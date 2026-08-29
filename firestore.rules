@@ -1,0 +1,57 @@
+rules_version = '2';
+
+// Modelo: /parents/{parentId} es el padre autenticado (parentId == auth.uid).
+// Todo lo del hogar cuelga debajo: children/{childId}, y dentro de cada hijo
+// sus colecciones de progreso, intentos, estrellas y canjes.
+//
+// Pendiente de decidir antes de construir el juego: cómo entra el NIÑO a su
+// perfil sin volver a autenticarse con Google. Estas reglas asumen, por ahora,
+// que el dispositivo ya está en la sesión autenticada del padre (uso
+// compartido en el mismo navegador/tablet). Si más adelante se quiere que el
+// niño entre solo con su PIN sin la sesión del padre, hace falta emitir un
+// token personalizado desde una Cloud Function que valide el PIN — no se
+// puede resolver únicamente con estas reglas declarativas.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isParent(parentId) {
+      return request.auth != null && request.auth.uid == parentId;
+    }
+
+    match /parents/{parentId} {
+      allow read, write: if isParent(parentId);
+
+      match /children/{childId} {
+        allow read, write: if isParent(parentId);
+
+        match /skillsProgress/{skillId} {
+          allow read, write: if isParent(parentId);
+        }
+
+        match /attempts/{attemptId} {
+          allow read, write: if isParent(parentId);
+        }
+
+        match /starLedger/{entryId} {
+          allow read, write: if isParent(parentId);
+        }
+
+        match /redemptionRequests/{requestId} {
+          allow read, write: if isParent(parentId);
+        }
+      }
+    }
+
+    // Contenido curricular: catálogo compartido de hilos/unidades, de solo
+    // lectura para cualquier usuario autenticado; se administra aparte
+    // (consola o script de siembra), nunca desde el cliente del juego.
+    match /curriculum/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
