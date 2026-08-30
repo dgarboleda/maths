@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 
@@ -74,8 +74,23 @@ export function PracticaTab({
   const [showKeypad, setShowKeypad] = useState(false);
   const [keypadInput, setKeypadInput] = useState("");
   const [finished, setFinished] = useState(false);
+  const promptId = useId();
+  const timeoutsRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   const question = questions[questionNumber - 1];
+
+  // Los temporizadores de "pasar a la siguiente" se cancelan al desmontar,
+  // para no tocar estado de un componente que ya no está en pantalla.
+  useEffect(() => {
+    const pending = timeoutsRef.current;
+    return () => {
+      for (const id of pending) clearTimeout(id);
+    };
+  }, []);
+
+  function later(fn: () => void, ms: number) {
+    timeoutsRef.current.push(setTimeout(fn, ms));
+  }
 
   function selectTable(t: number) {
     playSound("click", soundOn);
@@ -101,7 +116,7 @@ export function PracticaTab({
       setStatus("correct");
       setScore((s) => s + 10);
       triggerConfetti();
-      setTimeout(() => {
+      later(() => {
         if (questionNumber < QUESTIONS_PER_ROUND) {
           setQuestionNumber((n) => n + 1);
           setSelected(null);
@@ -117,7 +132,7 @@ export function PracticaTab({
     } else {
       playSound("wrong", soundOn);
       setStatus("wrong");
-      setTimeout(() => setStatus("idle"), 500);
+      later(() => setStatus("idle"), 500);
     }
   }
 
@@ -131,9 +146,13 @@ export function PracticaTab({
   return (
     <div className="space-y-6">
       <div>
-        <p className="mb-2 text-center font-bold text-slate-700">Elige una tabla para practicar:</p>
-        <div className="flex flex-wrap justify-center gap-2">
+        <p id="selector-tabla" className="mb-2 text-center font-bold text-slate-700">
+          Elige una tabla para practicar:
+        </p>
+        <div role="group" aria-labelledby="selector-tabla" className="flex flex-wrap justify-center gap-2">
           <button
+            type="button"
+            aria-pressed={table === 0}
             onClick={() => selectTable(0)}
             className={`rounded-xl border-2 px-3 py-1.5 text-xs font-bold sm:text-sm ${
               table === 0
@@ -141,11 +160,13 @@ export function PracticaTab({
                 : "border-purple-200 bg-purple-100 text-purple-700 hover:bg-purple-200"
             }`}
           >
-            🎲 Mezclado
+            <span aria-hidden="true">🎲 </span>Mezclado
           </button>
           {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
+              type="button"
+              aria-pressed={table === n}
               onClick={() => selectTable(n)}
               className={`rounded-xl border-2 px-3 py-1.5 text-xs font-bold sm:text-sm ${
                 table === n
@@ -161,10 +182,13 @@ export function PracticaTab({
 
       <div className="relative mx-auto max-w-xl rounded-3xl border-2 border-purple-200 bg-gradient-to-b from-purple-50 to-pink-50 p-6 text-center shadow-inner sm:p-8">
         {finished ? (
-          <div className="space-y-2 rounded-2xl border-2 border-green-400 bg-green-100 p-4 text-green-900">
-            <div className="text-3xl">🏆 ¡Práctica completada!</div>
+          <div role="status" className="space-y-2 rounded-2xl border-2 border-green-400 bg-green-100 p-4 text-green-900">
+            <div className="text-3xl">
+              <span aria-hidden="true">🏆 </span>¡Práctica completada!
+            </div>
             <p className="font-bold">Obtuviste {score} puntos en esta ronda.</p>
             <button
+              type="button"
               onClick={() => selectTable(table)}
               className="mt-2 rounded-xl bg-green-600 px-6 py-2 font-bold text-white"
             >
@@ -173,41 +197,60 @@ export function PracticaTab({
           </div>
         ) : (
           <>
-            <div className="mb-6 h-3 w-full overflow-hidden rounded-full bg-purple-200">
+            <div
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={QUESTIONS_PER_ROUND}
+              aria-valuenow={questionNumber - 1}
+              aria-valuetext={`Pregunta ${questionNumber} de ${QUESTIONS_PER_ROUND}`}
+              className="mb-6 h-3 w-full overflow-hidden rounded-full bg-purple-200"
+            >
               <div
                 className="h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
-            <div className="mb-2 flex items-center justify-between text-sm font-bold text-purple-600">
+            <div className="mb-2 flex items-center justify-between text-sm font-bold text-purple-700">
               <span>
                 Pregunta {questionNumber} de {QUESTIONS_PER_ROUND}
               </span>
               <span>
-                Puntos: <span className="text-green-600">{score}</span>
+                Puntos: <span className="text-green-700">{score}</span>
               </span>
             </div>
 
-            <div className="my-6 flex items-center justify-center gap-3 text-5xl font-black tracking-wider text-purple-900 sm:text-6xl">
+            <div
+              id={promptId}
+              className="my-6 flex items-center justify-center gap-3 text-5xl font-black tracking-wider text-purple-900 sm:text-6xl"
+            >
               <span>{question.f1}</span>
-              <span className="text-pink-500">×</span>
+              <span className="text-pink-600">×</span>
               <span>{question.f2}</span>
-              <span className="text-slate-400">=</span>
-              <span className="inline-block min-h-[60px] w-20 border-b-4 border-purple-600 text-center text-purple-600 sm:w-24">
+              <span className="text-slate-600">=</span>
+              <span className="inline-block min-h-[60px] w-20 border-b-4 border-purple-600 text-center text-purple-700 sm:w-24">
                 {selected ?? "?"}
               </span>
             </div>
 
             <button
+              type="button"
+              aria-expanded={showHint}
               onClick={() => setShowHint((v) => !v)}
               className="mb-4 inline-flex items-center gap-1 text-xs font-bold text-purple-600 underline hover:text-purple-800 sm:text-sm"
             >
-              🔍 ¿Necesitas una pista visual?
+              <span aria-hidden="true">🔍 </span>¿Necesitas una pista visual?
             </button>
             {showHint && (
-              <div className="mb-6 flex max-h-36 flex-wrap justify-center gap-1 overflow-y-auto rounded-xl border border-purple-200 bg-white p-3">
+              <div
+                aria-label={`${question.f1} grupos de ${question.f2} estrellas`}
+                className="mb-6 flex max-h-36 flex-wrap justify-center gap-1 overflow-y-auto rounded-xl border border-purple-200 bg-white p-3"
+              >
                 {Array.from({ length: question.f1 }, (_, i) => (
-                  <div key={i} className="m-1 flex items-center gap-1 rounded-lg border border-purple-300 bg-purple-100 p-1.5">
+                  <div
+                    key={i}
+                    aria-hidden="true"
+                    className="m-1 flex items-center gap-1 rounded-lg border border-purple-300 bg-purple-100 p-1.5"
+                  >
                     {Array.from({ length: question.f2 }, (_, j) => (
                       <span key={j} className="text-xs">
                         ⭐
@@ -218,7 +261,7 @@ export function PracticaTab({
               </div>
             )}
 
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4">
+            <div role="group" aria-labelledby={promptId} className="mb-6 grid grid-cols-2 gap-3 sm:gap-4">
               {question.choices.map((choice) => {
                 const isSelected = selected === choice;
                 const color =
@@ -230,6 +273,7 @@ export function PracticaTab({
                 return (
                   <button
                     key={choice}
+                    type="button"
                     onClick={() => submit(choice)}
                     className={`rounded-2xl border-2 py-3 text-2xl font-extrabold shadow-md transition-colors ${color}`}
                   >
@@ -239,19 +283,37 @@ export function PracticaTab({
               })}
             </div>
 
+            {/* El acierto se marcaba solo con color (WCAG 1.4.1); ahora
+                también se dice, y se anuncia en una región viva. */}
+            <p
+              role="status"
+              className={`mb-4 min-h-6 text-sm font-bold ${
+                status === "correct" ? "text-green-700" : "text-slate-700"
+              }`}
+            >
+              {status === "correct"
+                ? "¡Correcto!"
+                : status === "wrong"
+                  ? "Esa no era. Prueba otra vez."
+                  : ""}
+            </p>
+
             <div className="mt-2 border-t border-purple-200 pt-4">
               <button
+                type="button"
+                aria-expanded={showKeypad}
                 onClick={() => setShowKeypad((v) => !v)}
-                className="text-xs font-bold text-slate-500 hover:text-purple-600"
+                className="text-xs font-bold text-slate-700 hover:text-purple-700"
               >
-                ⌨️ O escribe el resultado directamente
+                <span aria-hidden="true">⌨️ </span>O escribe el resultado directamente
               </button>
               {showKeypad && (
                 <div className="mx-auto mt-3 max-w-xs">
-                  <div className="grid grid-cols-3 gap-2">
+                  <div role="group" aria-label="Teclado numérico" className="grid grid-cols-3 gap-2">
                     {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((n) => (
                       <button
                         key={n}
+                        type="button"
                         onClick={() => setKeypadInput((v) => (v.length < 3 ? v + n : v))}
                         className="rounded-xl border bg-white p-3 text-xl font-bold text-purple-800"
                       >
@@ -259,27 +321,31 @@ export function PracticaTab({
                       </button>
                     ))}
                     <button
+                      type="button"
                       onClick={() => setKeypadInput("")}
                       className="rounded-xl bg-red-100 p-3 text-sm font-bold text-red-600"
                     >
                       Borrar
                     </button>
                     <button
+                      type="button"
                       onClick={() => setKeypadInput((v) => (v.length < 3 ? v + "0" : v))}
                       className="rounded-xl border bg-white p-3 text-xl font-bold text-purple-800"
                     >
                       0
                     </button>
                     <button
+                      type="button"
                       onClick={keypadSubmit}
-                      className="rounded-xl bg-green-500 p-3 text-sm font-bold text-white"
+                      aria-label="Comprobar el número escrito"
+                      className="rounded-xl bg-green-700 p-3 text-sm font-bold text-white"
                     >
-                      OK ✔️
+                      OK <span aria-hidden="true">✔️</span>
                     </button>
                   </div>
-                  {keypadInput && (
-                    <p className="mt-2 text-sm text-slate-500">Escribiste: {keypadInput}</p>
-                  )}
+                  <p role="status" className="mt-2 text-sm text-slate-700">
+                    {keypadInput ? `Escribiste: ${keypadInput}` : ""}
+                  </p>
                 </div>
               )}
             </div>

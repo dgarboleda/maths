@@ -29,8 +29,10 @@ export function EjemplosTab({
   return (
     <div className="space-y-6">
       <div className="mx-auto max-w-xl text-center">
-        <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Ejemplos resueltos 📚</h2>
-        <p className="mt-1 text-sm text-slate-600">Mira estos ejemplos para entender mejor el tema.</p>
+        <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">
+          Ejemplos resueltos <span aria-hidden="true">📚</span>
+        </h2>
+        <p className="mt-1 text-sm text-slate-700">Mira estos ejemplos para entender mejor el tema.</p>
       </div>
 
       <div className="mx-auto flex max-w-xl flex-col gap-4">
@@ -38,9 +40,12 @@ export function EjemplosTab({
           <div key={ex.id} className="rounded-2xl border-2 border-purple-200 bg-white p-5 text-center shadow-sm">
             <p className="text-xl font-bold text-purple-900">{ex.prompt}</p>
             {revealed[ex.id] ? (
-              <p className="mt-3 text-lg font-extrabold text-emerald-600">Respuesta: {ex.answer}</p>
+              <p role="status" className="mt-3 text-lg font-extrabold text-emerald-700">
+                Respuesta: {ex.answer}
+              </p>
             ) : (
               <button
+                type="button"
                 onClick={() => {
                   playSound("click", soundOn);
                   setRevealed((r) => ({ ...r, [ex.id]: true }));
@@ -55,8 +60,12 @@ export function EjemplosTab({
       </div>
 
       <div className="text-center">
-        <button onClick={refresh} className="text-sm font-bold text-purple-600 underline hover:text-purple-800">
-          🔄 Ver otros ejemplos
+        <button
+          type="button"
+          onClick={refresh}
+          className="text-sm font-bold text-purple-700 underline hover:text-purple-900"
+        >
+          <span aria-hidden="true">🔄 </span>Ver otros ejemplos
         </button>
       </div>
     </div>

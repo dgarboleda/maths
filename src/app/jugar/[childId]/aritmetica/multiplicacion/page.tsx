@@ -3,22 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  onSnapshot,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthProvider";
 import { db } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { recordAttempt, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
-import { playSound } from "@/lib/gameSound";
-import { GameShell, TabNav } from "@/components/GameShell";
+import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
+import { useTotalStars } from "@/lib/useTotalStars";
+import { useSoundPreference } from "@/lib/useSoundPreference";
 import { ConceptoTab } from "@/components/multiplicacion/ConceptoTab";
 import { PracticaTab } from "@/components/multiplicacion/PracticaTab";
 import { CoheteTab } from "@/components/multiplicacion/CoheteTab";
@@ -36,6 +29,16 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: "tabla", label: "📊 Tabla 10×10" },
 ];
 
+/** Props ARIA del panel de la pestaña activa (ver TabNav en GameShell). */
+function panelProps(id: TabId) {
+  return {
+    id: tabPanelId(id),
+    role: "tabpanel" as const,
+    "aria-labelledby": tabId(id),
+    tabIndex: 0,
+  };
+}
+
 export default function MultiplicacionPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -43,10 +46,10 @@ export default function MultiplicacionPage() {
 
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progress, setProgress] = useState<SkillProgress | undefined>(undefined);
-  const [totalStars, setTotalStars] = useState<number | null>(null);
+  const totalStars = useTotalStars(user?.uid, params.childId);
   const [streak, setStreak] = useState(0);
   const [repeatsToday, setRepeatsToday] = useState(0);
-  const [soundOn, setSoundOn] = useState(true);
+  const [soundOn, toggleSound] = useSoundPreference();
   const [activeTab, setActiveTab] = useState<TabId>("concepto");
 
   useEffect(() => {
@@ -70,18 +73,6 @@ export default function MultiplicacionPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
-
-  useEffect(() => {
-    if (!user) return;
-    return onSnapshot(
-      collection(db, "parents", user.uid, "children", params.childId, "starLedger"),
-      (snap) => {
-        let total = 0;
-        snap.forEach((d) => (total += (d.data().delta as number) ?? 0));
-        setTotalStars(total);
-      },
-    );
   }, [user, params.childId]);
 
   async function submitAnswer(correct: boolean): Promise<number> {
@@ -122,8 +113,10 @@ export default function MultiplicacionPage() {
 
   if (!child) {
     return (
-      <main className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p className="text-neutral-400">Cargando…</p>
+      <main id="contenido" className="flex min-h-screen w-full items-center justify-center bg-white">
+        <p role="status" className="text-neutral-700">
+          Cargando…
+        </p>
       </main>
     );
   }
@@ -140,25 +133,26 @@ export default function MultiplicacionPage() {
       stars={totalStars}
       streak={streak}
       soundOn={soundOn}
-      onToggleSound={() => {
-        setSoundOn((v) => !v);
-        playSound("click", true);
-      }}
+      onToggleSound={toggleSound}
       nav={<TabNav tabs={TABS} active={activeTab} onSelect={setActiveTab} />}
     >
       {activeTab === "concepto" && (
-        <div className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div {...panelProps("concepto")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
           <ConceptoTab />
         </div>
       )}
       {activeTab === "practica" && (
-        <div className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div {...panelProps("practica")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
           <PracticaTab soundOn={soundOn} onAnswer={(correct) => void submitAnswer(correct)} />
         </div>
       )}
-      {activeTab === "cohete" && <CoheteTab soundOn={soundOn} onAnswer={submitAnswer} />}
+      {activeTab === "cohete" && (
+        <div {...panelProps("cohete")}>
+          <CoheteTab soundOn={soundOn} onAnswer={submitAnswer} />
+        </div>
+      )}
       {activeTab === "tabla" && (
-        <div className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div {...panelProps("tabla")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
           <TablaTab soundOn={soundOn} />
         </div>
       )}

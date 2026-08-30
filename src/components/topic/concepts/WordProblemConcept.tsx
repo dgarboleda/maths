@@ -20,9 +20,10 @@ export function WordProblemConcept({ strandSlug, difficulty }: { strandSlug: str
       <div className="mx-auto max-w-xl rounded-2xl border-2 border-purple-200 bg-white p-6 shadow-sm">
         <p className="text-xl font-bold text-purple-900">{problem.prompt}</p>
         {revealed ? (
-          <p className="mt-4 text-lg font-extrabold text-emerald-600">Respuesta: {problem.answer}</p>
+          <p className="mt-4 text-lg font-extrabold text-emerald-700">Respuesta: {problem.answer}</p>
         ) : (
           <button
+            type="button"
             onClick={() => setRevealed(true)}
             className="mt-4 rounded-xl bg-purple-100 px-4 py-1.5 text-sm font-bold text-purple-700 hover:bg-purple-200"
           >
@@ -31,13 +32,14 @@ export function WordProblemConcept({ strandSlug, difficulty }: { strandSlug: str
         )}
       </div>
       <button
+        type="button"
         onClick={() => {
           setProblem(strand.generateProblem(difficulty));
           setRevealed(false);
         }}
         className="text-sm font-bold text-purple-600 underline hover:text-purple-800"
       >
-        🔄 Otro problema
+        <span aria-hidden="true">🔄 </span>Otro problema
       </button>
     </div>
   );

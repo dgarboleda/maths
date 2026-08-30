@@ -19,6 +19,8 @@ import type { ChildProfile, RedemptionRequest } from "@/lib/types";
 import { STRANDS } from "@/lib/strands";
 import { GameShell } from "@/components/GameShell";
 import { playSound } from "@/lib/gameSound";
+import { useTotalStars } from "@/lib/useTotalStars";
+import { useSoundPreference } from "@/lib/useSoundPreference";
 
 interface RequestDoc extends RedemptionRequest {
   id: string;
@@ -44,10 +46,10 @@ export default function JugarPage() {
   const params = useParams<{ childId: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [totalStars, setTotalStars] = useState<number | null>(null);
   const [requests, setRequests] = useState<RequestDoc[]>([]);
   const [showRedeemForm, setShowRedeemForm] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
+  const totalStars = useTotalStars(user?.uid, params.childId);
+  const [soundOn, toggleSound] = useSoundPreference();
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -59,18 +61,6 @@ export default function JugarPage() {
       if (snap.exists()) setChild(snap.data() as ChildProfile);
       else setNotFound(true);
     });
-  }, [user, params.childId]);
-
-  useEffect(() => {
-    if (!user) return;
-    return onSnapshot(
-      collection(db, "parents", user.uid, "children", params.childId, "starLedger"),
-      (snap) => {
-        let total = 0;
-        snap.forEach((d) => (total += (d.data().delta as number) ?? 0));
-        setTotalStars(total);
-      },
-    );
   }, [user, params.childId]);
 
   useEffect(() => {
@@ -88,7 +78,10 @@ export default function JugarPage() {
 
   if (notFound) {
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center">
+      <main
+        id="contenido"
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+      >
         <p className="text-neutral-500">No encontré ese perfil.</p>
         <Link href="/perfiles" className="text-sm text-neutral-500 underline underline-offset-2">
           Volver a perfiles
@@ -110,14 +103,13 @@ export default function JugarPage() {
       }
       stars={totalStars}
       soundOn={soundOn}
-      onToggleSound={() => {
-        setSoundOn((v) => !v);
-        playSound("click", true);
-      }}
+      onToggleSound={toggleSound}
     >
       <div className="space-y-8">
         <div>
-          <h2 className="mb-3 text-center text-lg font-bold text-purple-800">¿Qué quieres practicar hoy? 🎯</h2>
+          <h2 className="mb-3 text-center text-lg font-bold text-purple-800">
+            ¿Qué quieres practicar hoy? <span aria-hidden="true">🎯</span>
+          </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {STRANDS.map((strand) => (
               <Link
@@ -126,7 +118,9 @@ export default function JugarPage() {
                 onClick={() => playSound("click", soundOn)}
                 className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-3xl bg-gradient-to-br ${STRAND_GRADIENTS[strand.slug]} text-white shadow-lg transition-transform hover:scale-105`}
               >
-                <span className="text-4xl">{strand.emoji}</span>
+                <span aria-hidden="true" className="text-4xl">
+                  {strand.emoji}
+                </span>
                 <span className="px-2 text-center text-sm font-bold">{strand.label}</span>
               </Link>
             ))}
@@ -135,9 +129,12 @@ export default function JugarPage() {
 
         <div className="mx-auto max-w-xl space-y-4 rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-purple-800">Canjear estrellas ⭐</h2>
+            <h2 className="text-lg font-bold text-purple-800">
+              Canjear estrellas <span aria-hidden="true">⭐</span>
+            </h2>
             {!showRedeemForm && (
               <button
+                type="button"
                 onClick={() => setShowRedeemForm(true)}
                 disabled={!totalStars}
                 className="rounded-xl bg-purple-100 px-4 py-1.5 text-sm font-bold text-purple-700 hover:bg-purple-200 disabled:opacity-40"
@@ -164,7 +161,8 @@ export default function JugarPage() {
                   className="flex items-center justify-between rounded-xl border-2 border-purple-100 px-4 py-2 text-sm"
                 >
                   <span className="text-purple-900">
-                    {r.rewardLabel} · {r.starsSpent} ★
+                    {r.rewardLabel} · {r.starsSpent} <span aria-hidden="true">★</span>
+                    <span className="sr-only">estrellas</span>
                   </span>
                   <span
                     className={
@@ -172,7 +170,7 @@ export default function JugarPage() {
                         ? "font-bold text-emerald-600"
                         : r.status === "rechazado"
                           ? "font-bold text-red-500"
-                          : "font-bold text-slate-400"
+                          : "font-bold text-slate-700"
                     }
                   >
                     {STATUS_LABEL[r.status]}
@@ -247,7 +245,7 @@ function RedeemForm({
           value={rewardLabel}
           onChange={(e) => setRewardLabel(e.target.value)}
           placeholder="Ej. 800 Robux"
-          className="rounded-xl border-2 border-purple-200 px-3 py-2 font-normal outline-none focus:border-purple-500"
+          className="rounded-xl border-2 border-purple-200 px-3 py-2 font-normal focus:border-purple-500"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm font-bold text-purple-800">
@@ -256,10 +254,14 @@ function RedeemForm({
           inputMode="numeric"
           value={starsSpent}
           onChange={(e) => setStarsSpent(e.target.value.replace(/\D/g, ""))}
-          className="rounded-xl border-2 border-purple-200 px-3 py-2 font-normal outline-none focus:border-purple-500"
+          className="rounded-xl border-2 border-purple-200 px-3 py-2 font-normal focus:border-purple-500"
         />
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm font-bold text-red-700">
+          {error}
+        </p>
+      )}
       <div className="flex gap-4">
         <button
           type="submit"
@@ -268,7 +270,7 @@ function RedeemForm({
         >
           Enviar
         </button>
-        <button type="button" onClick={onDone} className="text-sm font-bold text-slate-500">
+        <button type="button" onClick={onDone} className="text-sm font-bold text-slate-700">
           Cancelar
         </button>
       </div>

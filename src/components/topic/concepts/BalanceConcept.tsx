@@ -60,7 +60,7 @@ export function BalanceConcept() {
       </div>
 
       <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-slate-200 bg-slate-50 p-6">
-        <svg width="220" height="24">
+        <svg aria-hidden="true" width="220" height="24">
           <line x1="0" y1="12" x2="220" y2="12" stroke="#a3a3a3" strokeWidth="3" strokeLinecap="round" />
           <circle cx="110" cy="12" r="4" fill="#737373" />
         </svg>

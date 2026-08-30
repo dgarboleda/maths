@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { addDoc, collection, doc, getDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthProvider";
 import { db } from "@/lib/firebase";
 import type { ChildProfile } from "@/lib/types";
 import { starsForAnswer } from "@/lib/economy";
-import { playSound } from "@/lib/gameSound";
 import { GameShell } from "@/components/GameShell";
 import { PyramidGame } from "@/components/pyramid/PyramidGame";
+import { useTotalStars } from "@/lib/useTotalStars";
+import { useSoundPreference } from "@/lib/useSoundPreference";
 
 export default function PiramidePage() {
   const { user, loading } = useAuth();
@@ -18,10 +19,10 @@ export default function PiramidePage() {
   const params = useParams<{ childId: string }>();
 
   const [child, setChild] = useState<ChildProfile | null>(null);
-  const [totalStars, setTotalStars] = useState<number | null>(null);
+  const totalStars = useTotalStars(user?.uid, params.childId);
   const [streak, setStreak] = useState(0);
   const [repeatsToday, setRepeatsToday] = useState(0);
-  const [soundOn, setSoundOn] = useState(true);
+  const [soundOn, toggleSound] = useSoundPreference();
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -32,18 +33,6 @@ export default function PiramidePage() {
     getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
       if (snap.exists()) setChild(snap.data() as ChildProfile);
     });
-  }, [user, params.childId]);
-
-  useEffect(() => {
-    if (!user) return;
-    return onSnapshot(
-      collection(db, "parents", user.uid, "children", params.childId, "starLedger"),
-      (snap) => {
-        let total = 0;
-        snap.forEach((d) => (total += (d.data().delta as number) ?? 0));
-        setTotalStars(total);
-      },
-    );
   }, [user, params.childId]);
 
   async function submitAnswer(difficulty: number, correct: boolean): Promise<number> {
@@ -77,8 +66,10 @@ export default function PiramidePage() {
 
   if (!child) {
     return (
-      <main className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p className="text-neutral-400">Cargando…</p>
+      <main id="contenido" className="flex min-h-screen w-full items-center justify-center bg-white">
+        <p role="status" className="text-neutral-700">
+          Cargando…
+        </p>
       </main>
     );
   }
@@ -95,10 +86,7 @@ export default function PiramidePage() {
       stars={totalStars}
       streak={streak}
       soundOn={soundOn}
-      onToggleSound={() => {
-        setSoundOn((v) => !v);
-        playSound("click", true);
-      }}
+      onToggleSound={toggleSound}
     >
       <div className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
         <PyramidGame soundOn={soundOn} onAnswer={submitAnswer} />

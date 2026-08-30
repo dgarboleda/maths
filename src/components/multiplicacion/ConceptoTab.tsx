@@ -58,6 +58,9 @@ export function ConceptoTab() {
           {THEMES.map((icon) => (
             <button
               key={icon}
+              type="button"
+              aria-pressed={theme === icon}
+              aria-label={`Usar ${icon} como objeto`}
               onClick={() => setTheme(icon)}
               className={`rounded-xl border-2 p-2 text-xl transition-colors ${
                 theme === icon ? "border-purple-500 bg-purple-200" : "border-purple-200 hover:bg-purple-100"
@@ -85,7 +88,7 @@ export function ConceptoTab() {
               key={i}
               className="flex items-center gap-2 rounded-xl border border-purple-200 bg-white px-3 py-2 shadow-sm"
             >
-              <span className="mr-1 text-xs font-bold text-purple-400">G{i + 1}</span>
+              <span className="mr-1 text-xs font-bold text-purple-600">G{i + 1}</span>
               {Array.from({ length: f2 }, (_, j) => (
                 <span key={j} className="inline-block text-2xl sm:text-3xl">
                   {theme}

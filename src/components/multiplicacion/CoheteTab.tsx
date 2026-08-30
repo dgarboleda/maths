@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 
@@ -67,11 +67,12 @@ export function CoheteTab({
 }) {
   const [phase, setPhase] = useState<Phase>("start");
   const [timer, setTimer] = useState(START_TIME);
+  const timerRef = useRef(START_TIME);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [bag, setBag] = useState<Question[]>(() => drawBag());
   const [win, setWin] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const promptId = useId();
 
   const question = bag[0];
 
@@ -82,38 +83,42 @@ export function CoheteTab({
     });
   }
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
+  const endGame = useCallback(
+    (didWin: boolean) => {
+      setWin(didWin);
+      setPhase("over");
+      playSound("fanfare", soundOn);
+      if (didWin) triggerConfetti();
+    },
+    [soundOn],
+  );
 
-  function endGame(didWin: boolean) {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setWin(didWin);
-    setPhase("over");
-    playSound("fanfare", soundOn);
-    if (didWin) triggerConfetti();
+  function setTimeLeft(seconds: number) {
+    timerRef.current = Math.max(0, seconds);
+    setTimer(timerRef.current);
   }
+
+  // El reloj vive en un efecto atado a la fase y termina la partida desde el
+  // callback del intervalo. Antes llamaba a endGame() dentro del actualizador
+  // de setTimer, es decir efectos (sonido, confeti, cambio de fase) dentro de
+  // una función que React puede volver a ejecutar: en modo estricto la
+  // partida terminaba dos veces.
+  useEffect(() => {
+    if (phase !== "playing") return;
+    const id = setInterval(() => {
+      setTimeLeft(timerRef.current - 1);
+      if (timerRef.current <= 0) endGame(false);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [phase, endGame]);
 
   function start() {
     playSound("click", soundOn);
-    setTimer(START_TIME);
+    setTimeLeft(START_TIME);
     setCorrectCount(0);
     setStarsThisRound(0);
     setBag(drawBag());
     setPhase("playing");
-
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setTimer((t) => {
-        if (t <= 1) {
-          endGame(false);
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
   }
 
   async function answer(value: number) {
@@ -133,7 +138,11 @@ export function CoheteTab({
       advance();
     } else {
       playSound("wrong", soundOn);
-      setTimer((t) => Math.max(0, t - 3));
+      setTimeLeft(timerRef.current - 3);
+      if (timerRef.current <= 0) {
+        endGame(false);
+        return;
+      }
     }
   }
 
@@ -142,6 +151,7 @@ export function CoheteTab({
   return (
     <div className="relative overflow-hidden rounded-3xl border-4 border-indigo-500 bg-slate-900 p-6 text-white shadow-2xl">
       <div
+        aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-30"
         style={{
           backgroundImage: "radial-gradient(white 1px, transparent 0)",
@@ -151,7 +161,7 @@ export function CoheteTab({
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">
         <h2 className="mb-2 bg-gradient-to-r from-yellow-300 to-pink-400 bg-clip-text text-3xl font-extrabold text-transparent">
-          🚀 Misión despegue galáctico
+          <span aria-hidden="true">🚀 </span>Misión despegue galáctico
         </h2>
         <p className="mb-6 text-sm text-indigo-200">
           ¡Responde rápido para impulsar tu cohete antes de que se acabe el combustible!
@@ -159,8 +169,11 @@ export function CoheteTab({
 
         {phase === "start" && (
           <div className="space-y-6 py-8">
-            <div className="animate-bounce text-6xl">🚀</div>
+            <div aria-hidden="true" className="animate-bounce text-6xl">
+              🚀
+            </div>
             <button
+              type="button"
               onClick={start}
               className="rounded-2xl border-2 border-white bg-gradient-to-r from-green-400 to-emerald-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
@@ -172,9 +185,19 @@ export function CoheteTab({
 
         {phase === "playing" && (
           <div className="space-y-6">
-            <div className="relative flex h-28 items-center justify-between overflow-hidden rounded-2xl border border-indigo-500/40 bg-slate-800/80 p-4 px-6">
-              <span className="z-10 text-3xl">🌍</span>
-              <div className="absolute left-10 right-10 flex items-center">
+            <div
+              role="progressbar"
+              aria-label="Avance del cohete"
+              aria-valuemin={0}
+              aria-valuemax={GOAL}
+              aria-valuenow={correctCount}
+              aria-valuetext={`${correctCount} de ${GOAL} respuestas correctas`}
+              className="relative flex h-28 items-center justify-between overflow-hidden rounded-2xl border border-indigo-500/40 bg-slate-800/80 p-4 px-6"
+            >
+              <span aria-hidden="true" className="z-10 text-3xl">
+                🌍
+              </span>
+              <div aria-hidden="true" className="absolute left-10 right-10 flex items-center">
                 <div
                   className="text-4xl transition-all duration-500"
                   style={{ transform: `translateX(${progressPct * 3.4}px)` }}
@@ -182,28 +205,38 @@ export function CoheteTab({
                   🚀
                 </div>
               </div>
-              <span className="z-10 text-3xl">🌕</span>
+              <span aria-hidden="true" className="z-10 text-3xl">
+                🌕
+              </span>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-indigo-700 bg-indigo-950/80 p-3">
               <div className="flex items-center gap-2">
-                <span>⏱️ Tiempo:</span>
-                <span className="font-mono text-2xl font-bold text-yellow-400">{timer}s</span>
+                <span>
+                  <span aria-hidden="true">⏱️ </span>Tiempo:
+                </span>
+                {/* Sin región viva: anunciar cada segundo taparía el enunciado. */}
+                <span aria-live="off" className="font-mono text-2xl font-bold text-yellow-400">
+                  {timer}s
+                </span>
               </div>
               <div className="flex items-center gap-2">
-                <span>⭐ Estrellas:</span>
+                <span>
+                  <span aria-hidden="true">⭐ </span>Estrellas:
+                </span>
                 <span className="font-mono text-2xl font-bold text-green-400">{starsThisRound}</span>
               </div>
             </div>
 
             <div className="rounded-2xl border-2 border-indigo-400 bg-indigo-900/90 p-6 shadow-inner">
-              <div className="mb-4 text-4xl font-black text-yellow-300 sm:text-5xl">
+              <div id={promptId} className="mb-4 text-4xl font-black text-yellow-300 sm:text-5xl">
                 {question.f1} × {question.f2} = ?
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div role="group" aria-labelledby={promptId} className="grid grid-cols-2 gap-3">
                 {question.choices.map((choice) => (
                   <button
                     key={choice}
+                    type="button"
                     onClick={() => answer(choice)}
                     className="rounded-xl border border-indigo-400 bg-indigo-800/90 py-3 text-2xl font-extrabold text-yellow-300 shadow-lg transition-colors hover:bg-indigo-700"
                   >
@@ -216,8 +249,10 @@ export function CoheteTab({
         )}
 
         {phase === "over" && (
-          <div className="space-y-6 py-6">
-            <div className="text-6xl">{win ? "🚀🌕" : "🌟"}</div>
+          <div role="status" className="space-y-6 py-6">
+            <div aria-hidden="true" className="text-6xl">
+              {win ? "🚀🌕" : "🌟"}
+            </div>
             <h3 className="text-3xl font-bold text-yellow-300">
               {win ? "¡Misión cumplida!" : "¡Buen intento!"}
             </h3>
@@ -234,8 +269,8 @@ export function CoheteTab({
                 <strong className="text-yellow-400">+{starsThisRound} ★</strong>
               </div>
             </div>
-            <button onClick={start} className="rounded-xl bg-purple-600 px-8 py-3 font-bold text-white hover:bg-purple-500">
-              Jugar de nuevo 🔄
+            <button type="button" onClick={start} className="rounded-xl bg-purple-600 px-8 py-3 font-bold text-white hover:bg-purple-500">
+              Jugar de nuevo <span aria-hidden="true">🔄</span>
             </button>
           </div>
         )}

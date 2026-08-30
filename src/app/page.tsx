@@ -13,5 +13,11 @@ export default function Home() {
     router.replace(user ? "/perfiles" : "/login");
   }, [user, loading, router]);
 
-  return null;
+  return (
+    <main id="contenido" className="flex min-h-screen w-full items-center justify-center bg-white">
+      <p role="status" className="text-neutral-700">
+        Cargando…
+      </p>
+    </main>
+  );
 }

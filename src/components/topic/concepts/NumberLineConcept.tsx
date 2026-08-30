@@ -55,6 +55,9 @@ export function NumberLineConcept({ min, max }: { min: number; max: number }) {
         {(["+", "-"] as const).map((o) => (
           <button
             key={o}
+            type="button"
+            aria-pressed={op === o}
+            aria-label={o === "+" ? "Sumar" : "Restar"}
             onClick={() => setOp(o)}
             className={`rounded-xl border-2 px-5 py-2 text-xl font-bold transition-colors ${
               op === o ? "border-purple-700 bg-purple-600 text-white" : "border-purple-200 bg-white text-purple-700 hover:bg-purple-100"
@@ -73,8 +76,8 @@ export function NumberLineConcept({ min, max }: { min: number; max: number }) {
 
       <div className="relative h-20 rounded-2xl border-2 border-slate-200 bg-slate-50 px-6 pt-8">
         <div className="absolute left-6 right-6 top-1/2 h-0.5 -translate-y-1/2 bg-slate-300" />
-        <span className="absolute left-6 top-2 text-xs text-slate-400">{min}</span>
-        <span className="absolute right-6 top-2 text-xs text-slate-400">{max}</span>
+        <span className="absolute left-6 top-2 text-xs text-slate-600">{min}</span>
+        <span className="absolute right-6 top-2 text-xs text-slate-600">{max}</span>
         <div
           className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600"
           style={{ left: `calc(1.5rem + (100% - 3rem) * ${(a - min) / (max - min)})` }}

@@ -46,10 +46,11 @@ export function PatternConcept() {
               {SYMBOLS[s]}
             </span>
           ))}
-          <span className="mx-2 text-purple-400">→</span>
+          <span className="mx-2 text-purple-600">→</span>
           <span className="mx-1 text-pink-500">{SYMBOLS[next]}</span>
         </div>
         <button
+          type="button"
           onClick={() => setVisibleCount((v) => v + 1)}
           className="mt-4 rounded-xl bg-purple-600 px-5 py-2 font-bold text-white"
         >
