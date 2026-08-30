@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 export function NumberLineConcept({ min, max }: { min: number; max: number }) {
   const [a, setA] = useState(Math.round(min + (max - min) / 3));
   const [b, setB] = useState(Math.max(1, Math.round((max - min) / 6)));
   const [op, setOp] = useState<"+" | "-">("+");
+  const inicialId = useId();
+  const movimientoId = useId();
 
   const result = op === "+" ? a + b : a - b;
   const clamped = Math.max(min, Math.min(max, result));
@@ -23,10 +25,11 @@ export function NumberLineConcept({ min, max }: { min: number; max: number }) {
       <div className="grid grid-cols-1 gap-6 rounded-2xl border-2 border-purple-100 bg-purple-50 p-6 md:grid-cols-2">
         <div className="space-y-2">
           <div className="flex justify-between font-bold text-purple-800">
-            <span>Número inicial:</span>
+            <label htmlFor={inicialId}>Número inicial:</label>
             <span className="text-2xl text-pink-600">{a}</span>
           </div>
           <input
+            id={inicialId}
             type="range"
             min={min}
             max={max}
@@ -37,10 +40,11 @@ export function NumberLineConcept({ min, max }: { min: number; max: number }) {
         </div>
         <div className="space-y-2">
           <div className="flex justify-between font-bold text-purple-800">
-            <span>Cuánto se mueve:</span>
+            <label htmlFor={movimientoId}>Cuánto se mueve:</label>
             <span className="text-2xl text-blue-600">{b}</span>
           </div>
           <input
+            id={movimientoId}
             type="range"
             min={0}
             max={max - min}

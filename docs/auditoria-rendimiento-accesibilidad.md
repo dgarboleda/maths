@@ -40,9 +40,9 @@ que queda pendiente, con la propuesta concreta para cada punto.
   pasa por la sesión del padre en el navegador), pero si en algún momento se
   emiten tokens desde el servidor, los listados (perfiles, panel) podrían
   renderizarse en servidor y ahorrar el bloque de JS más caro.
-- **Sin presupuesto ni medición.** No hay Lighthouse en CI ni
-  `@next/bundle-analyzer`: es el siguiente paso natural para no perder lo
-  ganado.
+- **Sin presupuesto ni medición de rendimiento.** Ya hay CI (lint, tipos,
+  compilación y E2E), pero falta Lighthouse o `@next/bundle-analyzer` para que
+  una regresión de peso o de tiempos salte sola.
 
 ---
 
@@ -141,9 +141,9 @@ son mejoras que piden decisiones de producto o redacción de contenido.
 - **Zonas táctiles (WCAG 2.5.8).** Varias fichas y casillas rondan los 24–36
   px; conviene revisarlas contra el mínimo de 24×24 px reales y sus
   separaciones.
-- **Sin pruebas automáticas de accesibilidad.** Un `axe-core` sobre las
-  pantallas principales en CI evitaría regresiones; hoy no hay ninguna prueba
-  en el repositorio.
+- ~~Sin pruebas automáticas de accesibilidad.~~ **Hecho**: hay pruebas de
+  extremo a extremo con Playwright, con análisis de axe-core en todas las
+  pantallas, y CI que las ejecuta. Ver `docs/evaluacion-interfaz.md`.
 
 ---
 
@@ -175,14 +175,16 @@ son mejoras que piden decisiones de producto o redacción de contenido.
   llama a `getAuth()` al evaluar el módulo, y el prerenderizado de `/` revienta
   con `auth/invalid-api-key` si no hay `.env.local`. Inicializar de forma
   perezosa —o no prerenderizar esas rutas— haría el build reproducible sin
-  credenciales.
+  credenciales; de momento CI le pasa valores de relleno.
 - **Sin `error.tsx` ni `not-found.tsx`.** Cualquier fallo de Firestore deja la
   pantalla en blanco, y varias promesas (`getDoc(...).then(...)`) no tienen
   `catch`.
 - **`audit-pools.mjs` no se puede ejecutar tal cual**: importa un `.ts` desde
   Node sin cargador.
-- **Sin pruebas.** La lógica pura (`mastery`, `economy`, `problem`, `pyramid`)
-  es fácil de cubrir y hoy no tiene ni un test.
+- **Sin pruebas unitarias.** Los recorridos ya están cubiertos de extremo a
+  extremo, pero la lógica pura (`mastery`, `economy`, `problem`, `pyramid`)
+  sigue sin pruebas propias, que son más rápidas y precisas para sus casos
+  límite.
 
 ---
 

@@ -14,7 +14,8 @@ export default function Home() {
   }, [user, loading, router]);
 
   return (
-    <main id="contenido" className="flex min-h-screen w-full items-center justify-center bg-white">
+    <main id="contenido"
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
       <p role="status" className="text-neutral-700">
         Cargando…
       </p>

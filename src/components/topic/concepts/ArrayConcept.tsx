@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 const THEMES = ["🍎", "⭐", "🚀", "🐱", "🍕"];
 
@@ -8,6 +8,8 @@ export function ArrayConcept({ mode }: { mode: "mult" | "div" }) {
   const [f1, setF1] = useState(3);
   const [f2, setF2] = useState(4);
   const [theme, setTheme] = useState(THEMES[0]);
+  const gruposId = useId();
+  const objetosId = useId();
   const result = f1 * f2;
 
   return (
@@ -26,10 +28,11 @@ export function ArrayConcept({ mode }: { mode: "mult" | "div" }) {
       <div className="grid grid-cols-1 gap-6 rounded-2xl border-2 border-purple-100 bg-purple-50 p-6 md:grid-cols-2">
         <div className="space-y-2">
           <div className="flex justify-between font-bold text-purple-800">
-            <span>{mode === "mult" ? "Grupos (filas):" : "Grupos para repartir:"}</span>
+            <label htmlFor={gruposId}>{mode === "mult" ? "Grupos (filas):" : "Grupos para repartir:"}</label>
             <span className="text-2xl text-pink-600">{f1}</span>
           </div>
           <input
+            id={gruposId}
             type="range"
             min={1}
             max={10}
@@ -40,10 +43,11 @@ export function ArrayConcept({ mode }: { mode: "mult" | "div" }) {
         </div>
         <div className="space-y-2">
           <div className="flex justify-between font-bold text-purple-800">
-            <span>Objetos por grupo:</span>
+            <label htmlFor={objetosId}>Objetos por grupo:</label>
             <span className="text-2xl text-blue-600">{f2}</span>
           </div>
           <input
+            id={objetosId}
             type="range"
             min={1}
             max={10}

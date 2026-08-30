@@ -50,7 +50,11 @@ export default function PanelPage() {
   if (loading || !user) return null;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-white px-6 py-14">
+    <main
+      id="contenido"
+      tabIndex={-1}
+      className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-white px-6 py-14"
+    >
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">Panel de padre</h1>

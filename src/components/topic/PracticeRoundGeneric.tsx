@@ -99,6 +99,7 @@ export function PracticeRoundGeneric({
     <div className="mx-auto max-w-xl space-y-6 rounded-3xl border-2 border-purple-200 bg-gradient-to-b from-purple-50 to-pink-50 p-6 text-center shadow-inner sm:p-8">
       <div
         role="progressbar"
+        aria-label="Avance de la ronda"
         aria-valuemin={0}
         aria-valuemax={ROUND_LENGTH}
         aria-valuenow={questionNumber - 1}

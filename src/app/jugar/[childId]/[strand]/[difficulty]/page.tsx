@@ -118,6 +118,7 @@ export default function TopicPage() {
     return (
       <main
         id="contenido"
+        tabIndex={-1}
         className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-white text-center"
       >
         <p className="text-neutral-500">Ese tema todavía no existe.</p>
@@ -130,7 +131,8 @@ export default function TopicPage() {
 
   if (!child) {
     return (
-      <main id="contenido" className="flex min-h-screen w-full items-center justify-center bg-white">
+      <main id="contenido"
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
         <p role="status" className="text-neutral-700">
           Cargando…
         </p>

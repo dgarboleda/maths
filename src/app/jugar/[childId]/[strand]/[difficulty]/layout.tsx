@@ -8,8 +8,8 @@ export async function generateMetadata({
   const { strand, difficulty } = await params;
   const strandDef = getStrand(strand);
   if (!strandDef) return { title: "Tema" };
-  const topic = getTopicLabel(strandDef.slug, Number(difficulty));
-  return { title: `${topic.title} · ${strandDef.label}` };
+  // El sufijo (hilo · Numerario) lo pone la plantilla del layout del hilo.
+  return { title: getTopicLabel(strandDef.slug, Number(difficulty)).title };
 }
 
 export default function TopicLayout({

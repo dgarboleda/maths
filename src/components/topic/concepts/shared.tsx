@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 export function MiniSlider({
   label,
   value,
@@ -13,13 +15,17 @@ export function MiniSlider({
   min?: number;
   max: number;
 }) {
+  // El texto de arriba es la etiqueta del control: sin `htmlFor` el
+  // deslizador se anunciaba sin nombre (axe: regla "label", crítica).
+  const id = useId();
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm font-bold text-purple-800">
-        <span>{label}:</span>
-        <span className="text-pink-600">{value}</span>
+        <label htmlFor={id}>{label}:</label>
+        <span className="text-pink-700">{value}</span>
       </div>
       <input
+        id={id}
         type="range"
         min={min}
         max={max}

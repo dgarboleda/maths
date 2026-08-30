@@ -21,7 +21,7 @@ function DataMoney() {
           </span>
         ))}
         {Array.from({ length: c10 }).map((_, i) => (
-          <span key={`b${i}`} className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 font-bold text-white">
+          <span key={`b${i}`} className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 font-bold text-amber-950">
             10
           </span>
         ))}

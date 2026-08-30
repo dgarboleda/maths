@@ -58,6 +58,7 @@ export default function StrandTopicListPage() {
     return (
       <main
         id="contenido"
+        tabIndex={-1}
         className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
       >
         <p className="text-neutral-500">Ese hilo todavía no existe.</p>
@@ -70,7 +71,8 @@ export default function StrandTopicListPage() {
 
   if (!child) {
     return (
-      <main id="contenido" className="flex min-h-screen w-full items-center justify-center bg-white">
+      <main id="contenido"
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
         <p role="status" className="text-neutral-700">
           Cargando…
         </p>

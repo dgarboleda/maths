@@ -103,7 +103,7 @@ export function GroupTensInput({
         <button
           type="button"
           onClick={() => moveNext("decena")}
-          disabled={pending.length === 0}
+          disabled={pending.length === 0 || decenaCount >= 10}
           className="rounded-xl bg-purple-100 px-4 py-2 text-sm font-bold text-purple-800 hover:bg-purple-200 disabled:opacity-40"
         >
           A la decena

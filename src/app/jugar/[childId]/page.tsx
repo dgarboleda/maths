@@ -80,6 +80,7 @@ export default function JugarPage() {
     return (
       <main
         id="contenido"
+        tabIndex={-1}
         className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
       >
         <p className="text-neutral-500">No encontré ese perfil.</p>

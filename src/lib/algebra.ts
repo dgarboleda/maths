@@ -34,7 +34,7 @@ export function generateProblem(difficulty: number): Problem {
         id,
         difficulty,
         kind: "balanza",
-        prompt: `${a} + x = ${total}. Arrastra el peso que equilibra la balanza.`,
+        prompt: `${a} + x = ${total}. Elige el peso que equilibra la balanza.`,
         answer: missing,
         inputType: "balanceWeight",
         balanceLeftFixed: a,

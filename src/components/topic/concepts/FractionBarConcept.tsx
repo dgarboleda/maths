@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 export function FractionBarConcept({ mode }: { mode: "fraction" | "decimal" | "percent" }) {
   const fixedDen = mode === "fraction" ? null : 10;
   const [denominator, setDenominator] = useState(fixedDen ?? 4);
   const [numerator, setNumerator] = useState(1);
+  const totalesId = useId();
+  const coloreadasId = useId();
   const clampedNum = Math.min(numerator, denominator);
 
   const label =
@@ -36,10 +38,11 @@ export function FractionBarConcept({ mode }: { mode: "fraction" | "decimal" | "p
         {mode === "fraction" && (
           <div className="space-y-2">
             <div className="flex justify-between font-bold text-purple-800">
-              <span>Partes totales:</span>
+              <label htmlFor={totalesId}>Partes totales:</label>
               <span className="text-2xl text-blue-600">{denominator}</span>
             </div>
             <input
+              id={totalesId}
               type="range"
               min={2}
               max={10}
@@ -55,10 +58,11 @@ export function FractionBarConcept({ mode }: { mode: "fraction" | "decimal" | "p
         )}
         <div className="space-y-2">
           <div className="flex justify-between font-bold text-purple-800">
-            <span>Partes coloreadas:</span>
+            <label htmlFor={coloreadasId}>Partes coloreadas:</label>
             <span className="text-2xl text-pink-600">{clampedNum}</span>
           </div>
           <input
+            id={coloreadasId}
             type="range"
             min={0}
             max={denominator}

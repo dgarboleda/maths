@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Valores de relleno: la compilación inicializa Firebase al evaluar el módulo
+# y falla sin ellos. No son credenciales — el proyecto "demo-" está reservado
+# por Firebase para uso local y no existe en la nube.
+env:
+  NEXT_PUBLIC_FIREBASE_API_KEY: demo-api-key
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: demo-numerario.firebaseapp.com
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-numerario
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: demo-numerario.appspot.com
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+  NEXT_PUBLIC_FIREBASE_APP_ID: "1:000000000000:web:0000000000000000"
+
+jobs:
+  calidad:
+    name: Lint, tipos y compilación
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
+
+  e2e:
+    name: Pruebas de extremo a extremo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # El emulador de Firestore es un .jar.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: informe-playwright
+          path: playwright-report/
+          retention-days: 7

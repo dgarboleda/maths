@@ -42,6 +42,7 @@ export default function LoginPage() {
   return (
     <main
       id="contenido"
+        tabIndex={-1}
       className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-8 bg-white px-6"
     >
       <div>
@@ -108,7 +109,11 @@ export default function LoginPage() {
 function mensajeDeError(err: unknown): string {
   const code = (err as { code?: string })?.code ?? "";
   if (code.includes("email-already-in-use")) return "Ese correo ya tiene una cuenta.";
-  if (code.includes("invalid-credential") || code.includes("wrong-password")) {
+  if (
+    code.includes("invalid-credential") ||
+    code.includes("wrong-password") ||
+    code.includes("user-not-found")
+  ) {
     return "Correo o contraseña incorrectos.";
   }
   if (code.includes("weak-password")) return "La contraseña debe tener al menos 6 caracteres.";

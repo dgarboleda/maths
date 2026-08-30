@@ -199,6 +199,7 @@ export function PracticaTab({
           <>
             <div
               role="progressbar"
+              aria-label="Avance de la ronda"
               aria-valuemin={0}
               aria-valuemax={QUESTIONS_PER_ROUND}
               aria-valuenow={questionNumber - 1}
