@@ -31,8 +31,24 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy
 
-Este proyecto se despliega en [Cloudflare Pages](https://developers.cloudflare.com/workers/frameworks/framework-guides/nextjs) en lugar de Vercel (la opción que trae la plantilla de `create-next-app` por defecto). Cloudflare aún no tiene un ["verified adapter"](https://nextjs.org/docs/app/getting-started/deploying#verified-adapters) propio; la integración actual pasa por [OpenNext](https://opennext.js.org/cloudflare) (`@opennextjs/cloudflare`). Como toda la app es cliente ("use client") salvo los `layout.tsx` de metadatos, no debería haber sorpresas de Server Actions/Route Handlers al migrar.
+Este proyecto se despliega en Cloudflare en lugar de Vercel (la opción que trae la plantilla de `create-next-app` por defecto). Técnicamente es un **Cloudflare Worker con assets estáticos** (lo que Cloudflare recomienda hoy para Next.js) y no un proyecto clásico de "Pages" — Cloudflare aún no tiene un ["verified adapter"](https://nextjs.org/docs/app/getting-started/deploying#verified-adapters) propio para Next.js; la integración pasa por [OpenNext](https://opennext.js.org/cloudflare) (`@opennextjs/cloudflare`). Como toda la app es cliente (`"use client"`) salvo los `layout.tsx` de metadatos, no hay Server Actions ni Route Handlers que migrar.
 
-Si el plan gratuito de Cloudflare Pages/Workers se queda corto, [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) sigue siendo la opción sin fricción para Next.js.
+La configuración ya está en el repo (`wrangler.jsonc`, `open-next.config.ts`). Falta un paso que solo puede hacer quien tenga la cuenta de Cloudflare:
+
+```bash
+npx wrangler login   # una sola vez, abre el navegador
+npm run preview       # construye y sirve el Worker en local; imprime la URL al terminar
+npm run deploy        # construye y despliega de verdad a *.workers.dev
+```
+
+Antes de `npm run deploy`/`preview` hacen falta las `NEXT_PUBLIC_FIREBASE_*` reales en `.env.local` (se incrustan al compilar, igual que en cualquier otro despliegue — ver `.env.local.example`). La caché incremental de Next (ISR) está desactivada porque requiere un bucket R2, que a su vez requiere estar autenticado; para activarla:
+
+```bash
+npx wrangler r2 bucket create maths-opennext-cache
+```
+
+y sigue las notas dentro de `wrangler.jsonc`/`open-next.config.ts`. Más detalles en la [guía de Cloudflare para Next.js](https://developers.cloudflare.com/workers/frameworks/framework-guides/nextjs).
+
+Si el plan gratuito de Cloudflare Workers se queda corto, [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) sigue siendo la opción sin fricción para Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

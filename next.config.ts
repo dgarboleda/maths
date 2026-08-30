@@ -12,3 +12,8 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+// Habilita bindings de Cloudflare (variables, KV, R2...) en `next dev`,
+// para que el entorno local se parezca al del Worker en producción.
+// Ver https://opennext.js.org/cloudflare/get-started
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());

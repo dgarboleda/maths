@@ -1,0 +1,32 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "maths",
+	"compatibility_date": "2026-08-30",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			// Self-reference service binding, el nombre del servicio debe coincidir con el del worker
+			// ver https://opennext.js.org/cloudflare/caching
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "maths"
+		}
+	],
+	"images": {
+		// Habilita la optimización de imágenes
+		// ver https://opennext.js.org/cloudflare/howtos/image
+		"binding": "IMAGES"
+	}
+	/*
+	 * Sin caché con R2: crear el bucket requiere estar autenticado con
+	 * `wrangler login`, algo que este entorno no puede hacer. Para activarla,
+	 * ejecuta `wrangler r2 bucket create maths-opennext-cache` y añade aquí
+	 * "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "maths-opennext-cache" }],
+	 * más el incrementalCache en open-next.config.ts.
+	 * Ver https://opennext.js.org/cloudflare/caching
+	 */
+}
