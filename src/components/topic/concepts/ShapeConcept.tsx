@@ -20,7 +20,7 @@ function RegularPolygonSvg({ sides }: { sides: number }) {
     return `${100 + 80 * Math.cos(angle)},${100 + 80 * Math.sin(angle)}`;
   }).join(" ");
   return (
-    <svg viewBox="0 0 200 200" className="mx-auto h-40 w-40">
+    <svg aria-hidden="true" viewBox="0 0 200 200" className="mx-auto h-40 w-40">
       <polygon points={points} fill="#EDE9FE" stroke="#7C3AED" strokeWidth="4" />
     </svg>
   );
@@ -46,6 +46,8 @@ function ShapeSides() {
         {shapes.map((s, i) => (
           <button
             key={s.name}
+            type="button"
+            aria-pressed={i === idx}
             onClick={() => setIdx(i)}
             className={`rounded-xl border-2 px-4 py-2 font-bold ${
               i === idx ? "border-purple-700 bg-purple-600 text-white" : "border-purple-200 bg-white text-purple-700 hover:bg-purple-100"
@@ -77,7 +79,7 @@ function ShapeRect({ mode }: { mode: "perimeter" | "area" }) {
       </p>
       <SliderPair labelA="Ancho" a={w} setA={setW} labelB="Alto" b={h} setB={setH} maxA={10} maxB={10} />
       <div className="flex justify-center">
-        <svg viewBox="0 0 220 160" className="h-40 w-56">
+        <svg aria-hidden="true" viewBox="0 0 220 160" className="h-40 w-56">
           <rect x={30} y={20} width={w * 16} height={h * 16} fill="#FBCFE8" stroke="#DB2777" strokeWidth="3" />
         </svg>
       </div>
@@ -98,7 +100,7 @@ function ShapeTriangleArea() {
         (base × altura) ÷ 2.
       </p>
       <SliderPair labelA="Base" a={base} setA={setBase} labelB="Altura" b={height} setB={setHeight} maxA={12} maxB={12} />
-      <svg viewBox="0 0 220 160" className="mx-auto h-40 w-56">
+      <svg aria-hidden="true" viewBox="0 0 220 160" className="mx-auto h-40 w-56">
         <polygon
           points={`30,140 ${30 + base * 14},140 ${30 + (base * 14) / 2},${140 - height * 10}`}
           fill="#DDD6FE"
@@ -123,7 +125,7 @@ function ShapeAngle() {
       <div className="rounded-2xl border-2 border-purple-100 bg-purple-50 p-6">
         <MiniSlider label="Ángulo" value={deg} setValue={setDeg} min={1} max={179} />
       </div>
-      <svg viewBox="0 0 200 120" className="mx-auto h-28 w-48">
+      <svg aria-hidden="true" viewBox="0 0 200 120" className="mx-auto h-28 w-48">
         <line x1="20" y1="100" x2="180" y2="100" stroke="#94a3b8" strokeWidth="3" />
         <line
           x1="20"
@@ -181,7 +183,7 @@ function ShapeCoords() {
         <MiniSlider label="y" value={y} setValue={setY} min={-9} max={9} />
         <MiniSlider label="Mover en x" value={dx} setValue={setDx} min={-9} max={9} />
       </div>
-      <svg viewBox="0 0 200 200" className="mx-auto h-48 w-48 bg-slate-50">
+      <svg aria-hidden="true" viewBox="0 0 200 200" className="mx-auto h-48 w-48 bg-slate-50">
         <line x1="0" y1="100" x2="200" y2="100" stroke="#cbd5e1" />
         <line x1="100" y1="0" x2="100" y2="200" stroke="#cbd5e1" />
         <circle cx={px} cy={py} r="5" fill="#7C3AED" />
@@ -204,7 +206,7 @@ function ShapePythagoras() {
         la suma de los cuadrados de los otros dos lados: a² + b² = c².
       </p>
       <SliderPair labelA="Cateto a" a={a} setA={setA} labelB="Cateto b" b={b} setB={setB} maxA={15} maxB={15} />
-      <svg viewBox="0 0 200 160" className="mx-auto h-40 w-56">
+      <svg aria-hidden="true" viewBox="0 0 200 160" className="mx-auto h-40 w-56">
         <polygon points={`30,140 ${30 + a * 8},140 30,${140 - b * 8}`} fill="#DDD6FE" stroke="#7C3AED" strokeWidth="3" />
       </svg>
       <Formula text={`c = √(${a}² + ${b}²) = ${c.toFixed(1)}`} />

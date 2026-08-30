@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 const SYMBOLS = ["●", "■", "▲"];
 
 export function PatternConcept() {
   const [unitLength, setUnitLength] = useState(2);
   const [visibleCount, setVisibleCount] = useState(6);
+  const tamanoId = useId();
   const unit = Array.from({ length: unitLength }, (_, i) => i % SYMBOLS.length);
   const sequence = Array.from({ length: visibleCount }, (_, i) => unit[i % unitLength]);
   const next = unit[visibleCount % unitLength];
@@ -23,10 +24,11 @@ export function PatternConcept() {
 
       <div className="space-y-2 rounded-2xl border-2 border-purple-100 bg-purple-50 p-6">
         <div className="flex justify-between font-bold text-purple-800">
-          <span>Tamaño del patrón:</span>
+          <label htmlFor={tamanoId}>Tamaño del patrón:</label>
           <span className="text-2xl text-pink-600">{unitLength}</span>
         </div>
         <input
+          id={tamanoId}
           type="range"
           min={2}
           max={3}
@@ -46,10 +48,11 @@ export function PatternConcept() {
               {SYMBOLS[s]}
             </span>
           ))}
-          <span className="mx-2 text-purple-400">→</span>
+          <span className="mx-2 text-purple-600">→</span>
           <span className="mx-1 text-pink-500">{SYMBOLS[next]}</span>
         </div>
         <button
+          type="button"
           onClick={() => setVisibleCount((v) => v + 1)}
           className="mt-4 rounded-xl bg-purple-600 px-5 py-2 font-bold text-white"
         >

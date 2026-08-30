@@ -11,10 +11,13 @@ export function QuestionWidget({
   problem,
   disabled,
   onSubmit,
+  promptId,
 }: {
   problem: Problem;
   disabled?: boolean;
   onSubmit: (given: number) => void;
+  /** id del texto del enunciado, para etiquetar el control con él. */
+  promptId?: string;
 }) {
   const [inputValue, setInputValue] = useState("");
   const [choiceValue, setChoiceValue] = useState<number | null>(null);
@@ -28,6 +31,7 @@ export function QuestionWidget({
         start={problem.startValue ?? 0}
         disabled={disabled}
         onAnswer={onSubmit}
+        labelledBy={promptId}
       />
     );
   }
@@ -86,9 +90,11 @@ export function QuestionWidget({
         inputMode={problem.inputType === "decimal" ? "decimal" : "numeric"}
         autoFocus
         disabled={disabled}
+        aria-label="Tu respuesta"
+        aria-labelledby={promptId}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        className="w-32 rounded-xl border-2 border-purple-300 px-3 py-2 text-center text-xl outline-none focus:border-purple-500"
+        className="w-32 rounded-xl border-2 border-purple-300 px-3 py-2 text-center text-xl focus:border-purple-500"
       />
       <button
         type="submit"

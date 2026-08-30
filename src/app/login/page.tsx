@@ -40,10 +40,14 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-8 bg-white px-6">
+    <main
+      id="contenido"
+        tabIndex={-1}
+      className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-8 bg-white px-6"
+    >
       <div>
         <h1 className="text-2xl font-semibold text-neutral-900">Numerario</h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-neutral-700">
           {mode === "login" ? "Entra a tu cuenta de padre o madre" : "Crea tu cuenta de padre o madre"}
         </p>
       </div>
@@ -57,7 +61,7 @@ export default function LoginPage() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 outline-none focus:border-neutral-500"
+            className="rounded-md border border-neutral-400 px-3 py-2 text-neutral-900 focus:border-neutral-600"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm text-neutral-700">
@@ -69,11 +73,15 @@ export default function LoginPage() {
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 outline-none focus:border-neutral-500"
+            className="rounded-md border border-neutral-400 px-3 py-2 text-neutral-900 focus:border-neutral-600"
           />
         </label>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm font-bold text-red-700">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -90,7 +98,7 @@ export default function LoginPage() {
           setError(null);
           setMode(mode === "login" ? "signup" : "login");
         }}
-        className="text-sm text-neutral-500 underline underline-offset-2"
+        className="text-sm text-neutral-700 underline underline-offset-2"
       >
         {mode === "login" ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Entra"}
       </button>
@@ -101,7 +109,11 @@ export default function LoginPage() {
 function mensajeDeError(err: unknown): string {
   const code = (err as { code?: string })?.code ?? "";
   if (code.includes("email-already-in-use")) return "Ese correo ya tiene una cuenta.";
-  if (code.includes("invalid-credential") || code.includes("wrong-password")) {
+  if (
+    code.includes("invalid-credential") ||
+    code.includes("wrong-password") ||
+    code.includes("user-not-found")
+  ) {
     return "Correo o contraseña incorrectos.";
   }
   if (code.includes("weak-password")) return "La contraseña debe tener al menos 6 caracteres.";

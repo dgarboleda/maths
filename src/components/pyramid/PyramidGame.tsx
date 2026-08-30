@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   buildTargetList,
   formatCell,
@@ -36,6 +36,8 @@ export function PyramidGame({
   const [feedback, setFeedback] = useState<{ correct: boolean; value: number } | null>(null);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const promptId = useId();
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
 
   function initFilled(rows: number[][]): (number | null)[][] {
     return rows.map((row, r) => (r === 0 ? [...row] : row.map(() => null)));
@@ -52,6 +54,12 @@ export function PyramidGame({
     setFeedback(null);
     setStarsThisRound(0);
   }
+
+  // Al aparecer la corrección desaparece el formulario: sin esto el foco del
+  // teclado se perdería en vez de quedar sobre "Siguiente".
+  useEffect(() => {
+    if (feedback) nextButtonRef.current?.focus();
+  }, [feedback]);
 
   const current = targetIndex < targets.length ? targets[targetIndex] : null;
   const done = current === null;
@@ -98,17 +106,21 @@ export function PyramidGame({
   return (
     <div className="space-y-6">
       <div className="mx-auto max-w-xl text-center">
-        <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Pirámide numérica 🔺</h2>
-        <p className="mt-1 text-slate-600">
+        <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">
+          Pirámide numérica <span aria-hidden="true">🔺</span>
+        </h2>
+        <p className="mt-1 text-slate-700">
           Cada bloque es el resultado de combinar los dos bloques que tiene justo debajo. La base ya está
           completa — ve resolviendo hacia arriba hasta llegar a la cima.
         </p>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-2">
+      <div role="group" aria-label="Operación de la pirámide" className="flex flex-wrap justify-center gap-2">
         {OPTIONS.map((o) => (
           <button
             key={o.id}
+            type="button"
+            aria-pressed={op === o.id}
             onClick={() => startNew(o.id)}
             className={`rounded-xl border-2 px-4 py-2 text-sm font-bold transition-colors ${
               op === o.id ? "border-purple-700 bg-purple-600 text-white" : "border-purple-200 bg-white text-purple-700 hover:bg-purple-100"
@@ -119,7 +131,11 @@ export function PyramidGame({
         ))}
       </div>
 
-      <div className="flex flex-col items-center gap-3 rounded-3xl border-2 border-purple-100 bg-purple-50 p-6">
+      <div
+        role="group"
+        aria-label="Bloques de la pirámide"
+        className="flex flex-col items-center gap-3 rounded-3xl border-2 border-purple-100 bg-purple-50 p-6"
+      >
         {puzzle.rows
           .map((row, r) => r)
           .reverse()
@@ -139,7 +155,7 @@ export function PyramidGame({
                           ? "border-purple-500 bg-purple-100 text-purple-900"
                           : value !== null
                             ? "border-purple-200 bg-white text-purple-900"
-                            : "border-dashed border-slate-300 bg-white text-slate-300"
+                            : "border-dashed border-slate-400 bg-white text-slate-600"
                     }`}
                   >
                     {value !== null ? formatCell(value, op, puzzle.denominator) : isCurrent ? "?" : ""}
@@ -151,23 +167,25 @@ export function PyramidGame({
       </div>
 
       {puzzle.op === "fracciones" && (
-        <p className="text-center text-xs text-slate-500">
+        <p className="text-center text-xs text-slate-700">
           Todos los números son numeradores sobre el mismo denominador: /{puzzle.denominator}
         </p>
       )}
 
       <div className="mx-auto max-w-md space-y-4 text-center">
         {done ? (
-          <div className="space-y-2 rounded-2xl border-2 border-green-400 bg-green-100 p-6 text-green-900">
-            <div className="text-3xl">🏆 ¡Pirámide completa!</div>
+          <div role="status" className="space-y-2 rounded-2xl border-2 border-green-400 bg-green-100 p-6 text-green-900">
+            <div className="text-3xl">
+              <span aria-hidden="true">🏆 </span>¡Pirámide completa!
+            </div>
             <p className="font-bold">Ganaste {starsThisRound} ★ en esta ronda.</p>
-            <button onClick={() => startNew(op)} className="mt-2 rounded-xl bg-green-600 px-6 py-2 font-bold text-white">
+            <button type="button" onClick={() => startNew(op)} className="mt-2 rounded-xl bg-green-600 px-6 py-2 font-bold text-white">
               Nueva pirámide
             </button>
           </div>
         ) : (
           <>
-            <p className="text-xl font-bold text-purple-900">
+            <p id={promptId} className="text-xl font-bold text-purple-900">
               ¿Cuánto es {left !== null ? formatCell(left, op, puzzle.denominator) : "?"} {opSymbol(op)}{" "}
               {right !== null ? formatCell(right, op, puzzle.denominator) : "?"}?
             </p>
@@ -182,10 +200,11 @@ export function PyramidGame({
                 <input
                   type="text"
                   inputMode={op === "resta" ? "text" : "numeric"}
+                  aria-labelledby={promptId}
                   autoFocus
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value.replace(/[^0-9-]/g, ""))}
-                  className="w-28 rounded-xl border-2 border-purple-300 px-3 py-2 text-center text-xl outline-none focus:border-purple-500"
+                  className="w-28 rounded-xl border-2 border-purple-300 px-3 py-2 text-center text-xl focus:border-purple-500"
                 />
                 <button
                   type="submit"
@@ -196,20 +215,29 @@ export function PyramidGame({
                 </button>
               </form>
             )}
-            {feedback && (
-              <div className="space-y-3">
-                {feedback.correct ? (
-                  <p className="text-lg font-bold text-emerald-600">¡Correcto! 🎉</p>
-                ) : (
-                  <p className="text-lg font-bold text-slate-600">
-                    Casi — era {formatCell(feedback.value, op, puzzle.denominator)}
-                  </p>
-                )}
-                <button onClick={next} className="rounded-2xl bg-purple-600 px-6 py-2 font-bold text-white">
-                  Siguiente
-                </button>
-              </div>
-            )}
+            <div role="status" aria-live="polite">
+              {feedback && (
+                <div className="space-y-3">
+                  {feedback.correct ? (
+                    <p className="text-lg font-bold text-emerald-700">
+                      ¡Correcto! <span aria-hidden="true">🎉</span>
+                    </p>
+                  ) : (
+                    <p className="text-lg font-bold text-slate-700">
+                      Casi — era {formatCell(feedback.value, op, puzzle.denominator)}
+                    </p>
+                  )}
+                  <button
+                    ref={nextButtonRef}
+                    type="button"
+                    onClick={next}
+                    className="rounded-2xl bg-purple-600 px-6 py-2 font-bold text-white"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

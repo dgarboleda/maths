@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { collection, doc, getDoc, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthProvider";
 import { db } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
@@ -13,6 +13,8 @@ import { frontierDifficulty, masteredCount } from "@/lib/mastery";
 import { suggestedDifficulty } from "@/lib/problem";
 import { GameShell } from "@/components/GameShell";
 import { playSound } from "@/lib/gameSound";
+import { useTotalStars } from "@/lib/useTotalStars";
+import { useSoundPreference } from "@/lib/useSoundPreference";
 
 export default function StrandTopicListPage() {
   const { user, loading } = useAuth();
@@ -22,8 +24,8 @@ export default function StrandTopicListPage() {
 
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
-  const [totalStars, setTotalStars] = useState<number | null>(null);
-  const [soundOn, setSoundOn] = useState(true);
+  const totalStars = useTotalStars(user?.uid, params.childId);
+  const [soundOn, toggleSound] = useSoundPreference();
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -50,23 +52,15 @@ export default function StrandTopicListPage() {
     };
   }, [user, params.childId]);
 
-  useEffect(() => {
-    if (!user) return;
-    return onSnapshot(
-      collection(db, "parents", user.uid, "children", params.childId, "starLedger"),
-      (snap) => {
-        let total = 0;
-        snap.forEach((d) => (total += (d.data().delta as number) ?? 0));
-        setTotalStars(total);
-      },
-    );
-  }, [user, params.childId]);
-
   if (loading || !user) return null;
 
   if (!strand) {
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center">
+      <main
+        id="contenido"
+        tabIndex={-1}
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+      >
         <p className="text-neutral-500">Ese hilo todavía no existe.</p>
         <Link href={`/jugar/${params.childId}`} className="text-sm text-neutral-500 underline underline-offset-2">
           Volver
@@ -77,8 +71,11 @@ export default function StrandTopicListPage() {
 
   if (!child) {
     return (
-      <main className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p className="text-neutral-400">Cargando…</p>
+      <main id="contenido"
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
+        <p role="status" className="text-neutral-700">
+          Cargando…
+        </p>
       </main>
     );
   }
@@ -98,13 +95,10 @@ export default function StrandTopicListPage() {
       }
       stars={totalStars}
       soundOn={soundOn}
-      onToggleSound={() => {
-        setSoundOn((v) => !v);
-        playSound("click", true);
-      }}
+      onToggleSound={toggleSound}
     >
       <div className="space-y-4">
-        <p className="text-center text-sm font-bold text-purple-600">{dominados}/10 temas dominados</p>
+        <p className="text-center text-sm font-bold text-purple-700">{dominados}/10 temas dominados</p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {Array.from({ length: 10 }, (_, i) => i + 1).map((difficulty) => {
@@ -126,11 +120,15 @@ export default function StrandTopicListPage() {
                 }`}
               >
                 <span className="flex items-center gap-3">
-                  <span className="text-2xl">{topic.emoji}</span>
+                  <span aria-hidden="true" className="text-2xl">
+                  {topic.emoji}
+                </span>
                   <span className="font-bold text-purple-900">{topic.title}</span>
                 </span>
                 {mastered ? (
-                  <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-700">✓ Dominado</span>
+                  <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-800">
+                    <span aria-hidden="true">✓ </span>Dominado
+                  </span>
                 ) : recommended ? (
                   <span className="rounded-full bg-purple-100 px-2 py-1 text-xs font-bold text-purple-700">Recomendado</span>
                 ) : null}
@@ -146,7 +144,9 @@ export default function StrandTopicListPage() {
             className="flex items-center justify-between gap-3 rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-red-500 to-orange-500 px-4 py-3 text-white shadow-sm transition-all hover:scale-[1.02]"
           >
             <span className="flex items-center gap-3">
-              <span className="text-2xl">🔺</span>
+              <span aria-hidden="true" className="text-2xl">
+                🔺
+              </span>
               <span className="font-bold">Pirámide numérica</span>
             </span>
             <span className="rounded-full bg-white/20 px-2 py-1 text-xs font-bold">Especial</span>

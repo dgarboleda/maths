@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 const THEMES = ["🍎", "⭐", "🚀", "🐱", "🍕"];
 
@@ -8,6 +8,8 @@ export function ArrayConcept({ mode }: { mode: "mult" | "div" }) {
   const [f1, setF1] = useState(3);
   const [f2, setF2] = useState(4);
   const [theme, setTheme] = useState(THEMES[0]);
+  const gruposId = useId();
+  const objetosId = useId();
   const result = f1 * f2;
 
   return (
@@ -26,10 +28,11 @@ export function ArrayConcept({ mode }: { mode: "mult" | "div" }) {
       <div className="grid grid-cols-1 gap-6 rounded-2xl border-2 border-purple-100 bg-purple-50 p-6 md:grid-cols-2">
         <div className="space-y-2">
           <div className="flex justify-between font-bold text-purple-800">
-            <span>{mode === "mult" ? "Grupos (filas):" : "Grupos para repartir:"}</span>
+            <label htmlFor={gruposId}>{mode === "mult" ? "Grupos (filas):" : "Grupos para repartir:"}</label>
             <span className="text-2xl text-pink-600">{f1}</span>
           </div>
           <input
+            id={gruposId}
             type="range"
             min={1}
             max={10}
@@ -40,10 +43,11 @@ export function ArrayConcept({ mode }: { mode: "mult" | "div" }) {
         </div>
         <div className="space-y-2">
           <div className="flex justify-between font-bold text-purple-800">
-            <span>Objetos por grupo:</span>
+            <label htmlFor={objetosId}>Objetos por grupo:</label>
             <span className="text-2xl text-blue-600">{f2}</span>
           </div>
           <input
+            id={objetosId}
             type="range"
             min={1}
             max={10}
@@ -60,6 +64,9 @@ export function ArrayConcept({ mode }: { mode: "mult" | "div" }) {
           {THEMES.map((icon) => (
             <button
               key={icon}
+              type="button"
+              aria-pressed={theme === icon}
+              aria-label={`Usar ${icon} como objeto`}
               onClick={() => setTheme(icon)}
               className={`rounded-xl border-2 p-2 text-xl transition-colors ${
                 theme === icon ? "border-purple-500 bg-purple-200" : "border-purple-200 hover:bg-purple-100"
@@ -94,7 +101,7 @@ export function ArrayConcept({ mode }: { mode: "mult" | "div" }) {
         <div className="flex w-full flex-col items-center justify-center gap-3 overflow-x-auto p-2">
           {Array.from({ length: f1 }, (_, i) => (
             <div key={i} className="flex items-center gap-2 rounded-xl border border-purple-200 bg-white px-3 py-2 shadow-sm">
-              <span className="mr-1 text-xs font-bold text-purple-400">G{i + 1}</span>
+              <span className="mr-1 text-xs font-bold text-purple-600">G{i + 1}</span>
               {Array.from({ length: f2 }, (_, j) => (
                 <span key={j} className="inline-block text-2xl sm:text-3xl">
                   {theme}

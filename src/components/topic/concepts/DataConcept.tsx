@@ -21,7 +21,7 @@ function DataMoney() {
           </span>
         ))}
         {Array.from({ length: c10 }).map((_, i) => (
-          <span key={`b${i}`} className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 font-bold text-white">
+          <span key={`b${i}`} className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 font-bold text-amber-950">
             10
           </span>
         ))}
@@ -45,7 +45,7 @@ function DataClock() {
         una vuelta completa.
       </p>
       <SliderPair labelA="Hora inicial" a={hour} setA={setHour} labelB="Horas que pasan" b={add} setB={setAdd} maxA={12} maxB={11} />
-      <svg viewBox="0 0 100 100" className="mx-auto h-32 w-32">
+      <svg aria-hidden="true" viewBox="0 0 100 100" className="mx-auto h-32 w-32">
         <circle cx="50" cy="50" r="45" fill="white" stroke="#7C3AED" strokeWidth="3" />
         <line
           x1="50"
@@ -81,6 +81,8 @@ function DataConvert() {
         {pairs.map((p, i) => (
           <button
             key={p[0]}
+            type="button"
+            aria-pressed={i === idx}
             onClick={() => setIdx(i)}
             className={`rounded-xl border-2 px-3 py-1.5 text-sm font-bold ${
               i === idx ? "border-purple-700 bg-purple-600 text-white" : "border-purple-200 bg-white text-purple-700"
