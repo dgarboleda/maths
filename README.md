@@ -29,8 +29,10 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Este proyecto se despliega en [Cloudflare Pages](https://developers.cloudflare.com/workers/frameworks/framework-guides/nextjs) en lugar de Vercel (la opción que trae la plantilla de `create-next-app` por defecto). Cloudflare aún no tiene un ["verified adapter"](https://nextjs.org/docs/app/getting-started/deploying#verified-adapters) propio; la integración actual pasa por [OpenNext](https://opennext.js.org/cloudflare) (`@opennextjs/cloudflare`). Como toda la app es cliente ("use client") salvo los `layout.tsx` de metadatos, no debería haber sorpresas de Server Actions/Route Handlers al migrar.
+
+Si el plan gratuito de Cloudflare Pages/Workers se queda corto, [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) sigue siendo la opción sin fricción para Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
