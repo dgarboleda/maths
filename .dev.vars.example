@@ -1,0 +1,4 @@
+# Copia este archivo a .dev.vars para `npm run preview` (Wrangler local).
+# .dev.vars NO se versiona (ver .gitignore); las NEXT_PUBLIC_FIREBASE_*
+# siguen yendo en .env.local como siempre (ver .env.local.example).
+NEXTJS_ENV=development
