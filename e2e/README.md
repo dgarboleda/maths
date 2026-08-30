@@ -18,6 +18,10 @@ Playwright levanta por su cuenta los emuladores y `next dev` (y reutiliza los
 que ya estén arriba), así que no hace falta arrancar nada antes. La primera
 vez descarga el emulador de Firestore, que necesita **Java 11 o superior**.
 
+Si una ejecución se interrumpe a lo bruto puede quedar vivo el emulador de
+Firestore ocupando su puerto; `npm run emuladores` lo detecta y lo cierra al
+arrancar.
+
 Para desarrollar a mano contra los emuladores:
 
 ```bash

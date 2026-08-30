@@ -41,6 +41,9 @@ jobs:
   e2e:
     name: Pruebas de extremo a extremo
     runs-on: ubuntu-latest
+    # Red de seguridad: la suite tarda unos dos minutos; si algo se cuelga,
+    # que falle en vez de ocupar un runner durante horas.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
