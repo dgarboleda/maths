@@ -192,8 +192,10 @@ son mejoras que piden decisiones de producto o redacción de contenido.
 
 ```bash
 npm ci
-npm run lint    # sin errores
-npm run build   # necesita las NEXT_PUBLIC_FIREBASE_* (ver .env.local.example)
+npm run lint        # sin errores
+npm run typecheck   # genera los tipos de rutas de Next y comprueba tipos
+npm run build       # necesita las NEXT_PUBLIC_FIREBASE_* (ver .env.local.example)
+npm run e2e         # pruebas de extremo a extremo (ver e2e/README.md)
 ```
 
 Comprobaciones manuales recomendadas: recorrer una pantalla de tema entera

@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# Una ejecución por rama: al empujar de nuevo, la anterior se cancela.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # Valores de relleno: la compilación inicializa Firebase al evaluar el módulo
 # y falla sin ellos. No son credenciales — el proyecto "demo-" está reservado
 # por Firebase para uso local y no existe en la nube.
@@ -28,7 +33,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npx tsc --noEmit
+      # `typecheck` genera antes los tipos de rutas de Next: sin ellos,
+      # `LayoutProps` no existe en un árbol recién clonado.
+      - run: npm run typecheck
       - run: npm run build
 
   e2e:
