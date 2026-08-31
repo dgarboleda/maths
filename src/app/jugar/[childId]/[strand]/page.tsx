@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthProvider";
-import { db } from "@/lib/firebase";
+import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { getStrand } from "@/lib/strands";
 import { getTopicLabel } from "@/lib/topics";
@@ -35,6 +34,11 @@ export default function StrandTopicListPage() {
     if (!user) return;
     let cancelled = false;
     (async () => {
+      const {
+        db,
+        firestore: { collection, doc, getDoc, getDocs },
+      } = await getFirebase();
+      if (cancelled) return;
       const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
       if (cancelled || !childSnap.exists()) return;
       setChild(childSnap.data() as ChildProfile);
