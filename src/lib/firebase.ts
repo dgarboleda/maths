@@ -1,6 +1,6 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { connectAuthEmulator, getAuth } from "firebase/auth";
-import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,9 +11,27 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+/*
+ * Toda la app es "use client" (ver README), pero Next igualmente ejecuta
+ * este módulo en Node al prerenderizar "/" durante `next build`. Si las
+ * NEXT_PUBLIC_FIREBASE_* no están disponibles en ese entorno de build (p.ej.
+ * un proyecto de Cloudflare sin esas variables configuradas), getAuth()
+ * lanza auth/invalid-api-key de forma síncrona y tira el build entero.
+ * Como ningún archivo del proyecto usa `auth`/`db` fuera del navegador, en
+ * el servidor basta con no inicializar Firebase de verdad.
+ */
+const isBrowser = typeof window !== "undefined";
+
+function initFirebase() {
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  return { app, auth: getAuth(app), db: getFirestore(app) };
+}
+
+const firebase = isBrowser ? initFirebase() : undefined;
+
+export const app = firebase?.app as FirebaseApp;
+export const auth = firebase?.auth as Auth;
+export const db = firebase?.db as Firestore;
 
 /*
  * Con NEXT_PUBLIC_FIREBASE_EMULATORS=1 la app habla con los emuladores
@@ -26,6 +44,7 @@ declare global {
 }
 
 if (
+  isBrowser &&
   process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1" &&
   !globalThis.__numerarioEmulatorsConnected
 ) {
