@@ -50,7 +50,7 @@ async function initFirebase(): Promise<Firebase> {
     ]);
 
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+  const auth = withDiagnostics(() => getAuth(app));
   const db = firestore.getFirestore(app);
 
   /*
@@ -69,4 +69,28 @@ async function initFirebase(): Promise<Firebase> {
   }
 
   return { app, auth, db, firestore };
+}
+
+/*
+ * La clave web de Firebase no es secreta — se restringe por dominio/App
+ * Check en Google Cloud, no por ocultarla —, así que es seguro mostrar un
+ * fragmento en el mensaje de error. Si auth/invalid-api-key persiste
+ * después de configurar las NEXT_PUBLIC_FIREBASE_* en el panel de
+ * Cloudflare, esto distingue "no llegó ningún valor al build" de "llegó
+ * un valor pero no es el correcto" sin depender de la consola del
+ * navegador (login/page.tsx muestra `error.message` cuando el código no
+ * es uno de los reconocidos).
+ */
+function withDiagnostics<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    const key = firebaseConfig.apiKey;
+    const preview = key ? `"${key.slice(0, 6)}…" (${key.length} caracteres)` : "no está definida";
+    const diag = new Error(
+      `${err instanceof Error ? err.message : String(err)} — NEXT_PUBLIC_FIREBASE_API_KEY ${preview}.`,
+    );
+    (diag as Error & { code?: string }).code = (err as { code?: string })?.code;
+    throw diag;
+  }
 }
