@@ -122,5 +122,8 @@ function mensajeDeError(err: unknown): string {
   }
   if (code.includes("weak-password")) return "La contraseña debe tener al menos 6 caracteres.";
   if (code.includes("invalid-email")) return "Ese correo no es válido.";
-  return "Ocurrió un error. Intenta de nuevo.";
+  // Sin código reconocido: se muestra el código crudo (p. ej.
+  // "permission-denied" o "auth/operation-not-allowed") para poder
+  // diagnosticar sin depender de la consola del navegador.
+  return code ? `Ocurrió un error (${code}). Intenta de nuevo.` : "Ocurrió un error. Intenta de nuevo.";
 }
