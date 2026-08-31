@@ -18,6 +18,7 @@ export default function PerfilesPage() {
   const router = useRouter();
   const [children, setChildren] = useState<ChildDoc[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -31,11 +32,22 @@ export default function PerfilesPage() {
       .then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
         if (cancelled) return;
         const q = query(collection(db, "parents", user.uid, "children"), orderBy("createdAt", "asc"));
-        unsubscribe = onSnapshot(q, (snap) => {
-          setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
-        });
+        unsubscribe = onSnapshot(
+          q,
+          (snap) => {
+            setListError(null);
+            setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
+          },
+          (err) => {
+            console.error("No se pudo cargar la lista de hijos", err);
+            setListError(`No se pudo cargar la lista (${err.code}). ${err.message}`);
+          },
+        );
       })
-      .catch((err) => console.error("No se pudo cargar la lista de hijos", err));
+      .catch((err) => {
+        console.error("No se pudo cargar la lista de hijos", err);
+        setListError(err instanceof Error ? err.message : "No se pudo cargar la lista de hijos.");
+      });
     return () => {
       cancelled = true;
       unsubscribe?.();
@@ -65,6 +77,12 @@ export default function PerfilesPage() {
           </button>
         </div>
       </div>
+
+      {listError && (
+        <p role="alert" className="text-sm font-bold text-red-700">
+          {listError}
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {children.map((child) => (
@@ -213,8 +231,11 @@ function NewChildForm({ parentId, onDone }: { parentId: string; onDone: () => vo
         createdAt: serverTimestamp(),
       });
       onDone();
-    } catch {
-      setError("No se pudo guardar. Intenta de nuevo.");
+    } catch (err) {
+      console.error("No se pudo guardar el hijo", err);
+      const code = (err as { code?: string })?.code;
+      const message = err instanceof Error ? err.message : String(err);
+      setError(code ? `No se pudo guardar (${code}). ${message}` : `No se pudo guardar. ${message}`);
     } finally {
       setSubmitting(false);
     }
