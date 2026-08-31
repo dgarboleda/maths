@@ -6,8 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { getFirebase } from "@/lib/firebase";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -22,6 +21,11 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
+      const {
+        auth,
+        db,
+        firestore: { doc, serverTimestamp, setDoc },
+      } = await getFirebase();
       if (mode === "signup") {
         const credential = await createUserWithEmailAndPassword(auth, email, password);
         await setDoc(doc(db, "parents", credential.user.uid), {

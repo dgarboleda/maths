@@ -4,19 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import {
-  addDoc,
-  collection,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  doc,
-} from "firebase/firestore";
 import { useAuth } from "@/lib/AuthProvider";
-import { auth, db } from "@/lib/firebase";
+import { getFirebase } from "@/lib/firebase";
 import type { Attempt, ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { STRANDS, getStrand } from "@/lib/strands";
 import { frontierDifficulty, masteredCount } from "@/lib/mastery";
@@ -38,13 +27,19 @@ export default function PanelPage() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(
-      collection(db, "parents", user.uid, "children"),
-      orderBy("createdAt", "asc"),
-    );
-    return onSnapshot(q, (snap) => {
-      setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+    getFirebase().then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
+      if (cancelled) return;
+      const q = query(collection(db, "parents", user.uid, "children"), orderBy("createdAt", "asc"));
+      unsubscribe = onSnapshot(q, (snap) => {
+        setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
+      });
     });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [user]);
 
   if (loading || !user) return null;
@@ -64,7 +59,7 @@ export default function PanelPage() {
         </div>
         <button
           type="button"
-          onClick={() => signOut(auth)}
+          onClick={() => getFirebase().then(({ auth }) => signOut(auth))}
           className="text-sm text-neutral-600 underline underline-offset-2"
         >
           Cerrar sesión
@@ -99,35 +94,62 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   useEffect(() => {
-    return onSnapshot(
-      collection(db, "parents", parentId, "children", child.id, "skillsProgress"),
-      (snap) => {
-        const map: Record<string, SkillProgress> = {};
-        snap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
-        setProgressBySkill(map);
-      },
-    );
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+    getFirebase().then(({ db, firestore: { collection, onSnapshot } }) => {
+      if (cancelled) return;
+      unsubscribe = onSnapshot(
+        collection(db, "parents", parentId, "children", child.id, "skillsProgress"),
+        (snap) => {
+          const map: Record<string, SkillProgress> = {};
+          snap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
+          setProgressBySkill(map);
+        },
+      );
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [parentId, child.id]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, "parents", parentId, "children", child.id, "redemptionRequests"),
-      orderBy("createdAt", "desc"),
-    );
-    return onSnapshot(q, (snap) => {
-      setRequests(snap.docs.map((d) => ({ id: d.id, ...(d.data() as RedemptionRequest) })));
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+    getFirebase().then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
+      if (cancelled) return;
+      const q = query(
+        collection(db, "parents", parentId, "children", child.id, "redemptionRequests"),
+        orderBy("createdAt", "desc"),
+      );
+      unsubscribe = onSnapshot(q, (snap) => {
+        setRequests(snap.docs.map((d) => ({ id: d.id, ...(d.data() as RedemptionRequest) })));
+      });
     });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [parentId, child.id]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, "parents", parentId, "children", child.id, "attempts"),
-      orderBy("createdAt", "desc"),
-      limit(8),
-    );
-    return onSnapshot(q, (snap) => {
-      setAttempts(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Attempt) })));
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+    getFirebase().then(({ db, firestore: { collection, onSnapshot, orderBy, query, limit } }) => {
+      if (cancelled) return;
+      const q = query(
+        collection(db, "parents", parentId, "children", child.id, "attempts"),
+        orderBy("createdAt", "desc"),
+        limit(8),
+      );
+      unsubscribe = onSnapshot(q, (snap) => {
+        setAttempts(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Attempt) })));
+      });
     });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [parentId, child.id]);
 
   const pending = requests.filter((r) => r.status === "pendiente");
@@ -137,6 +159,10 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
     if (resolvingId) return;
     setResolvingId(request.id);
     try {
+      const {
+        db,
+        firestore: { addDoc, collection, doc, serverTimestamp, updateDoc },
+      } = await getFirebase();
       if (approve) {
         await addDoc(collection(db, "parents", parentId, "children", child.id, "starLedger"), {
           delta: -request.starsSpent,

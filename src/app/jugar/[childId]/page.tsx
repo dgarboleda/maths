@@ -3,18 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-} from "firebase/firestore";
 import { useAuth } from "@/lib/AuthProvider";
-import { db } from "@/lib/firebase";
+import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, RedemptionRequest } from "@/lib/types";
 import { STRANDS } from "@/lib/strands";
 import { GameShell } from "@/components/GameShell";
@@ -57,21 +47,38 @@ export default function JugarPage() {
 
   useEffect(() => {
     if (!user) return;
-    getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
-      if (snap.exists()) setChild(snap.data() as ChildProfile);
-      else setNotFound(true);
+    let cancelled = false;
+    getFirebase().then(({ db, firestore: { doc, getDoc } }) => {
+      if (cancelled) return;
+      getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
+        if (cancelled) return;
+        if (snap.exists()) setChild(snap.data() as ChildProfile);
+        else setNotFound(true);
+      });
     });
+    return () => {
+      cancelled = true;
+    };
   }, [user, params.childId]);
 
   useEffect(() => {
     if (!user) return;
-    const q = query(
-      collection(db, "parents", user.uid, "children", params.childId, "redemptionRequests"),
-      orderBy("createdAt", "desc"),
-    );
-    return onSnapshot(q, (snap) => {
-      setRequests(snap.docs.map((d) => ({ id: d.id, ...(d.data() as RedemptionRequest) })));
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+    getFirebase().then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
+      if (cancelled) return;
+      const q = query(
+        collection(db, "parents", user.uid, "children", params.childId, "redemptionRequests"),
+        orderBy("createdAt", "desc"),
+      );
+      unsubscribe = onSnapshot(q, (snap) => {
+        setRequests(snap.docs.map((d) => ({ id: d.id, ...(d.data() as RedemptionRequest) })));
+      });
     });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [user, params.childId]);
 
   if (loading || !user) return null;
@@ -220,6 +227,10 @@ function RedeemForm({
     }
     setSubmitting(true);
     try {
+      const {
+        db,
+        firestore: { addDoc, collection, serverTimestamp },
+      } = await getFirebase();
       await addDoc(
         collection(db, "parents", parentId, "children", childId, "redemptionRequests"),
         {

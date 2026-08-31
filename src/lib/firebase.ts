@@ -1,6 +1,6 @@
-import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
-import { connectFirestoreEmulator, getFirestore, type Firestore } from "firebase/firestore";
+import type { FirebaseApp } from "firebase/app";
+import type { Auth } from "firebase/auth";
+import type { Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,44 +11,62 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/*
- * Toda la app es "use client" (ver README), pero Next igualmente ejecuta
- * este módulo en Node al prerenderizar "/" durante `next build`. Si las
- * NEXT_PUBLIC_FIREBASE_* no están disponibles en ese entorno de build (p.ej.
- * un proyecto de Cloudflare sin esas variables configuradas), getAuth()
- * lanza auth/invalid-api-key de forma síncrona y tira el build entero.
- * Como ningún archivo del proyecto usa `auth`/`db` fuera del navegador, en
- * el servidor basta con no inicializar Firebase de verdad.
- */
-const isBrowser = typeof window !== "undefined";
-
-function initFirebase() {
-  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  return { app, auth: getAuth(app), db: getFirestore(app) };
+export interface Firebase {
+  app: FirebaseApp;
+  auth: Auth;
+  db: Firestore;
+  /** Funciones de "firebase/firestore" (collection, doc, onSnapshot...). */
+  firestore: typeof import("firebase/firestore");
 }
 
-const firebase = isBrowser ? initFirebase() : undefined;
-
-export const app = firebase?.app as FirebaseApp;
-export const auth = firebase?.auth as Auth;
-export const db = firebase?.db as Firestore;
-
 /*
- * Con NEXT_PUBLIC_FIREBASE_EMULATORS=1 la app habla con los emuladores
- * locales en vez de con el proyecto real. Lo usan las pruebas E2E de
- * Playwright (ver e2e/README.md) y sirve también para desarrollar sin tocar
- * datos de verdad: `npm run emuladores`.
+ * Toda la app es "use client" (ver README), pero Next igual renderiza cada
+ * página una vez en el servidor para generar el HTML inicial, así que un
+ * `import` estático de "firebase/firestore" se evalúa también ahí. Ese
+ * paquete usa protobufjs, que compila funciones con `new Function` al
+ * cargarse — Cloudflare Workers no permite generar código desde strings y
+ * el Worker responde 500 en cualquier página, sin necesidad de que se
+ * llegue a llamar ninguna función de Firestore. Por eso Firebase entero se
+ * carga de forma perezosa con `import()` dentro de esta función: así el
+ * paquete solo se evalúa cuando el navegador la ejecuta de verdad.
  */
+let firebasePromise: Promise<Firebase> | undefined;
+
+export function getFirebase(): Promise<Firebase> {
+  if (!firebasePromise) firebasePromise = initFirebase();
+  return firebasePromise;
+}
+
 declare global {
   var __numerarioEmulatorsConnected: boolean | undefined;
 }
 
-if (
-  isBrowser &&
-  process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1" &&
-  !globalThis.__numerarioEmulatorsConnected
-) {
-  globalThis.__numerarioEmulatorsConnected = true;
-  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+async function initFirebase(): Promise<Firebase> {
+  const [{ initializeApp, getApps, getApp }, { getAuth, connectAuthEmulator }, firestore] =
+    await Promise.all([
+      import("firebase/app"),
+      import("firebase/auth"),
+      import("firebase/firestore"),
+    ]);
+
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = firestore.getFirestore(app);
+
+  /*
+   * Con NEXT_PUBLIC_FIREBASE_EMULATORS=1 la app habla con los emuladores
+   * locales en vez de con el proyecto real. Lo usan las pruebas E2E de
+   * Playwright (ver e2e/README.md) y sirve también para desarrollar sin
+   * tocar datos de verdad: `npm run emuladores`.
+   */
+  if (
+    process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1" &&
+    !globalThis.__numerarioEmulatorsConnected
+  ) {
+    globalThis.__numerarioEmulatorsConnected = true;
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    firestore.connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  }
+
+  return { app, auth, db, firestore };
 }

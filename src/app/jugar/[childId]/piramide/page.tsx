@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthProvider";
-import { db } from "@/lib/firebase";
+import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile } from "@/lib/types";
 import { starsForAnswer } from "@/lib/economy";
 import { GameShell } from "@/components/GameShell";
@@ -30,13 +29,26 @@ export default function PiramidePage() {
 
   useEffect(() => {
     if (!user) return;
-    getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
-      if (snap.exists()) setChild(snap.data() as ChildProfile);
+    let cancelled = false;
+    getFirebase().then(({ db, firestore: { doc, getDoc } }) => {
+      if (cancelled) return;
+      getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
+        if (cancelled) return;
+        if (snap.exists()) setChild(snap.data() as ChildProfile);
+      });
     });
+    return () => {
+      cancelled = true;
+    };
   }, [user, params.childId]);
 
   async function submitAnswer(difficulty: number, correct: boolean): Promise<number> {
     if (!user) return 0;
+
+    const {
+      db,
+      firestore: { addDoc, collection, serverTimestamp },
+    } = await getFirebase();
 
     await addDoc(collection(db, "parents", user.uid, "children", params.childId, "attempts"), {
       skillId: "piramide",

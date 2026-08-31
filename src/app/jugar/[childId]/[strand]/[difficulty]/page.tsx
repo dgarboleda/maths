@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthProvider";
-import { db } from "@/lib/firebase";
+import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { recordAttempt, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
@@ -63,6 +62,11 @@ export default function TopicPage() {
     if (!user || !strand) return;
     let cancelled = false;
     (async () => {
+      const {
+        db,
+        firestore: { doc, getDoc },
+      } = await getFirebase();
+      if (cancelled) return;
       const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
       if (cancelled || !childSnap.exists()) return;
       setChild(childSnap.data() as ChildProfile);
@@ -80,6 +84,11 @@ export default function TopicPage() {
 
   async function submitAnswer(correct: boolean): Promise<number> {
     if (!user || !strand) return 0;
+
+    const {
+      db,
+      firestore: { addDoc, collection, doc, serverTimestamp, setDoc },
+    } = await getFirebase();
 
     await addDoc(collection(db, "parents", user.uid, "children", params.childId, "attempts"), {
       skillId: `${strand.slug}-topico-d${difficulty}`,

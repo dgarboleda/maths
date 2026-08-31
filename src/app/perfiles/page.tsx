@@ -4,16 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import {
-  addDoc,
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-} from "firebase/firestore";
 import { useAuth } from "@/lib/AuthProvider";
-import { auth, db } from "@/lib/firebase";
+import { getFirebase } from "@/lib/firebase";
 import { hashPin } from "@/lib/pin";
 import type { ChildProfile } from "@/lib/types";
 
@@ -33,13 +25,19 @@ export default function PerfilesPage() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(
-      collection(db, "parents", user.uid, "children"),
-      orderBy("createdAt", "asc"),
-    );
-    return onSnapshot(q, (snap) => {
-      setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+    getFirebase().then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
+      if (cancelled) return;
+      const q = query(collection(db, "parents", user.uid, "children"), orderBy("createdAt", "asc"));
+      unsubscribe = onSnapshot(q, (snap) => {
+        setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
+      });
     });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [user]);
 
   if (loading || !user) return null;
@@ -58,7 +56,7 @@ export default function PerfilesPage() {
           </Link>
           <button
             type="button"
-            onClick={() => signOut(auth)}
+            onClick={() => getFirebase().then(({ auth }) => signOut(auth))}
             className="text-neutral-600 underline underline-offset-2"
           >
             Cerrar sesión
@@ -202,6 +200,10 @@ function NewChildForm({ parentId, onDone }: { parentId: string; onDone: () => vo
     setSubmitting(true);
     try {
       const pinHash = await hashPin(pin);
+      const {
+        db,
+        firestore: { addDoc, collection, serverTimestamp },
+      } = await getFirebase();
       await addDoc(collection(db, "parents", parentId, "children"), {
         name,
         birthDate,
