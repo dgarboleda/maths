@@ -36,11 +36,12 @@ jobs:
       # `typecheck` genera antes los tipos de rutas de Next: sin ellos,
       # `LayoutProps` no existe en un árbol recién clonado.
       - run: npm run typecheck
+      # `npm run build` ya empaqueta el Worker de Cloudflare (ver
+      # package.json/open-next.config.ts): produce `.open-next/worker.js`,
+      # no solo `.next`. Validamos wrangler.jsonc (bindings, assets) sin
+      # necesitar login: ninguno de los dos pasos llama a la API de
+      # Cloudflare. `wrangler deploy` de verdad sí necesita credenciales.
       - run: npm run build
-      # Empaqueta el Worker de Cloudflare y valida wrangler.jsonc (bindings,
-      # assets) sin necesitar login: ninguno de los dos pasos llama a la API
-      # de Cloudflare. `wrangler deploy` de verdad sí necesita credenciales.
-      - run: npx opennextjs-cloudflare build
       - run: npx wrangler deploy --dry-run
 
   e2e:
