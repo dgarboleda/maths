@@ -20,6 +20,22 @@
 		// Habilita la optimización de imágenes
 		// ver https://opennext.js.org/cloudflare/howtos/image
 		"binding": "IMAGES"
+	},
+	// Logs del Worker en el dashboard de Cloudflare (útil para depurar cosas
+	// como el auth/invalid-api-key: ahí se ve exactamente qué variables de
+	// entorno tenía el Worker en tiempo de ejecución). Aquí en vez de solo en
+	// el dashboard para que un `wrangler deploy` no lo desactive sin querer y
+	// quede igual en cualquier máquina que despliegue.
+	// ver https://developers.cloudflare.com/workers/observability/logs/workers-logs/
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1,
+		"logs": {
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"invocation_logs": true,
+			"persist": true
+		}
 	}
 	/*
 	 * Sin caché con R2: crear el bucket requiere estar autenticado con
