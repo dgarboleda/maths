@@ -30,13 +30,15 @@ export default function PiramidePage() {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    getFirebase().then(({ db, firestore: { doc, getDoc } }) => {
-      if (cancelled) return;
-      getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
+    getFirebase()
+      .then(({ db, firestore: { doc, getDoc } }) => {
         if (cancelled) return;
-        if (snap.exists()) setChild(snap.data() as ChildProfile);
-      });
-    });
+        return getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
+          if (cancelled) return;
+          if (snap.exists()) setChild(snap.data() as ChildProfile);
+        });
+      })
+      .catch((err) => console.error("No se pudo cargar el perfil", err));
     return () => {
       cancelled = true;
     };

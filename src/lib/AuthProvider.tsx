@@ -18,13 +18,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
-    getFirebase().then(({ auth }) => {
-      if (cancelled) return;
-      unsubscribe = onAuthStateChanged(auth, (u) => {
-        setUser(u);
-        setLoading(false);
+    getFirebase()
+      .then(({ auth }) => {
+        if (cancelled) return;
+        unsubscribe = onAuthStateChanged(auth, (u) => {
+          setUser(u);
+          setLoading(false);
+        });
+      })
+      .catch((err) => {
+        // Si Firebase no carga (p. ej. configuración inválida en el
+        // despliegue), no dejar la app cargando para siempre.
+        console.error("No se pudo inicializar Firebase", err);
+        if (!cancelled) setLoading(false);
       });
-    });
     return () => {
       cancelled = true;
       unsubscribe?.();

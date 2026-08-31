@@ -76,7 +76,7 @@ export default function TopicPage() {
       );
       if (cancelled) return;
       setProgress(progressSnap.exists() ? (progressSnap.data() as SkillProgress) : undefined);
-    })();
+    })().catch((err) => console.error("No se pudo cargar el progreso", err));
     return () => {
       cancelled = true;
     };

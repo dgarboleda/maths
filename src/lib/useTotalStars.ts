@@ -35,27 +35,29 @@ export function useTotalStars(
     const deltas = new Map<string, number>();
     let sum = 0;
 
-    getFirebase().then(({ db, firestore: { collection, onSnapshot } }) => {
-      if (cancelled) return;
-      unsubscribe = onSnapshot(
-        collection(db, "parents", parentId, "children", childId, "starLedger"),
-        (snap) => {
-          for (const change of snap.docChanges()) {
-            const id = change.doc.id;
-            const previous = deltas.get(id) ?? 0;
-            if (change.type === "removed") {
-              sum -= previous;
-              deltas.delete(id);
-            } else {
-              const delta = (change.doc.data().delta as number) ?? 0;
-              sum += delta - previous;
-              deltas.set(id, delta);
+    getFirebase()
+      .then(({ db, firestore: { collection, onSnapshot } }) => {
+        if (cancelled) return;
+        unsubscribe = onSnapshot(
+          collection(db, "parents", parentId, "children", childId, "starLedger"),
+          (snap) => {
+            for (const change of snap.docChanges()) {
+              const id = change.doc.id;
+              const previous = deltas.get(id) ?? 0;
+              if (change.type === "removed") {
+                sum -= previous;
+                deltas.delete(id);
+              } else {
+                const delta = (change.doc.data().delta as number) ?? 0;
+                sum += delta - previous;
+                deltas.set(id, delta);
+              }
             }
-          }
-          setBalance({ key: `${parentId}/${childId}`, total: sum });
-        },
-      );
-    });
+            setBalance({ key: `${parentId}/${childId}`, total: sum });
+          },
+        );
+      })
+      .catch((err) => console.error("No se pudo cargar el saldo de estrellas", err));
 
     return () => {
       cancelled = true;

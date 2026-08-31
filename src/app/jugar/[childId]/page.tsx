@@ -48,14 +48,16 @@ export default function JugarPage() {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    getFirebase().then(({ db, firestore: { doc, getDoc } }) => {
-      if (cancelled) return;
-      getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
+    getFirebase()
+      .then(({ db, firestore: { doc, getDoc } }) => {
         if (cancelled) return;
-        if (snap.exists()) setChild(snap.data() as ChildProfile);
-        else setNotFound(true);
-      });
-    });
+        return getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
+          if (cancelled) return;
+          if (snap.exists()) setChild(snap.data() as ChildProfile);
+          else setNotFound(true);
+        });
+      })
+      .catch((err) => console.error("No se pudo cargar el perfil", err));
     return () => {
       cancelled = true;
     };
@@ -65,16 +67,18 @@ export default function JugarPage() {
     if (!user) return;
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
-    getFirebase().then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
-      if (cancelled) return;
-      const q = query(
-        collection(db, "parents", user.uid, "children", params.childId, "redemptionRequests"),
-        orderBy("createdAt", "desc"),
-      );
-      unsubscribe = onSnapshot(q, (snap) => {
-        setRequests(snap.docs.map((d) => ({ id: d.id, ...(d.data() as RedemptionRequest) })));
-      });
-    });
+    getFirebase()
+      .then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
+        if (cancelled) return;
+        const q = query(
+          collection(db, "parents", user.uid, "children", params.childId, "redemptionRequests"),
+          orderBy("createdAt", "desc"),
+        );
+        unsubscribe = onSnapshot(q, (snap) => {
+          setRequests(snap.docs.map((d) => ({ id: d.id, ...(d.data() as RedemptionRequest) })));
+        });
+      })
+      .catch((err) => console.error("No se pudieron cargar los canjes", err));
     return () => {
       cancelled = true;
       unsubscribe?.();

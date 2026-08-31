@@ -50,7 +50,7 @@ export default function StrandTopicListPage() {
       const map: Record<string, SkillProgress> = {};
       progressSnap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
       setProgressBySkill(map);
-    })();
+    })().catch((err) => console.error("No se pudo cargar el progreso", err));
     return () => {
       cancelled = true;
     };

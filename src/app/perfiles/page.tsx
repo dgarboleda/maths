@@ -27,13 +27,15 @@ export default function PerfilesPage() {
     if (!user) return;
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
-    getFirebase().then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
-      if (cancelled) return;
-      const q = query(collection(db, "parents", user.uid, "children"), orderBy("createdAt", "asc"));
-      unsubscribe = onSnapshot(q, (snap) => {
-        setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
-      });
-    });
+    getFirebase()
+      .then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
+        if (cancelled) return;
+        const q = query(collection(db, "parents", user.uid, "children"), orderBy("createdAt", "asc"));
+        unsubscribe = onSnapshot(q, (snap) => {
+          setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
+        });
+      })
+      .catch((err) => console.error("No se pudo cargar la lista de hijos", err));
     return () => {
       cancelled = true;
       unsubscribe?.();
@@ -56,7 +58,7 @@ export default function PerfilesPage() {
           </Link>
           <button
             type="button"
-            onClick={() => getFirebase().then(({ auth }) => signOut(auth))}
+            onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
             className="text-neutral-600 underline underline-offset-2"
           >
             Cerrar sesión
