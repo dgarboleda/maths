@@ -123,7 +123,11 @@ function mensajeDeError(err: unknown): string {
   if (code.includes("weak-password")) return "La contraseña debe tener al menos 6 caracteres.";
   if (code.includes("invalid-email")) return "Ese correo no es válido.";
   // Sin código reconocido: se muestra el código crudo (p. ej.
-  // "permission-denied" o "auth/operation-not-allowed") para poder
-  // diagnosticar sin depender de la consola del navegador.
-  return code ? `Ocurrió un error (${code}). Intenta de nuevo.` : "Ocurrió un error. Intenta de nuevo.";
+  // "permission-denied" o "auth/operation-not-allowed") y, si lo hay, el
+  // mensaje completo (getFirebase() añade ahí un diagnóstico de
+  // NEXT_PUBLIC_FIREBASE_API_KEY) para poder diagnosticar sin depender de
+  // la consola del navegador.
+  const message = err instanceof Error ? err.message : "";
+  if (code) return `Ocurrió un error (${code}). ${message}`.trim();
+  return message || "Ocurrió un error. Intenta de nuevo.";
 }
