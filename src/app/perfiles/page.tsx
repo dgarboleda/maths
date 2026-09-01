@@ -19,6 +19,7 @@ export default function PerfilesPage() {
   const [children, setChildren] = useState<ChildDoc[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
+  const [banner, setBanner] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -83,6 +84,11 @@ export default function PerfilesPage() {
           {listError}
         </p>
       )}
+      {banner && (
+        <p role="status" className="text-sm font-bold text-green-700">
+          {banner}
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {children.map((child) => (
@@ -102,7 +108,13 @@ export default function PerfilesPage() {
       </div>
 
       {showForm && (
-        <NewChildForm parentId={user.uid} onDone={() => setShowForm(false)} />
+        <NewChildForm
+          parentId={user.uid}
+          onDone={(message) => {
+            setShowForm(false);
+            setBanner(message ?? null);
+          }}
+        />
       )}
     </main>
   );
@@ -198,7 +210,13 @@ function ChildCard({ child }: { child: ChildDoc }) {
   );
 }
 
-function NewChildForm({ parentId, onDone }: { parentId: string; onDone: () => void }) {
+function NewChildForm({
+  parentId,
+  onDone,
+}: {
+  parentId: string;
+  onDone: (message?: string) => void;
+}) {
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [pin, setPin] = useState("");
@@ -222,15 +240,27 @@ function NewChildForm({ parentId, onDone }: { parentId: string; onDone: () => vo
       const pinHash = await hashPin(pin);
       const {
         db,
-        firestore: { addDoc, collection, serverTimestamp },
+        firestore: { addDoc, collection, getDocs, serverTimestamp },
       } = await getFirebase();
-      await addDoc(collection(db, "parents", parentId, "children"), {
+      const childrenCollection = collection(db, "parents", parentId, "children");
+      const ref = await addDoc(childrenCollection, {
         name,
         birthDate,
         pinHash,
         createdAt: serverTimestamp(),
       });
-      onDone();
+      // Diagnóstico: además de que addDoc() no haya lanzado error, se
+      // vuelve a leer la colección completa (sin depender del listener en
+      // tiempo real) para confirmar que el documento realmente quedó en el
+      // servidor y así distinguir "no se guardó" de "se guardó pero no se
+      // refleja en la lista".
+      const snap = await getDocs(childrenCollection);
+      const found = snap.docs.some((d) => d.id === ref.id);
+      onDone(
+        found
+          ? `"${name}" guardado (id ${ref.id}). La colección tiene ${snap.size} perfil(es).`
+          : `"${name}" se guardó (id ${ref.id}) pero al releer la colección no aparece (${snap.size} documento(s) encontrados).`,
+      );
     } catch (err) {
       console.error("No se pudo guardar el hijo", err);
       const code = (err as { code?: string })?.code;
@@ -303,7 +333,7 @@ function NewChildForm({ parentId, onDone }: { parentId: string; onDone: () => vo
         >
           Guardar
         </button>
-        <button type="button" onClick={onDone} className="text-sm text-neutral-700">
+        <button type="button" onClick={() => onDone()} className="text-sm text-neutral-700">
           Cancelar
         </button>
       </div>
