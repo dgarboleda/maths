@@ -63,6 +63,7 @@ export default function PerfilesPage() {
       tabIndex={-1}
       className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-white px-6 py-14"
     >
+      <p className="text-[10px] text-neutral-300">build: diag-v3</p>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-neutral-900">¿Quién va a jugar?</h1>
         <div className="flex items-center gap-4 text-sm">
@@ -256,16 +257,23 @@ function NewChildForm({
       // refleja en la lista".
       const snap = await getDocs(childrenCollection);
       const found = snap.docs.some((d) => d.id === ref.id);
-      onDone(
-        found
-          ? `"${name}" guardado (id ${ref.id}). La colección tiene ${snap.size} perfil(es).`
-          : `"${name}" se guardó (id ${ref.id}) pero al releer la colección no aparece (${snap.size} documento(s) encontrados).`,
-      );
+      const message = found
+        ? `"${name}" guardado (id ${ref.id}). La colección tiene ${snap.size} perfil(es).`
+        : `"${name}" se guardó (id ${ref.id}) pero al releer la colección no aparece (${snap.size} documento(s) encontrados).`;
+      // Diagnóstico temporal: alert() nativo además del banner en pantalla,
+      // para descartar que el mensaje no se vea por caché/CSS — un alert()
+      // es imposible de pasar por alto y bloquea hasta que se cierre.
+      window.alert(message);
+      onDone(message);
     } catch (err) {
       console.error("No se pudo guardar el hijo", err);
       const code = (err as { code?: string })?.code;
-      const message = err instanceof Error ? err.message : String(err);
-      setError(code ? `No se pudo guardar (${code}). ${message}` : `No se pudo guardar. ${message}`);
+      const rawMessage = err instanceof Error ? err.message : String(err);
+      const message = code
+        ? `No se pudo guardar (${code}). ${rawMessage}`
+        : `No se pudo guardar. ${rawMessage}`;
+      window.alert(message);
+      setError(message);
     } finally {
       setSubmitting(false);
     }
