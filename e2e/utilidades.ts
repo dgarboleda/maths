@@ -1,4 +1,7 @@
 import { expect, type Page } from "@playwright/test";
+import { deleteApp, initializeApp } from "firebase/app";
+import { connectAuthEmulator, getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { connectFirestoreEmulator, doc, getFirestore, setDoc } from "firebase/firestore";
 
 export const CLAVE_PADRE = "secreto123";
 
@@ -46,11 +49,53 @@ export async function entrarAlPerfil(page: Page, nombre: string, pin: string): P
 export async function sesionDeHijo(
   page: Page,
   opciones?: { nombre?: string; pin?: string; nacimiento?: string },
-): Promise<{ nombre: string; pin: string }> {
-  await registrarPadre(page);
+): Promise<{ nombre: string; pin: string; correo: string }> {
+  const correo = await registrarPadre(page);
   const hijo = await crearHijo(page, opciones);
   await entrarAlPerfil(page, hijo.nombre, hijo.pin);
-  return hijo;
+  return { ...hijo, correo };
+}
+
+/** El id del hijo va en la URL de juego: /jugar/{childId}/... */
+export function idDeHijo(page: Page): string {
+  return page.url().match(/\/jugar\/([^/]+)/)![1];
+}
+
+/**
+ * Marca como dominados, directo en Firestore, los módulos indicados —sin
+ * jugar rondas de verdad. Dominar de verdad exige aciertos repartidos en al
+ * menos 2 días distintos (MIN_DAY_SPAN en mastery.ts), algo que una prueba de
+ * un solo proceso no puede cumplir jugando. Con la currícula real (candados
+ * por prerrequisito), para poder abrir un módulo bloqueado en una prueba hay
+ * que otorgarle "dominado" a sus prerrequisitos directos por esta vía; se
+ * autentica como el mismo padre de la prueba, así que las reglas de
+ * Firestore (isParent) lo permiten igual que al niño jugando de verdad.
+ */
+export async function otorgarDominio(correo: string, childId: string, moduleIds: string[]): Promise<void> {
+  const app = initializeApp(
+    { apiKey: "demo-api-key", projectId: "demo-numerario" },
+    `otorgar-${crypto.randomUUID()}`,
+  );
+  try {
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
+
+    const db = getFirestore(app);
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+    await Promise.all(
+      moduleIds.map((moduleId) =>
+        setDoc(doc(db, "parents", user.uid, "children", childId, "skillsProgress", moduleId), {
+          recentResults: [],
+          recentAccuracy: 1,
+          masteredAt: Date.now(),
+        }),
+      ),
+    );
+  } finally {
+    await deleteApp(app);
+  }
 }
 
 /**

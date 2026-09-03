@@ -2,27 +2,25 @@
 
 import { useState } from "react";
 import type { Problem } from "@/lib/problem";
-import { getStrand } from "@/lib/strands";
+import { getModule } from "@/lib/curriculum";
 import { playSound } from "@/lib/gameSound";
 
 export function EjemplosTab({
-  strandSlug,
-  difficulty,
+  moduleId,
   soundOn,
 }: {
-  strandSlug: string;
-  difficulty: number;
+  moduleId: string;
   soundOn: boolean;
 }) {
-  const strand = getStrand(strandSlug)!;
+  const mod = getModule(moduleId)!;
   const [examples, setExamples] = useState<Problem[]>(() =>
-    Array.from({ length: 3 }, () => strand.generateProblem(difficulty)),
+    Array.from({ length: 3 }, mod.generateProblem),
   );
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
 
   function refresh() {
     playSound("click", soundOn);
-    setExamples(Array.from({ length: 3 }, () => strand.generateProblem(difficulty)));
+    setExamples(Array.from({ length: 3 }, mod.generateProblem));
     setRevealed({});
   }
 

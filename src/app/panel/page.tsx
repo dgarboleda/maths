@@ -8,8 +8,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { Attempt, ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { STRANDS, getStrand } from "@/lib/strands";
-import { frontierDifficulty, masteredCount } from "@/lib/mastery";
-import { suggestedDifficulty } from "@/lib/problem";
+import { recommendedModule, countUnlocked } from "@/lib/curriculum";
 import { useTotalStars } from "@/lib/useTotalStars";
 
 interface ChildDoc extends ChildProfile {
@@ -226,19 +225,24 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
         </h3>
         <ul className="grid grid-cols-1 gap-1 text-sm text-neutral-600 sm:grid-cols-2">
           {STRANDS.map((s) => {
-            const floor = suggestedDifficulty(child.birthDate);
-            const frontier = frontierDifficulty(progressBySkill, s.slug, floor);
-            const dominados = masteredCount(progressBySkill, s.slug);
+            const recommended = recommendedModule(progressBySkill, s.slug);
+            const { unlocked, total } = countUnlocked(progressBySkill, s.slug);
             return (
               <li key={s.slug} className="flex items-center justify-between">
                 <span>{s.label}</span>
                 <span className="text-neutral-600">
-                  nivel {frontier} · {dominados} dominados
+                  {recommended ? recommended.label : "todo dominado"} · {unlocked}/{total} desbloqueados
                 </span>
               </li>
             );
           })}
         </ul>
+        <Link
+          href={`/panel/${child.id}`}
+          className="mt-1 self-start text-sm text-neutral-500 underline underline-offset-2"
+        >
+          Ver currícula completa
+        </Link>
       </div>
 
       {pending.length > 0 && (

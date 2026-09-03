@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { QuestionWidget } from "./QuestionWidget";
 import { generateUniqueBatch, isCorrectAnswer, type Problem } from "@/lib/problem";
-import { getStrand, type StrandDef } from "@/lib/strands";
+import { getModule } from "@/lib/curriculum";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 
@@ -16,28 +16,26 @@ const BAG_SIZE = 20;
 
 type Phase = "start" | "playing" | "over";
 
-function drawBag(strand: StrandDef, difficulty: number): Problem[] {
-  return generateUniqueBatch(() => strand.generateProblem(difficulty), BAG_SIZE);
+function drawBag(generateProblem: () => Problem): Problem[] {
+  return generateUniqueBatch(generateProblem, BAG_SIZE);
 }
 
 export function CoheteGeneric({
-  strandSlug,
-  difficulty,
+  moduleId,
   soundOn,
   onAnswer,
 }: {
-  strandSlug: string;
-  difficulty: number;
+  moduleId: string;
   soundOn: boolean;
   onAnswer: (correct: boolean) => Promise<number>;
 }) {
-  const strand = getStrand(strandSlug)!;
+  const mod = getModule(moduleId)!;
   const [phase, setPhase] = useState<Phase>("start");
   const [timer, setTimer] = useState(START_TIME);
   const timerRef = useRef(START_TIME);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
-  const [bag, setBag] = useState<Problem[]>(() => drawBag(strand, difficulty));
+  const [bag, setBag] = useState<Problem[]>(() => drawBag(mod.generateProblem));
   const [win, setWin] = useState(false);
   const promptId = useId();
 
@@ -46,7 +44,7 @@ export function CoheteGeneric({
   function advance() {
     setBag((b) => {
       const rest = b.slice(1);
-      return rest.length > 0 ? rest : drawBag(strand, difficulty);
+      return rest.length > 0 ? rest : drawBag(mod.generateProblem);
     });
   }
 
@@ -84,7 +82,7 @@ export function CoheteGeneric({
     setTimeLeft(START_TIME);
     setCorrectCount(0);
     setStarsThisRound(0);
-    setBag(drawBag(strand, difficulty));
+    setBag(drawBag(mod.generateProblem));
     setPhase("playing");
   }
 

@@ -3,29 +3,27 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { QuestionWidget } from "./QuestionWidget";
 import { generateUniqueBatch, isCorrectAnswer, type Problem } from "@/lib/problem";
-import { getStrand } from "@/lib/strands";
+import { getModule } from "@/lib/curriculum";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 
 const ROUND_LENGTH = 10;
 
 export function PracticeRoundGeneric({
-  strandSlug,
-  difficulty,
+  moduleId,
   soundOn,
   onAnswer,
 }: {
-  strandSlug: string;
-  difficulty: number;
+  moduleId: string;
   soundOn: boolean;
   onAnswer: (correct: boolean) => void;
 }) {
-  const strand = getStrand(strandSlug)!;
+  const mod = getModule(moduleId)!;
 
   // El vector completo de la ronda se arma de una sola vez, con firmas
   // (categoría + parámetros) sin repetir — no se genera pregunta a pregunta.
   const [questions, setQuestions] = useState<Problem[]>(() =>
-    generateUniqueBatch(() => strand.generateProblem(difficulty), ROUND_LENGTH),
+    generateUniqueBatch(mod.generateProblem, ROUND_LENGTH),
   );
   const [questionNumber, setQuestionNumber] = useState(1);
   const [score, setScore] = useState(0);
@@ -69,7 +67,7 @@ export function PracticeRoundGeneric({
 
   function restart() {
     playSound("click", soundOn);
-    setQuestions(generateUniqueBatch(() => strand.generateProblem(difficulty), ROUND_LENGTH));
+    setQuestions(generateUniqueBatch(mod.generateProblem, ROUND_LENGTH));
     setQuestionNumber(1);
     setScore(0);
     setFeedback(null);

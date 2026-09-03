@@ -8,6 +8,7 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { recordAttempt, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
+import { isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
@@ -45,6 +46,7 @@ export default function MultiplicacionPage() {
 
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progress, setProgress] = useState<SkillProgress | undefined>(undefined);
+  const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [streak, setStreak] = useState(0);
   const [repeatsToday, setRepeatsToday] = useState(0);
@@ -61,18 +63,21 @@ export default function MultiplicacionPage() {
     (async () => {
       const {
         db,
-        firestore: { doc, getDoc },
+        firestore: { collection, doc, getDoc, getDocs },
       } = await getFirebase();
       if (cancelled) return;
       const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
       if (cancelled || !childSnap.exists()) return;
       setChild(childSnap.data() as ChildProfile);
 
-      const progressSnap = await getDoc(
-        doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", SKILL_KEY),
+      const progressSnap = await getDocs(
+        collection(db, "parents", user.uid, "children", params.childId, "skillsProgress"),
       );
       if (cancelled) return;
-      setProgress(progressSnap.exists() ? (progressSnap.data() as SkillProgress) : undefined);
+      const map: Record<string, SkillProgress> = {};
+      progressSnap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
+      setProgressBySkill(map);
+      setProgress(map[SKILL_KEY]);
     })().catch((err) => console.error("No se pudo cargar el progreso", err));
     return () => {
       cancelled = true;
@@ -146,6 +151,33 @@ export default function MultiplicacionPage() {
         <p role="status" className="text-neutral-700">
           Cargando…
         </p>
+      </main>
+    );
+  }
+
+  // Defensa contra entrar por URL directa saltándose el candado de la lista
+  // de temas, que es la puerta principal.
+  if (!isUnlocked(progressBySkill, SKILL_KEY)) {
+    const missing = missingPrerequisites(progressBySkill, SKILL_KEY);
+    return (
+      <main
+        id="contenido"
+        tabIndex={-1}
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+      >
+        <span aria-hidden="true" className="text-4xl">
+          🔒
+        </span>
+        <p className="text-lg font-bold text-slate-700">Todavía no puedes entrar aquí</p>
+        <p className="text-slate-500">
+          Primero dominá: {missing.map((m) => m.label).join(", ")}
+        </p>
+        <Link
+          href={`/jugar/${params.childId}/aritmetica`}
+          className="text-sm text-purple-700 underline underline-offset-2"
+        >
+          Volver a Aritmética
+        </Link>
       </main>
     );
   }
