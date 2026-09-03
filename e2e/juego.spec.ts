@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { resolverEnunciado, sesionDeHijo } from "./utilidades";
+import { idDeHijo, otorgarDominio, resolverEnunciado, sesionDeHijo } from "./utilidades";
 
 /** Saldo de estrellas que muestra la cabecera. */
 function estrellas(page: Page) {
@@ -17,11 +17,13 @@ test.describe("Recorrido de juego", () => {
 
     await irATema(page, "Geometría", /\/geometria$/);
     await expect(page).toHaveTitle("Geometría · Numerario");
-    await expect(page.getByText(/\d+\/10 temas dominados/)).toBeVisible();
+    await expect(page.getByText(/\d+\/\d+ temas dominados/)).toBeVisible();
 
-    await page.getByRole("link", { name: "Perímetro" }).click();
-    await expect(page).toHaveURL(/\/geometria\/3$/);
-    await expect(page).toHaveTitle("Perímetro · Geometría · Numerario");
+    // "Lados de figuras" no tiene prerrequisitos: se puede entrar sin dominar
+    // nada antes.
+    await page.getByRole("link", { name: "Lados de figuras" }).click();
+    await expect(page).toHaveURL(/\/geometria\/geometria-d1$/);
+    await expect(page).toHaveTitle("Lados de figuras · Geometría · Numerario");
 
     await page.getByRole("link", { name: `← Geometría de ${nombre}` }).click();
     await expect(page).toHaveURL(/\/geometria$/);
@@ -29,8 +31,8 @@ test.describe("Recorrido de juego", () => {
 
   test("las pestañas se manejan con flechas y cada panel queda anunciado", async ({ page }) => {
     await sesionDeHijo(page);
-    await irATema(page, "Lógica", /\/logica$/);
-    await page.getByRole("link", { name: "Problemas de suma" }).click();
+    await irATema(page, "Aritmética", /\/aritmetica$/);
+    await page.getByRole("link", { name: "Sumas hasta 5" }).click();
 
     const concepto = page.getByRole("tab", { name: /Concepto/ });
     const practica = page.getByRole("tab", { name: /Práctica/ });
@@ -60,7 +62,7 @@ test.describe("Recorrido de juego", () => {
     const hijo = await sesionDeHijo(page);
     await expect(estrellas(page)).toHaveText("Estrellas: 0");
 
-    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/1"));
+    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/aritmetica-d1"));
     await expect(page.getByRole("heading", { name: `Sumas hasta 5` })).toBeVisible();
     await page.getByRole("tab", { name: /Práctica/ }).click();
 
@@ -87,8 +89,10 @@ test.describe("Recorrido de juego", () => {
   });
 
   test("la balanza se resuelve con el teclado, sin arrastrar", async ({ page }) => {
-    await sesionDeHijo(page);
-    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/algebra/2"));
+    const { correo } = await sesionDeHijo(page);
+    // "Balanza" (algebra-d2) exige dominar antes aritmetica-d2.
+    await otorgarDominio(correo, idDeHijo(page), ["aritmetica-d2"]);
+    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/algebra/algebra-d2"));
     await page.getByRole("tab", { name: /Práctica/ }).click();
 
     const enunciado = await page.getByText(/\d+ \+ x = \d+/).innerText();
@@ -100,8 +104,10 @@ test.describe("Recorrido de juego", () => {
   });
 
   test("el reparto en decenas se completa con los botones", async ({ page }) => {
-    await sesionDeHijo(page);
-    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/2"));
+    const { correo } = await sesionDeHijo(page);
+    // "Sumas y restas hasta 10" (aritmetica-d2) exige dominar antes aritmetica-d1.
+    await otorgarDominio(correo, idDeHijo(page), ["aritmetica-d1"]);
+    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/aritmetica-d2"));
     await page.getByRole("tab", { name: /Práctica/ }).click();
 
     // El nivel 2 alterna entre recta numérica y reparto en decenas: se
@@ -128,7 +134,9 @@ test.describe("Recorrido de juego", () => {
   });
 
   test("la tabla de multiplicar se navega y activa con el teclado", async ({ page }) => {
-    await sesionDeHijo(page);
+    const { correo } = await sesionDeHijo(page);
+    // "Multiplicación" (aritmetica-d5) exige dominar antes aritmetica-d3.
+    await otorgarDominio(correo, idDeHijo(page), ["aritmetica-d3"]);
     await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/multiplicacion"));
     await expect(page).toHaveTitle("Multiplicación · Numerario");
 
@@ -166,7 +174,7 @@ test.describe("Recorrido de juego", () => {
   test("pedir un canje deja la solicitud pendiente para el padre", async ({ page }) => {
     await sesionDeHijo(page, { nombre: "Dani", pin: "1357" });
 
-    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/1"));
+    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/aritmetica-d1"));
     await page.getByRole("tab", { name: /Práctica/ }).click();
     const enunciado = await page.getByText(/¿Cuánto es \d+ \+ \d+\?/).innerText();
     const objetivo = resolverEnunciado(enunciado)!;
@@ -200,7 +208,7 @@ test.describe("Movimiento reducido", () => {
 
   test("no se dibuja confeti si el sistema pide reducir movimiento", async ({ page }) => {
     await sesionDeHijo(page);
-    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/1"));
+    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/aritmetica-d1"));
     await page.getByRole("tab", { name: /Práctica/ }).click();
 
     const enunciado = await page.getByText(/¿Cuánto es \d+ \+ \d+\?/).innerText();

@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
-import type { ChildProfile, RedemptionRequest } from "@/lib/types";
+import type { ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { STRANDS } from "@/lib/strands";
+import { countUnlocked } from "@/lib/curriculum";
 import { GameShell } from "@/components/GameShell";
 import { playSound } from "@/lib/gameSound";
 import { useTotalStars } from "@/lib/useTotalStars";
@@ -37,6 +38,7 @@ export default function JugarPage() {
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [requests, setRequests] = useState<RequestDoc[]>([]);
+  const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [showRedeemForm, setShowRedeemForm] = useState(false);
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
@@ -58,6 +60,25 @@ export default function JugarPage() {
         });
       })
       .catch((err) => console.error("No se pudo cargar el perfil", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [user, params.childId]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    getFirebase()
+      .then(({ db, firestore: { collection, getDocs } }) =>
+        getDocs(collection(db, "parents", user.uid, "children", params.childId, "skillsProgress")),
+      )
+      .then((snap) => {
+        if (cancelled) return;
+        const map: Record<string, SkillProgress> = {};
+        snap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
+        setProgressBySkill(map);
+      })
+      .catch((err) => console.error("No se pudo cargar el progreso", err));
     return () => {
       cancelled = true;
     };
@@ -141,19 +162,25 @@ export default function JugarPage() {
             ¿Qué quieres practicar hoy? <span aria-hidden="true">🎯</span>
           </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {STRANDS.map((strand) => (
-              <Link
-                key={strand.slug}
-                href={`/jugar/${params.childId}/${strand.slug}`}
-                onClick={() => playSound("click", soundOn)}
-                className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-3xl bg-gradient-to-br ${STRAND_GRADIENTS[strand.slug]} text-white shadow-lg transition-transform hover:scale-105`}
-              >
-                <span aria-hidden="true" className="text-4xl">
-                  {strand.emoji}
-                </span>
-                <span className="px-2 text-center text-sm font-bold">{strand.label}</span>
-              </Link>
-            ))}
+            {STRANDS.map((strand) => {
+              const { unlocked, total } = countUnlocked(progressBySkill, strand.slug);
+              return (
+                <Link
+                  key={strand.slug}
+                  href={`/jugar/${params.childId}/${strand.slug}`}
+                  onClick={() => playSound("click", soundOn)}
+                  className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-3xl bg-gradient-to-br ${STRAND_GRADIENTS[strand.slug]} text-white shadow-lg transition-transform hover:scale-105`}
+                >
+                  <span aria-hidden="true" className="text-4xl">
+                    {strand.emoji}
+                  </span>
+                  <span className="px-2 text-center text-sm font-bold">{strand.label}</span>
+                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold">
+                    {unlocked}/{total} desbloqueados
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
 

@@ -42,14 +42,17 @@ export function PatternConcept() {
       </div>
 
       <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-6 text-center">
-        <div className="text-4xl tracking-widest">
+        {/* flex-wrap, no texto en línea: las figuras van pegadas sin espacio
+            entre sí (el espaciado es margin, no un carácter de espacio), así
+            que el navegador no tiene dónde partir la línea y, sin flex-wrap,
+            la secuencia se sale del recuadro (y hasta de la pantalla) apenas
+            "Agregar uno más" la alarga lo suficiente. */}
+        <div className="flex flex-wrap items-center justify-center gap-1 text-4xl">
           {sequence.map((s, i) => (
-            <span key={i} className="mx-1">
-              {SYMBOLS[s]}
-            </span>
+            <span key={i}>{SYMBOLS[s]}</span>
           ))}
-          <span className="mx-2 text-purple-600">→</span>
-          <span className="mx-1 text-pink-500">{SYMBOLS[next]}</span>
+          <span className="mx-1 text-purple-600">→</span>
+          <span className="text-pink-500">{SYMBOLS[next]}</span>
         </div>
         <button
           type="button"

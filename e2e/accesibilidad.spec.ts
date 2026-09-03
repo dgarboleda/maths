@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { crearHijo, registrarPadre, sesionDeHijo } from "./utilidades";
+import { crearHijo, idDeHijo, otorgarDominio, registrarPadre, sesionDeHijo } from "./utilidades";
 
 const NORMAS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
@@ -48,7 +48,8 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
 
   test("las cuatro pestañas de un tema", async ({ page }) => {
     await sesionDeHijo(page);
-    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/geometria/4"));
+    // "Lados de figuras" (geometria-d1) no tiene prerrequisitos.
+    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/geometria/geometria-d1"));
     await expect(page.getByRole("tab", { name: /Concepto/ })).toBeVisible();
 
     for (const pestaña of [/Concepto/, /Práctica/, /Cohete/, /Ejemplos/]) {
@@ -59,7 +60,9 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
   });
 
   test("juego de multiplicación, incluida la tabla 10x10", async ({ page }) => {
-    await sesionDeHijo(page);
+    const { correo } = await sesionDeHijo(page);
+    // "Multiplicación" (aritmetica-d5) exige dominar antes aritmetica-d3.
+    await otorgarDominio(correo, idDeHijo(page), ["aritmetica-d3"]);
     await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/multiplicacion"));
     await expect(page.getByRole("tab", { name: /Concepto/ })).toBeVisible();
 
@@ -74,15 +77,33 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
   // balanza, patrones, tablas de datos, figuras): se recorren todos porque
   // los fallos de etiquetado viven justo ahí, en sus deslizadores.
   test("todas las pantallas de concepto de los cinco hilos", async ({ page }) => {
-    await sesionDeHijo(page);
+    const { correo } = await sesionDeHijo(page);
     const raiz = page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1");
 
+    // Candados reales: para poder abrir cada tema de la lista hay que
+    // otorgarle "dominado" a sus prerrequisitos directos (no hace falta la
+    // cadena completa: isUnlocked solo mira un nivel de prerrequisitos).
+    await otorgarDominio(correo, idDeHijo(page), [
+      "aritmetica-d1",
+      "aritmetica-d2",
+      "aritmetica-d3",
+      "aritmetica-d5",
+      "aritmetica-d6",
+      "aritmetica-d7",
+      "aritmetica-d10",
+      "geometria-d3",
+      "logica-d2",
+      "aritmetica-mcd-mcm",
+    ]);
+
     const temas = [
-      "aritmetica/1", "aritmetica/2", "aritmetica/6", "aritmetica/7", "aritmetica/9",
-      "algebra/1", "algebra/2",
-      "geometria/1", "geometria/6", "geometria/8",
-      "medicion/2", "medicion/3", "medicion/5", "medicion/9",
-      "logica/4",
+      "aritmetica/aritmetica-d1", "aritmetica/aritmetica-d2", "aritmetica/aritmetica-d6",
+      "aritmetica/aritmetica-d7", "aritmetica/aritmetica-d9",
+      "aritmetica/aritmetica-mcd-mcm", "aritmetica/aritmetica-fracciones-2",
+      "algebra/algebra-d1", "algebra/algebra-d2",
+      "geometria/geometria-d1", "geometria/geometria-d6", "geometria/geometria-d8",
+      "medicion/medicion-d2", "medicion/medicion-d3", "medicion/medicion-d5", "medicion/medicion-d9",
+      "logica/logica-d4",
     ];
 
     for (const tema of temas) {

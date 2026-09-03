@@ -9,7 +9,7 @@ import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { recordAttempt, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
 import { getStrand } from "@/lib/strands";
-import { getTopicLabel } from "@/lib/topics";
+import { getModule, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
@@ -40,50 +40,54 @@ function panelProps(id: TabId) {
 export default function TopicPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const params = useParams<{ childId: string; strand: string; difficulty: string }>();
+  const params = useParams<{ childId: string; strand: string; moduleId: string }>();
   const strand = getStrand(params.strand);
-  const difficulty = Number(params.difficulty);
+  const mod = getModule(params.moduleId);
 
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progress, setProgress] = useState<SkillProgress | undefined>(undefined);
+  const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [streak, setStreak] = useState(0);
   const [repeatsToday, setRepeatsToday] = useState(0);
   const [soundOn, toggleSound] = useSoundPreference();
   const [activeTab, setActiveTab] = useState<TabId>("concepto");
 
-  const skillKey = strand ? `${strand.slug}-d${difficulty}` : "";
+  const skillKey = mod?.id ?? "";
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user || !strand) return;
+    if (!user || !mod) return;
     let cancelled = false;
     (async () => {
       const {
         db,
-        firestore: { doc, getDoc },
+        firestore: { collection, doc, getDoc, getDocs },
       } = await getFirebase();
       if (cancelled) return;
       const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
       if (cancelled || !childSnap.exists()) return;
       setChild(childSnap.data() as ChildProfile);
 
-      const progressSnap = await getDoc(
-        doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", skillKey),
+      const progressSnap = await getDocs(
+        collection(db, "parents", user.uid, "children", params.childId, "skillsProgress"),
       );
       if (cancelled) return;
-      setProgress(progressSnap.exists() ? (progressSnap.data() as SkillProgress) : undefined);
+      const map: Record<string, SkillProgress> = {};
+      progressSnap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
+      setProgressBySkill(map);
+      setProgress(map[skillKey]);
     })().catch((err) => console.error("No se pudo cargar el progreso", err));
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId, strand, skillKey]);
+  }, [user, params.childId, mod, skillKey]);
 
   async function submitAnswer(correct: boolean): Promise<number> {
-    if (!user || !strand) return 0;
+    if (!user || !mod) return 0;
 
     // El progreso/racha/estrellas se calculan de una función pura sobre
     // estado que ya tenemos en el cliente: no hace falta esperar a que
@@ -102,7 +106,7 @@ export default function TopicPage() {
 
     const persistAttempt = async () => {
       await addDoc(collection(db, "parents", user.uid, "children", params.childId, "attempts"), {
-        skillId: `${strand.slug}-topico-d${difficulty}`,
+        skillId: `${mod.strandSlug}-topico-${mod.id}`,
         itemId: crypto.randomUUID(),
         correct,
         createdAt: serverTimestamp(),
@@ -119,7 +123,7 @@ export default function TopicPage() {
       return 0;
     }
 
-    const stars = starsForAnswer({ difficulty, streak, repeatsToday });
+    const stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday });
     setStreak((s) => s + 1);
     setRepeatsToday((n) => n + 1);
     addDoc(collection(db, "parents", user.uid, "children", params.childId, "starLedger"), {
@@ -142,7 +146,7 @@ export default function TopicPage() {
     );
   }
 
-  if (!strand || Number.isNaN(difficulty) || difficulty < 1 || difficulty > 10) {
+  if (!strand || !mod || mod.strandSlug !== strand.slug) {
     return (
       <main
         id="contenido"
@@ -168,12 +172,37 @@ export default function TopicPage() {
     );
   }
 
-  const topic = getTopicLabel(strand.slug, difficulty);
+  // Defensa contra entrar por URL directa saltándose el candado de la lista
+  // de temas, que es la puerta principal.
+  if (!isUnlocked(progressBySkill, mod.id)) {
+    const missing = missingPrerequisites(progressBySkill, mod.id);
+    return (
+      <main
+        id="contenido"
+        tabIndex={-1}
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+      >
+        <span aria-hidden="true" className="text-4xl">
+          🔒
+        </span>
+        <p className="text-lg font-bold text-slate-700">Todavía no puedes entrar aquí</p>
+        <p className="text-slate-500">
+          Primero dominá: {missing.map((m) => m.label).join(", ")}
+        </p>
+        <Link
+          href={`/jugar/${params.childId}/${strand.slug}`}
+          className="text-sm text-purple-700 underline underline-offset-2"
+        >
+          Volver a {strand.label}
+        </Link>
+      </main>
+    );
+  }
 
   return (
     <GameShell
-      icon={topic.emoji}
-      title={topic.title}
+      icon={mod.emoji}
+      title={mod.label}
       subtitle={
         <Link href={`/jugar/${params.childId}/${strand.slug}`} className="underline">
           ← {strand.label} de {child.name}
@@ -187,14 +216,13 @@ export default function TopicPage() {
     >
       {activeTab === "concepto" && (
         <div {...panelProps("concepto")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
-          <ConceptoGeneric strandSlug={strand.slug} difficulty={difficulty} />
+          <ConceptoGeneric moduleId={mod.id} />
         </div>
       )}
       {activeTab === "practica" && (
         <div {...panelProps("practica")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
           <PracticeRoundGeneric
-            strandSlug={strand.slug}
-            difficulty={difficulty}
+            moduleId={mod.id}
             soundOn={soundOn}
             onAnswer={(correct) => void submitAnswer(correct)}
           />
@@ -202,12 +230,12 @@ export default function TopicPage() {
       )}
       {activeTab === "cohete" && (
         <div {...panelProps("cohete")}>
-          <CoheteGeneric strandSlug={strand.slug} difficulty={difficulty} soundOn={soundOn} onAnswer={submitAnswer} />
+          <CoheteGeneric moduleId={mod.id} soundOn={soundOn} onAnswer={submitAnswer} />
         </div>
       )}
       {activeTab === "ejemplos" && (
         <div {...panelProps("ejemplos")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
-          <EjemplosTab strandSlug={strand.slug} difficulty={difficulty} soundOn={soundOn} />
+          <EjemplosTab moduleId={mod.id} soundOn={soundOn} />
         </div>
       )}
     </GameShell>
