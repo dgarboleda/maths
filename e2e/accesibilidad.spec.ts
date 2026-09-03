@@ -121,18 +121,42 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
     expect(await revisar(page)).toEqual([]);
   });
 
-  // Las tarjetas de hilo del hub tienen dos elementos interactivos hermanos
-  // (link al hilo + link "Continuar misión"), justo el patrón con más riesgo
-  // de terminar como un link anidado dentro de otro.
-  test("hub del niño con las tarjetas narrativas y el evento Código secreto", async ({ page }) => {
+  // El mundo mete botones y enlaces encima de un dibujo: el riesgo está en
+  // los nombres accesibles, el contraste sobre la escena y los diálogos.
+  test("mundo del niño: ciudad, evento y diario de misiones", async ({ page }) => {
     await sesionDeHijo(page);
     await expect(page.getByRole("link", { name: /Tu próximo desafío/ })).toBeVisible();
     expect(await revisar(page)).toEqual([]);
 
+    const raiz = page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1");
+
+    await page.goto(`${raiz}/misiones`);
+    await expect(page.getByRole("heading", { name: "Diario de misiones" })).toBeVisible();
+    expect(await revisar(page)).toEqual([]);
+
     // Geometría: "Lados de figuras" y "Vértices" están desbloqueados sin sembrar nada.
-    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/geometria/evento"));
+    await page.goto(`${raiz}/geometria/evento`);
     await expect(page.getByRole("heading", { name: "Código secreto" })).toBeVisible();
     expect(await revisar(page)).toEqual([]);
+  });
+
+  test("diálogos del mundo: tienda, personaje y ficha de un objeto", async ({ page }) => {
+    await sesionDeHijo(page);
+
+    await page.getByRole("button", { name: "Tienda" }).click();
+    await expect(page.getByRole("dialog", { name: "Tienda de la ciudad" })).toBeVisible();
+    expect(await revisar(page), "tienda").toEqual([]);
+    await page.getByRole("button", { name: "Salir" }).click();
+
+    await page.getByRole("button", { name: /Personalizar el personaje/ }).click();
+    await expect(page.getByRole("dialog", { name: "Tu personaje" })).toBeVisible();
+    expect(await revisar(page), "personaje").toEqual([]);
+    await page.getByRole("button", { name: "Salir" }).click();
+
+    await page.getByRole("link", { name: "Geometría" }).click();
+    await page.getByRole("button", { name: /^Lados de figuras —/ }).click();
+    await expect(page.getByRole("dialog", { name: /Lados de figuras/ })).toBeVisible();
+    expect(await revisar(page), "objeto del mundo").toEqual([]);
   });
 
   test("Boss Challenge", async ({ page }) => {

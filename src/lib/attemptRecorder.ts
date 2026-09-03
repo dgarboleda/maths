@@ -27,6 +27,9 @@ export async function recordModuleAttempt(
   prevProgress: SkillProgress | undefined,
   correct: boolean,
   streak: number,
+  /** Pistas pedidas en este problema: descuenta estrellas con la misma regla
+   * de `economy.ts` que ya aplica la pestaña Práctica. */
+  hintsUsed = 0,
 ): Promise<AttemptOutcome> {
   const { addDoc, collection, doc, serverTimestamp, setDoc } = firestoreFns;
 
@@ -46,7 +49,7 @@ export async function recordModuleAttempt(
 
   let stars = 0;
   if (correct) {
-    stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday: 0 });
+    stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday: 0, hintsUsed });
     await addDoc(collection(db, "parents", parentId, "children", childId, "starLedger"), {
       delta: stars,
       reason: "problem_solved",

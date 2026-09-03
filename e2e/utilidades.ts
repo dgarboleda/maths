@@ -37,12 +37,13 @@ export async function crearHijo(
   return { nombre, pin };
 }
 
-/** Entra al perfil del hijo con su PIN y espera la pantalla de juego. */
+/** Entra al perfil del hijo con su PIN y espera a estar dentro del mundo. */
 export async function entrarAlPerfil(page: Page, nombre: string, pin: string): Promise<void> {
   await page.getByRole("button", { name: `Entrar al perfil de ${nombre}` }).click();
   await page.getByLabel(`PIN de ${nombre}`).fill(pin);
   await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page.getByRole("heading", { name: `¡Hola, ${nombre}!` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ciudad Central" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Centro de Energía" })).toBeVisible();
 }
 
 /** Atajo: cuenta nueva + hijo nuevo + sesión del hijo abierta. */

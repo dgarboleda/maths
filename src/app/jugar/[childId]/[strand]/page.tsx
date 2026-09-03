@@ -7,14 +7,24 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { getStrand } from "@/lib/strands";
-import { modulesForStrand, isMastered, isUnlocked, missingPrerequisites, moduleHref, recommendedModule } from "@/lib/curriculum";
+import { getModule, isMastered, modulesForStrand } from "@/lib/curriculum";
 import { getStrandNarrative } from "@/lib/narrative";
+import { zoneScene, type Interactable } from "@/lib/world/scenes";
+import { activeQuest } from "@/lib/world/quests";
 import { GameShell } from "@/components/GameShell";
+import { ZoneScene } from "@/components/world/ZoneScene";
+import { PuzzleOverlay } from "@/components/world/PuzzleOverlay";
 import { playSound } from "@/lib/gameSound";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
 
-export default function StrandTopicListPage() {
+/**
+ * Interior de una zona del mundo. Los objetos son los módulos reales del
+ * hilo: el candado sale de los prerrequisitos, el problema del generador del
+ * módulo y el intento se guarda donde siempre. El enlace "Entrar" de cada
+ * objeto sigue llevando a la pantalla completa del tema.
+ */
+export default function ZonaPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string; strand: string }>();
@@ -22,6 +32,8 @@ export default function StrandTopicListPage() {
 
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
+  const [selected, setSelected] = useState<Interactable | null>(null);
+  const [streak, setStreak] = useState(0);
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
 
@@ -57,8 +69,7 @@ export default function StrandTopicListPage() {
 
   if (loading || !user) {
     return (
-      <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
           Cargando…
         </p>
@@ -66,7 +77,9 @@ export default function StrandTopicListPage() {
     );
   }
 
-  if (!strand) {
+  const scene = strand ? zoneScene(strand.slug) : null;
+
+  if (!strand || !scene) {
     return (
       <main
         id="contenido"
@@ -83,8 +96,7 @@ export default function StrandTopicListPage() {
 
   if (!child) {
     return (
-      <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
           Cargando…
         </p>
@@ -94,8 +106,11 @@ export default function StrandTopicListPage() {
 
   const modules = modulesForStrand(strand.slug);
   const dominados = modules.filter((mod) => isMastered(progressBySkill, mod.id)).length;
-  const recommended = recommendedModule(progressBySkill, strand.slug);
   const narrative = getStrandNarrative(strand.slug);
+  const quest = activeQuest(progressBySkill);
+  const questModuleIds =
+    quest?.objectives.filter((o) => !o.done && !o.locked).map((o) => o.moduleId) ?? [];
+  const selectedModule = selected ? getModule(selected.moduleId) : null;
 
   return (
     <GameShell
@@ -107,114 +122,84 @@ export default function StrandTopicListPage() {
         </Link>
       }
       stars={totalStars}
+      streak={streak}
       soundOn={soundOn}
       onToggleSound={toggleSound}
     >
-      <div className="space-y-4">
-        <div className="mx-auto flex max-w-xl items-center gap-3 rounded-2xl border-2 border-indigo-500/20 bg-slate-900/60 px-4 py-3">
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-indigo-500/25 bg-slate-900/70 px-4 py-3">
           <span aria-hidden="true" className="text-2xl">
             {narrative.icon}
           </span>
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-bold uppercase tracking-wide text-indigo-200">{narrative.zoneName}</p>
             <p className="text-xs text-slate-400">{narrative.tagline}</p>
           </div>
+          <p className="text-xs font-bold text-indigo-300">
+            {dominados}/{modules.length} temas dominados
+          </p>
         </div>
 
-        <p className="text-center text-sm font-bold text-indigo-300">
-          {dominados}/{modules.length} temas dominados
-        </p>
+        <ZoneScene
+          childId={params.childId}
+          scene={scene}
+          progressBySkill={progressBySkill}
+          questModuleIds={questModuleIds}
+          onSelect={(interactable) => {
+            playSound("click", soundOn);
+            setSelected(interactable);
+          }}
+        />
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {modules.map((mod) => {
-            const mastered = isMastered(progressBySkill, mod.id);
-            const unlocked = isUnlocked(progressBySkill, mod.id);
-            const isRecommended = recommended?.id === mod.id;
-
-            if (!unlocked) {
-              const missing = missingPrerequisites(progressBySkill, mod.id);
-              const missingLabel = missing.map((m) => m.label).join(", ");
-              return (
-                <div
-                  key={mod.id}
-                  aria-disabled="true"
-                  aria-label={`Bloqueado: dominá primero ${missingLabel}`}
-                  className="flex flex-col gap-1 rounded-2xl border-2 border-slate-700/60 bg-slate-900/40 px-4 py-3 text-slate-500"
-                >
-                  <span className="flex items-center gap-3">
-                    <span aria-hidden="true" className="text-2xl">
-                      🔒
-                    </span>
-                    <span className="font-bold">{mod.label}</span>
-                  </span>
-                  <span className="pl-9 text-xs">Dominá primero: {missingLabel}</span>
-                </div>
-              );
-            }
-
-            const href = moduleHref(params.childId, mod);
-
-            return (
-              <Link
-                key={mod.id}
-                href={href}
-                onClick={() => playSound("click", soundOn)}
-                className={`flex items-center justify-between gap-3 rounded-2xl border-2 bg-slate-900/60 px-4 py-3 shadow-sm transition-all hover:scale-[1.02] ${
-                  mastered
-                    ? "border-emerald-400/60 shadow-[0_0_12px_rgba(52,211,153,0.25)]"
-                    : isRecommended
-                      ? "border-violet-400/60 bg-violet-950/40 shadow-[0_0_12px_rgba(167,139,250,0.3)]"
-                      : "border-indigo-500/20"
-                }`}
-              >
-                <span className="flex items-center gap-3">
-                  <span aria-hidden="true" className="text-2xl">
-                    {mod.emoji}
-                  </span>
-                  <span className="font-bold text-slate-100">{mod.label}</span>
-                </span>
-                {mastered ? (
-                  <span className="rounded-full bg-emerald-500/20 px-2 py-1 text-xs font-bold text-emerald-300">
-                    <span aria-hidden="true">✓ </span>Dominado
-                  </span>
-                ) : isRecommended ? (
-                  <span className="rounded-full bg-violet-500/20 px-2 py-1 text-xs font-bold text-violet-300">Recomendado</span>
-                ) : null}
-              </Link>
-            );
-          })}
-        </div>
-
-        <Link
-          href={`/jugar/${params.childId}/${strand.slug}/evento`}
-          onClick={() => playSound("click", soundOn)}
-          className="flex items-center justify-between gap-3 rounded-2xl border-2 border-amber-400/50 bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-3 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-[1.02]"
-        >
-          <span className="flex items-center gap-3">
-            <span aria-hidden="true" className="text-2xl">
-              🔐
-            </span>
-            <span className="font-bold">Código secreto</span>
-          </span>
-          <span className="rounded-full bg-white/20 px-2 py-1 text-xs font-bold">Evento</span>
-        </Link>
-
-        {strand.slug === "logica" && (
+        <div className="grid gap-2 sm:grid-cols-2">
           <Link
-            href={`/jugar/${params.childId}/piramide`}
+            href={`/jugar/${params.childId}/${strand.slug}/evento`}
             onClick={() => playSound("click", soundOn)}
-            className="flex items-center justify-between gap-3 rounded-2xl border-2 border-orange-400/50 bg-gradient-to-r from-red-600 to-orange-600 px-4 py-3 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-[1.02]"
+            className="flex items-center justify-between gap-3 rounded-2xl border-2 border-amber-400/50 bg-gradient-to-r from-amber-600 to-yellow-600 px-4 py-3 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-[1.02]"
           >
             <span className="flex items-center gap-3">
               <span aria-hidden="true" className="text-2xl">
-                🔺
+                🔐
               </span>
-              <span className="font-bold">Pirámide numérica</span>
+              <span className="font-bold">Código secreto</span>
             </span>
-            <span className="rounded-full bg-white/20 px-2 py-1 text-xs font-bold">Especial</span>
+            <span className="rounded-full bg-white/20 px-2 py-1 text-xs font-bold">Evento</span>
           </Link>
-        )}
+
+          {strand.slug === "logica" && (
+            <Link
+              href={`/jugar/${params.childId}/piramide`}
+              onClick={() => playSound("click", soundOn)}
+              className="flex items-center justify-between gap-3 rounded-2xl border-2 border-orange-400/50 bg-gradient-to-r from-red-600 to-orange-600 px-4 py-3 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-[1.02]"
+            >
+              <span className="flex items-center gap-3">
+                <span aria-hidden="true" className="text-2xl">
+                  🔺
+                </span>
+                <span className="font-bold">Pirámide numérica</span>
+              </span>
+              <span className="rounded-full bg-white/20 px-2 py-1 text-xs font-bold">Especial</span>
+            </Link>
+          )}
+        </div>
       </div>
+
+      {selected && selectedModule && (
+        <PuzzleOverlay
+          parentId={user.uid}
+          childId={params.childId}
+          interactable={selected}
+          mod={selectedModule}
+          progressBySkill={progressBySkill}
+          streak={streak}
+          soundOn={soundOn}
+          onClose={() => setSelected(null)}
+          onResolved={(moduleId, updated, correct) => {
+            setProgressBySkill((prev) => ({ ...prev, [moduleId]: updated }));
+            setStreak((s) => (correct ? s + 1 : 0));
+          }}
+        />
+      )}
     </GameShell>
   );
 }

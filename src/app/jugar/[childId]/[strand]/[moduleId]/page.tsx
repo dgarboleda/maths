@@ -9,10 +9,11 @@ import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { recordAttempt, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
 import { getStrand } from "@/lib/strands";
-import { getModule, isMastered, isUnlocked, missingPrerequisites, modulesForStrand } from "@/lib/curriculum";
+import { getModule, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { getStrandNarrative } from "@/lib/narrative";
 import { triggerConfetti } from "@/lib/confetti";
 import { awardBadge } from "@/lib/awardBadge";
+import { awardMasteryBadges } from "@/lib/masteryRewards";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
@@ -125,12 +126,9 @@ export default function TopicPage() {
 
     if (!wasMastered && updated.masteredAt) {
       const mergedProgress = { ...progressBySkill, [mod.id]: updated };
-      const badges: Promise<void>[] = [];
-      if (mod.tier === 0) badges.push(awardBadge(firestore, db, user.uid, params.childId, "resolutor"));
-      if (modulesForStrand(mod.strandSlug).every((m) => isMastered(mergedProgress, m.id))) {
-        badges.push(awardBadge(firestore, db, user.uid, params.childId, `maestro-${mod.strandSlug}`));
-      }
-      Promise.all(badges).catch((err) => console.error("No se pudo otorgar la insignia", err));
+      awardMasteryBadges(firestore, db, user.uid, params.childId, mod, mergedProgress).catch((err) =>
+        console.error("No se pudo otorgar la insignia", err),
+      );
       triggerConfetti();
       setCelebration({ label: mod.label, zoneName: getStrandNarrative(mod.strandSlug).zoneName });
     }

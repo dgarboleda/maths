@@ -191,6 +191,8 @@ test.describe("Recorrido de juego", () => {
     await page.getByRole("link", { name: /← Aritmética de Dani/ }).click();
     await page.getByRole("link", { name: "← Dani" }).click();
 
+    // El canje vive en la tienda de la ciudad: hay que entrar a ella.
+    await page.getByRole("button", { name: "Tienda" }).click();
     await page.getByRole("button", { name: "Pedir canje" }).click();
     await page.getByLabel("¿Qué quieres canjear?").fill("Media hora de consola");
     await page.getByLabel(/¿Cuántas estrellas\?/).fill("1");
