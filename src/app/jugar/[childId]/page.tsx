@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { STRANDS } from "@/lib/strands";
-import { masteredCountForStrand, nextChallenge, recommendedModule } from "@/lib/curriculum";
+import { masteredCountForStrand, moduleHref, nextChallenge, recommendedModule } from "@/lib/curriculum";
 import { getStrandNarrative } from "@/lib/narrative";
 import { getBadge } from "@/lib/badges";
 import { GameShell } from "@/components/GameShell";
@@ -32,10 +32,6 @@ const STRAND_GRADIENTS: Record<string, string> = {
   medicion: "from-emerald-600 to-emerald-900",
   logica: "from-amber-600 to-amber-800",
 };
-
-function moduleHref(childId: string, mod: { id: string; strandSlug: string; href?: (childId: string) => string }): string {
-  return mod.href ? mod.href(childId) : `/jugar/${childId}/${mod.strandSlug}/${mod.id}`;
-}
 
 export default function JugarPage() {
   const { user, loading } = useAuth();

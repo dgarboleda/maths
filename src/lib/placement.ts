@@ -34,6 +34,13 @@ function representativeModule(strandSlug: string, tier: number): ModuleDef {
   return mod;
 }
 
+/** Módulo representativo de una franja, o undefined si no existe — versión
+ * pública y sin throw de `representativeModule`, para armar links desde la
+ * pantalla de resultados (puntos de mejora, "practicar de nuevo"). */
+export function moduleForTier(strandSlug: string, tier: number): ModuleDef | undefined {
+  return modulesForStrand(strandSlug).find((m) => m.tier === tier);
+}
+
 export interface StrandPlacementState {
   strandSlug: string;
   tiers: number[];
@@ -42,19 +49,35 @@ export interface StrandPlacementState {
   itemsAsked: number;
   itemsCorrect: number;
   highestTierPassed: number; // -1 = ni la franja más fácil se pasó
+  /** Franjas falladas a lo largo del recorrido (incluye las del techo). */
+  weakTiers: number[];
+  /** Franja desde la que arrancó este recorrido (0 = basal puro). */
+  startTier: number;
   done: boolean;
 }
 
-export function initStrandPlacement(strandSlug: string): StrandPlacementState {
+/**
+ * `startTier` permite arrancar más arriba que la franja 0 en una
+ * re-evaluación (ver `startTierFor` en la pantalla de evaluación): en vez de
+ * volver a probar desde cero franjas ya acreditadas en una evaluación
+ * anterior, arranca justo encima de la última franja aprobada. La primera
+ * evaluación de un alumno sigue siendo basal puro (startTier=0 por defecto).
+ */
+export function initStrandPlacement(strandSlug: string, startTier = 0): StrandPlacementState {
   const tiers = distinctTiers(strandSlug);
+  const maxTier = tiers.length ? tiers[tiers.length - 1] : 0;
+  const clampedStart = Math.max(0, Math.min(startTier, maxTier));
+  const pointer = Math.max(0, tiers.findIndex((t) => t >= clampedStart));
   return {
     strandSlug,
     tiers,
-    pointer: 0,
+    pointer,
     consecutiveIncorrect: 0,
     itemsAsked: 0,
     itemsCorrect: 0,
     highestTierPassed: -1,
+    weakTiers: [],
+    startTier: clampedStart,
     done: tiers.length === 0,
   };
 }
@@ -77,6 +100,7 @@ export function answerPlacementItem(state: StrandPlacementState, correct: boolea
     itemsAsked: state.itemsAsked + 1,
     itemsCorrect: state.itemsCorrect + (correct ? 1 : 0),
     highestTierPassed: correct ? tier : state.highestTierPassed,
+    weakTiers: correct ? state.weakTiers : [...state.weakTiers, tier],
     done: consecutiveIncorrect >= CEILING_STREAK || nextPointer >= state.tiers.length,
   };
 }
@@ -100,16 +124,27 @@ export function gradeBandForTier(tier: number): string {
   return GRADE_BAND_BY_TIER[tier] ?? `franja ${tier + 1}`;
 }
 
+/**
+ * Si arrancó por encima de la franja 0 (`startTier`), las franjas de abajo
+ * quedan acreditadas por la evaluación anterior aunque no se vuelvan a
+ * probar acá — de lo contrario un alumno que ya iba bien y esta vez arranca
+ * fuerte pero falla temprano vería su nivel "caer a cero" en vez de quedar
+ * en lo que ya tenía. `weakTiers` solo incluye franjas falladas de forma
+ * aislada (con una franja más arriba aprobada después) — no las del techo,
+ * que ya se reflejan en "próximo módulo recomendado".
+ */
 export function strandResultFrom(state: StrandPlacementState): PlacementStrandRecord {
+  const highestTierPassed = Math.max(state.startTier - 1, state.highestTierPassed);
   return {
     itemsAsked: state.itemsAsked,
     itemsCorrect: state.itemsCorrect,
-    highestTierPassed: state.highestTierPassed,
-    gradeBand: gradeBandForTier(state.highestTierPassed),
+    highestTierPassed,
+    gradeBand: gradeBandForTier(highestTierPassed),
+    weakTiers: state.weakTiers.filter((t) => t < state.highestTierPassed),
   };
 }
 
-function maxTierForStrand(strandSlug: string): number {
+export function maxTierForStrand(strandSlug: string): number {
   const tiers = distinctTiers(strandSlug);
   return tiers.length ? tiers[tiers.length - 1] : 0;
 }

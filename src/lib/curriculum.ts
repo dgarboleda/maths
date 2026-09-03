@@ -647,6 +647,11 @@ export function getModule(id: string): ModuleDef | undefined {
   return MODULES_BY_ID.get(id);
 }
 
+/** Ruta de un módulo: la propia si la tiene (p. ej. la tabla de multiplicar), si no la genérica. */
+export function moduleHref(childId: string, mod: ModuleDef): string {
+  return mod.href ? mod.href(childId) : `/jugar/${childId}/${mod.strandSlug}/${mod.id}`;
+}
+
 /** Módulos de un hilo, en orden de franja (y de dificultad dentro de la franja). */
 export function modulesForStrand(strandSlug: string): ModuleDef[] {
   return MODULES.filter((m) => m.strandSlug === strandSlug).sort(

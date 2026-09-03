@@ -50,6 +50,10 @@ export interface PlacementStrandRecord {
   itemsCorrect: number;
   highestTierPassed: number; // -1 = ni la franja más fácil se pasó
   gradeBand: string;
+  /** Franjas donde falló pero luego siguió acertando más arriba — "puntos de
+   * mejora" dentro de lo ya alcanzado, para el plan de la pantalla de
+   * resultados. No incluye las franjas del techo (las que cerraron el hilo). */
+  weakTiers: number[];
 }
 
 /** /parents/{parentId}/children/{childId}/badges/{badgeId} — se otorgan una

@@ -111,7 +111,13 @@ export async function sembrarEvaluacion(
   opts: {
     perStrand: Record<
       string,
-      { itemsAsked: number; itemsCorrect: number; highestTierPassed: number; gradeBand: string }
+      {
+        itemsAsked: number;
+        itemsCorrect: number;
+        highestTierPassed: number;
+        gradeBand: string;
+        weakTiers?: number[];
+      }
     >;
     overallScore: number;
     overallGradeBand: string;
