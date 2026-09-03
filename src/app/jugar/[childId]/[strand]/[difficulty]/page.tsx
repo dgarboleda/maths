@@ -85,24 +85,34 @@ export default function TopicPage() {
   async function submitAnswer(correct: boolean): Promise<number> {
     if (!user || !strand) return 0;
 
-    const {
-      db,
-      firestore: { addDoc, collection, doc, serverTimestamp, setDoc },
-    } = await getFirebase();
-
-    await addDoc(collection(db, "parents", user.uid, "children", params.childId, "attempts"), {
-      skillId: `${strand.slug}-topico-d${difficulty}`,
-      itemId: crypto.randomUUID(),
-      correct,
-      createdAt: serverTimestamp(),
-    });
+    // El progreso/racha/estrellas se calculan de una función pura sobre
+    // estado que ya tenemos en el cliente: no hace falta esperar a que
+    // Firestore confirme nada para saber el resultado. Antes cada intento
+    // esperaba 2-3 escrituras seguidas antes de avisar al llamador (el modo
+    // Cohete usa ese valor para dar feedback inmediato y avanzar a la
+    // siguiente pregunta) — en una red lenta eso se sentía como que el
+    // juego se congelaba hasta el siguiente tick del cronómetro. Ahora se
+    // actualiza el estado local y se responde de inmediato; el guardado en
+    // Firestore corre en segundo plano.
+    const { db, firestore: { addDoc, collection, doc, serverTimestamp, setDoc } } =
+      await getFirebase();
 
     const updated = recordAttempt(progress, correct, todayKey());
-    await setDoc(
-      doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", skillKey),
-      updated,
-    );
     setProgress(updated);
+
+    const persistAttempt = async () => {
+      await addDoc(collection(db, "parents", user.uid, "children", params.childId, "attempts"), {
+        skillId: `${strand.slug}-topico-d${difficulty}`,
+        itemId: crypto.randomUUID(),
+        correct,
+        createdAt: serverTimestamp(),
+      });
+      await setDoc(
+        doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", skillKey),
+        updated,
+      );
+    };
+    persistAttempt().catch((err) => console.error("No se pudo guardar el intento", err));
 
     if (!correct) {
       setStreak(0);
@@ -110,14 +120,14 @@ export default function TopicPage() {
     }
 
     const stars = starsForAnswer({ difficulty, streak, repeatsToday });
-    await addDoc(collection(db, "parents", user.uid, "children", params.childId, "starLedger"), {
+    setStreak((s) => s + 1);
+    setRepeatsToday((n) => n + 1);
+    addDoc(collection(db, "parents", user.uid, "children", params.childId, "starLedger"), {
       delta: stars,
       reason: "problem_solved",
       attemptId: null,
       createdAt: serverTimestamp(),
-    });
-    setStreak((s) => s + 1);
-    setRepeatsToday((n) => n + 1);
+    }).catch((err) => console.error("No se pudo guardar la estrella", err));
     return stars;
   }
 
