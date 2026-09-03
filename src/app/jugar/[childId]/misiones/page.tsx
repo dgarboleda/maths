@@ -12,6 +12,7 @@ import { getStrandNarrative } from "@/lib/narrative";
 import { GameShell } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
+import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 /**
  * Diario de misiones. Cada objetivo apunta a un módulo real y se marca con el
@@ -26,6 +27,7 @@ export default function MisionesPage() {
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
+  const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -57,7 +59,7 @@ export default function MisionesPage() {
     };
   }, [user, params.childId]);
 
-  if (loading || !user || !child) {
+  if (loading || !user || !child || placementPending) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">

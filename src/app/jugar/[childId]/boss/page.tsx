@@ -12,6 +12,7 @@ import { GameShell } from "@/components/GameShell";
 import { MultiModuleChallenge } from "@/components/topic/MultiModuleChallenge";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
+import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 /** Hasta un módulo recomendado por hilo — nunca uno bloqueado ni ya dominado
  * (recommendedModule ya garantiza eso), se salta los hilos sin recomendado. */
@@ -31,6 +32,7 @@ export default function BossChallengePage() {
   const [progressLoaded, setProgressLoaded] = useState(false);
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
+  const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -75,7 +77,7 @@ export default function BossChallengePage() {
     );
   }
 
-  if (!child || !progressLoaded) {
+  if (!child || !progressLoaded || placementPending) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">

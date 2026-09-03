@@ -12,6 +12,7 @@ import { isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
+import { useRequirePlacement } from "@/lib/useRequirePlacement";
 import { ConceptoTab } from "@/components/multiplicacion/ConceptoTab";
 import { PracticaTab } from "@/components/multiplicacion/PracticaTab";
 import { CoheteTab } from "@/components/multiplicacion/CoheteTab";
@@ -52,6 +53,7 @@ export default function MultiplicacionPage() {
   const [repeatsToday, setRepeatsToday] = useState(0);
   const [soundOn, toggleSound] = useSoundPreference();
   const [activeTab, setActiveTab] = useState<TabId>("concepto");
+  const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -144,7 +146,7 @@ export default function MultiplicacionPage() {
     );
   }
 
-  if (!child) {
+  if (!child || placementPending) {
     return (
       <main id="contenido"
         tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">

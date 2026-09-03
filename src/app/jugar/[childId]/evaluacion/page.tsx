@@ -293,13 +293,18 @@ function IntroScreen({
       </p>
       <p className="text-sm text-slate-500">Dura entre 10 y 20 minutos. No es examen — no hay una nota, solo nos ayuda a ubicarte.</p>
 
-      {ultimaEvaluacion?.completedAt && (
+      {ultimaEvaluacion?.completedAt ? (
         <div className="rounded-2xl border-2 border-purple-100 bg-white p-4 text-left text-sm text-slate-600">
           <p className="font-bold text-purple-800">
             Ya hiciste esta evaluación antes: nivel general aproximado {ultimaEvaluacion.overallGradeBand}.
           </p>
           <p>Puedes volver a hacerla para ver cuánto has avanzado — esta vez arrancamos desde ahí, no desde cero.</p>
         </div>
+      ) : (
+        <p className="text-sm font-bold text-purple-800">
+          Es el primer paso: sin esta evaluación no armamos tu plan de temas, así que hay que completarla para
+          empezar a practicar.
+        </p>
       )}
 
       <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -310,9 +315,11 @@ function IntroScreen({
         >
           {ultimaEvaluacion ? "Evaluar de nuevo" : "Comenzar evaluación"}
         </button>
-        <Link href={childHref} className="text-sm font-bold text-slate-600 underline underline-offset-2">
-          Omitir por ahora
-        </Link>
+        {ultimaEvaluacion && (
+          <Link href={childHref} className="text-sm font-bold text-slate-600 underline underline-offset-2">
+            Omitir por ahora
+          </Link>
+        )}
       </div>
     </div>
   );

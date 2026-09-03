@@ -11,6 +11,7 @@ import { GameShell } from "@/components/GameShell";
 import { PyramidGame } from "@/components/pyramid/PyramidGame";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
+import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 export default function PiramidePage() {
   const { user, loading } = useAuth();
@@ -22,6 +23,7 @@ export default function PiramidePage() {
   const [streak, setStreak] = useState(0);
   const [repeatsToday, setRepeatsToday] = useState(0);
   const [soundOn, toggleSound] = useSoundPreference();
+  const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -87,7 +89,7 @@ export default function PiramidePage() {
     );
   }
 
-  if (!child) {
+  if (!child || placementPending) {
     return (
       <main id="contenido"
         tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">

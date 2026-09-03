@@ -16,6 +16,7 @@ import { AvatarEditor } from "@/components/world/AvatarEditor";
 import { playSound } from "@/lib/gameSound";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
+import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 /**
  * Ciudad Central: la pantalla de entrada del niño ya no es un tablero de
@@ -34,10 +35,10 @@ export default function CiudadCentralPage() {
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
   const [look, setLook] = useState<AvatarLook | null>(null);
   const [panel, setPanel] = useState<"ninguno" | "tienda" | "personaje">("ninguno");
-  const [npcDismissed, setNpcDismissed] = useState(false);
   const [npcAbierto, setNpcAbierto] = useState(false);
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
+  const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -147,7 +148,7 @@ export default function CiudadCentralPage() {
     );
   }
 
-  if (!child || !look) {
+  if (!child || !look || placementPending) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
@@ -158,10 +159,9 @@ export default function CiudadCentralPage() {
   }
 
   const quest = activeQuest(progressBySkill);
-  const evaluacionPendiente = child.placementStatus !== "completo";
-  // Ada aparece sola la primera vez (evaluación pendiente) y se puede volver a
-  // llamar tocándola: es la única puerta del niño a repetir la evaluación.
-  const mostrarAda = (evaluacionPendiente && !npcDismissed) || npcAbierto;
+  // La evaluación inicial ya es obligatoria para llegar hasta aquí
+  // (useRequirePlacement redirige mientras esté pendiente): Ada solo
+  // ofrece repetirla, y únicamente cuando el niño la llama.
 
   return (
     <main id="contenido" tabIndex={-1} className="min-h-screen bg-slate-950 px-3 py-3 sm:px-4 sm:py-4">
@@ -178,28 +178,17 @@ export default function CiudadCentralPage() {
           nextChallengeModule={nextChallenge(progressBySkill)}
         />
 
-        {mostrarAda && (
+        {npcAbierto && (
           <div className="mb-2 flex items-start gap-3 rounded-2xl border-2 border-cyan-400/40 bg-gradient-to-r from-slate-900 to-cyan-950/60 px-4 py-3">
             <span aria-hidden="true" className="text-3xl">
               🧑‍🔬
             </span>
             <div className="flex-1">
               <p className="text-sm font-bold text-cyan-100">
-                Ada, la ingeniera:{" "}
-                {evaluacionPendiente ? (
-                  <>
-                    <span aria-hidden="true">🎯 </span>¿Hacemos una evaluación rápida?
-                  </>
-                ) : (
-                  <>
-                    <span aria-hidden="true">🎯 </span>¿Volvemos a medir tu nivel?
-                  </>
-                )}
+                Ada, la ingeniera: <span aria-hidden="true">🎯 </span>¿Volvemos a medir tu nivel?
               </p>
               <p className="text-xs text-cyan-300/90">
-                {evaluacionPendiente
-                  ? "—Antes de bajar al túnel necesito saber con qué herramientas cuentas. Dura 10-20 minutos."
-                  : "—Repetirla te dice cuánto avanzaste desde la última vez. Empezamos justo encima de lo que ya dominas."}
+                —Repetirla te dice cuánto avanzaste desde la última vez. Empezamos justo encima de lo que ya dominas.
               </p>
               <div className="mt-2 flex items-center gap-3">
                 <Link
@@ -207,14 +196,11 @@ export default function CiudadCentralPage() {
                   onClick={() => playSound("click", soundOn)}
                   className="rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-1.5 text-sm font-bold text-white"
                 >
-                  {evaluacionPendiente ? "Empezar" : "Volver a evaluar"}
+                  Volver a evaluar
                 </Link>
                 <button
                   type="button"
-                  onClick={() => {
-                    setNpcDismissed(true);
-                    setNpcAbierto(false);
-                  }}
+                  onClick={() => setNpcAbierto(false)}
                   className="text-sm font-bold text-cyan-300 underline underline-offset-2"
                 >
                   Ahora no
@@ -236,10 +222,8 @@ export default function CiudadCentralPage() {
           }}
           onOpenNpc={() => {
             playSound("click", soundOn);
-            setNpcDismissed(false);
             setNpcAbierto(true);
           }}
-          npcAlert={evaluacionPendiente}
         />
 
         <QuestPanel

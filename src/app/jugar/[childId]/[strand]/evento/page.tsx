@@ -13,6 +13,7 @@ import { GameShell } from "@/components/GameShell";
 import { MultiModuleChallenge } from "@/components/topic/MultiModuleChallenge";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
+import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 const MAX_CHALLENGES = 3;
 
@@ -37,6 +38,7 @@ export default function CodigoSecretoPage() {
   const [digits, setDigits] = useState<Record<number, number>>({});
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
+  const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -99,7 +101,7 @@ export default function CodigoSecretoPage() {
     );
   }
 
-  if (!child || !progressLoaded) {
+  if (!child || !progressLoaded || placementPending) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
