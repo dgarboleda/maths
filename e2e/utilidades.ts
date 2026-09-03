@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { deleteApp, initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { connectFirestoreEmulator, doc, getFirestore, setDoc } from "firebase/firestore";
+import { collection, connectFirestoreEmulator, doc, getFirestore, setDoc, writeBatch } from "firebase/firestore";
 
 export const CLAVE_PADRE = "secreto123";
 
@@ -93,6 +93,65 @@ export async function otorgarDominio(correo: string, childId: string, moduleIds:
         }),
       ),
     );
+  } finally {
+    await deleteApp(app);
+  }
+}
+
+/**
+ * Guarda directo en Firestore el resultado de una evaluación de ubicación ya
+ * "hecha" — sin recorrer las ~40 preguntas adaptativas del flujo real — para
+ * poder probar la lectura (historial en el panel, insignias de "dominado
+ * por evaluación") sin depender de qué tipo de control le toque a cada
+ * pregunta al azar.
+ */
+export async function sembrarEvaluacion(
+  correo: string,
+  childId: string,
+  opts: {
+    perStrand: Record<
+      string,
+      { itemsAsked: number; itemsCorrect: number; highestTierPassed: number; gradeBand: string }
+    >;
+    overallScore: number;
+    overallGradeBand: string;
+    grantedModuleIds: string[];
+  },
+): Promise<void> {
+  const app = initializeApp(
+    { apiKey: "demo-api-key", projectId: "demo-numerario" },
+    `sembrar-${crypto.randomUUID()}`,
+  );
+  try {
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
+
+    const db = getFirestore(app);
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+    const batch = writeBatch(db);
+    const placementRef = doc(
+      collection(db, "parents", user.uid, "children", childId, "placements"),
+    );
+    batch.set(placementRef, {
+      startedAt: Date.now() - 10 * 60 * 1000,
+      completedAt: Date.now(),
+      perStrand: opts.perStrand,
+      overallScore: opts.overallScore,
+      overallGradeBand: opts.overallGradeBand,
+      grantedModuleIds: opts.grantedModuleIds,
+    });
+    for (const moduleId of opts.grantedModuleIds) {
+      batch.set(doc(db, "parents", user.uid, "children", childId, "skillsProgress", moduleId), {
+        recentResults: [],
+        recentAccuracy: 1,
+        masteredAt: Date.now(),
+        masteredVia: "placement",
+      });
+    }
+    batch.update(doc(db, "parents", user.uid, "children", childId), { placementStatus: "completo" });
+    await batch.commit();
   } finally {
     await deleteApp(app);
   }

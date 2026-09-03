@@ -39,6 +39,10 @@ service cloud.firestore {
         match /redemptionRequests/{requestId} {
           allow read, write: if isParent(parentId);
         }
+
+        match /placements/{placementId} {
+          allow read, write: if isParent(parentId);
+        }
       }
     }
 

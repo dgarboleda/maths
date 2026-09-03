@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
-import type { ChildProfile, SkillProgress } from "@/lib/types";
-import { getStrand } from "@/lib/strands";
+import type { ChildProfile, Placement, SkillProgress } from "@/lib/types";
+import { getStrand, STRANDS } from "@/lib/strands";
 import { MODULES, isMastered, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 
 const STRAND_COLORS: Record<string, string> = {
@@ -17,12 +17,17 @@ const STRAND_COLORS: Record<string, string> = {
   logica: "bg-amber-100 text-amber-800",
 };
 
+interface PlacementDoc extends Placement {
+  id: string;
+}
+
 export default function CurriculaPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
+  const [evaluaciones, setEvaluaciones] = useState<PlacementDoc[]>([]);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -34,7 +39,7 @@ export default function CurriculaPage() {
     (async () => {
       const {
         db,
-        firestore: { collection, doc, getDoc, getDocs },
+        firestore: { collection, doc, getDoc, getDocs, orderBy, query },
       } = await getFirebase();
       if (cancelled) return;
       const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
@@ -48,6 +53,17 @@ export default function CurriculaPage() {
       const map: Record<string, SkillProgress> = {};
       progressSnap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
       setProgressBySkill(map);
+
+      const placementsSnap = await getDocs(
+        query(
+          collection(db, "parents", user.uid, "children", params.childId, "placements"),
+          orderBy("completedAt", "desc"),
+        ),
+      );
+      if (cancelled) return;
+      setEvaluaciones(
+        placementsSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Placement) })),
+      );
     })().catch((err) => console.error("No se pudo cargar el progreso", err));
     return () => {
       cancelled = true;
@@ -93,6 +109,51 @@ export default function CurriculaPage() {
         </p>
       </div>
 
+      <section aria-label="Evaluaciones de ubicación" className="flex flex-col gap-3 rounded-xl border border-neutral-200 p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-neutral-900">Evaluaciones de ubicación</h2>
+          <Link
+            href={`/jugar/${params.childId}/evaluacion`}
+            className="text-sm text-neutral-500 underline underline-offset-2"
+          >
+            {evaluaciones.length > 0 ? "Volver a evaluar" : "Hacer la evaluación inicial"}
+          </Link>
+        </div>
+
+        {evaluaciones.length === 0 ? (
+          <p className="text-sm text-neutral-600">
+            Todavía no se ha hecho ninguna evaluación de ubicación. Sirve como línea base para medir el avance con el
+            tiempo.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {evaluaciones.map((ev) => (
+              <li key={ev.id} className="rounded-lg border border-neutral-100 bg-neutral-50 p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-neutral-900">
+                    {ev.completedAt ? new Date(ev.completedAt).toLocaleDateString("es") : "…"}
+                  </span>
+                  <span className="font-medium text-purple-700">
+                    {ev.overallGradeBand} ({ev.overallScore}/100)
+                  </span>
+                </div>
+                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-neutral-600">
+                  {STRANDS.map((s) => {
+                    const r = ev.perStrand[s.slug];
+                    if (!r) return null;
+                    return (
+                      <span key={s.slug}>
+                        {s.emoji} {r.gradeBand}
+                      </span>
+                    );
+                  })}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <div className="flex flex-col gap-6">
         {tiers.map((tier) => (
           <section key={tier} aria-label={`Franja ${tier + 1}`} className="flex flex-col gap-2">
@@ -100,6 +161,7 @@ export default function CurriculaPage() {
             <ul className="flex flex-col gap-1">
               {MODULES.filter((m) => m.tier === tier).map((mod) => {
                 const mastered = isMastered(progressBySkill, mod.id);
+                const viaPlacement = progressBySkill[mod.id]?.masteredVia === "placement";
                 const unlocked = isUnlocked(progressBySkill, mod.id);
                 const missing = missingPrerequisites(progressBySkill, mod.id);
                 const strandLabel = getStrand(mod.strandSlug)?.label ?? mod.strandSlug;
@@ -117,7 +179,9 @@ export default function CurriculaPage() {
                       </span>
                     </span>
                     {mastered ? (
-                      <span className="font-medium text-emerald-700">✓ Dominado</span>
+                      <span className="font-medium text-emerald-700">
+                        ✓ Dominado{viaPlacement ? " (evaluación inicial)" : ""}
+                      </span>
                     ) : unlocked ? (
                       <span className="font-medium text-purple-700">▶ Desbloqueado</span>
                     ) : (
