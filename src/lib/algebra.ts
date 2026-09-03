@@ -68,6 +68,7 @@ export function generateProblem(difficulty: number): Problem {
         answer: x,
         inputType: "integer",
         hints: ecuacionSumaHints(b, x + b, x),
+        flavor: "🧪 Un experimento del laboratorio esconde una cantidad x.",
       };
     }
     case 4: {

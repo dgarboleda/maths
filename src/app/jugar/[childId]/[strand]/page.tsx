@@ -8,6 +8,7 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { getStrand } from "@/lib/strands";
 import { modulesForStrand, isMastered, isUnlocked, missingPrerequisites, recommendedModule } from "@/lib/curriculum";
+import { getStrandNarrative } from "@/lib/narrative";
 import { GameShell } from "@/components/GameShell";
 import { playSound } from "@/lib/gameSound";
 import { useTotalStars } from "@/lib/useTotalStars";
@@ -94,6 +95,7 @@ export default function StrandTopicListPage() {
   const modules = modulesForStrand(strand.slug);
   const dominados = modules.filter((mod) => isMastered(progressBySkill, mod.id)).length;
   const recommended = recommendedModule(progressBySkill, strand.slug);
+  const narrative = getStrandNarrative(strand.slug);
 
   return (
     <GameShell
@@ -109,6 +111,16 @@ export default function StrandTopicListPage() {
       onToggleSound={toggleSound}
     >
       <div className="space-y-4">
+        <div className="mx-auto flex max-w-xl items-center gap-3 rounded-2xl border-2 border-indigo-500/20 bg-slate-900/60 px-4 py-3">
+          <span aria-hidden="true" className="text-2xl">
+            {narrative.icon}
+          </span>
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wide text-indigo-200">{narrative.zoneName}</p>
+            <p className="text-xs text-slate-400">{narrative.tagline}</p>
+          </div>
+        </div>
+
         <p className="text-center text-sm font-bold text-indigo-300">
           {dominados}/{modules.length} temas dominados
         </p>
@@ -172,6 +184,20 @@ export default function StrandTopicListPage() {
             );
           })}
         </div>
+
+        <Link
+          href={`/jugar/${params.childId}/${strand.slug}/evento`}
+          onClick={() => playSound("click", soundOn)}
+          className="flex items-center justify-between gap-3 rounded-2xl border-2 border-amber-400/50 bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-3 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-[1.02]"
+        >
+          <span className="flex items-center gap-3">
+            <span aria-hidden="true" className="text-2xl">
+              🔐
+            </span>
+            <span className="font-bold">Código secreto</span>
+          </span>
+          <span className="rounded-full bg-white/20 px-2 py-1 text-xs font-bold">Evento</span>
+        </Link>
 
         {strand.slug === "logica" && (
           <Link

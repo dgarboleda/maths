@@ -10,6 +10,8 @@ import { recordAttempt, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
 import { getStrand } from "@/lib/strands";
 import { getModule, isMastered, isUnlocked, missingPrerequisites, modulesForStrand } from "@/lib/curriculum";
+import { getStrandNarrative } from "@/lib/narrative";
+import { triggerConfetti } from "@/lib/confetti";
 import { awardBadge } from "@/lib/awardBadge";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
@@ -53,6 +55,7 @@ export default function TopicPage() {
   const [repeatsToday, setRepeatsToday] = useState(0);
   const [soundOn, toggleSound] = useSoundPreference();
   const [activeTab, setActiveTab] = useState<TabId>("concepto");
+  const [celebration, setCelebration] = useState<{ label: string; zoneName: string } | null>(null);
 
   const skillKey = mod?.id ?? "";
 
@@ -128,6 +131,8 @@ export default function TopicPage() {
         badges.push(awardBadge(firestore, db, user.uid, params.childId, `maestro-${mod.strandSlug}`));
       }
       Promise.all(badges).catch((err) => console.error("No se pudo otorgar la insignia", err));
+      triggerConfetti();
+      setCelebration({ label: mod.label, zoneName: getStrandNarrative(mod.strandSlug).zoneName });
     }
 
     if (!correct) {
@@ -247,6 +252,30 @@ export default function TopicPage() {
       onToggleSound={toggleSound}
       nav={<TabNav tabs={TABS} active={activeTab} onSelect={setActiveTab} />}
     >
+      {celebration && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mx-auto mb-4 flex max-w-md flex-col items-center gap-2 rounded-3xl border-2 border-emerald-400/60 bg-emerald-950/60 px-6 py-5 text-center shadow-[0_0_20px_rgba(52,211,153,0.3)]"
+        >
+          <p className="text-xs font-bold uppercase tracking-wide text-emerald-300">
+            <span aria-hidden="true">✓ </span>Habilidad dominada
+          </p>
+          <p className="text-lg font-bold text-emerald-100">{celebration.label}</p>
+          <p className="text-sm text-emerald-300">
+            <span aria-hidden="true">⚡ </span>
+            {celebration.zoneName} avanza
+          </p>
+          <button
+            type="button"
+            onClick={() => setCelebration(null)}
+            className="mt-2 rounded-xl bg-emerald-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-emerald-500"
+          >
+            Continuar
+          </button>
+        </div>
+      )}
+
       {activeTab === "concepto" && (
         <div {...panelProps("concepto")} className="rounded-3xl border-4 border-indigo-300 bg-white p-6 shadow-xl">
           <ConceptoGeneric moduleId={mod.id} />

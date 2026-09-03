@@ -18,6 +18,7 @@ import { DataConcept } from "@/components/topic/concepts/DataConcept";
 import { WordProblemConcept } from "@/components/topic/concepts/WordProblemConcept";
 import { McdMcmConcept } from "@/components/topic/concepts/McdMcmConcept";
 import { FraccionesDistintoDenomConcept } from "@/components/topic/concepts/FraccionesDistintoDenomConcept";
+import { STRANDS } from "./strands";
 
 /**
  * Currícula: un solo grafo de módulos con prerrequisitos explícitos, que
@@ -701,4 +702,40 @@ export function countUnlocked(
   const modules = modulesForStrand(strandSlug);
   const unlocked = modules.filter((m) => isUnlocked(progressBySkill, m.id)).length;
   return { unlocked, total: modules.length };
+}
+
+export function masteredCountForStrand(
+  progressBySkill: Record<string, SkillProgress>,
+  strandSlug: string,
+): { mastered: number; total: number } {
+  const modules = modulesForStrand(strandSlug);
+  const mastered = modules.filter((m) => isMastered(progressBySkill, m.id)).length;
+  return { mastered, total: modules.length };
+}
+
+/**
+ * "Tu próximo desafío": el mismo criterio que `recommendedModule` (nunca
+ * bloqueado, nunca ya dominado), pero mirando todos los hilos a la vez.
+ * Si se pasa `preferredStrand`, se prioriza el recomendado de ese hilo;
+ * si no hay ninguno ahí (o no se pasó), se elige entre los recomendados de
+ * cada hilo el de menor franja, y ante empate el que aparece primero en
+ * `STRANDS`.
+ */
+export function nextChallenge(
+  progressBySkill: Record<string, SkillProgress>,
+  preferredStrand?: string,
+): ModuleDef | null {
+  if (preferredStrand) {
+    const preferred = recommendedModule(progressBySkill, preferredStrand);
+    if (preferred) return preferred;
+  }
+
+  let best: ModuleDef | null = null;
+  for (const strand of STRANDS) {
+    const candidate = recommendedModule(progressBySkill, strand.slug);
+    if (candidate && (!best || candidate.tier < best.tier)) {
+      best = candidate;
+    }
+  }
+  return best;
 }

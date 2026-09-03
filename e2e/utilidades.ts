@@ -157,6 +157,45 @@ export async function sembrarEvaluacion(
   }
 }
 
+/**
+ * Deja un módulo a un solo acierto real de distancia de dominarlo: siembra
+ * 11 intentos correctos repartidos en 2 días distintos (uno menos que
+ * MASTERY_WINDOW, ya con MIN_DAY_SPAN cumplido), sin tocar `masteredAt`. Sirve
+ * para probar la transición real a mastery (y su celebración) contestando
+ * una sola pregunta real de UI en vez de jugar 12 rondas completas.
+ */
+export async function sembrarProgresoCercaDeDominio(
+  correo: string,
+  childId: string,
+  moduleId: string,
+): Promise<void> {
+  const app = initializeApp(
+    { apiKey: "demo-api-key", projectId: "demo-numerario" },
+    `progreso-${crypto.randomUUID()}`,
+  );
+  try {
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
+
+    const db = getFirestore(app);
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+    const recentResults = Array.from({ length: 11 }, (_, i) => ({
+      correct: true,
+      day: i < 6 ? "2020-01-01" : "2020-01-02",
+    }));
+
+    await setDoc(doc(db, "parents", user.uid, "children", childId, "skillsProgress", moduleId), {
+      recentResults,
+      recentAccuracy: 1,
+      masteredAt: null,
+    });
+  } finally {
+    await deleteApp(app);
+  }
+}
+
 /** Otorga directo en Firestore una insignia ya ganada, sin recorrer el evento real que la dispara. */
 export async function otorgarInsignia(correo: string, childId: string, badgeId: string): Promise<void> {
   const app = initializeApp(

@@ -57,6 +57,7 @@ export function generateProblem(difficulty: number): Problem {
         answer: porPlato,
         inputType: "integer",
         hints: problemaDivisionHints(porPlato * platos, platos, porPlato),
+        flavor: "🕵️ En el Distrito Misterioso hay que repartir las pistas por igual entre los investigadores.",
       };
     }
     case 4: {

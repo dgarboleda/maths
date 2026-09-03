@@ -31,6 +31,7 @@ export function generateProblem(difficulty: number): Problem {
         lineMax: 5,
         startValue: a,
         hints: sumaHints(a, b, answer),
+        flavor: "⚡ La central necesita reservas de energía extra.",
       };
     }
     case 2: {
