@@ -3,6 +3,7 @@ import {
   idDeHijo,
   otorgarDominio,
   resolverEnunciado,
+  sembrarEvaluacion,
   sembrarProgresoCercaDeDominio,
   sesionDeHijo,
 } from "./utilidades";
@@ -120,6 +121,30 @@ test.describe("Mundo: Ciudad Central", () => {
     await otorgarDominio(correo, childId, ["aritmetica-d1"]);
     await page.reload();
     await expect(objetivo).toContainText("Completado:");
+  });
+
+  test("Ada deja volver a evaluar desde el mundo cuando la evaluación ya está hecha", async ({
+    page,
+  }) => {
+    const { correo } = await sesionDeHijo(page);
+    const childId = idDeHijo(page);
+    await sembrarEvaluacion(correo, childId, {
+      perStrand: {
+        aritmetica: { itemsAsked: 2, itemsCorrect: 1, highestTierPassed: 0, gradeBand: "preescolar–1.º" },
+      },
+      overallScore: 10,
+      overallGradeBand: "preescolar–1.º",
+      grantedModuleIds: ["aritmetica-d1"],
+    });
+
+    await page.goto(`/jugar/${childId}`);
+    // Con la evaluación hecha, Ada ya no interrumpe sola…
+    await expect(page.getByText("¿Volvemos a medir tu nivel?")).toBeHidden();
+
+    // …pero sigue siendo la puerta del niño a repetirla.
+    await page.getByRole("button", { name: /Ada, la ingeniera/ }).click();
+    await page.getByRole("link", { name: "Volver a evaluar" }).click();
+    await expect(page).toHaveURL(/\/evaluacion$/);
   });
 
   test("el personaje se guarda en Firestore y sigue igual al recargar", async ({ page }) => {

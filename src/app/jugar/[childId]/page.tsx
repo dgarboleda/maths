@@ -35,6 +35,7 @@ export default function CiudadCentralPage() {
   const [look, setLook] = useState<AvatarLook | null>(null);
   const [panel, setPanel] = useState<"ninguno" | "tienda" | "personaje">("ninguno");
   const [npcDismissed, setNpcDismissed] = useState(false);
+  const [npcAbierto, setNpcAbierto] = useState(false);
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
 
@@ -158,7 +159,9 @@ export default function CiudadCentralPage() {
 
   const quest = activeQuest(progressBySkill);
   const evaluacionPendiente = child.placementStatus !== "completo";
-  const mostrarAda = evaluacionPendiente && !npcDismissed;
+  // Ada aparece sola la primera vez (evaluación pendiente) y se puede volver a
+  // llamar tocándola: es la única puerta del niño a repetir la evaluación.
+  const mostrarAda = (evaluacionPendiente && !npcDismissed) || npcAbierto;
 
   return (
     <main id="contenido" tabIndex={-1} className="min-h-screen bg-slate-950 px-3 py-3 sm:px-4 sm:py-4">
@@ -182,10 +185,21 @@ export default function CiudadCentralPage() {
             </span>
             <div className="flex-1">
               <p className="text-sm font-bold text-cyan-100">
-                Ada, la ingeniera: <span aria-hidden="true">🎯 </span>¿Hacemos una evaluación rápida?
+                Ada, la ingeniera:{" "}
+                {evaluacionPendiente ? (
+                  <>
+                    <span aria-hidden="true">🎯 </span>¿Hacemos una evaluación rápida?
+                  </>
+                ) : (
+                  <>
+                    <span aria-hidden="true">🎯 </span>¿Volvemos a medir tu nivel?
+                  </>
+                )}
               </p>
               <p className="text-xs text-cyan-300/90">
-                —Antes de bajar al túnel necesito saber con qué herramientas cuentas. Dura 10-20 minutos.
+                {evaluacionPendiente
+                  ? "—Antes de bajar al túnel necesito saber con qué herramientas cuentas. Dura 10-20 minutos."
+                  : "—Repetirla te dice cuánto avanzaste desde la última vez. Empezamos justo encima de lo que ya dominas."}
               </p>
               <div className="mt-2 flex items-center gap-3">
                 <Link
@@ -193,11 +207,14 @@ export default function CiudadCentralPage() {
                   onClick={() => playSound("click", soundOn)}
                   className="rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-1.5 text-sm font-bold text-white"
                 >
-                  Empezar
+                  {evaluacionPendiente ? "Empezar" : "Volver a evaluar"}
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setNpcDismissed(true)}
+                  onClick={() => {
+                    setNpcDismissed(true);
+                    setNpcAbierto(false);
+                  }}
                   className="text-sm font-bold text-cyan-300 underline underline-offset-2"
                 >
                   Ahora no
@@ -220,7 +237,7 @@ export default function CiudadCentralPage() {
           onOpenNpc={() => {
             playSound("click", soundOn);
             setNpcDismissed(false);
-            if (!evaluacionPendiente) router.push(`/jugar/${params.childId}/misiones`);
+            setNpcAbierto(true);
           }}
           npcAlert={evaluacionPendiente}
         />
