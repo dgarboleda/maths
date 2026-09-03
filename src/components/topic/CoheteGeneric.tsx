@@ -196,6 +196,11 @@ export function CoheteGeneric({
             </div>
 
             <div className="rounded-2xl border-2 border-indigo-400 bg-indigo-900/90 p-6 shadow-inner">
+              {problem.flavor && (
+                <p aria-hidden="true" className="mb-1 text-sm italic text-indigo-300">
+                  {problem.flavor}
+                </p>
+              )}
               <div id={promptId} className="mb-4 text-3xl font-black text-yellow-300 sm:text-4xl">
                 {problem.prompt}
               </div>

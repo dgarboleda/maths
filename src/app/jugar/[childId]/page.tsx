@@ -7,7 +7,8 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { STRANDS } from "@/lib/strands";
-import { countUnlocked } from "@/lib/curriculum";
+import { masteredCountForStrand, nextChallenge, recommendedModule } from "@/lib/curriculum";
+import { getStrandNarrative } from "@/lib/narrative";
 import { getBadge } from "@/lib/badges";
 import { GameShell } from "@/components/GameShell";
 import { playSound } from "@/lib/gameSound";
@@ -31,6 +32,10 @@ const STRAND_GRADIENTS: Record<string, string> = {
   medicion: "from-emerald-600 to-emerald-900",
   logica: "from-amber-600 to-amber-800",
 };
+
+function moduleHref(childId: string, mod: { id: string; strandSlug: string; href?: (childId: string) => string }): string {
+  return mod.href ? mod.href(childId) : `/jugar/${childId}/${mod.strandSlug}/${mod.id}`;
+}
 
 export default function JugarPage() {
   const { user, loading } = useAuth();
@@ -225,28 +230,102 @@ export default function JugarPage() {
           </ul>
         )}
 
+        {(() => {
+          const challenge = nextChallenge(progressBySkill);
+          if (!challenge) return null;
+          return (
+            <Link
+              href={moduleHref(params.childId, challenge)}
+              onClick={() => playSound("click", soundOn)}
+              className="mx-auto flex max-w-xl items-center justify-between gap-3 rounded-2xl border-2 border-amber-400/50 bg-gradient-to-r from-amber-600/80 to-orange-600/80 px-5 py-4 text-white shadow-lg ring-1 ring-white/10 transition-transform hover:scale-[1.01]"
+            >
+              <span className="flex items-center gap-3">
+                <span aria-hidden="true" className="text-2xl">
+                  ⭐
+                </span>
+                <span>
+                  <span className="block text-xs font-bold uppercase tracking-wide text-amber-100">
+                    Tu próximo desafío
+                  </span>
+                  <span className="block font-bold">
+                    {challenge.emoji} {challenge.label}
+                  </span>
+                </span>
+              </span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold">Ir →</span>
+            </Link>
+          );
+        })()}
+
+        <Link
+          href={`/jugar/${params.childId}/boss`}
+          onClick={() => playSound("click", soundOn)}
+          className="mx-auto flex max-w-xl items-center justify-between gap-3 rounded-2xl border-2 border-red-400/50 bg-gradient-to-r from-red-700/80 to-slate-900 px-5 py-4 text-white shadow-lg ring-1 ring-white/10 transition-transform hover:scale-[1.01]"
+        >
+          <span className="flex items-center gap-3">
+            <span aria-hidden="true" className="text-2xl">
+              💥
+            </span>
+            <span className="font-bold">Boss Challenge</span>
+          </span>
+          <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold">Entrar →</span>
+        </Link>
+
         <div>
           <h2 className="mb-3 text-center text-lg font-bold text-indigo-200">
             ¿Qué quieres practicar hoy? <span aria-hidden="true">🎯</span>
           </h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {STRANDS.map((strand) => {
-              const { unlocked, total } = countUnlocked(progressBySkill, strand.slug);
+              const narrative = getStrandNarrative(strand.slug);
+              const { mastered, total } = masteredCountForStrand(progressBySkill, strand.slug);
+              const pct = total > 0 ? Math.round((mastered / total) * 100) : 0;
+              const recommended = recommendedModule(progressBySkill, strand.slug);
               return (
-                <Link
+                <div
                   key={strand.slug}
-                  href={`/jugar/${params.childId}/${strand.slug}`}
-                  onClick={() => playSound("click", soundOn)}
-                  className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-3xl bg-gradient-to-br ${STRAND_GRADIENTS[strand.slug]} text-white shadow-lg ring-1 ring-white/10 transition-transform hover:scale-105 hover:ring-white/30`}
+                  className={`flex flex-col gap-3 rounded-3xl bg-gradient-to-br ${STRAND_GRADIENTS[strand.slug]} p-4 text-white shadow-lg ring-1 ring-white/10`}
                 >
-                  <span aria-hidden="true" className="text-4xl">
-                    {strand.emoji}
-                  </span>
-                  <span className="px-2 text-center text-sm font-bold">{strand.label}</span>
-                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold">
-                    {unlocked}/{total} desbloqueados
-                  </span>
-                </Link>
+                  <Link
+                    href={`/jugar/${params.childId}/${strand.slug}`}
+                    onClick={() => playSound("click", soundOn)}
+                    className="flex items-center gap-3 rounded-xl hover:underline"
+                  >
+                    <span aria-hidden="true" className="text-3xl">
+                      {narrative.icon}
+                    </span>
+                    <span>
+                      <span className="block text-sm font-bold uppercase tracking-wide">{narrative.zoneName}</span>
+                      <span className="block text-xs text-white/70">{strand.label}</span>
+                    </span>
+                  </Link>
+
+                  <div>
+                    <div
+                      role="progressbar"
+                      aria-valuenow={pct}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`Progreso en ${narrative.zoneName}`}
+                      className="h-2 w-full overflow-hidden rounded-full bg-white/20"
+                    >
+                      <div className="h-2 rounded-full bg-white" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="mt-1 text-xs font-bold text-white/90">
+                      {mastered} / {total} habilidades dominadas
+                    </p>
+                  </div>
+
+                  {recommended && (
+                    <Link
+                      href={moduleHref(params.childId, recommended)}
+                      onClick={() => playSound("click", soundOn)}
+                      className="mt-auto inline-flex w-fit items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold hover:bg-white/30"
+                    >
+                      ▶ Continuar misión
+                    </Link>
+                  )}
+                </div>
               );
             })}
           </div>

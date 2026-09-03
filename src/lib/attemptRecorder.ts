@@ -1,0 +1,59 @@
+import type { Firestore } from "firebase/firestore";
+import type { ModuleDef } from "./curriculum";
+import type { SkillProgress } from "./types";
+import { recordAttempt, todayKey } from "./mastery";
+import { starsForAnswer } from "./economy";
+
+export interface AttemptOutcome {
+  updatedProgress: SkillProgress;
+  wasMastered: boolean;
+  stars: number;
+}
+
+/**
+ * Extrae, parametrizada por `ModuleDef` en vez de estar cerrada sobre un
+ * solo módulo, la misma secuencia de escritura que ya usa
+ * `[moduleId]/page.tsx` (intento → progreso → estrellas). Así un evento o
+ * boss challenge que recorre varios módulos guarda cada resultado exactamente
+ * donde se guardaría jugando la pestaña Práctica normal — sin inventar otra
+ * fuente de verdad de progreso, mastery o estrellas.
+ */
+export async function recordModuleAttempt(
+  firestoreFns: typeof import("firebase/firestore"),
+  db: Firestore,
+  parentId: string,
+  childId: string,
+  mod: ModuleDef,
+  prevProgress: SkillProgress | undefined,
+  correct: boolean,
+  streak: number,
+): Promise<AttemptOutcome> {
+  const { addDoc, collection, doc, serverTimestamp, setDoc } = firestoreFns;
+
+  const wasMastered = Boolean(prevProgress?.masteredAt);
+  const updatedProgress = recordAttempt(prevProgress, correct, todayKey());
+
+  await addDoc(collection(db, "parents", parentId, "children", childId, "attempts"), {
+    skillId: `${mod.strandSlug}-topico-${mod.id}`,
+    itemId: crypto.randomUUID(),
+    correct,
+    createdAt: serverTimestamp(),
+  });
+  await setDoc(
+    doc(db, "parents", parentId, "children", childId, "skillsProgress", mod.id),
+    updatedProgress,
+  );
+
+  let stars = 0;
+  if (correct) {
+    stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday: 0 });
+    await addDoc(collection(db, "parents", parentId, "children", childId, "starLedger"), {
+      delta: stars,
+      reason: "problem_solved",
+      attemptId: null,
+      createdAt: serverTimestamp(),
+    });
+  }
+
+  return { updatedProgress, wasMastered, stars };
+}

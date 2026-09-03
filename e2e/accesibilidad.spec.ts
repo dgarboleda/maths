@@ -120,4 +120,25 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
     await expect(page.getByRole("heading", { name: "Pirámide numérica", level: 1 })).toBeVisible();
     expect(await revisar(page)).toEqual([]);
   });
+
+  // Las tarjetas de hilo del hub tienen dos elementos interactivos hermanos
+  // (link al hilo + link "Continuar misión"), justo el patrón con más riesgo
+  // de terminar como un link anidado dentro de otro.
+  test("hub del niño con las tarjetas narrativas y el evento Código secreto", async ({ page }) => {
+    await sesionDeHijo(page);
+    await expect(page.getByRole("link", { name: /Tu próximo desafío/ })).toBeVisible();
+    expect(await revisar(page)).toEqual([]);
+
+    // Geometría: "Lados de figuras" y "Vértices" están desbloqueados sin sembrar nada.
+    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/geometria/evento"));
+    await expect(page.getByRole("heading", { name: "Código secreto" })).toBeVisible();
+    expect(await revisar(page)).toEqual([]);
+  });
+
+  test("Boss Challenge", async ({ page }) => {
+    await sesionDeHijo(page);
+    await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/boss"));
+    await expect(page.getByRole("heading", { name: "Boss Challenge" })).toBeVisible();
+    expect(await revisar(page)).toEqual([]);
+  });
 });

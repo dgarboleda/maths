@@ -89,6 +89,7 @@ export function generateProblem(difficulty: number): Problem {
         answer: largo * ancho,
         inputType: "integer",
         hints: areaRectanguloHints(largo, ancho, largo * ancho),
+        flavor: `🏗️ Construyes una plataforma de ${largo} por ${ancho} metros.`,
       };
     }
     case 5: {

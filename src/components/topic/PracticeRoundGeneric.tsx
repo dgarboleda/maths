@@ -147,6 +147,11 @@ export function PracticeRoundGeneric({
         </span>
       </div>
 
+      {problem.flavor && (
+        <p aria-hidden="true" className="text-sm italic text-purple-500">
+          {problem.flavor}
+        </p>
+      )}
       <p id={promptId} className="text-2xl font-extrabold text-purple-900 sm:text-3xl">
         {problem.prompt}
       </p>

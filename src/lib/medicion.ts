@@ -51,6 +51,7 @@ export function generateProblem(difficulty: number): Problem {
         choices: shuffle([answer, answer + 5, Math.max(0, answer - 10)]),
         inputType: "choice",
         hints: dineroHints(monedas5, monedas10, answer),
+        flavor: "📡 El centro de control registra el efectivo de la caja.",
       };
     }
     case 3: {
