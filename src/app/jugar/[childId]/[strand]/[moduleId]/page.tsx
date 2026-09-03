@@ -9,7 +9,8 @@ import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { recordAttempt, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
 import { getStrand } from "@/lib/strands";
-import { getModule, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
+import { getModule, isMastered, isUnlocked, missingPrerequisites, modulesForStrand } from "@/lib/curriculum";
+import { awardBadge } from "@/lib/awardBadge";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
@@ -86,7 +87,7 @@ export default function TopicPage() {
     };
   }, [user, params.childId, mod, skillKey]);
 
-  async function submitAnswer(correct: boolean): Promise<number> {
+  async function submitAnswer(correct: boolean, hintsUsed = 0): Promise<number> {
     if (!user || !mod) return 0;
 
     // El progreso/racha/estrellas se calculan de una función pura sobre
@@ -98,9 +99,10 @@ export default function TopicPage() {
     // juego se congelaba hasta el siguiente tick del cronómetro. Ahora se
     // actualiza el estado local y se responde de inmediato; el guardado en
     // Firestore corre en segundo plano.
-    const { db, firestore: { addDoc, collection, doc, serverTimestamp, setDoc } } =
-      await getFirebase();
+    const { db, firestore } = await getFirebase();
+    const { addDoc, collection, doc, serverTimestamp, setDoc } = firestore;
 
+    const wasMastered = Boolean(progress?.masteredAt);
     const updated = recordAttempt(progress, correct, todayKey());
     setProgress(updated);
 
@@ -118,12 +120,22 @@ export default function TopicPage() {
     };
     persistAttempt().catch((err) => console.error("No se pudo guardar el intento", err));
 
+    if (!wasMastered && updated.masteredAt) {
+      const mergedProgress = { ...progressBySkill, [mod.id]: updated };
+      const badges: Promise<void>[] = [];
+      if (mod.tier === 0) badges.push(awardBadge(firestore, db, user.uid, params.childId, "resolutor"));
+      if (modulesForStrand(mod.strandSlug).every((m) => isMastered(mergedProgress, m.id))) {
+        badges.push(awardBadge(firestore, db, user.uid, params.childId, `maestro-${mod.strandSlug}`));
+      }
+      Promise.all(badges).catch((err) => console.error("No se pudo otorgar la insignia", err));
+    }
+
     if (!correct) {
       setStreak(0);
       return 0;
     }
 
-    const stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday });
+    const stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday, hintsUsed });
     setStreak((s) => s + 1);
     setRepeatsToday((n) => n + 1);
     addDoc(collection(db, "parents", user.uid, "children", params.childId, "starLedger"), {
@@ -135,11 +147,32 @@ export default function TopicPage() {
     return stars;
   }
 
+  function handleCoheteWin() {
+    if (!user) return;
+    const BOSS_BONUS = 15;
+    getFirebase()
+      .then(async ({ db, firestore }) => {
+        await firestore.addDoc(
+          firestore.collection(db, "parents", user.uid, "children", params.childId, "starLedger"),
+          { delta: BOSS_BONUS, reason: "boss_level", attemptId: null, createdAt: firestore.serverTimestamp() },
+        );
+        await awardBadge(firestore, db, user.uid, params.childId, "rapido");
+      })
+      .catch((err) => console.error("No se pudo otorgar el bono del Cohete", err));
+  }
+
+  function handleNoHintStreak() {
+    if (!user) return;
+    getFirebase()
+      .then(({ db, firestore }) => awardBadge(firestore, db, user.uid, params.childId, "estratega"))
+      .catch((err) => console.error("No se pudo otorgar la insignia", err));
+  }
+
   if (loading || !user) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -151,10 +184,10 @@ export default function TopicPage() {
       <main
         id="contenido"
         tabIndex={-1}
-        className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-white text-center"
+        className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-slate-950 text-center"
       >
-        <p className="text-neutral-500">Ese tema todavía no existe.</p>
-        <Link href={`/jugar/${params.childId}`} className="text-sm text-neutral-500 underline underline-offset-2">
+        <p className="text-slate-400">Ese tema todavía no existe.</p>
+        <Link href={`/jugar/${params.childId}`} className="text-sm text-slate-400 underline underline-offset-2">
           Volver
         </Link>
       </main>
@@ -164,8 +197,8 @@ export default function TopicPage() {
   if (!child) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -180,18 +213,18 @@ export default function TopicPage() {
       <main
         id="contenido"
         tabIndex={-1}
-        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center"
       >
         <span aria-hidden="true" className="text-4xl">
           🔒
         </span>
-        <p className="text-lg font-bold text-slate-700">Todavía no puedes entrar aquí</p>
-        <p className="text-slate-500">
+        <p className="text-lg font-bold text-slate-200">Todavía no puedes entrar aquí</p>
+        <p className="text-slate-400">
           Primero dominá: {missing.map((m) => m.label).join(", ")}
         </p>
         <Link
           href={`/jugar/${params.childId}/${strand.slug}`}
-          className="text-sm text-purple-700 underline underline-offset-2"
+          className="text-sm text-violet-300 underline underline-offset-2"
         >
           Volver a {strand.label}
         </Link>
@@ -215,26 +248,27 @@ export default function TopicPage() {
       nav={<TabNav tabs={TABS} active={activeTab} onSelect={setActiveTab} />}
     >
       {activeTab === "concepto" && (
-        <div {...panelProps("concepto")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div {...panelProps("concepto")} className="rounded-3xl border-4 border-indigo-300 bg-white p-6 shadow-xl">
           <ConceptoGeneric moduleId={mod.id} />
         </div>
       )}
       {activeTab === "practica" && (
-        <div {...panelProps("practica")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div {...panelProps("practica")} className="rounded-3xl border-4 border-indigo-300 bg-white p-6 shadow-xl">
           <PracticeRoundGeneric
             moduleId={mod.id}
             soundOn={soundOn}
-            onAnswer={(correct) => void submitAnswer(correct)}
+            onAnswer={(correct, hintsUsed) => void submitAnswer(correct, hintsUsed)}
+            onNoHintStreak={handleNoHintStreak}
           />
         </div>
       )}
       {activeTab === "cohete" && (
         <div {...panelProps("cohete")}>
-          <CoheteGeneric moduleId={mod.id} soundOn={soundOn} onAnswer={submitAnswer} />
+          <CoheteGeneric moduleId={mod.id} soundOn={soundOn} onAnswer={submitAnswer} onWin={handleCoheteWin} />
         </div>
       )}
       {activeTab === "ejemplos" && (
-        <div {...panelProps("ejemplos")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div {...panelProps("ejemplos")} className="rounded-3xl border-4 border-indigo-300 bg-white p-6 shadow-xl">
           <EjemplosTab moduleId={mod.id} soundOn={soundOn} />
         </div>
       )}

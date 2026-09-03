@@ -8,6 +8,7 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, Placement, SkillProgress } from "@/lib/types";
 import { getStrand, STRANDS } from "@/lib/strands";
 import { MODULES, isMastered, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
+import { BADGES } from "@/lib/badges";
 
 const STRAND_COLORS: Record<string, string> = {
   aritmetica: "bg-purple-100 text-purple-800",
@@ -28,6 +29,7 @@ export default function CurriculaPage() {
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [evaluaciones, setEvaluaciones] = useState<PlacementDoc[]>([]);
+  const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -64,6 +66,12 @@ export default function CurriculaPage() {
       setEvaluaciones(
         placementsSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Placement) })),
       );
+
+      const badgesSnap = await getDocs(
+        collection(db, "parents", user.uid, "children", params.childId, "badges"),
+      );
+      if (cancelled) return;
+      setEarnedBadgeIds(badgesSnap.docs.map((d) => d.id));
     })().catch((err) => console.error("No se pudo cargar el progreso", err));
     return () => {
       cancelled = true;
@@ -152,6 +160,33 @@ export default function CurriculaPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section aria-label="Insignias" className="flex flex-col gap-3 rounded-xl border border-neutral-200 p-5">
+        <h2 className="text-sm font-semibold text-neutral-900">Insignias</h2>
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {BADGES.map((badge) => {
+            const earned = earnedBadgeIds.includes(badge.id);
+            return (
+              <li
+                key={badge.id}
+                className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
+                  earned ? "border-amber-200 bg-amber-50" : "border-neutral-200 text-neutral-400"
+                }`}
+              >
+                <span aria-hidden="true" className="text-xl">
+                  {badge.emoji}
+                </span>
+                <span>
+                  <span className={`block font-medium ${earned ? "text-amber-900" : "text-neutral-500"}`}>
+                    {badge.label}
+                  </span>
+                  <span className="text-xs">{badge.description}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       <div className="flex flex-col gap-6">

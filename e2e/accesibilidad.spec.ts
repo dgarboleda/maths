@@ -16,7 +16,7 @@ async function revisar(page: Page) {
 test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
   test("pantalla de entrada", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "Numerario" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Math Quest" })).toBeVisible();
     expect(await revisar(page)).toEqual([]);
   });
 

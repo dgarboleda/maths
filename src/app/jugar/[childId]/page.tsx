@@ -8,6 +8,7 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { STRANDS } from "@/lib/strands";
 import { countUnlocked } from "@/lib/curriculum";
+import { getBadge } from "@/lib/badges";
 import { GameShell } from "@/components/GameShell";
 import { playSound } from "@/lib/gameSound";
 import { useTotalStars } from "@/lib/useTotalStars";
@@ -24,11 +25,11 @@ const STATUS_LABEL: Record<RedemptionRequest["status"], string> = {
 };
 
 const STRAND_GRADIENTS: Record<string, string> = {
-  aritmetica: "from-purple-500 to-purple-700",
-  algebra: "from-pink-500 to-pink-700",
-  geometria: "from-blue-500 to-blue-700",
-  medicion: "from-emerald-500 to-emerald-700",
-  logica: "from-amber-500 to-amber-600",
+  aritmetica: "from-violet-600 to-violet-900",
+  algebra: "from-fuchsia-600 to-fuchsia-900",
+  geometria: "from-blue-600 to-blue-900",
+  medicion: "from-emerald-600 to-emerald-900",
+  logica: "from-amber-600 to-amber-800",
 };
 
 export default function JugarPage() {
@@ -39,6 +40,7 @@ export default function JugarPage() {
   const [notFound, setNotFound] = useState(false);
   const [requests, setRequests] = useState<RequestDoc[]>([]);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
+  const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
   const [showRedeemForm, setShowRedeemForm] = useState(false);
   const [placementDismissed, setPlacementDismissed] = useState(false);
   const totalStars = useTotalStars(user?.uid, params.childId);
@@ -87,6 +89,23 @@ export default function JugarPage() {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
+    getFirebase()
+      .then(({ db, firestore: { collection, getDocs } }) =>
+        getDocs(collection(db, "parents", user.uid, "children", params.childId, "badges")),
+      )
+      .then((snap) => {
+        if (cancelled) return;
+        setEarnedBadgeIds(snap.docs.map((d) => d.id));
+      })
+      .catch((err) => console.error("No se pudieron cargar las insignias", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [user, params.childId]);
+
+  useEffect(() => {
+    if (!user) return;
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
     getFirebase()
@@ -110,8 +129,8 @@ export default function JugarPage() {
   if (loading || !user) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -123,10 +142,10 @@ export default function JugarPage() {
       <main
         id="contenido"
         tabIndex={-1}
-        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center"
       >
-        <p className="text-neutral-500">No encontré ese perfil.</p>
-        <Link href="/perfiles" className="text-sm text-neutral-500 underline underline-offset-2">
+        <p className="text-slate-400">No encontré ese perfil.</p>
+        <Link href="/perfiles" className="text-sm text-slate-400 underline underline-offset-2">
           Volver a perfiles
         </Link>
       </main>
@@ -136,8 +155,8 @@ export default function JugarPage() {
   if (!child) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -159,25 +178,25 @@ export default function JugarPage() {
     >
       <div className="space-y-8">
         {child.placementStatus !== "completo" && !placementDismissed && (
-          <div className="mx-auto flex max-w-xl flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-purple-300 bg-gradient-to-r from-purple-100 to-pink-100 px-5 py-4">
+          <div className="mx-auto flex max-w-xl flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-violet-500/40 bg-gradient-to-r from-violet-950/70 to-fuchsia-950/70 px-5 py-4">
             <div>
-              <p className="font-bold text-purple-900">
+              <p className="font-bold text-violet-100">
                 <span aria-hidden="true">🎯 </span>¿Hacemos una evaluación rápida?
               </p>
-              <p className="text-sm text-purple-700">Nos ayuda a saber por dónde empezar. Dura 10-20 minutos.</p>
+              <p className="text-sm text-violet-300">Nos ayuda a saber por dónde empezar. Dura 10-20 minutos.</p>
             </div>
             <div className="flex items-center gap-3">
               <Link
                 href={`/jugar/${params.childId}/evaluacion`}
                 onClick={() => playSound("click", soundOn)}
-                className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-500"
+                className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white hover:from-violet-500 hover:to-fuchsia-500"
               >
                 Empezar
               </Link>
               <button
                 type="button"
                 onClick={() => setPlacementDismissed(true)}
-                className="text-sm font-bold text-purple-700 underline underline-offset-2"
+                className="text-sm font-bold text-violet-300 underline underline-offset-2"
               >
                 Ahora no
               </button>
@@ -185,8 +204,29 @@ export default function JugarPage() {
           </div>
         )}
 
+        {earnedBadgeIds.length > 0 && (
+          <ul className="flex flex-wrap justify-center gap-3" aria-label="Insignias ganadas">
+            {earnedBadgeIds.map((id) => {
+              const badge = getBadge(id);
+              if (!badge) return null;
+              return (
+                <li
+                  key={id}
+                  title={`${badge.label}: ${badge.description}`}
+                  className="flex items-center gap-2 rounded-full border-2 border-amber-400/40 bg-amber-950/40 px-3 py-1.5"
+                >
+                  <span aria-hidden="true" className="text-xl">
+                    {badge.emoji}
+                  </span>
+                  <span className="text-sm font-bold text-amber-200">{badge.label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
         <div>
-          <h2 className="mb-3 text-center text-lg font-bold text-purple-800">
+          <h2 className="mb-3 text-center text-lg font-bold text-indigo-200">
             ¿Qué quieres practicar hoy? <span aria-hidden="true">🎯</span>
           </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -197,7 +237,7 @@ export default function JugarPage() {
                   key={strand.slug}
                   href={`/jugar/${params.childId}/${strand.slug}`}
                   onClick={() => playSound("click", soundOn)}
-                  className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-3xl bg-gradient-to-br ${STRAND_GRADIENTS[strand.slug]} text-white shadow-lg transition-transform hover:scale-105`}
+                  className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-3xl bg-gradient-to-br ${STRAND_GRADIENTS[strand.slug]} text-white shadow-lg ring-1 ring-white/10 transition-transform hover:scale-105 hover:ring-white/30`}
                 >
                   <span aria-hidden="true" className="text-4xl">
                     {strand.emoji}
@@ -212,9 +252,9 @@ export default function JugarPage() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-xl space-y-4 rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div className="mx-auto max-w-xl space-y-4 rounded-3xl border-2 border-indigo-500/30 bg-slate-900/60 p-6 shadow-xl">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-purple-800">
+            <h2 className="text-lg font-bold text-indigo-200">
               Canjear estrellas <span aria-hidden="true">⭐</span>
             </h2>
             {!showRedeemForm && (
@@ -222,7 +262,7 @@ export default function JugarPage() {
                 type="button"
                 onClick={() => setShowRedeemForm(true)}
                 disabled={!totalStars}
-                className="rounded-xl bg-purple-100 px-4 py-1.5 text-sm font-bold text-purple-700 hover:bg-purple-200 disabled:opacity-40"
+                className="rounded-xl bg-slate-800 px-4 py-1.5 text-sm font-bold text-indigo-200 hover:bg-slate-700 disabled:opacity-40"
               >
                 Pedir canje
               </button>
@@ -243,19 +283,19 @@ export default function JugarPage() {
               {requests.map((r) => (
                 <li
                   key={r.id}
-                  className="flex items-center justify-between rounded-xl border-2 border-purple-100 px-4 py-2 text-sm"
+                  className="flex items-center justify-between rounded-xl border-2 border-indigo-500/20 px-4 py-2 text-sm"
                 >
-                  <span className="text-purple-900">
+                  <span className="text-slate-200">
                     {r.rewardLabel} · {r.starsSpent} <span aria-hidden="true">★</span>
                     <span className="sr-only">estrellas</span>
                   </span>
                   <span
                     className={
                       r.status === "aprobado"
-                        ? "font-bold text-emerald-600"
+                        ? "font-bold text-emerald-400"
                         : r.status === "rechazado"
-                          ? "font-bold text-red-500"
-                          : "font-bold text-slate-700"
+                          ? "font-bold text-red-400"
+                          : "font-bold text-slate-400"
                     }
                   >
                     {STATUS_LABEL[r.status]}
@@ -327,27 +367,27 @@ function RedeemForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-2xl border-2 border-purple-100 bg-purple-50 p-4">
-      <label className="flex flex-col gap-1 text-sm font-bold text-purple-800">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-2xl border-2 border-indigo-500/30 bg-slate-950/60 p-4">
+      <label className="flex flex-col gap-1 text-sm font-bold text-indigo-200">
         ¿Qué quieres canjear?
         <input
           value={rewardLabel}
           onChange={(e) => setRewardLabel(e.target.value)}
           placeholder="Ej. 800 Robux"
-          className="rounded-xl border-2 border-purple-200 px-3 py-2 font-normal focus:border-purple-500"
+          className="rounded-xl border-2 border-indigo-500/30 bg-slate-900 px-3 py-2 font-normal text-slate-100 placeholder:text-slate-500 focus:border-violet-400"
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm font-bold text-purple-800">
+      <label className="flex flex-col gap-1 text-sm font-bold text-indigo-200">
         ¿Cuántas estrellas? (tienes {maxStars} ★)
         <input
           inputMode="numeric"
           value={starsSpent}
           onChange={(e) => setStarsSpent(e.target.value.replace(/\D/g, ""))}
-          className="rounded-xl border-2 border-purple-200 px-3 py-2 font-normal focus:border-purple-500"
+          className="rounded-xl border-2 border-indigo-500/30 bg-slate-900 px-3 py-2 font-normal text-slate-100 focus:border-violet-400"
         />
       </label>
       {error && (
-        <p role="alert" className="text-sm font-bold text-red-700">
+        <p role="alert" className="text-sm font-bold text-red-400">
           {error}
         </p>
       )}
@@ -355,11 +395,11 @@ function RedeemForm({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+          className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
         >
           Enviar
         </button>
-        <button type="button" onClick={onDone} className="text-sm font-bold text-slate-700">
+        <button type="button" onClick={onDone} className="text-sm font-bold text-slate-400">
           Cancelar
         </button>
       </div>

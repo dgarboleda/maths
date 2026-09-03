@@ -16,7 +16,7 @@ export async function generateMetadata({
   const { strand } = await params;
   const label = getStrand(strand)?.label ?? "Practicar";
   return {
-    title: { default: label, template: `%s · ${label} · Numerario` },
+    title: { default: label, template: `%s · ${label} · Math Quest` },
   };
 }
 

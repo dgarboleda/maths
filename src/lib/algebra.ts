@@ -1,4 +1,17 @@
 import { type Problem, randInt, shuffle } from "./problem";
+import {
+  balanzaHints,
+  cuadraticaHints,
+  desigualdadHints,
+  ecuacionDosPasosHints,
+  ecuacionMultiplicacionHints,
+  ecuacionRestaHints,
+  ecuacionSumaHints,
+  evaluarExpresionHints,
+  funcionHints,
+  patronHints,
+  proporcionesHints,
+} from "./hints";
 
 const PATTERN_SYMBOLS = ["●", "■", "▲"];
 
@@ -22,6 +35,7 @@ export function generateProblem(difficulty: number): Problem {
         choices: choiceIds,
         choiceLabels: choiceIds.map((c) => PATTERN_SYMBOLS[c]),
         inputType: "choice",
+        hints: patronHints(),
       };
     }
     case 2: {
@@ -40,6 +54,7 @@ export function generateProblem(difficulty: number): Problem {
         balanceLeftFixed: a,
         balanceRightFixed: total,
         balanceWeights: shuffle([...weights]),
+        hints: balanzaHints(a, total, missing),
       };
     }
     case 3: {
@@ -52,6 +67,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `x + ${b} = ${x + b}. ¿Cuánto vale x?`,
         answer: x,
         inputType: "integer",
+        hints: ecuacionSumaHints(b, x + b, x),
       };
     }
     case 4: {
@@ -66,6 +82,7 @@ export function generateProblem(difficulty: number): Problem {
           prompt: `${m}x = ${m * x}. ¿Cuánto vale x?`,
           answer: x,
           inputType: "integer",
+          hints: ecuacionMultiplicacionHints(m, m * x, x),
         };
       }
       const x = randInt(1, 20);
@@ -77,6 +94,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `x − ${b} = ${x - b}. ¿Cuánto vale x?`,
         answer: x,
         inputType: "integer",
+        hints: ecuacionRestaHints(b, x - b, x),
       };
     }
     case 5: {
@@ -91,6 +109,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Si ${unitQty} manzanas cuestan ${unitCost}, ¿cuánto cuestan ${targetQty} manzanas?`,
         answer: (unitCost / unitQty) * targetQty,
         inputType: "integer",
+        hints: proporcionesHints(unitQty, unitCost, targetQty, (unitCost / unitQty) * targetQty),
       };
     }
     case 6: {
@@ -104,6 +123,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Si x = ${x}, ¿cuánto vale ${m}x + ${b}?`,
         answer: m * x + b,
         inputType: "integer",
+        hints: evaluarExpresionHints(x, m, b, m * x + b),
       };
     }
     case 7: {
@@ -117,6 +137,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `${m}x + ${b} = ${m * x + b}. ¿Cuánto vale x?`,
         answer: x,
         inputType: "integer",
+        hints: ecuacionDosPasosHints(m, b, m * x + b, x),
       };
     }
     case 8: {
@@ -128,6 +149,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuál es el menor número entero que cumple x > ${b}?`,
         answer: b + 1,
         inputType: "integer",
+        hints: desigualdadHints(b, b + 1),
       };
     }
     case 9: {
@@ -141,6 +163,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `f(x) = ${m}x ${b >= 0 ? "+" : "−"} ${Math.abs(b)}. ¿Cuánto es f(${x})?`,
         answer: m * x + b,
         inputType: "integer",
+        hints: funcionHints(m, b, x, m * x + b),
       };
     }
     default: {
@@ -153,6 +176,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `x² = ${square}. ¿Cuánto vale x (el valor positivo)?`,
         answer: root,
         inputType: "integer",
+        hints: cuadraticaHints(square, root),
       };
     }
   }

@@ -1,4 +1,5 @@
 import { type Problem, randInt } from "./problem";
+import { fraccionDistintoDenominadorHints, mcdHints, mcmHints } from "./hints";
 
 export function gcd(a: number, b: number): number {
   let x = Math.abs(a);
@@ -32,6 +33,7 @@ export function generateMcdMcmProblem(): Problem {
       prompt: `¿Cuál es el máximo común divisor (MCD) de ${a} y ${b}?`,
       answer: gcd(a, b),
       inputType: "integer",
+      hints: mcdHints(a, b, gcd(a, b)),
     };
   }
 
@@ -45,6 +47,7 @@ export function generateMcdMcmProblem(): Problem {
     prompt: `¿Cuál es el mínimo común múltiplo (MCM) de ${a} y ${b}?`,
     answer: lcm(a, b),
     inputType: "integer",
+    hints: mcmHints(a, b, lcm(a, b)),
   };
 }
 
@@ -80,5 +83,6 @@ export function generateUnlikeFractionsProblem(): Problem {
     prompt: `¿Cuánto es ${n1}/${d1} + ${n2}/${d2}? Responde solo el numerador (el denominador común es ${common}).`,
     answer,
     inputType: "integer",
+    hints: fraccionDistintoDenominadorHints(n1, d1, n2, d2, common, answer),
   };
 }
