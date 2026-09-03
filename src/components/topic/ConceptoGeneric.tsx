@@ -5,6 +5,7 @@ import { ArrayConcept } from "./concepts/ArrayConcept";
 import { FractionBarConcept } from "./concepts/FractionBarConcept";
 import { PatternConcept } from "./concepts/PatternConcept";
 import { BalanceConcept } from "./concepts/BalanceConcept";
+import { AlgebraConcept, type AlgebraVariant } from "./concepts/AlgebraConcept";
 import { ShapeConcept, type ShapeVariant } from "./concepts/ShapeConcept";
 import { DataConcept, type DataVariant } from "./concepts/DataConcept";
 import { WordProblemConcept } from "./concepts/WordProblemConcept";
@@ -20,6 +21,17 @@ const GEOMETRIA_VARIANTS: Record<number, ShapeVariant> = {
   8: "coords",
   9: "pythagoras",
   10: "scale",
+};
+
+const ALGEBRA_VARIANTS: Record<number, AlgebraVariant> = {
+  3: "simple",
+  4: "mult-sub",
+  5: "proportion",
+  6: "evaluate",
+  7: "two-step",
+  8: "inequality",
+  9: "function",
+  10: "quadratic",
 };
 
 const MEDICION_VARIANTS: Record<number, DataVariant> = {
@@ -50,7 +62,8 @@ export function ConceptoGeneric({ strandSlug, difficulty }: { strandSlug: string
 
   if (strandSlug === "algebra") {
     if (difficulty === 1) return <PatternConcept />;
-    return <BalanceConcept />;
+    if (difficulty === 2) return <BalanceConcept />;
+    return <AlgebraConcept variant={ALGEBRA_VARIANTS[difficulty] ?? "simple"} />;
   }
 
   if (strandSlug === "geometria") {
