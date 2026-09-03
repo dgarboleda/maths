@@ -57,8 +57,8 @@ export default function StrandTopicListPage() {
   if (loading || !user) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -70,10 +70,10 @@ export default function StrandTopicListPage() {
       <main
         id="contenido"
         tabIndex={-1}
-        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center"
       >
-        <p className="text-neutral-500">Ese hilo todavía no existe.</p>
-        <Link href={`/jugar/${params.childId}`} className="text-sm text-neutral-500 underline underline-offset-2">
+        <p className="text-slate-400">Ese hilo todavía no existe.</p>
+        <Link href={`/jugar/${params.childId}`} className="text-sm text-slate-400 underline underline-offset-2">
           Volver
         </Link>
       </main>
@@ -83,8 +83,8 @@ export default function StrandTopicListPage() {
   if (!child) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -109,7 +109,7 @@ export default function StrandTopicListPage() {
       onToggleSound={toggleSound}
     >
       <div className="space-y-4">
-        <p className="text-center text-sm font-bold text-purple-700">
+        <p className="text-center text-sm font-bold text-indigo-300">
           {dominados}/{modules.length} temas dominados
         </p>
 
@@ -127,7 +127,7 @@ export default function StrandTopicListPage() {
                   key={mod.id}
                   aria-disabled="true"
                   aria-label={`Bloqueado: dominá primero ${missingLabel}`}
-                  className="flex flex-col gap-1 rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-slate-400"
+                  className="flex flex-col gap-1 rounded-2xl border-2 border-slate-700/60 bg-slate-900/40 px-4 py-3 text-slate-500"
                 >
                   <span className="flex items-center gap-3">
                     <span aria-hidden="true" className="text-2xl">
@@ -147,22 +147,26 @@ export default function StrandTopicListPage() {
                 key={mod.id}
                 href={href}
                 onClick={() => playSound("click", soundOn)}
-                className={`flex items-center justify-between gap-3 rounded-2xl border-2 bg-white px-4 py-3 shadow-sm transition-all hover:scale-[1.02] ${
-                  mastered ? "border-emerald-300" : isRecommended ? "border-purple-400 bg-purple-50" : "border-purple-100"
+                className={`flex items-center justify-between gap-3 rounded-2xl border-2 bg-slate-900/60 px-4 py-3 shadow-sm transition-all hover:scale-[1.02] ${
+                  mastered
+                    ? "border-emerald-400/60 shadow-[0_0_12px_rgba(52,211,153,0.25)]"
+                    : isRecommended
+                      ? "border-violet-400/60 bg-violet-950/40 shadow-[0_0_12px_rgba(167,139,250,0.3)]"
+                      : "border-indigo-500/20"
                 }`}
               >
                 <span className="flex items-center gap-3">
                   <span aria-hidden="true" className="text-2xl">
                     {mod.emoji}
                   </span>
-                  <span className="font-bold text-purple-900">{mod.label}</span>
+                  <span className="font-bold text-slate-100">{mod.label}</span>
                 </span>
                 {mastered ? (
-                  <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-800">
+                  <span className="rounded-full bg-emerald-500/20 px-2 py-1 text-xs font-bold text-emerald-300">
                     <span aria-hidden="true">✓ </span>Dominado
                   </span>
                 ) : isRecommended ? (
-                  <span className="rounded-full bg-purple-100 px-2 py-1 text-xs font-bold text-purple-700">Recomendado</span>
+                  <span className="rounded-full bg-violet-500/20 px-2 py-1 text-xs font-bold text-violet-300">Recomendado</span>
                 ) : null}
               </Link>
             );
@@ -173,7 +177,7 @@ export default function StrandTopicListPage() {
           <Link
             href={`/jugar/${params.childId}/piramide`}
             onClick={() => playSound("click", soundOn)}
-            className="flex items-center justify-between gap-3 rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-red-500 to-orange-500 px-4 py-3 text-white shadow-sm transition-all hover:scale-[1.02]"
+            className="flex items-center justify-between gap-3 rounded-2xl border-2 border-orange-400/50 bg-gradient-to-r from-red-600 to-orange-600 px-4 py-3 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-[1.02]"
           >
             <span className="flex items-center gap-3">
               <span aria-hidden="true" className="text-2xl">

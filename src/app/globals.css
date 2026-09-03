@@ -18,7 +18,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fredoka), var(--font-quicksand), ui-sans-serif, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-quicksand), ui-sans-serif, sans-serif;
 }
 
 body {

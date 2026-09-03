@@ -17,6 +17,7 @@ import {
   type StrandPlacementState,
 } from "@/lib/placement";
 import { isCorrectAnswer, type Problem } from "@/lib/problem";
+import { awardBadge } from "@/lib/awardBadge";
 import { GameShell } from "@/components/GameShell";
 import { QuestionWidget } from "@/components/topic/QuestionWidget";
 import { playSound } from "@/lib/gameSound";
@@ -143,10 +144,8 @@ export default function EvaluacionPage() {
     const grants = grantsFromPlacement(results, progressBySkill);
     try {
       if (user) {
-        const {
-          db,
-          firestore: { collection, doc, writeBatch },
-        } = await getFirebase();
+        const { db, firestore } = await getFirebase();
+        const { collection, doc, writeBatch } = firestore;
         const batch = writeBatch(db);
 
         const placementRef = doc(
@@ -179,6 +178,7 @@ export default function EvaluacionPage() {
         });
 
         await batch.commit();
+        await awardBadge(firestore, db, user.uid, params.childId, "detective");
       }
     } catch (err) {
       console.error("No se pudo guardar la evaluación", err);
@@ -194,8 +194,8 @@ export default function EvaluacionPage() {
 
   if (loading || !user || !child) {
     return (
-      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -262,7 +262,7 @@ function IntroScreen({
   childHref: string;
 }) {
   return (
-    <div className="mx-auto max-w-xl space-y-6 rounded-3xl border-2 border-purple-200 bg-gradient-to-b from-purple-50 to-pink-50 p-6 text-center shadow-inner sm:p-8">
+    <div className="mx-auto max-w-xl space-y-6 rounded-3xl border-2 border-indigo-300 bg-gradient-to-b from-purple-50 to-pink-50 p-6 text-center shadow-inner sm:p-8">
       <h2 className="text-2xl font-bold text-purple-900">¡Hola, {childName}! 👋</h2>
       <p className="text-slate-700">
         Antes de empezar a practicar, hagamos una evaluación rápida para saber por dónde conviene arrancar. Vamos a
@@ -319,7 +319,7 @@ function AskingScreen({
   if (!problem || !strand) return null;
 
   return (
-    <div className="mx-auto max-w-xl space-y-6 rounded-3xl border-2 border-purple-200 bg-gradient-to-b from-purple-50 to-pink-50 p-6 text-center shadow-inner sm:p-8">
+    <div className="mx-auto max-w-xl space-y-6 rounded-3xl border-2 border-indigo-300 bg-gradient-to-b from-purple-50 to-pink-50 p-6 text-center shadow-inner sm:p-8">
       <div className="flex items-center justify-between text-sm font-bold text-purple-700">
         <span>
           Hilo {strandOrderIdx + 1} de {STRANDS.length}: {strand.emoji} {strand.label}

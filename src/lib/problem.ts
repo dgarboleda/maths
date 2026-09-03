@@ -26,6 +26,8 @@ export interface Problem {
   balanceLeftFixed?: number;
   balanceRightFixed?: number;
   balanceWeights?: number[];
+  /** Pistas de 3 niveles (conceptual → primer paso → casi completo), ver hints.ts. */
+  hints?: [string, string, string];
 }
 
 export function randInt(min: number, max: number): number {

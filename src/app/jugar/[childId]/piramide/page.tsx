@@ -79,8 +79,8 @@ export default function PiramidePage() {
   if (loading || !user) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -90,8 +90,8 @@ export default function PiramidePage() {
   if (!child) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -112,7 +112,7 @@ export default function PiramidePage() {
       soundOn={soundOn}
       onToggleSound={toggleSound}
     >
-      <div className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+      <div className="rounded-3xl border-4 border-indigo-300 bg-white p-6 shadow-xl">
         <PyramidGame soundOn={soundOn} onAnswer={submitAnswer} />
       </div>
     </GameShell>

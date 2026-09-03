@@ -25,46 +25,46 @@ export function GameShell({
 }) {
   return (
     <div
-      className="min-h-screen bg-gray-100"
+      className="min-h-screen bg-slate-950"
       style={{
         backgroundImage:
-          "radial-gradient(#8b5cf622 1.5px, transparent 1.5px), radial-gradient(#ec489922 1.5px, transparent 1.5px)",
+          "radial-gradient(#818cf833 1.5px, transparent 1.5px), radial-gradient(#e879f933 1.5px, transparent 1.5px)",
         backgroundSize: "60px 60px",
         backgroundPosition: "0 0, 30px 30px",
       }}
     >
-      <header className="sticky top-0 z-40 border-b-4 border-purple-200 bg-white/90 px-4 py-3 shadow-md backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b-2 border-indigo-500/30 bg-slate-900/90 px-4 py-3 shadow-lg backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div
               aria-hidden="true"
-              className="flex h-11 w-11 rotate-3 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-xl text-white shadow-lg"
+              className="flex h-11 w-11 rotate-3 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 to-fuchsia-600 text-xl text-white shadow-[0_0_16px_rgba(168,85,247,0.55)]"
             >
               {icon}
             </div>
             <div>
-              <h1 className="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text font-display text-xl font-bold text-transparent">
+              <h1 className="bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text font-display text-xl font-bold text-transparent">
                 {title}
               </h1>
-              {subtitle && <div className="text-xs font-semibold text-purple-700">{subtitle}</div>}
+              {subtitle && <div className="text-xs font-semibold text-indigo-300">{subtitle}</div>}
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl border-2 border-purple-200 bg-purple-50 px-4 py-1.5">
+          <div className="flex items-center gap-3 rounded-2xl border-2 border-indigo-500/40 bg-slate-800/80 px-4 py-1.5">
             <span aria-hidden="true" className="text-xl">
               ⭐
             </span>
-            <span className="text-lg font-bold text-amber-700">
+            <span className="text-lg font-bold text-amber-300">
               <span className="sr-only">Estrellas: </span>
               {stars ?? "…"}
             </span>
             {!!streak && streak > 0 && (
               <>
-                <div aria-hidden="true" className="h-5 w-0.5 bg-purple-200" />
+                <div aria-hidden="true" className="h-5 w-0.5 bg-indigo-500/40" />
                 <span aria-hidden="true" className="text-xl">
                   🔥
                 </span>
-                <span className="text-lg font-bold text-orange-600">
+                <span className="text-lg font-bold text-orange-300">
                   <span className="sr-only">Racha: </span>
                   {streak}
                 </span>
@@ -77,7 +77,7 @@ export function GameShell({
             onClick={onToggleSound}
             aria-pressed={soundOn}
             aria-label="Efectos de sonido"
-            className="rounded-xl bg-purple-100 p-2.5 text-purple-800 transition-colors hover:bg-purple-200"
+            className="rounded-xl bg-slate-800 p-2.5 text-indigo-200 transition-colors hover:bg-slate-700"
             title="Efectos de sonido"
           >
             <span aria-hidden="true">{soundOn ? "🔊" : "🔇"}</span>
@@ -144,7 +144,7 @@ export function TabNav<T extends string>({
         role="tablist"
         aria-label={label}
         onKeyDown={handleKeyDown}
-        className="grid grid-cols-2 gap-2 rounded-2xl border-2 border-purple-200 bg-purple-100/80 p-1.5 shadow-inner sm:grid-cols-4"
+        className="grid grid-cols-2 gap-2 rounded-2xl border-2 border-indigo-500/30 bg-slate-900/80 p-1.5 shadow-inner sm:grid-cols-4"
       >
         {tabs.map((tab) => {
           const selected = active === tab.id;
@@ -159,7 +159,9 @@ export function TabNav<T extends string>({
               tabIndex={selected ? 0 : -1}
               onClick={() => onSelect(tab.id)}
               className={`rounded-xl px-3 py-2.5 text-center text-sm font-bold transition-all sm:text-base ${
-                selected ? "bg-purple-600 text-white shadow-md" : "text-purple-800 hover:bg-purple-200/60"
+                selected
+                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-md"
+                  : "text-indigo-200 hover:bg-slate-800/60"
               }`}
             >
               {tab.label}

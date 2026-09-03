@@ -52,6 +52,13 @@ export interface PlacementStrandRecord {
   gradeBand: string;
 }
 
+/** /parents/{parentId}/children/{childId}/badges/{badgeId} — se otorgan una
+ * sola vez; ver src/lib/badges.ts para el catálogo y awardBadge.ts para el
+ * otorgamiento. */
+export interface Badge {
+  earnedAt: number;
+}
+
 export interface Placement {
   startedAt: number;
   completedAt: number | null;

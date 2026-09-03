@@ -16,14 +16,25 @@ export function diminishingFactor(repeatsToday: number): number {
   return Math.max(1 - 0.3 * repeatsToday, 0.15);
 }
 
+/**
+ * Usar una pista reduce la recompensa (25% por nivel, piso de 25%) pero
+ * nunca la anula del todo — pedir ayuda no debe impedir completar la
+ * misión, solo cuesta un poco menos que resolverlo por cuenta propia.
+ */
+export function hintPenalty(hintsUsed: number): number {
+  return Math.max(1 - 0.25 * hintsUsed, 0.25);
+}
+
 export function starsForAnswer(params: {
   difficulty: number;
   streak: number;
   repeatsToday: number;
+  hintsUsed?: number;
 }): number {
   const raw =
     baseStars(params.difficulty) *
     streakMultiplier(params.streak) *
-    diminishingFactor(params.repeatsToday);
+    diminishingFactor(params.repeatsToday) *
+    hintPenalty(params.hintsUsed ?? 0);
   return Math.max(1, Math.round(raw));
 }

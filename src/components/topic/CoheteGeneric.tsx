@@ -24,10 +24,12 @@ export function CoheteGeneric({
   moduleId,
   soundOn,
   onAnswer,
+  onWin,
 }: {
   moduleId: string;
   soundOn: boolean;
   onAnswer: (correct: boolean) => Promise<number>;
+  onWin?: () => void;
 }) {
   const mod = getModule(moduleId)!;
   const [phase, setPhase] = useState<Phase>("start");
@@ -53,9 +55,12 @@ export function CoheteGeneric({
       setWin(didWin);
       setPhase("over");
       playSound("fanfare", soundOn);
-      if (didWin) triggerConfetti();
+      if (didWin) {
+        triggerConfetti();
+        onWin?.();
+      }
     },
-    [soundOn],
+    [soundOn, onWin],
   );
 
   function setTimeLeft(seconds: number) {

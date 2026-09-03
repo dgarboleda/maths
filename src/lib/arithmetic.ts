@@ -1,4 +1,15 @@
 import { type Problem, randInt, round1 } from "./problem";
+import {
+  decenasHints,
+  divisionHints,
+  enterosHints,
+  fraccionMismoDenominadorHints,
+  multiplicacionHints,
+  porcentajeHints,
+  restaHints,
+  sumaHints,
+  sumaRestaDecimalHints,
+} from "./hints";
 
 /** Nivel 1-10: fija el valor en estrellas (ver economy.ts), no la edad del niño. */
 export function generateProblem(difficulty: number): Problem {
@@ -19,6 +30,7 @@ export function generateProblem(difficulty: number): Problem {
         lineMin: 0,
         lineMax: 5,
         startValue: a,
+        hints: sumaHints(a, b, answer),
       };
     }
     case 2: {
@@ -32,6 +44,7 @@ export function generateProblem(difficulty: number): Problem {
           answer: 10,
           inputType: "groupTens",
           groupTotal: total,
+          hints: decenasHints(total),
         };
       }
       const isAdd = Math.random() < 0.5;
@@ -49,6 +62,7 @@ export function generateProblem(difficulty: number): Problem {
         lineMin: 0,
         lineMax: 10,
         startValue: a,
+        hints: isAdd ? sumaHints(a, b, answer) : restaHints(a, b, answer),
       };
     }
     case 3: {
@@ -66,6 +80,7 @@ export function generateProblem(difficulty: number): Problem {
           lineMin: 0,
           lineMax: 100,
           startValue: a,
+          hints: sumaHints(a, b, a + b),
         };
       }
       const a = randInt(10, 100);
@@ -80,6 +95,7 @@ export function generateProblem(difficulty: number): Problem {
         lineMin: 0,
         lineMax: 100,
         startValue: a,
+        hints: restaHints(a, b, a - b),
       };
     }
     case 4: {
@@ -95,6 +111,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuánto es ${a} ${isAdd ? "+" : "−"} ${b}?`,
         answer,
         inputType: "integer",
+        hints: isAdd ? sumaHints(a, b, answer) : restaHints(a, b, answer),
       };
     }
     case 5: {
@@ -107,6 +124,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuánto es ${a} × ${b}?`,
         answer: a * b,
         inputType: "integer",
+        hints: multiplicacionHints(a, b, a * b),
       };
     }
     case 6: {
@@ -120,6 +138,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuánto es ${a} ÷ ${b}?`,
         answer,
         inputType: "integer",
+        hints: divisionHints(a, b, answer),
       };
     }
     case 7: {
@@ -133,6 +152,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuánto es ${num1}/${denom} + ${num2}/${denom}? Responde solo el numerador (el denominador sigue siendo ${denom}).`,
         answer: num1 + num2,
         inputType: "integer",
+        hints: fraccionMismoDenominadorHints(num1, num2, denom, num1 + num2),
       };
     }
     case 8: {
@@ -148,6 +168,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuánto es ${a} ${isAdd ? "+" : "−"} ${b}?`,
         answer,
         inputType: "decimal",
+        hints: sumaRestaDecimalHints(a, b, isAdd, answer),
       };
     }
     case 9: {
@@ -165,6 +186,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuánto es el ${pct}% de ${base}?`,
         answer: (base * pct) / 100,
         inputType: "integer",
+        hints: porcentajeHints(pct, base, (base * pct) / 100),
       };
     }
     default: {
@@ -180,6 +202,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuánto es (${a}) ${op} ${b}?`,
         answer,
         inputType: "integer",
+        hints: enterosHints(a, op, b, answer),
       };
     }
   }

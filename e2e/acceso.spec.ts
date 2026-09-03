@@ -5,13 +5,13 @@ test.describe("Acceso de la familia", () => {
   test("la raíz manda a /login cuando no hay sesión", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page).toHaveTitle("Entrar · Numerario");
+    await expect(page).toHaveTitle("Entrar · Math Quest");
   });
 
   test("un padre se registra y llega a la lista de perfiles", async ({ page }) => {
     await registrarPadre(page);
     await expect(page).toHaveURL(/\/perfiles$/);
-    await expect(page).toHaveTitle("¿Quién va a jugar? · Numerario");
+    await expect(page).toHaveTitle("¿Quién va a jugar? · Math Quest");
   });
 
   test("las credenciales incorrectas se anuncian como alerta", async ({ page }) => {
@@ -50,7 +50,7 @@ test.describe("Acceso de la familia", () => {
     await crearHijo(page, { nombre: "Carla", pin: "2468" });
 
     await page.getByRole("link", { name: "Panel de padre" }).click();
-    await expect(page).toHaveTitle("Panel de padre · Numerario");
+    await expect(page).toHaveTitle("Panel de padre · Math Quest");
     await expect(page.getByRole("region", { name: "Progreso de Carla" })).toBeVisible();
     await expect(page.getByText("Todavía no hay actividad.")).toBeVisible();
   });

@@ -157,6 +157,28 @@ export async function sembrarEvaluacion(
   }
 }
 
+/** Otorga directo en Firestore una insignia ya ganada, sin recorrer el evento real que la dispara. */
+export async function otorgarInsignia(correo: string, childId: string, badgeId: string): Promise<void> {
+  const app = initializeApp(
+    { apiKey: "demo-api-key", projectId: "demo-numerario" },
+    `insignia-${crypto.randomUUID()}`,
+  );
+  try {
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
+
+    const db = getFirestore(app);
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+    await setDoc(doc(db, "parents", user.uid, "children", childId, "badges", badgeId), {
+      earnedAt: Date.now(),
+    });
+  } finally {
+    await deleteApp(app);
+  }
+}
+
 /**
  * Resuelve el enunciado cuando es una operación simple ("¿Cuánto es 3 + 4?").
  * Devuelve null si el enunciado no tiene esa forma, para que la prueba pueda

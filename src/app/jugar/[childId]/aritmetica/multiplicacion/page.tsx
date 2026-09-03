@@ -136,8 +136,8 @@ export default function MultiplicacionPage() {
   if (loading || !user) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -147,8 +147,8 @@ export default function MultiplicacionPage() {
   if (!child) {
     return (
       <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-slate-300">
           Cargando…
         </p>
       </main>
@@ -163,18 +163,18 @@ export default function MultiplicacionPage() {
       <main
         id="contenido"
         tabIndex={-1}
-        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center"
       >
         <span aria-hidden="true" className="text-4xl">
           🔒
         </span>
-        <p className="text-lg font-bold text-slate-700">Todavía no puedes entrar aquí</p>
-        <p className="text-slate-500">
+        <p className="text-lg font-bold text-slate-200">Todavía no puedes entrar aquí</p>
+        <p className="text-slate-400">
           Primero dominá: {missing.map((m) => m.label).join(", ")}
         </p>
         <Link
           href={`/jugar/${params.childId}/aritmetica`}
-          className="text-sm text-purple-700 underline underline-offset-2"
+          className="text-sm text-violet-300 underline underline-offset-2"
         >
           Volver a Aritmética
         </Link>
@@ -198,12 +198,12 @@ export default function MultiplicacionPage() {
       nav={<TabNav tabs={TABS} active={activeTab} onSelect={setActiveTab} />}
     >
       {activeTab === "concepto" && (
-        <div {...panelProps("concepto")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div {...panelProps("concepto")} className="rounded-3xl border-4 border-indigo-300 bg-white p-6 shadow-xl">
           <ConceptoTab />
         </div>
       )}
       {activeTab === "practica" && (
-        <div {...panelProps("practica")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div {...panelProps("practica")} className="rounded-3xl border-4 border-indigo-300 bg-white p-6 shadow-xl">
           <PracticaTab soundOn={soundOn} onAnswer={(correct) => void submitAnswer(correct)} />
         </div>
       )}
@@ -213,7 +213,7 @@ export default function MultiplicacionPage() {
         </div>
       )}
       {activeTab === "tabla" && (
-        <div {...panelProps("tabla")} className="rounded-3xl border-4 border-purple-200 bg-white p-6 shadow-xl">
+        <div {...panelProps("tabla")} className="rounded-3xl border-4 border-indigo-300 bg-white p-6 shadow-xl">
           <TablaTab soundOn={soundOn} />
         </div>
       )}

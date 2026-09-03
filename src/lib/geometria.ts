@@ -1,4 +1,18 @@
 import { type Problem, randInt, choiceSet } from "./problem";
+import {
+  anguloComplementarioHints,
+  anguloSuplementarioHints,
+  areaRectanguloHints,
+  areaTrianguloHints,
+  coordenadasHints,
+  ladosHints,
+  perimetroHints,
+  pitagorasCatetoHints,
+  pitagorasHipotenusaHints,
+  semejanzaHints,
+  verticesHints,
+  volumenHints,
+} from "./hints";
 
 const SHAPES: Array<[string, number]> = [
   ["triángulo", 3],
@@ -35,6 +49,7 @@ export function generateProblem(difficulty: number): Problem {
         answer: sides,
         choices: choiceSet(sides, 2),
         inputType: "choice",
+        hints: ladosHints(name, sides),
       };
     }
     case 2: {
@@ -47,6 +62,7 @@ export function generateProblem(difficulty: number): Problem {
         answer: sides,
         choices: choiceSet(sides, 2),
         inputType: "choice",
+        hints: verticesHints(name, sides),
       };
     }
     case 3: {
@@ -59,6 +75,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuál es el perímetro de un rectángulo de ${largo} × ${ancho}?`,
         answer: 2 * (largo + ancho),
         inputType: "integer",
+        hints: perimetroHints(largo, ancho, 2 * (largo + ancho)),
       };
     }
     case 4: {
@@ -71,6 +88,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuál es el área de un rectángulo de ${largo} × ${ancho}?`,
         answer: largo * ancho,
         inputType: "integer",
+        hints: areaRectanguloHints(largo, ancho, largo * ancho),
       };
     }
     case 5: {
@@ -83,11 +101,13 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuál es el área de un triángulo con base ${base} y altura ${altura}?`,
         answer: (base * altura) / 2,
         inputType: "integer",
+        hints: areaTrianguloHints(base, altura, (base * altura) / 2),
       };
     }
     case 6: {
       const grados = randInt(10, 89);
       const supl = Math.random() < 0.5;
+      const answer = supl ? 180 - grados : Math.max(0, 90 - grados);
       return {
         id,
         difficulty,
@@ -95,8 +115,9 @@ export function generateProblem(difficulty: number): Problem {
         prompt: supl
           ? `Un ángulo mide ${grados}°. ¿Cuánto mide su ángulo suplementario (para sumar 180°)?`
           : `Un ángulo mide ${grados}°. ¿Cuánto mide su ángulo complementario (para sumar 90°)?`,
-        answer: supl ? 180 - grados : Math.max(0, 90 - grados),
+        answer,
         inputType: "integer",
+        hints: supl ? anguloSuplementarioHints(grados, answer) : anguloComplementarioHints(grados, answer),
       };
     }
     case 7: {
@@ -110,6 +131,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `¿Cuál es el volumen de un prisma rectangular de ${largo} × ${ancho} × ${alto}?`,
         answer: largo * ancho * alto,
         inputType: "integer",
+        hints: volumenHints(largo, ancho, alto, largo * ancho * alto),
       };
     }
     case 8: {
@@ -122,6 +144,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `El punto (${x}, y) se traslada ${dx >= 0 ? `${dx} unidades a la derecha` : `${Math.abs(dx)} unidades a la izquierda`}. ¿Cuál es su nueva coordenada x?`,
         answer: x + dx,
         inputType: "integer",
+        hints: coordenadasHints(x, dx, x + dx),
       };
     }
     case 9: {
@@ -136,6 +159,7 @@ export function generateProblem(difficulty: number): Problem {
           : `Un triángulo rectángulo tiene hipotenusa ${c} y un cateto de ${a}. ¿Cuánto mide el otro cateto?`,
         answer: askHypotenuse ? c : b,
         inputType: "integer",
+        hints: askHypotenuse ? pitagorasHipotenusaHints(a, b, c) : pitagorasCatetoHints(c, a, b),
       };
     }
     default: {
@@ -148,6 +172,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Dos figuras son semejantes con razón de escala ${scale}. Si un lado de la figura pequeña mide ${smallSide}, ¿cuánto mide el lado correspondiente de la figura grande?`,
         answer: smallSide * scale,
         inputType: "integer",
+        hints: semejanzaHints(scale, smallSide, smallSide * scale),
       };
     }
   }

@@ -1,4 +1,16 @@
 import { type Problem, randInt, choiceSet } from "./problem";
+import {
+  datoIrrelevanteHints,
+  deduccionHints,
+  optimizacionHints,
+  presupuestoHints,
+  problemaDivisionHints,
+  problemaDosPasosHints,
+  problemaMultiplicacionSumaHints,
+  problemaRestaHints,
+  problemaSumaHints,
+  redondeoHints,
+} from "./hints";
 
 export function generateProblem(difficulty: number): Problem {
   const id = crypto.randomUUID();
@@ -16,6 +28,7 @@ export function generateProblem(difficulty: number): Problem {
         answer,
         choices: choiceSet(answer, 2),
         inputType: "choice",
+        hints: problemaSumaHints(a, b, answer),
       };
     }
     case 2: {
@@ -30,6 +43,7 @@ export function generateProblem(difficulty: number): Problem {
         answer,
         choices: choiceSet(answer, 2),
         inputType: "choice",
+        hints: problemaRestaHints(a, b, answer),
       };
     }
     case 3: {
@@ -42,6 +56,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Hay ${porPlato * platos} galletas repartidas en partes iguales en ${platos} platos. ¿Cuántas galletas hay en cada plato?`,
         answer: porPlato,
         inputType: "integer",
+        hints: problemaDivisionHints(porPlato * platos, platos, porPlato),
       };
     }
     case 4: {
@@ -55,6 +70,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Tenías ${inicial} canicas. Ganaste ${gana} y luego perdiste ${pierde}. ¿Cuántas canicas tienes ahora?`,
         answer: inicial + gana - pierde,
         inputType: "integer",
+        hints: problemaDosPasosHints(inicial, gana, pierde, inicial + gana - pierde),
       };
     }
     case 5: {
@@ -68,6 +84,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Compraste ${paquetes} paquetes de ${porPaquete} lápices cada uno, y ya tenías ${yaTenia} lápices. ¿Cuántos lápices tienes en total?`,
         answer: paquetes * porPaquete + yaTenia,
         inputType: "integer",
+        hints: problemaMultiplicacionSumaHints(paquetes, porPaquete, yaTenia, paquetes * porPaquete + yaTenia),
       };
     }
     case 6: {
@@ -81,6 +98,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Ana tiene ${edadA} años. Su hermano tiene ${edadB} años y mide ${alturaDistractor} cm. ¿Cuántos años más tiene Ana que su hermano?`,
         answer: edadA - edadB,
         inputType: "integer",
+        hints: datoIrrelevanteHints(edadA, edadB, edadA - edadB),
       };
     }
     case 7: {
@@ -94,6 +112,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Tienes $${dinero}. Compras algo de $${gasto1} y otra cosa de $${gasto2}. ¿Cuánto dinero te queda?`,
         answer: dinero - gasto1 - gasto2,
         inputType: "integer",
+        hints: presupuestoHints(dinero, gasto1, gasto2, dinero - gasto1 - gasto2),
       };
     }
     case 8: {
@@ -106,6 +125,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Redondea ${n} a la decena más cercana.`,
         answer: rounded,
         inputType: "integer",
+        hints: redondeoHints(n, rounded),
       };
     }
     case 9: {
@@ -118,6 +138,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Pienso un número. Si le sumo ${add}, obtengo ${secret + add}. ¿Cuál es mi número?`,
         answer: secret,
         inputType: "integer",
+        hints: deduccionHints(add, secret + add, secret),
       };
     }
     default: {
@@ -130,6 +151,7 @@ export function generateProblem(difficulty: number): Problem {
         prompt: `Quieres comprar la mayor cantidad posible de globos que cuestan $${precio} cada uno, con $${dinero}. ¿Cuántos globos puedes comprar?`,
         answer: Math.floor(dinero / precio),
         inputType: "integer",
+        hints: optimizacionHints(dinero, precio, Math.floor(dinero / precio)),
       };
     }
   }

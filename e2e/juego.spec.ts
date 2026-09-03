@@ -16,14 +16,14 @@ test.describe("Recorrido de juego", () => {
     const { nombre } = await sesionDeHijo(page);
 
     await irATema(page, "Geometría", /\/geometria$/);
-    await expect(page).toHaveTitle("Geometría · Numerario");
+    await expect(page).toHaveTitle("Geometría · Math Quest");
     await expect(page.getByText(/\d+\/\d+ temas dominados/)).toBeVisible();
 
     // "Lados de figuras" no tiene prerrequisitos: se puede entrar sin dominar
     // nada antes.
     await page.getByRole("link", { name: "Lados de figuras" }).click();
     await expect(page).toHaveURL(/\/geometria\/geometria-d1$/);
-    await expect(page).toHaveTitle("Lados de figuras · Geometría · Numerario");
+    await expect(page).toHaveTitle("Lados de figuras · Geometría · Math Quest");
 
     await page.getByRole("link", { name: `← Geometría de ${nombre}` }).click();
     await expect(page).toHaveURL(/\/geometria$/);
@@ -138,7 +138,7 @@ test.describe("Recorrido de juego", () => {
     // "Multiplicación" (aritmetica-d5) exige dominar antes aritmetica-d3.
     await otorgarDominio(correo, idDeHijo(page), ["aritmetica-d3"]);
     await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/multiplicacion"));
-    await expect(page).toHaveTitle("Multiplicación · Numerario");
+    await expect(page).toHaveTitle("Multiplicación · Math Quest");
 
     await page.getByRole("tab", { name: /Tabla/ }).click();
     await page.getByRole("button", { name: "7 por 8 igual a 56" }).press("Enter");

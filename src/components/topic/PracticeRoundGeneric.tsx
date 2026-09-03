@@ -9,14 +9,22 @@ import { triggerConfetti } from "@/lib/confetti";
 
 const ROUND_LENGTH = 10;
 
+const MAX_HINT_LEVEL = 3;
+
+/** Racha de aciertos sin pista que desbloquea la insignia "Estratega". */
+const NO_HINT_STREAK_GOAL = 5;
+
 export function PracticeRoundGeneric({
   moduleId,
   soundOn,
   onAnswer,
+  onNoHintStreak,
 }: {
   moduleId: string;
   soundOn: boolean;
-  onAnswer: (correct: boolean) => void;
+  onAnswer: (correct: boolean, hintsUsed: number) => void;
+  /** Se llama cuando se acumulan NO_HINT_STREAK_GOAL aciertos seguidos sin pista. */
+  onNoHintStreak?: () => void;
 }) {
   const mod = getModule(moduleId)!;
 
@@ -29,6 +37,8 @@ export function PracticeRoundGeneric({
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<{ correct: boolean; answer: number } | null>(null);
   const [finished, setFinished] = useState(false);
+  const [hintLevel, setHintLevel] = useState(0);
+  const [noHintStreak, setNoHintStreak] = useState(0);
   const promptId = useId();
   const nextButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -41,16 +51,33 @@ export function PracticeRoundGeneric({
     if (feedback) nextButtonRef.current?.focus();
   }, [feedback]);
 
+  function pedirPista() {
+    if (hintLevel >= MAX_HINT_LEVEL) return;
+    playSound("click", soundOn);
+    setHintLevel((n) => n + 1);
+  }
+
   function submit(given: number) {
     const correct = isCorrectAnswer(problem, given);
-    onAnswer(correct);
+    onAnswer(correct, hintLevel);
     setFeedback({ correct, answer: problem.answer });
     if (correct) {
       playSound("correct", soundOn);
       setScore((s) => s + 10);
       triggerConfetti();
+      if (hintLevel === 0) {
+        const streak = noHintStreak + 1;
+        setNoHintStreak(streak);
+        if (streak >= NO_HINT_STREAK_GOAL) {
+          setNoHintStreak(0);
+          onNoHintStreak?.();
+        }
+      } else {
+        setNoHintStreak(0);
+      }
     } else {
       playSound("wrong", soundOn);
+      setNoHintStreak(0);
     }
   }
 
@@ -63,6 +90,7 @@ export function PracticeRoundGeneric({
     }
     setQuestionNumber((n) => n + 1);
     setFeedback(null);
+    setHintLevel(0);
   }
 
   function restart() {
@@ -72,6 +100,7 @@ export function PracticeRoundGeneric({
     setScore(0);
     setFeedback(null);
     setFinished(false);
+    setHintLevel(0);
   }
 
   const progressPct = ((questionNumber - 1) / ROUND_LENGTH) * 100;
@@ -121,6 +150,32 @@ export function PracticeRoundGeneric({
       <p id={promptId} className="text-2xl font-extrabold text-purple-900 sm:text-3xl">
         {problem.prompt}
       </p>
+
+      {!feedback && problem.hints && (
+        <div className="space-y-2">
+          <div role="status" aria-live="polite">
+            {hintLevel > 0 && (
+              <p className="rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-800">
+                <span aria-hidden="true">💡 </span>
+                {problem.hints[hintLevel - 1]}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={pedirPista}
+            disabled={hintLevel >= MAX_HINT_LEVEL}
+            className="rounded-xl bg-amber-100 px-4 py-1.5 text-sm font-bold text-amber-800 hover:bg-amber-200 disabled:opacity-40"
+          >
+            💡{" "}
+            {hintLevel === 0
+              ? "Pedir pista"
+              : hintLevel >= MAX_HINT_LEVEL
+                ? "Sin más pistas"
+                : `Pista ${hintLevel + 1}`}
+          </button>
+        </div>
+      )}
 
       {!feedback && <QuestionWidget problem={problem} onSubmit={submit} promptId={promptId} />}
 
