@@ -85,7 +85,16 @@ export default function JugarPage() {
     };
   }, [user, params.childId]);
 
-  if (loading || !user) return null;
+  if (loading || !user) {
+    return (
+      <main id="contenido"
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
+        <p role="status" className="text-neutral-700">
+          Cargando…
+        </p>
+      </main>
+    );
+  }
 
   if (notFound) {
     return (
@@ -102,7 +111,16 @@ export default function JugarPage() {
     );
   }
 
-  if (!child) return null;
+  if (!child) {
+    return (
+      <main id="contenido"
+        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
+        <p role="status" className="text-neutral-700">
+          Cargando…
+        </p>
+      </main>
+    );
+  }
 
   return (
     <GameShell
