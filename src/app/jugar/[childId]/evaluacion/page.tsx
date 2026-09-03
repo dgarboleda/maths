@@ -12,10 +12,13 @@ import {
   currentPlacementModule,
   grantsFromPlacement,
   initStrandPlacement,
+  maxTierForStrand,
+  moduleForTier,
   strandResultFrom,
   summarizePlacement,
   type StrandPlacementState,
 } from "@/lib/placement";
+import { moduleHref, recommendedModule } from "@/lib/curriculum";
 import { isCorrectAnswer, type Problem } from "@/lib/problem";
 import { awardBadge } from "@/lib/awardBadge";
 import { GameShell } from "@/components/GameShell";
@@ -93,9 +96,19 @@ export default function EvaluacionPage() {
     };
   }, [user, params.childId]);
 
+  /**
+   * En una re-evaluación, arranca justo encima de la última franja aprobada
+   * en ese hilo en vez de repetir el basal desde 0 — la primera vez de un
+   * alumno (sin evaluación previa) sigue siendo basal puro.
+   */
+  function startTierFor(strandSlug: string): number {
+    const previous = ultimaEvaluacion?.perStrand[strandSlug];
+    return previous ? previous.highestTierPassed + 1 : 0;
+  }
+
   function startPlacement() {
     startedAtRef.current = Date.now();
-    const state = initStrandPlacement(STRANDS[0].slug);
+    const state = initStrandPlacement(STRANDS[0].slug, startTierFor(STRANDS[0].slug));
     setStrandOrderIdx(0);
     setStrandResults({});
     setStrandState(state);
@@ -132,7 +145,7 @@ export default function EvaluacionPage() {
       void finishPlacement(updatedResults);
       return;
     }
-    const nextState = initStrandPlacement(STRANDS[nextIdx].slug);
+    const nextState = initStrandPlacement(STRANDS[nextIdx].slug, startTierFor(STRANDS[nextIdx].slug));
     setStrandOrderIdx(nextIdx);
     setStrandState(nextState);
     setProblem(currentPlacementModule(nextState)?.generateProblem() ?? null);
@@ -160,16 +173,19 @@ export default function EvaluacionPage() {
           grantedModuleIds: grants,
         });
 
+        const mergedProgress = { ...progressBySkill };
         for (const moduleId of grants) {
           const existing = progressBySkill[moduleId];
+          const granted: SkillProgress = {
+            recentResults: existing?.recentResults ?? [],
+            recentAccuracy: existing?.recentAccuracy ?? 1,
+            masteredAt: Date.now(),
+            masteredVia: "placement",
+          };
+          mergedProgress[moduleId] = granted;
           batch.set(
             doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", moduleId),
-            {
-              recentResults: existing?.recentResults ?? [],
-              recentAccuracy: existing?.recentAccuracy ?? 1,
-              masteredAt: Date.now(),
-              masteredVia: "placement",
-            },
+            granted,
           );
         }
 
@@ -179,6 +195,10 @@ export default function EvaluacionPage() {
 
         await batch.commit();
         await awardBadge(firestore, db, user.uid, params.childId, "detective");
+        // El plan de la pantalla de resultados (próximo módulo por hilo)
+        // necesita ver los módulos recién otorgados, no el progreso de antes
+        // de rendir la evaluación.
+        setProgressBySkill(mergedProgress);
       }
     } catch (err) {
       console.error("No se pudo guardar la evaluación", err);
@@ -239,10 +259,12 @@ export default function EvaluacionPage() {
 
       {phase === "results" && savedSummary && (
         <ResultsScreen
+          childId={params.childId}
           childName={child.name}
           results={strandResults}
           summary={savedSummary}
           previa={ultimaEvaluacion}
+          progressBySkill={progressBySkill}
           childHref={`/jugar/${params.childId}`}
         />
       )}
@@ -276,7 +298,7 @@ function IntroScreen({
           <p className="font-bold text-purple-800">
             Ya hiciste esta evaluación antes: nivel general aproximado {ultimaEvaluacion.overallGradeBand}.
           </p>
-          <p>Puedes volver a hacerla para ver cuánto has avanzado.</p>
+          <p>Puedes volver a hacerla para ver cuánto has avanzado — esta vez arrancamos desde ahí, no desde cero.</p>
         </div>
       )}
 
@@ -357,18 +379,32 @@ function AskingScreen({
 }
 
 function ResultsScreen({
+  childId,
   childName,
   results,
   summary,
   previa,
+  progressBySkill,
   childHref,
 }: {
+  childId: string;
   childName: string;
   results: Record<string, PlacementStrandRecord>;
   summary: ReturnType<typeof summarizePlacement>;
   previa: PlacementDoc | null;
+  progressBySkill: Record<string, SkillProgress>;
   childHref: string;
 }) {
+  // Hilo con menor avance relativo (franja alcanzada / franja máxima del
+  // hilo) — el punto de partida sugerido del plan, no una nota ni un ranking.
+  let priority: { slug: string; ratio: number } | null = null;
+  for (const [slug, r] of Object.entries(results)) {
+    const ratio = (r.highestTierPassed + 1) / (maxTierForStrand(slug) + 1);
+    if (!priority || ratio < priority.ratio) priority = { slug, ratio };
+  }
+  const priorityStrand = priority ? getStrand(priority.slug) : undefined;
+  const priorityModule = priorityStrand ? recommendedModule(progressBySkill, priorityStrand.slug) : null;
+
   return (
     <div role="status" className="mx-auto max-w-xl space-y-6 rounded-3xl border-2 border-emerald-300 bg-emerald-50 p-6 text-center shadow-inner sm:p-8">
       <div aria-hidden="true" className="text-5xl">
@@ -386,21 +422,54 @@ function ResultsScreen({
         </p>
       )}
 
+      {priorityStrand && priorityModule && (
+        <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-left">
+          <p className="font-bold text-amber-900">
+            <span aria-hidden="true">🎯 </span>Tu plan: por dónde empezar
+          </p>
+          <p className="mt-1 text-sm text-amber-800">
+            {priorityStrand.emoji} {priorityStrand.label} es donde tienes más para crecer ahora mismo.
+          </p>
+          <Link
+            href={moduleHref(childId, priorityModule)}
+            className="mt-2 inline-block rounded-xl bg-amber-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-amber-500"
+          >
+            ▶ Practicar {priorityModule.label}
+          </Link>
+        </div>
+      )}
+
       <ul className="flex flex-col gap-2 text-left">
         {STRANDS.map((s) => {
           const r = results[s.slug];
           if (!r) return null;
+          const recommended = recommendedModule(progressBySkill, s.slug);
+          const weakLabels = r.weakTiers
+            .map((tier) => moduleForTier(s.slug, tier)?.label)
+            .filter((label): label is string => Boolean(label));
           return (
-            <li
-              key={s.slug}
-              className="flex items-center justify-between rounded-xl border-2 border-emerald-100 bg-white px-4 py-2 text-sm"
-            >
-              <span className="font-bold text-emerald-900">
-                {s.emoji} {s.label}
-              </span>
-              <span className="text-emerald-700">
-                {r.gradeBand} · {r.itemsCorrect}/{r.itemsAsked} correctas
-              </span>
+            <li key={s.slug} className="rounded-xl border-2 border-emerald-100 bg-white px-4 py-2 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-emerald-900">
+                  {s.emoji} {s.label}
+                </span>
+                <span className="text-emerald-700">
+                  {r.gradeBand} · {r.itemsCorrect}/{r.itemsAsked} correctas
+                </span>
+              </div>
+              {weakLabels.length > 0 && (
+                <p className="mt-1 text-xs text-amber-700">
+                  <span aria-hidden="true">🎯 </span>Puntos de mejora: {weakLabels.join(", ")}
+                </p>
+              )}
+              {recommended && (
+                <Link
+                  href={moduleHref(childId, recommended)}
+                  className="mt-1 inline-block text-xs font-bold text-emerald-700 underline underline-offset-2"
+                >
+                  ▶ Practicar {recommended.label}
+                </Link>
+              )}
             </li>
           );
         })}

@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { getStrand } from "@/lib/strands";
-import { modulesForStrand, isMastered, isUnlocked, missingPrerequisites, recommendedModule } from "@/lib/curriculum";
+import { modulesForStrand, isMastered, isUnlocked, missingPrerequisites, moduleHref, recommendedModule } from "@/lib/curriculum";
 import { getStrandNarrative } from "@/lib/narrative";
 import { GameShell } from "@/components/GameShell";
 import { playSound } from "@/lib/gameSound";
@@ -152,7 +152,7 @@ export default function StrandTopicListPage() {
               );
             }
 
-            const href = mod.href ? mod.href(params.childId) : `/jugar/${params.childId}/${strand.slug}/${mod.id}`;
+            const href = moduleHref(params.childId, mod);
 
             return (
               <Link

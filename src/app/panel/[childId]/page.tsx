@@ -8,6 +8,7 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, Placement, SkillProgress } from "@/lib/types";
 import { getStrand, STRANDS } from "@/lib/strands";
 import { MODULES, isMastered, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
+import { moduleForTier } from "@/lib/placement";
 import { BADGES } from "@/lib/badges";
 
 const STRAND_COLORS: Record<string, string> = {
@@ -156,6 +157,19 @@ export default function CurriculaPage() {
                     );
                   })}
                 </p>
+                {STRANDS.some((s) => ev.perStrand[s.slug]?.weakTiers?.length) && (
+                  <p className="mt-1 text-xs text-amber-700">
+                    Puntos de mejora:{" "}
+                    {STRANDS.flatMap((s) => {
+                      const r = ev.perStrand[s.slug];
+                      if (!r?.weakTiers?.length) return [];
+                      const labels = r.weakTiers
+                        .map((tier) => moduleForTier(s.slug, tier)?.label)
+                        .filter((label): label is string => Boolean(label));
+                      return labels.length ? [`${s.emoji} ${labels.join(", ")}`] : [];
+                    }).join(" · ")}
+                  </p>
+                )}
               </li>
             ))}
           </ul>

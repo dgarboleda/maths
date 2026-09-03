@@ -74,8 +74,8 @@ test.describe("Motor de evaluación de ubicación (lógica pura)", () => {
 
   test("otorga como dominados solo los módulos en o por debajo de la franja alcanzada, y no repite lo ya dominado", () => {
     const perStrand: Record<string, PlacementStrandRecord> = {
-      aritmetica: { itemsAsked: 5, itemsCorrect: 4, highestTierPassed: 3, gradeBand: gradeBandForTier(3) },
-      algebra: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: gradeBandForTier(-1) },
+      aritmetica: { itemsAsked: 5, itemsCorrect: 4, highestTierPassed: 3, gradeBand: gradeBandForTier(3), weakTiers: [] },
+      algebra: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: gradeBandForTier(-1), weakTiers: [] },
     };
     const yaDominado = "aritmetica-d1";
     const progressBySkill: Record<string, SkillProgress> = {
@@ -95,8 +95,8 @@ test.describe("Motor de evaluación de ubicación (lógica pura)", () => {
   test("los otorgamientos resuelven prerrequisitos cruzados entre hilos igual que jugando de verdad", () => {
     // algebra-d4 (franja 5) exige algebra-d3 (franja 3) Y aritmetica-d6 (franja 4).
     const conAritmeticaHasta3: Record<string, PlacementStrandRecord> = {
-      aritmetica: { itemsAsked: 4, itemsCorrect: 4, highestTierPassed: 3, gradeBand: gradeBandForTier(3) },
-      algebra: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 3, gradeBand: gradeBandForTier(3) },
+      aritmetica: { itemsAsked: 4, itemsCorrect: 4, highestTierPassed: 3, gradeBand: gradeBandForTier(3), weakTiers: [] },
+      algebra: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 3, gradeBand: gradeBandForTier(3), weakTiers: [] },
     };
     const progresoParcial: Record<string, SkillProgress> = {};
     for (const id of grantsFromPlacement(conAritmeticaHasta3, {})) {
@@ -106,7 +106,7 @@ test.describe("Motor de evaluación de ubicación (lógica pura)", () => {
 
     const conAritmeticaHasta4: Record<string, PlacementStrandRecord> = {
       ...conAritmeticaHasta3,
-      aritmetica: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 4, gradeBand: gradeBandForTier(4) },
+      aritmetica: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 4, gradeBand: gradeBandForTier(4), weakTiers: [] },
     };
     const progresoCompleto: Record<string, SkillProgress> = {};
     for (const id of grantsFromPlacement(conAritmeticaHasta4, {})) {
@@ -118,17 +118,71 @@ test.describe("Motor de evaluación de ubicación (lógica pura)", () => {
 
   test("el resumen general combina los cinco hilos en un puntaje y una franja aproximada", () => {
     const perStrand: Record<string, PlacementStrandRecord> = {
-      aritmetica: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 8, gradeBand: gradeBandForTier(8) },
-      algebra: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 9, gradeBand: gradeBandForTier(9) },
-      geometria: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: gradeBandForTier(-1) },
-      medicion: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: gradeBandForTier(-1) },
-      logica: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: gradeBandForTier(-1) },
+      aritmetica: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 8, gradeBand: gradeBandForTier(8), weakTiers: [] },
+      algebra: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 9, gradeBand: gradeBandForTier(9), weakTiers: [] },
+      geometria: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: gradeBandForTier(-1), weakTiers: [] },
+      medicion: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: gradeBandForTier(-1), weakTiers: [] },
+      logica: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: gradeBandForTier(-1), weakTiers: [] },
     };
     const resumen = summarizePlacement(perStrand);
     // Dos hilos al tope y tres sin nada: el puntaje queda a la mitad, no en los extremos.
     expect(resumen.overallScore).toBeGreaterThan(20);
     expect(resumen.overallScore).toBeLessThan(80);
     expect(resumen.overallGradeBand).not.toBe("por reforzar las bases");
+  });
+
+  test("un fallo aislado queda en weakTiers como 'punto de mejora', sin tocar la franja alcanzada", () => {
+    let state = initStrandPlacement("aritmetica"); // franjas 0..8, contiguas
+    state = answerPlacementItem(state, true); // franja 0 ✓
+    state = answerPlacementItem(state, false); // franja 1 ✗ (aislado)
+    state = answerPlacementItem(state, true); // franja 2 ✓ — se recupera
+    state = answerPlacementItem(state, true); // franja 3 ✓
+    expect(state.done).toBe(false); // nunca hubo 2 fallos seguidos
+
+    const result = strandResultFrom(state);
+    expect(result.highestTierPassed).toBe(3);
+    expect(result.weakTiers).toEqual([1]);
+  });
+
+  test("los fallos que cierran el hilo (techo) no cuentan como punto de mejora", () => {
+    let state = initStrandPlacement("aritmetica");
+    state = answerPlacementItem(state, true); // franja 0 ✓
+    state = answerPlacementItem(state, true); // franja 1 ✓
+    state = answerPlacementItem(state, false); // franja 2 ✗ (techo, 1/2)
+    state = answerPlacementItem(state, false); // franja 3 ✗ (techo, 2/2)
+    expect(state.done).toBe(true);
+
+    const result = strandResultFrom(state);
+    expect(result.highestTierPassed).toBe(1);
+    expect(result.weakTiers).toEqual([]); // las del techo no son "puntos de mejora"
+  });
+
+  test("una re-evaluación con startTier arranca por encima de lo ya aprobado y no pierde ese piso si falla enseguida", () => {
+    const state0 = initStrandPlacement("aritmetica", 4);
+    expect(state0.pointer).toBe(4); // franjas contiguas: pointer == valor de franja
+    expect(state0.startTier).toBe(4);
+
+    let state = state0;
+    state = answerPlacementItem(state, false); // franja 4 ✗ (1/2)
+    state = answerPlacementItem(state, false); // franja 5 ✗ (2/2, techo inmediato)
+    expect(state.done).toBe(true);
+    expect(state.highestTierPassed).toBe(-1); // nada aprobado EN ESTA pasada
+
+    const result = strandResultFrom(state);
+    // Pero como ya venía acreditado hasta la franja 3, el resultado no cae a "por reforzar las bases".
+    expect(result.highestTierPassed).toBe(3);
+    expect(result.gradeBand).toBe(gradeBandForTier(3));
+  });
+
+  test("con startTier, una franja aprobada en esta pasada pesa más que el piso heredado", () => {
+    let state = initStrandPlacement("aritmetica", 4);
+    state = answerPlacementItem(state, true); // franja 4 ✓
+    state = answerPlacementItem(state, false); // franja 5 ✗ (1/2)
+    state = answerPlacementItem(state, false); // franja 6 ✗ (2/2, techo)
+    expect(state.done).toBe(true);
+
+    const result = strandResultFrom(state);
+    expect(result.highestTierPassed).toBe(4); // lo probado (4) > piso heredado (3)
   });
 });
 
@@ -195,5 +249,35 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     // La tarjeta de invitación en el hub del niño ya no debería aparecer.
     await page.goto(`/jugar/${childId}`);
     await expect(page.getByText("¿Hacemos una evaluación rápida?")).toBeHidden();
+  });
+
+  test("el panel del padre muestra los puntos de mejora de una evaluación con fallos aislados", async ({ page }) => {
+    const { correo } = await sesionDeHijo(page);
+    const childId = idDeHijo(page);
+
+    await sembrarEvaluacion(correo, childId, {
+      perStrand: {
+        aritmetica: {
+          itemsAsked: 4,
+          itemsCorrect: 3,
+          highestTierPassed: 3,
+          gradeBand: "2.º–3.º",
+          weakTiers: [1],
+        },
+        algebra: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: "por reforzar las bases" },
+        geometria: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: "por reforzar las bases" },
+        medicion: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: "por reforzar las bases" },
+        logica: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: "por reforzar las bases" },
+      },
+      overallScore: 40,
+      overallGradeBand: "1.º–2.º",
+      grantedModuleIds: ["aritmetica-d1", "aritmetica-d2", "aritmetica-d3", "aritmetica-d4"],
+    });
+
+    await page.goto(`/panel/${childId}`);
+    const puntosDeMejora = page.getByText(/Puntos de mejora:/);
+    await expect(puntosDeMejora).toBeVisible();
+    // La franja 1 de aritmética es "aritmetica-d2" (Sumas y restas hasta 10).
+    await expect(puntosDeMejora).toContainText("Sumas y restas hasta 10");
   });
 });
