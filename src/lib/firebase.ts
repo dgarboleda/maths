@@ -51,7 +51,7 @@ async function initFirebase(): Promise<Firebase> {
 
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   const auth = withDiagnostics(() => getAuth(app));
-  const db = firestore.getFirestore(app);
+  const db = getOrInitFirestore(app, firestore);
 
   /*
    * Con NEXT_PUBLIC_FIREBASE_EMULATORS=1 la app habla con los emuladores
@@ -69,6 +69,34 @@ async function initFirebase(): Promise<Firebase> {
   }
 
   return { app, auth, db, firestore };
+}
+
+/*
+ * Sin caché local persistente, Firestore solo guarda los datos en memoria:
+ * cualquier recarga (o un corte de red justo en ese momento, típico de una
+ * tablet familiar con wifi inestable) obliga a esperar una respuesta del
+ * servidor antes de mostrar nada, y si esa respuesta no llega a tiempo la
+ * lista de hijos se ve vacía aunque los documentos sigan intactos en el
+ * servidor. `persistentLocalCache` guarda los datos en IndexedDB para que
+ * sobrevivan a recargas y estén disponibles de inmediato mientras se
+ * confirma con el servidor. Si el navegador no soporta IndexedDB (modo
+ * privado de Safari, por ejemplo) `initializeFirestore` lanza, así que se
+ * usa `getFirestore` (memoria) como respaldo.
+ */
+function getOrInitFirestore(
+  app: FirebaseApp,
+  firestore: typeof import("firebase/firestore"),
+): Firestore {
+  try {
+    return firestore.initializeFirestore(app, {
+      localCache: firestore.persistentLocalCache({
+        tabManager: firestore.persistentMultipleTabManager(),
+      }),
+    });
+  } catch (err) {
+    console.error("No se pudo activar la caché persistente de Firestore", err);
+    return firestore.getFirestore(app);
+  }
 }
 
 /*
