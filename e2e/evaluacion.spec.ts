@@ -10,7 +10,15 @@ import {
   summarizePlacement,
 } from "../src/lib/placement";
 import type { PlacementStrandRecord, SkillProgress } from "../src/lib/types";
-import { idDeHijo, resolverEnunciado, sembrarEvaluacion, sesionDeHijo } from "./utilidades";
+import {
+  crearHijo,
+  entrarAPerfilSinEvaluar,
+  idDeHijo,
+  registrarPadre,
+  resolverEnunciado,
+  sembrarEvaluacion,
+  sesionDeHijo,
+} from "./utilidades";
 
 test.describe("Motor de evaluación de ubicación (lógica pura)", () => {
   test("arranca siempre en la franja más fácil del hilo, sin nada dado por dominado", () => {
@@ -187,18 +195,27 @@ test.describe("Motor de evaluación de ubicación (lógica pura)", () => {
 });
 
 test.describe("Evaluación de ubicación en el navegador", () => {
-  test("la tarjeta de evaluación aparece al crear un hijo y se puede omitir", async ({ page }) => {
-    await sesionDeHijo(page);
-    await expect(page.getByText("¿Hacemos una evaluación rápida?")).toBeVisible();
+  test("sin evaluación completa, el niño no puede entrar al mundo: todo redirige a la evaluación", async ({
+    page,
+  }) => {
+    await registrarPadre(page);
+    const { nombre, pin } = await crearHijo(page);
+    await entrarAPerfilSinEvaluar(page, nombre, pin);
 
-    await page.getByRole("button", { name: "Ahora no" }).click();
-    await expect(page.getByText("¿Hacemos una evaluación rápida?")).toBeHidden();
+    await expect(page.getByRole("heading", { name: "Evaluación inicial" })).toBeVisible();
+    // Es obligatoria la primera vez: no hay forma de omitirla.
+    await expect(page.getByRole("link", { name: "Omitir por ahora" })).toBeHidden();
+
+    // Ni siquiera navegando directo a la ciudad: el mundo redirige de vuelta.
+    const childId = idDeHijo(page);
+    await page.goto(`/jugar/${childId}`);
+    await expect(page).toHaveURL(/\/evaluacion$/);
   });
 
   test("empezar la evaluación arranca en Aritmética y avanza de pregunta al acertar", async ({ page }) => {
-    await sesionDeHijo(page);
-    await page.getByRole("link", { name: "Empezar" }).click();
-    await expect(page).toHaveURL(/\/evaluacion$/);
+    await registrarPadre(page);
+    const { nombre, pin } = await crearHijo(page);
+    await entrarAPerfilSinEvaluar(page, nombre, pin);
     await expect(page.getByRole("heading", { name: "Evaluación inicial" })).toBeVisible();
 
     await page.getByRole("button", { name: "Comenzar evaluación" }).click();
@@ -246,9 +263,9 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     await expect(page.getByText("1.º (22/100)")).toBeVisible();
     await expect(page.getByText("✓ Dominado (evaluación inicial)").first()).toBeVisible();
 
-    // La tarjeta de invitación en el hub del niño ya no debería aparecer.
+    // Ada ya no interrumpe sola: la evaluación está completa.
     await page.goto(`/jugar/${childId}`);
-    await expect(page.getByText("¿Hacemos una evaluación rápida?")).toBeHidden();
+    await expect(page.getByText("¿Volvemos a medir tu nivel?")).toBeHidden();
   });
 
   test("el panel del padre muestra los puntos de mejora de una evaluación con fallos aislados", async ({ page }) => {

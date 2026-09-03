@@ -21,7 +21,6 @@ export function CityScene({
   questStrandSlug,
   onOpenShop,
   onOpenNpc,
-  npcAlert,
 }: {
   childId: string;
   childName: string;
@@ -30,7 +29,6 @@ export function CityScene({
   questStrandSlug: string | null;
   onOpenShop: () => void;
   onOpenNpc: () => void;
-  npcAlert: boolean;
 }) {
   const buildings = cityBuildings();
 
@@ -220,15 +218,12 @@ export function CityScene({
         >
           <span
             aria-hidden="true"
-            className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-cyan-300/60 bg-cyan-500/15 text-3xl ${
-              npcAlert ? "animate-[worldPulse_2.4s_ease-in-out_infinite]" : ""
-            }`}
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-cyan-300/60 bg-cyan-500/15 text-3xl"
           >
             🧑‍🔬
           </span>
           <span className="mt-1 block rounded-xl bg-slate-950/85 px-2 py-1 text-[11px] font-bold leading-tight text-cyan-100 ring-1 ring-cyan-400/30">
             Ada, la ingeniera
-            {npcAlert && <span className="block text-[10px] font-semibold text-amber-300">¡Quiere hablar contigo!</span>}
           </span>
         </button>
       </div>

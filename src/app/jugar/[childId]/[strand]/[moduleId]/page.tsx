@@ -17,6 +17,7 @@ import { awardMasteryBadges } from "@/lib/masteryRewards";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
+import { useRequirePlacement } from "@/lib/useRequirePlacement";
 import { ConceptoGeneric } from "@/components/topic/ConceptoGeneric";
 import { PracticeRoundGeneric } from "@/components/topic/PracticeRoundGeneric";
 import { CoheteGeneric } from "@/components/topic/CoheteGeneric";
@@ -57,6 +58,7 @@ export default function TopicPage() {
   const [soundOn, toggleSound] = useSoundPreference();
   const [activeTab, setActiveTab] = useState<TabId>("concepto");
   const [celebration, setCelebration] = useState<{ label: string; zoneName: string } | null>(null);
+  const placementPending = useRequirePlacement(params.childId, child, router);
 
   const skillKey = mod?.id ?? "";
 
@@ -197,7 +199,7 @@ export default function TopicPage() {
     );
   }
 
-  if (!child) {
+  if (!child || placementPending) {
     return (
       <main id="contenido"
         tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">

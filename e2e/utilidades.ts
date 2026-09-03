@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import { deleteApp, initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { collection, connectFirestoreEmulator, doc, getFirestore, setDoc, writeBatch } from "firebase/firestore";
+import { STRANDS } from "../src/lib/strands";
 
 export const CLAVE_PADRE = "secreto123";
 
@@ -37,16 +38,55 @@ export async function crearHijo(
   return { nombre, pin };
 }
 
-/** Entra al perfil del hijo con su PIN y espera a estar dentro del mundo. */
-export async function entrarAlPerfil(page: Page, nombre: string, pin: string): Promise<void> {
+/** Hace clic en el perfil, mete el PIN y confirma — sin esperar a ningún
+ * destino, porque a dónde lleva depende de si ya hay una evaluación
+ * completa (ver `entrarAlPerfil` vs. `entrarAPerfilSinEvaluar`). */
+async function confirmarPin(page: Page, nombre: string, pin: string): Promise<void> {
   await page.getByRole("button", { name: `Entrar al perfil de ${nombre}` }).click();
   await page.getByLabel(`PIN de ${nombre}`).fill(pin);
   await page.getByRole("button", { name: "Entrar" }).click();
+}
+
+/**
+ * Entra al perfil del hijo y espera a estar dentro del mundo. Sin evaluación
+ * inicial completa el mundo redirige a /evaluacion —el plan de temas sale
+ * del resultado real, no se puede jugar a ciegas—, así que aquí se siembra
+ * directo en Firestore un resultado "en blanco" (nada acreditado, ningún
+ * módulo otorgado) antes de seguir: el resto de las pruebas no evalúan la
+ * evaluación en sí misma y no pueden pagar sus ~45 preguntas adaptativas en
+ * cada setup.
+ */
+export async function entrarAlPerfil(page: Page, nombre: string, pin: string, correo: string): Promise<void> {
+  await confirmarPin(page, nombre, pin);
+  await page.waitForURL(/\/jugar\//);
+  const childId = idDeHijo(page);
+
+  await sembrarEvaluacion(correo, childId, {
+    perStrand: Object.fromEntries(
+      STRANDS.map((s) => [
+        s.slug,
+        { itemsAsked: 0, itemsCorrect: 0, highestTierPassed: -1, gradeBand: "por reforzar las bases" },
+      ]),
+    ),
+    overallScore: 0,
+    overallGradeBand: "por reforzar las bases",
+    grantedModuleIds: [],
+  });
+
+  await page.goto(`/jugar/${childId}`);
   // La Ciudad Central es la ruta más pesada de la app y `next dev` la compila
   // la primera vez que un worker la visita, así que aquí el margen es mayor
   // que el `expect.timeout` global (ver el comentario de playwright.config.ts).
   await expect(page.getByRole("heading", { name: "Ciudad Central" })).toBeVisible({ timeout: 45_000 });
   await expect(page.getByRole("link", { name: "Centro de Energía" })).toBeVisible();
+}
+
+/** Entra al perfil sin sembrar ninguna evaluación: como la evaluación queda
+ * pendiente, el mundo redirige directo a /evaluacion. Para probar la
+ * evaluación en sí misma (el resto de las pruebas usa `entrarAlPerfil`). */
+export async function entrarAPerfilSinEvaluar(page: Page, nombre: string, pin: string): Promise<void> {
+  await confirmarPin(page, nombre, pin);
+  await expect(page).toHaveURL(/\/evaluacion$/);
 }
 
 /** Atajo: cuenta nueva + hijo nuevo + sesión del hijo abierta. */
@@ -56,7 +96,7 @@ export async function sesionDeHijo(
 ): Promise<{ nombre: string; pin: string; correo: string }> {
   const correo = await registrarPadre(page);
   const hijo = await crearHijo(page, opciones);
-  await entrarAlPerfil(page, hijo.nombre, hijo.pin);
+  await entrarAlPerfil(page, hijo.nombre, hijo.pin, correo);
   return { ...hijo, correo };
 }
 
