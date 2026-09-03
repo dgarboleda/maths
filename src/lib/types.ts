@@ -8,12 +8,18 @@ export interface Parent {
   createdAt: number;
 }
 
+export type PlacementStatus = "pendiente" | "completo";
+
 /** /parents/{parentId}/children/{childId} */
 export interface ChildProfile {
   name: string;
   birthDate: string;
   pinHash: string;
   createdAt: number;
+  /** Estado de la evaluación diagnóstica inicial. Ausente en perfiles
+   * creados antes de esta función: se trata como "pendiente" pero sin
+   * forzar nada — ver /jugar/[childId]/page.tsx. */
+  placementStatus?: PlacementStatus;
 }
 
 /** /curriculum/{skillId} — catálogo de solo lectura, sembrado aparte */
@@ -30,6 +36,29 @@ export interface SkillProgress {
   recentResults: Array<{ correct: boolean; day: string }>; // ventana móvil, más reciente al final
   recentAccuracy: number; // 0-1, derivado de recentResults
   masteredAt: number | null;
+  /** Cómo se llegó a dominarlo: práctica normal, o "testeado fuera" en la
+   * evaluación diagnóstica inicial. Ausente en progreso previo a esta
+   * distinción — se trata como "practice". */
+  masteredVia?: "practice" | "placement";
+}
+
+/** /parents/{parentId}/children/{childId}/placements/{placementId} — cada
+ * evaluación diagnóstica queda guardada como línea base para medir
+ * evolución en evaluaciones posteriores. */
+export interface PlacementStrandRecord {
+  itemsAsked: number;
+  itemsCorrect: number;
+  highestTierPassed: number; // -1 = ni la franja más fácil se pasó
+  gradeBand: string;
+}
+
+export interface Placement {
+  startedAt: number;
+  completedAt: number | null;
+  perStrand: Record<string, PlacementStrandRecord>;
+  overallScore: number; // 0-100
+  overallGradeBand: string;
+  grantedModuleIds: string[];
 }
 
 /** /parents/{parentId}/children/{childId}/attempts/{attemptId} */

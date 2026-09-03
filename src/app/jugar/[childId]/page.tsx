@@ -40,6 +40,7 @@ export default function JugarPage() {
   const [requests, setRequests] = useState<RequestDoc[]>([]);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [showRedeemForm, setShowRedeemForm] = useState(false);
+  const [placementDismissed, setPlacementDismissed] = useState(false);
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
 
@@ -157,6 +158,33 @@ export default function JugarPage() {
       onToggleSound={toggleSound}
     >
       <div className="space-y-8">
+        {child.placementStatus !== "completo" && !placementDismissed && (
+          <div className="mx-auto flex max-w-xl flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-purple-300 bg-gradient-to-r from-purple-100 to-pink-100 px-5 py-4">
+            <div>
+              <p className="font-bold text-purple-900">
+                <span aria-hidden="true">🎯 </span>¿Hacemos una evaluación rápida?
+              </p>
+              <p className="text-sm text-purple-700">Nos ayuda a saber por dónde empezar. Dura 10-20 minutos.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/jugar/${params.childId}/evaluacion`}
+                onClick={() => playSound("click", soundOn)}
+                className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-500"
+              >
+                Empezar
+              </Link>
+              <button
+                type="button"
+                onClick={() => setPlacementDismissed(true)}
+                className="text-sm font-bold text-purple-700 underline underline-offset-2"
+              >
+                Ahora no
+              </button>
+            </div>
+          </div>
+        )}
+
         <div>
           <h2 className="mb-3 text-center text-lg font-bold text-purple-800">
             ¿Qué quieres practicar hoy? <span aria-hidden="true">🎯</span>
