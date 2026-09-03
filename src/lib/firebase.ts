@@ -82,6 +82,21 @@ async function initFirebase(): Promise<Firebase> {
  * confirma con el servidor. Si el navegador no soporta IndexedDB (modo
  * privado de Safari, por ejemplo) `initializeFirestore` lanza, así que se
  * usa `getFirestore` (memoria) como respaldo.
+ *
+ * Se usa `persistentSingleTabManager` (no `persistentMultipleTabManager`):
+ * esta app la usa un solo dispositivo/pestaña a la vez (ver firestore.rules),
+ * así que no hace falta coordinar varias pestañas, y esa coordinación tiene
+ * un costo real. El modo multi-pestaña negocia con IndexedDB quién es la
+ * pestaña "dueña" del caché, y si la pestaña anterior no se cerró de forma
+ * limpia (típico en una tablet: la app se manda a segundo plano y el
+ * sistema operativo la mata sin disparar el evento de cierre) la nueva
+ * pestaña espera a que ese "alquiler" expire (unos segundos) antes de
+ * poder usar la caché — eso es justo el tipo de demora larga e intermitente
+ * al abrir la app que se había reportado. `forceOwnership: true` hace que
+ * la pestaña activa tome el caché de inmediato sin esperar esa expiración;
+ * como costo, si en algún momento hubiera de verdad dos pestañas abiertas
+ * a la vez, la más antigua perdería su caché persistente (no sus datos:
+ * solo deja de tener caché local y sigue funcionando contra el servidor).
  */
 function getOrInitFirestore(
   app: FirebaseApp,
@@ -90,7 +105,7 @@ function getOrInitFirestore(
   try {
     return firestore.initializeFirestore(app, {
       localCache: firestore.persistentLocalCache({
-        tabManager: firestore.persistentMultipleTabManager(),
+        tabManager: firestore.persistentSingleTabManager({ forceOwnership: true }),
       }),
     });
   } catch (err) {
