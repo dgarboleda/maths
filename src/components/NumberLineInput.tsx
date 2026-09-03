@@ -90,7 +90,12 @@ export function NumberLineInput({
             <div
               key={n}
               aria-hidden="true"
-              className="absolute top-6 -translate-x-1/2 text-xs text-neutral-600"
+              // Fondo sólido propio (no depende de un color de texto que
+              // combine con el fondo de la página): esta recta se usa tanto
+              // sobre tarjetas claras (Práctica) como sobre el panel oscuro
+              // del modo Cohete, donde el gris que se usaba antes casi no
+              // se distinguía del fondo.
+              className="absolute top-6 -translate-x-1/2 rounded bg-neutral-800 px-1.5 py-0.5 text-sm font-bold text-white"
               style={{ left: `${((n - min) / (max - min)) * 100}%` }}
             >
               {n}
@@ -124,7 +129,10 @@ export function NumberLineInput({
           style={{ left: `${((value - min) / (max - min)) * 100}%` }}
         />
       </div>
-      <p className="text-sm font-bold text-purple-900" aria-hidden="true">
+      <p
+        className="rounded-lg bg-white px-3 py-1 text-sm font-bold text-purple-900 shadow"
+        aria-hidden="true"
+      >
         {value}
       </p>
       <button
