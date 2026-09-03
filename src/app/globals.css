@@ -50,6 +50,20 @@ body {
   }
 }
 
+/* Latido suave que marca en el mundo el objetivo de la misión activa. El
+   bloque de `prefers-reduced-motion` de arriba ya lo neutraliza. */
+@keyframes worldPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: brightness(1.25);
+  }
+}
+
 /* Enlace para saltar directamente al contenido, visible solo al enfocarlo. */
 .skip-link {
   position: absolute;

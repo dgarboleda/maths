@@ -37,12 +37,16 @@ export async function crearHijo(
   return { nombre, pin };
 }
 
-/** Entra al perfil del hijo con su PIN y espera la pantalla de juego. */
+/** Entra al perfil del hijo con su PIN y espera a estar dentro del mundo. */
 export async function entrarAlPerfil(page: Page, nombre: string, pin: string): Promise<void> {
   await page.getByRole("button", { name: `Entrar al perfil de ${nombre}` }).click();
   await page.getByLabel(`PIN de ${nombre}`).fill(pin);
   await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page.getByRole("heading", { name: `¡Hola, ${nombre}!` })).toBeVisible();
+  // La Ciudad Central es la ruta más pesada de la app y `next dev` la compila
+  // la primera vez que un worker la visita, así que aquí el margen es mayor
+  // que el `expect.timeout` global (ver el comentario de playwright.config.ts).
+  await expect(page.getByRole("heading", { name: "Ciudad Central" })).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByRole("link", { name: "Centro de Energía" })).toBeVisible();
 }
 
 /** Atajo: cuenta nueva + hijo nuevo + sesión del hijo abierta. */
