@@ -228,10 +228,26 @@ function ShapeScale() {
         <MiniSlider label="Lado pequeño" value={side} setValue={setSide} max={8} />
         <MiniSlider label="Escala" value={scale} setValue={setScale} min={1} max={4} />
       </div>
-      <div className="flex items-end justify-center gap-6">
-        <div style={{ width: side * 10, height: side * 10 }} className="border-2 border-pink-600 bg-pink-300" />
-        <div style={{ width: side * scale * 10, height: side * scale * 10 }} className="border-2 border-purple-600 bg-purple-300" />
-      </div>
+      {/* Se escalan ambos cuadrados por el mismo factor para que el grande
+          nunca pase de maxPx: con lado y escala al máximo (8 × 4 × 10 = 320px)
+          el par se salía del ancho disponible en una pantalla angosta. */}
+      {(() => {
+        const maxPx = 140;
+        const bigRaw = side * scale * 10;
+        const factor = bigRaw > maxPx ? maxPx / bigRaw : 1;
+        return (
+          <div className="flex flex-wrap items-end justify-center gap-6">
+            <div
+              style={{ width: side * 10 * factor, height: side * 10 * factor }}
+              className="border-2 border-pink-600 bg-pink-300"
+            />
+            <div
+              style={{ width: bigRaw * factor, height: bigRaw * factor }}
+              className="border-2 border-purple-600 bg-purple-300"
+            />
+          </div>
+        );
+      })()}
       <Formula text={`Lado grande = ${side} × ${scale} = ${side * scale}`} />
     </div>
   );
