@@ -20,10 +20,23 @@ export default function PerfilesPage() {
   const [showForm, setShowForm] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [user, loading, router]);
+
+  useEffect(() => {
+    // Diagnóstico: el projectId de Firebase no es secreto (viaja en cada
+    // petición al backend) y mostrarlo aquí permite comparar, en segundos,
+    // que el proyecto al que habla ESTE build sea el mismo que se está
+    // mirando en la consola de Firebase — las NEXT_PUBLIC_FIREBASE_* se
+    // incrustan en el build (ver README) y un build viejo servido desde
+    // caché puede seguir apuntando a un proyecto distinto.
+    getFirebase()
+      .then(({ app }) => setProjectId(app.options.projectId ?? null))
+      .catch(() => setProjectId(null));
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -63,7 +76,9 @@ export default function PerfilesPage() {
       tabIndex={-1}
       className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-white px-6 py-14"
     >
-      <p className="text-[10px] text-neutral-600">build: diag-v3</p>
+      <p className="text-[10px] text-neutral-600">
+        build: diag-v4 · proyecto Firebase: {projectId ?? "cargando…"}
+      </p>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-neutral-900">¿Quién va a jugar?</h1>
         <div className="flex items-center gap-4 text-sm">
@@ -240,8 +255,9 @@ function NewChildForm({
     try {
       const pinHash = await hashPin(pin);
       const {
+        app,
         db,
-        firestore: { addDoc, collection, getDocs, serverTimestamp },
+        firestore: { addDoc, collection, getDocsFromServer, serverTimestamp },
       } = await getFirebase();
       const childrenCollection = collection(db, "parents", parentId, "children");
       const ref = await addDoc(childrenCollection, {
@@ -250,16 +266,22 @@ function NewChildForm({
         pinHash,
         createdAt: serverTimestamp(),
       });
-      // Diagnóstico: además de que addDoc() no haya lanzado error, se
-      // vuelve a leer la colección completa (sin depender del listener en
-      // tiempo real) para confirmar que el documento realmente quedó en el
-      // servidor y así distinguir "no se guardó" de "se guardó pero no se
-      // refleja en la lista".
-      const snap = await getDocs(childrenCollection);
+      // Diagnóstico: addDoc() ya garantiza que el documento fue confirmado
+      // por el backend antes de resolver (así lo documenta el SDK: la
+      // promesa no se resuelve hasta que el servidor confirma la
+      // escritura). Igual se fuerza una relectura con getDocsFromServer
+      // —ignora la caché local— para descartar además un problema de
+      // reglas de lectura, y se muestra a qué proyecto de Firebase se
+      // escribió: NEXT_PUBLIC_FIREBASE_* se incrusta en el build (ver
+      // README), así que un build viejo servido desde caché puede seguir
+      // hablando con un proyecto distinto al que se mira en la consola.
+      const projectId = app.options.projectId ?? "desconocido";
+      const consoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore/data/parents/${parentId}/children/${ref.id}`;
+      const snap = await getDocsFromServer(childrenCollection);
       const found = snap.docs.some((d) => d.id === ref.id);
       const message = found
-        ? `"${name}" guardado (id ${ref.id}). La colección tiene ${snap.size} perfil(es).`
-        : `"${name}" se guardó (id ${ref.id}) pero al releer la colección no aparece (${snap.size} documento(s) encontrados).`;
+        ? `"${name}" guardado en el proyecto "${projectId}" (id ${ref.id}). La colección tiene ${snap.size} perfil(es) en el servidor. Verifícalo en: ${consoleUrl}`
+        : `"${name}" se guardó (id ${ref.id}) en el proyecto "${projectId}" pero al releer desde el servidor no aparece (${snap.size} documento(s) encontrados). Revisa las reglas de lectura o si hay más de una base de datos de Firestore en ese proyecto.`;
       // Diagnóstico temporal: alert() nativo además del banner en pantalla,
       // para descartar que el mensaje no se vea por caché/CSS — un alert()
       // es imposible de pasar por alto y bloquea hasta que se cierre.
