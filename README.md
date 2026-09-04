@@ -53,6 +53,34 @@ npx wrangler r2 bucket create maths-opennext-cache
 
 y sigue las notas dentro de `wrangler.jsonc`/`open-next.config.ts`. Más detalles en la [guía de Cloudflare para Next.js](https://developers.cloudflare.com/workers/frameworks/framework-guides/nextjs).
 
+### Reglas de Firestore: hay que desplegarlas aparte
+
+`firestore.rules` vive en el repo y protege los emuladores en local y en
+Playwright, pero **nada en `npm run deploy`/`preview` ni en Cloudflare
+Workers Builds las sube al proyecto real** — Cloudflare solo compila y
+despliega el Worker (Next.js), no toca Firestore. Si nunca se corrió el
+comando de abajo (o se editaron las reglas después de la última vez), el
+proyecto real puede estar sirviendo unas reglas más viejas o las que trae el
+Console por defecto — más restrictivas que las de este archivo.
+
+Mismo síntoma que las build vars de Cloudflare: todo compila en verde y la
+app carga bien (los datos que ya se podían leer antes siguen leyéndose), pero
+una escritura nueva falla con `permission-denied` ("Missing or insufficient
+permissions") aunque el usuario esté bien autenticado — por ejemplo, la
+evaluación inicial completándose mandaba al niño de vuelta a `/evaluacion` en
+bucle porque nunca lograba guardar la franja `placements`, colección más
+nueva que las reglas desplegadas todavía no reconocían.
+
+```bash
+npx firebase login                          # una sola vez, abre el navegador
+npx firebase deploy --only firestore:rules --project <tu-project-id>
+```
+
+`<tu-project-id>` es el mismo `NEXT_PUBLIC_FIREBASE_PROJECT_ID` de
+`.env.local` (Firebase Console → Configuración del proyecto → General). Hace
+falta repetir este despliegue cada vez que cambie `firestore.rules` — no es
+automático como sí lo es la compilación del Worker en cada push.
+
 Si el plan gratuito de Cloudflare Workers se queda corto, [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) sigue siendo la opción sin fricción para Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
