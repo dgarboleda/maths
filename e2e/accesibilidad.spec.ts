@@ -148,11 +148,6 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
     expect(await revisar(page), "tienda").toEqual([]);
     await page.getByRole("button", { name: "Salir" }).click();
 
-    await page.getByRole("button", { name: /Personalizar el personaje/ }).click();
-    await expect(page.getByRole("dialog", { name: "Tu personaje" })).toBeVisible();
-    expect(await revisar(page), "personaje").toEqual([]);
-    await page.getByRole("button", { name: "Salir" }).click();
-
     await page.getByRole("link", { name: "Geometría" }).click();
     await page.getByRole("button", { name: /^Lados de figuras —/ }).click();
     await expect(page.getByRole("dialog", { name: /Lados de figuras/ })).toBeVisible();

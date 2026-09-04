@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { masteredCountForStrand } from "@/lib/curriculum";
 import type { SkillProgress } from "@/lib/types";
-import type { AvatarLook } from "@/lib/world/avatar";
 import { CITY_LANDMARKS, cityBuildings } from "@/lib/world/scenes";
 import { Avatar } from "./Avatar";
 import { BuildingArt } from "./BuildingArt";
@@ -32,7 +31,6 @@ const FIREFLIES = [
 export function CityScene({
   childId,
   childName,
-  look,
   progressBySkill,
   questStrandSlug,
   onOpenShop,
@@ -40,7 +38,6 @@ export function CityScene({
 }: {
   childId: string;
   childName: string;
-  look: AvatarLook;
   progressBySkill: Record<string, SkillProgress>;
   questStrandSlug: string | null;
   onOpenShop: () => void;
@@ -333,8 +330,8 @@ export function CityScene({
       >
         <span className="absolute bottom-0 left-1/2 h-2.5 w-10 -translate-x-1/2 rounded-full bg-black/40 blur-sm" />
         <Avatar
-          look={look}
-          className={`h-16 w-11 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)] ${walking ? "anim-walk" : "anim-idle"}`}
+          pose={walking ? "walk" : "idle"}
+          className={`h-16 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)] ${walking ? "anim-walk" : "anim-idle"}`}
           title={`${childName}, en la plaza`}
         />
       </div>

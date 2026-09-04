@@ -10,7 +10,6 @@ import type { Attempt, ChildProfile, RedemptionRequest, SkillProgress } from "@/
 import { STRANDS, getStrand } from "@/lib/strands";
 import { recommendedModule, countUnlocked } from "@/lib/curriculum";
 import { useTotalStars } from "@/lib/useTotalStars";
-import { normalizeAvatar } from "@/lib/world/avatar";
 import { Avatar } from "@/components/world/Avatar";
 
 interface ChildDoc extends ChildProfile {
@@ -105,7 +104,6 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
   const [attempts, setAttempts] = useState<AttemptDoc[]>([]);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [resolvingId, setResolvingId] = useState<string | null>(null);
-  const look = normalizeAvatar(child.avatar);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -208,7 +206,7 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30">
-            <Avatar look={look} className="h-7 w-5" title={child.name} />
+            <Avatar className="h-7" title={child.name} />
           </span>
           <span className="font-display font-bold text-white">{child.name}</span>
         </div>

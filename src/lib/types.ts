@@ -20,13 +20,6 @@ export interface ChildProfile {
    * creados antes de esta función: se trata como "pendiente" pero sin
    * forzar nada — ver /jugar/[childId]/page.tsx. */
   placementStatus?: PlacementStatus;
-  /** Apariencia del personaje en el mundo. Ausente = look por defecto. */
-  avatar?: {
-    skin: string;
-    hair: string;
-    outfit: string;
-    accessory: string;
-  };
 }
 
 /** /curriculum/{skillId} — catálogo de solo lectura, sembrado aparte */
