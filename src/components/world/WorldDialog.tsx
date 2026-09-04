@@ -29,7 +29,7 @@ export function WorldDialog({
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="max-h-full w-full max-w-md overflow-y-auto rounded-3xl border-2 border-indigo-400/40 bg-slate-900 shadow-[0_0_60px_rgba(99,102,241,0.25)] focus:outline-none"
+        className="anim-rise world-quest-panel max-h-full w-full max-w-md overflow-y-auto rounded-3xl border-2 border-indigo-400/40 focus:outline-none"
       >
         <div className="flex items-start justify-between gap-3 border-b-2 border-indigo-400/25 px-5 py-4">
           <div className="flex items-center gap-3">

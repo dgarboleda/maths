@@ -72,6 +72,7 @@ export function PuzzleOverlay({
 
   const missing = missingPrerequisites(progressBySkill, mod.id);
   const locked = missing.length > 0;
+  const isCore = interactable.kind === "mecanismo" || interactable.kind === "puerta";
 
   async function submit(given: number) {
     if (saving || result) return;
@@ -118,19 +119,32 @@ export function PuzzleOverlay({
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="max-h-full w-full max-w-lg overflow-y-auto rounded-3xl border-2 border-cyan-400/40 bg-slate-900 shadow-[0_0_60px_rgba(34,211,238,0.25)] focus:outline-none"
+        className={`anim-rise world-scanlines max-h-full w-full max-w-lg overflow-y-auto rounded-3xl border-2 focus:outline-none ${
+          isCore ? "world-core-panel border-amber-400/40" : "world-terminal-panel border-cyan-400/40"
+        } ${result && !result.correct ? "anim-shake" : ""}`}
       >
-        <div className="flex items-start justify-between gap-3 border-b-2 border-cyan-400/25 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4">
+        <div
+          className={`flex items-start justify-between gap-3 border-b-2 bg-gradient-to-r from-slate-900/80 to-slate-800/60 px-5 py-4 ${
+            isCore ? "border-amber-400/25" : "border-cyan-400/25"
+          }`}
+        >
           <div className="flex items-center gap-3">
             <span aria-hidden="true" className="text-3xl">
               {locked ? "🔒" : KIND_ICON[interactable.kind]}
             </span>
             <div>
-              <h2 id={titleId} className="font-display text-lg font-bold text-cyan-200">
+              <h2 id={titleId} className={`font-display text-lg font-bold ${isCore ? "text-amber-200" : "text-cyan-200"}`}>
                 {interactable.label}
               </h2>
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-400/80">
+              <p
+                className={`font-mono text-[11px] uppercase tracking-[0.2em] ${isCore ? "text-amber-400/80" : "text-cyan-400/80"}`}
+              >
                 {locked ? "ACCESO DENEGADO" : KIND_HEADLINE[interactable.kind]}
+                {!locked && (
+                  <span aria-hidden="true" className="anim-blink ml-1">
+                    ▮
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -169,29 +183,36 @@ export function PuzzleOverlay({
             </>
           ) : (
             <>
-              <p className="rounded-2xl border border-cyan-400/20 bg-slate-950/70 px-4 py-3 text-sm italic text-cyan-100">
+              <p
+                className={`rounded-2xl border px-4 py-3 text-sm italic ${
+                  isCore ? "border-amber-400/20 bg-slate-950/70 text-amber-100" : "border-cyan-400/20 bg-slate-950/70 text-cyan-100"
+                }`}
+              >
                 {result?.correct ? interactable.reward : interactable.clue}
               </p>
 
               {!result && (
-                <>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                <div className={`world-screen-glass overflow-hidden rounded-2xl p-4 ${isCore ? "is-core" : ""}`}>
+                  <p className={`font-mono text-[11px] uppercase tracking-[0.2em] ${isCore ? "text-amber-400/90" : "text-cyan-400/90"}`}>
                     {KIND_ACTION[interactable.kind]}
                   </p>
                   {problem.flavor && (
-                    <p aria-hidden="true" className="text-sm italic text-violet-300">
+                    <p aria-hidden="true" className="mt-2 text-sm italic text-violet-300">
                       {problem.flavor}
                     </p>
                   )}
-                  <p id={promptId} className="text-xl font-extrabold text-slate-50 sm:text-2xl">
+                  <p id={promptId} className="mt-2 text-xl font-extrabold text-slate-50 sm:text-2xl">
                     {problem.prompt}
                   </p>
 
                   {problem.hints && (
-                    <div className="space-y-2">
+                    <div className="mt-3 space-y-2">
                       <div role="status" aria-live="polite">
                         {hintLevel > 0 && (
                           <p className="rounded-xl border border-amber-400/30 bg-amber-950/40 px-3 py-2 text-sm text-amber-100">
+                            <span className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300">
+                              Diagnóstico ·{" "}
+                            </span>
                             {problem.hints[hintLevel - 1]}
                           </p>
                         )}
@@ -203,23 +224,23 @@ export function PuzzleOverlay({
                         className="rounded-xl bg-slate-800 px-3 py-1.5 text-xs font-bold text-amber-200 hover:bg-slate-700 disabled:opacity-40"
                       >
                         {hintLevel === 0
-                          ? "Pedir pista"
+                          ? "Ejecutar diagnóstico"
                           : hintLevel >= 3
                             ? "Sin más pistas"
-                            : `Pista ${hintLevel + 1}`}
+                            : `Diagnóstico ${hintLevel + 1}`}
                       </button>
                     </div>
                   )}
 
-                  <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
+                  <div className="mt-3 rounded-xl border border-white/10 bg-slate-950/60 p-4">
                     <QuestionWidget problem={problem} onSubmit={submit} promptId={promptId} disabled={saving} />
                   </div>
-                </>
+                </div>
               )}
 
               <div role="status" aria-live="polite">
                 {result && (
-                  <div className="space-y-3">
+                  <div className="anim-rise space-y-3">
                     {result.correct ? (
                       <>
                         <p className="font-mono text-lg font-bold text-emerald-300">
