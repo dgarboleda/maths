@@ -330,8 +330,9 @@ export function CityScene({
       >
         <span className="absolute bottom-0 left-1/2 h-2.5 w-10 -translate-x-1/2 rounded-full bg-black/40 blur-sm" />
         <Avatar
-          pose={walking ? "walk" : "idle"}
-          className={`h-16 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)] ${walking ? "anim-walk" : "anim-idle"}`}
+          variant="explorer"
+          walking={walking}
+          className="h-16 drop-shadow-[0_0_12px_rgba(167,139,250,0.6)]"
           title={`${childName}, en la plaza`}
         />
       </div>
