@@ -35,24 +35,24 @@ export function WorldTopBar({
   nextChallengeModule: ModuleDef | null;
 }) {
   return (
-    <header className="mb-2 flex flex-wrap items-center gap-2 rounded-2xl border border-indigo-500/25 bg-slate-900/80 px-3 py-2 backdrop-blur sm:gap-3 sm:px-4">
+    <header className="world-hud-panel mb-2 flex flex-wrap items-center gap-2 rounded-full px-3 py-2 sm:gap-3 sm:px-4">
       <button
         type="button"
         onClick={onOpenAvatar}
         aria-label={`Personalizar el personaje de ${childName}`}
-        className="rounded-2xl border border-white/15 bg-slate-900/80 px-2 py-1 hover:border-white/40"
+        className="rounded-2xl border border-white/15 bg-slate-900/80 px-2 py-1 transition-transform hover:scale-105 hover:border-white/40"
       >
         <Avatar look={look} className="h-9 w-7" title={`Personaje de ${childName}`} />
       </button>
 
       <div>
-        <h1 className="bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text font-display text-base font-bold text-transparent sm:text-lg">
+        <h1 className="world-text-glow bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text font-display text-base font-bold text-transparent sm:text-lg">
           Ciudad Central
         </h1>
         <p className="text-[11px] font-semibold text-indigo-300">{childName}</p>
       </div>
 
-      <span className="flex items-center gap-1.5 rounded-2xl border border-amber-400/40 bg-slate-900/80 px-3 py-1.5">
+      <span className="flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-slate-900/70 px-3 py-1.5">
         <span aria-hidden="true">⭐</span>
         <span className="font-bold text-amber-300">
           <span className="sr-only">Estrellas: </span>
@@ -83,7 +83,7 @@ export function WorldTopBar({
         {nextChallengeModule && (
           <Link
             href={moduleHref(childId, nextChallengeModule)}
-            className="flex items-center gap-1.5 rounded-2xl border border-violet-400/40 bg-slate-900/80 px-3 py-1.5 text-xs font-bold text-violet-200 hover:border-violet-300"
+            className="flex items-center gap-1.5 rounded-full border border-violet-400/40 bg-slate-900/70 px-3 py-1.5 text-xs font-bold text-violet-200 transition-colors hover:border-violet-300"
           >
             <span aria-hidden="true">⭐</span>
             Tu próximo desafío · {nextChallengeModule.label}
@@ -94,13 +94,13 @@ export function WorldTopBar({
           onClick={onToggleSound}
           aria-pressed={soundOn}
           aria-label="Efectos de sonido"
-          className="rounded-2xl border border-white/15 bg-slate-900/80 p-2 text-slate-200 hover:border-white/40"
+          className="rounded-full border border-white/15 bg-slate-900/70 p-2 text-slate-200 hover:border-white/40"
         >
           <span aria-hidden="true">{soundOn ? "🔊" : "🔇"}</span>
         </button>
         <Link
           href="/perfiles"
-          className="rounded-2xl border border-white/15 bg-slate-900/80 px-3 py-2 text-xs font-bold text-slate-200 hover:border-white/40"
+          className="rounded-full border border-white/15 bg-slate-900/70 px-3 py-2 text-xs font-bold text-slate-200 hover:border-white/40"
         >
           Cambiar de perfil
         </Link>
@@ -122,7 +122,7 @@ export function QuestPanel({
     return (
       <section
         aria-label="Misión actual"
-        className="mt-2 rounded-2xl border border-emerald-400/40 bg-slate-950/90 px-4 py-3"
+        className="world-quest-panel anim-rise mt-2 rounded-2xl border border-emerald-400/40 px-4 py-3"
       >
         <p className="text-sm font-bold text-emerald-200">
           <span aria-hidden="true">🏆 </span>Todas las misiones de la Ciudad Central están resueltas.
@@ -137,12 +137,15 @@ export function QuestPanel({
   return (
     <section
       aria-label="Misión actual"
-      className="mt-2 rounded-2xl border border-amber-400/40 bg-slate-950/92 px-4 py-3 shadow-[0_0_40px_rgba(0,0,0,0.4)]"
+      className="world-quest-panel anim-rise mt-2 rounded-2xl border border-amber-400/40 px-4 py-3"
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-sm font-bold uppercase tracking-wide text-amber-200">
           <span aria-hidden="true">{quest.quest.icon} </span>
           {quest.quest.title}
+          <span aria-hidden="true" className="anim-blink ml-1 text-amber-300/80">
+            ▮
+          </span>
         </h2>
         <span className="text-xs font-bold text-slate-300">
           {quest.doneCount}/{quest.total}
@@ -161,21 +164,40 @@ export function QuestPanel({
       </div>
 
       <ul className="mt-2 flex flex-col gap-1">
-        {quest.objectives.map((objective) => (
-          <li
-            key={objective.id}
-            className={`text-xs ${objective.done ? "text-emerald-300" : objective.locked ? "text-slate-400" : "text-slate-200"}`}
-          >
-            <span aria-hidden="true">{objective.done ? "✓ " : objective.locked ? "🔒 " : "○ "}</span>
-            <span className="sr-only">
-              {objective.done ? "Completado: " : objective.locked ? "Bloqueado: " : "Pendiente: "}
-            </span>
-            {objective.label}
-            {objective.locked && objective.missing.length > 0 && (
-              <span className="text-slate-400"> — falta dominar {objective.missing.join(", ")}</span>
-            )}
-          </li>
-        ))}
+        {(() => {
+          const currentId = quest.objectives.find((o) => !o.done && !o.locked)?.id;
+          return quest.objectives.map((objective) => {
+            const current = objective.id === currentId;
+            return (
+              <li
+                key={objective.id}
+                className={`flex flex-wrap items-center gap-1.5 rounded-lg px-1.5 py-0.5 text-xs ${
+                  current
+                    ? "border border-amber-300/30 bg-amber-400/10 text-slate-100"
+                    : objective.done
+                      ? "text-emerald-300"
+                      : objective.locked
+                        ? "text-slate-400"
+                        : "text-slate-200"
+                }`}
+              >
+                <span aria-hidden="true">{objective.done ? "✓ " : objective.locked ? "🔒 " : "○ "}</span>
+                <span className="sr-only">
+                  {objective.done ? "Completado: " : objective.locked ? "Bloqueado: " : "Pendiente: "}
+                </span>
+                {objective.label}
+                {objective.locked && objective.missing.length > 0 && (
+                  <span className="text-slate-400"> — falta dominar {objective.missing.join(", ")}</span>
+                )}
+                {current && (
+                  <span className="rounded-full bg-amber-400/20 px-1.5 py-0.5 font-display text-[9px] font-bold uppercase tracking-[0.18em] text-amber-200">
+                    En curso
+                  </span>
+                )}
+              </li>
+            );
+          });
+        })()}
       </ul>
 
       <div className="mt-2.5 flex flex-wrap items-center gap-2">

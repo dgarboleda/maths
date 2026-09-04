@@ -31,7 +31,7 @@ export function ZoneScene({
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-3xl border border-indigo-500/25 bg-slate-950"
+      className="world-scene-vignette relative w-full overflow-hidden rounded-3xl border border-indigo-500/25 bg-slate-950"
       style={{ height: `${170 + rows * 132}px` }}
     >
       <svg
@@ -59,6 +59,17 @@ export function ZoneScene({
           opacity="0.55"
         />
       </svg>
+
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="anim-fog absolute top-[6%] h-28 rounded-full bg-violet-500/10 blur-3xl"
+          style={{ left: "-10%", right: "-10%" }}
+        />
+        <div
+          className="anim-fog absolute bottom-[4%] h-32 rounded-full bg-cyan-400/10 blur-3xl"
+          style={{ left: "-10%", right: "-10%", animationDuration: "32s", animationDelay: "-8s" }}
+        />
+      </div>
 
       {scene.interactables.map((interactable) => {
         const mod = getModule(interactable.moduleId);

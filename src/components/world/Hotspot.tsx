@@ -5,8 +5,8 @@ import { STATE_LABEL, type WorldState } from "@/lib/world/state";
 
 const RING: Record<WorldState, string> = {
   bloqueado: "border-slate-600 bg-slate-800/80",
-  disponible: "border-amber-300 bg-amber-500/20 shadow-[0_0_22px_rgba(251,191,36,0.45)]",
-  activado: "border-cyan-300 bg-cyan-500/20 shadow-[0_0_22px_rgba(34,211,238,0.45)]",
+  disponible: "border-amber-300 bg-amber-500/20 shadow-[0_0_22px_rgba(251,191,36,0.45)] anim-breathe",
+  activado: "border-cyan-300 bg-cyan-500/20 shadow-[0_0_22px_rgba(34,211,238,0.45)] anim-breathe",
   dominado: "border-emerald-300 bg-emerald-500/25 shadow-[0_0_22px_rgba(52,211,153,0.5)]",
 };
 
@@ -42,10 +42,18 @@ export function Hotspot({
       type="button"
       onClick={onSelect}
       aria-label={`${label} — ${STATE_LABEL[state]}`}
-      className="group block w-full focus:outline-none"
+      className="group relative block w-full focus:outline-none"
     >
+      {pulse && (
+        <span
+          aria-hidden="true"
+          className="anim-guide world-text-glow pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 text-lg font-bold text-amber-300"
+        >
+          ▼
+        </span>
+      )}
       <span
-        className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-2xl transition-transform group-hover:scale-110 group-focus-visible:scale-110 group-focus-visible:ring-4 group-focus-visible:ring-white ${RING[state]} ${
+        className={`world-scanlines mx-auto flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border-2 text-2xl transition-transform group-hover:scale-110 group-focus-visible:scale-110 group-focus-visible:ring-4 group-focus-visible:ring-white ${RING[state]} ${
           pulse ? "animate-[worldPulse_2.4s_ease-in-out_infinite]" : ""
         }`}
       >
