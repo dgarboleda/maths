@@ -316,9 +316,9 @@ export function CityScene({
         >
           <span
             aria-hidden="true"
-            className="anim-breathe mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-cyan-300/60 bg-cyan-500/15 text-3xl world-ring-glow"
+            className="anim-breathe world-ring-glow mx-auto flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border-2 border-cyan-300/60 bg-cyan-500/15"
           >
-            🧑‍🔬
+            <img src="/illustrations/ada-portrait.webp" alt="" className="h-full w-full object-cover" />
           </span>
           <span className="mt-1 block rounded-xl bg-slate-950/85 px-2 py-1 text-[11px] font-bold leading-tight text-cyan-100 ring-1 ring-cyan-400/30">
             Ada, la ingeniera

@@ -1,11 +1,14 @@
 @import "tailwindcss";
 
 /*
- * La app está diseñada en claro: cada pantalla pinta superficies blancas con
- * texto oscuro. Se declara `color-scheme: light` para que el navegador no
- * fuerce controles oscuros encima (antes el bloque `prefers-color-scheme:
- * dark` solo invertía el fondo del body, dejando texto casi blanco sobre las
- * tarjetas blancas). Un tema oscuro de verdad está pendiente — ver
+ * La app está diseñada en claro por defecto: cada pantalla pinta superficies
+ * blancas con texto oscuro. Se declara `color-scheme: light` para que el
+ * navegador no fuerce controles oscuros encima. Login, perfiles y el panel
+ * familiar son la excepción deliberada: pintan su propio `bg-slate-950` y
+ * usan el lenguaje `.family-*` de más abajo (mismo tema violeta/índigo que
+ * ya vestía el juego) para que la puerta de entrada y el espacio de los
+ * padres se sientan parte de la misma aventura. El resto de pantallas
+ * (multiplicación, pirámide, evaluación, misiones…) sigue en claro — ver
  * docs/auditoria-rendimiento-accesibilidad.md.
  */
 :root {
@@ -374,6 +377,96 @@ body {
   box-shadow:
     0 0 0 1px rgba(34, 211, 238, 0.35),
     0 0 28px rgba(34, 211, 238, 0.3);
+}
+
+/*
+ * ---------- Espacio familiar (login, perfiles, panel de padres) ----------
+ * Mismo tema violeta/índigo que el mundo de juego, pero más sobrio: sin
+ * scanlines ni neón de terminal, pensado para leerse con calma. Se aplica
+ * solo dentro de pantallas que ya pintan su propio `bg-slate-950` (igual que
+ * `.world-*`), nunca a través de `:root`.
+ */
+
+.family-panel {
+  background: linear-gradient(172deg, rgba(43, 33, 82, 0.9), rgba(20, 18, 45, 0.94));
+  border: 1px solid rgba(129, 140, 248, 0.22);
+  box-shadow: 0 16px 40px -26px rgba(2, 3, 12, 0.85);
+}
+
+.family-tile {
+  background: linear-gradient(172deg, rgba(43, 33, 82, 0.9), rgba(20, 18, 45, 0.94));
+  border: 1px solid rgba(129, 140, 248, 0.22);
+  box-shadow: 0 16px 40px -26px rgba(2, 3, 12, 0.85);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.family-tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 211, 238, 0.45);
+  box-shadow: 0 22px 48px -24px rgba(2, 3, 12, 0.95);
+}
+
+.family-input {
+  min-height: 2.75rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(129, 140, 248, 0.28);
+  background: rgba(30, 27, 65, 0.6);
+  padding: 0 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f1f0fb;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.family-input::placeholder {
+  color: rgba(203, 213, 225, 0.45);
+}
+.family-input:focus-visible {
+  border-color: #a78bfa;
+}
+.family-input.has-error {
+  border-color: rgba(248, 113, 113, 0.8);
+}
+
+/* Tecla del teclado de PIN: mismo lenguaje "físico" que las terminales del juego. */
+.family-keycap {
+  background: linear-gradient(180deg, rgba(76, 61, 140, 0.85), rgba(35, 28, 68, 0.92));
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -4px 0 rgba(8, 6, 24, 0.45),
+    0 8px 16px -10px rgba(2, 3, 12, 0.85);
+  color: #f1f0fb;
+  transition:
+    transform 0.1s ease,
+    border-color 0.15s ease;
+}
+.family-keycap:hover {
+  border-color: rgba(167, 139, 250, 0.5);
+}
+.family-keycap:active {
+  transform: translateY(1px);
+}
+
+/* Viñeta sobre la imagen de héroe del login (ciudad al fondo). */
+.family-hero-vignette {
+  position: relative;
+}
+.family-hero-vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(11, 15, 43, 0.35) 0%, rgba(11, 15, 43, 0.55) 55%, rgba(11, 15, 43, 0.96) 100%),
+    linear-gradient(0deg, rgba(11, 15, 43, 0.5) 0%, transparent 30%);
+}
+
+.family-text-glow {
+  text-shadow: 0 0 18px rgba(167, 139, 250, 0.45);
 }
 
 /* Enlace para saltar directamente al contenido, visible solo al enfocarlo. */

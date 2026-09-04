@@ -46,67 +46,153 @@ export default function LoginPage() {
   return (
     <main
       id="contenido"
-        tabIndex={-1}
-      className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-8 bg-white px-6"
+      tabIndex={-1}
+      className="min-h-screen bg-slate-950 lg:grid lg:grid-cols-[1.1fr_1fr]"
     >
-      <div>
-        <h1 className="text-2xl font-semibold text-neutral-900">Math Quest</h1>
-        <p className="mt-1 text-sm text-neutral-700">
-          {mode === "login" ? "Entra a tu cuenta de padre o madre" : "Crea tu cuenta de padre o madre"}
-        </p>
-      </div>
+      <h1 className="sr-only">Math Quest</h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm text-neutral-700">
-          Correo
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="rounded-md border border-neutral-400 px-3 py-2 text-neutral-900 focus:border-neutral-600"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm text-neutral-700">
-          Contraseña
-          <input
-            type="password"
-            required
-            minLength={6}
-            autoComplete={mode === "signup" ? "new-password" : "current-password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="rounded-md border border-neutral-400 px-3 py-2 text-neutral-900 focus:border-neutral-600"
-          />
-        </label>
+      {/* Panel de mundo (desktop): la aventura asoma desde el login. */}
+      <aside className="family-hero-vignette relative hidden overflow-hidden lg:block" aria-hidden="true">
+        <img
+          src="/illustrations/city-central.webp"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="relative flex h-full flex-col justify-between p-10">
+          <Brand />
+          <div className="max-w-md space-y-4 pb-8">
+            <h2 className="family-text-glow font-display text-3xl font-bold leading-tight text-white">
+              La ciudad está a oscuras. La matemática es la llave.
+            </h2>
+            <p className="text-sm leading-relaxed text-indigo-200/80">
+              Misiones de aventura donde cada problema resuelto enciende luces, abre puertas y
+              desbloquea zonas nuevas. Cuando entres, tus hijos eligen su perfil y su PIN.
+            </p>
+            <ul className="flex flex-wrap gap-2">
+              <FeatureChip icon="⚔️">Misiones jugables</FeatureChip>
+              <FeatureChip icon="🗺️">Mundos por desbloquear</FeatureChip>
+              <FeatureChip icon="🎁">Recompensas en familia</FeatureChip>
+            </ul>
+          </div>
+        </div>
+      </aside>
 
-        {error && (
-          <p role="alert" className="text-sm font-bold text-red-700">
-            {error}
-          </p>
-        )}
+      {/* Columna de acceso */}
+      <section className="flex min-h-screen flex-col px-4 py-6 sm:px-8">
+        <div className="lg:hidden">
+          <Brand />
+        </div>
+        <div className="flex flex-1 items-center justify-center py-8">
+          <div className="w-full max-w-sm space-y-4">
+            <header className="space-y-1">
+              <h2 className="font-display text-2xl font-bold text-white">Panel familiar</h2>
+              <p className="text-sm text-indigo-200/80">
+                {mode === "login"
+                  ? "Entra para ver el progreso y las recompensas de tus hijos."
+                  : "Crea tu cuenta de padre o madre para empezar la aventura."}
+              </p>
+            </header>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white transition-opacity disabled:opacity-50"
-        >
-          {mode === "login" ? "Entrar" : "Crear cuenta"}
-        </button>
-      </form>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="space-y-1.5">
+                <label htmlFor="login-email" className="text-xs font-bold uppercase tracking-wide text-indigo-300">
+                  Correo electrónico
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`family-input${error ? " has-error" : ""}`}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="login-pass" className="text-xs font-bold uppercase tracking-wide text-indigo-300">
+                  Contraseña
+                </label>
+                <input
+                  id="login-pass"
+                  type="password"
+                  required
+                  minLength={6}
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="········"
+                  className={`family-input${error ? " has-error" : ""}`}
+                />
+              </div>
 
-      <button
-        type="button"
-        onClick={() => {
-          setError(null);
-          setMode(mode === "login" ? "signup" : "login");
-        }}
-        className="text-sm text-neutral-700 underline underline-offset-2"
-      >
-        {mode === "login" ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Entra"}
-      </button>
+              {error && (
+                <p
+                  role="alert"
+                  className="anim-shake rounded-xl bg-red-500/10 px-3.5 py-2.5 text-sm font-semibold text-red-300"
+                >
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 font-display text-sm font-bold uppercase tracking-wide text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {submitting
+                  ? "Un momento…"
+                  : mode === "login"
+                    ? "Entrar al panel"
+                    : "Crear cuenta"}
+              </button>
+            </form>
+
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setMode(mode === "login" ? "signup" : "login");
+              }}
+              className="block w-full text-center text-sm font-semibold text-cyan-300 underline-offset-4 hover:underline"
+            >
+              {mode === "login" ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Entra"}
+            </button>
+
+            <p className="rounded-xl border border-dashed border-indigo-500/30 px-3.5 py-2.5 text-center text-xs text-indigo-300/80">
+              ¿Va a jugar un explorador o exploradora? Entra primero como madre o padre; después
+              eligen su perfil y su PIN.
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
+  );
+}
+
+function Brand() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg">
+        <span aria-hidden="true" className="text-lg">✨</span>
+      </span>
+      <span>
+        <span className="block font-display text-lg font-bold leading-none tracking-wide text-white">
+          MATH QUEST
+        </span>
+        <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-300">
+          Aventura matemática
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function FeatureChip({ icon, children }: { icon: string; children: React.ReactNode }) {
+  return (
+    <li className="inline-flex items-center gap-1.5 rounded-full border border-indigo-400/30 bg-slate-900/50 px-3 py-1.5 text-xs font-bold text-indigo-100">
+      <span aria-hidden="true">{icon}</span>
+      {children}
+    </li>
   );
 }
 

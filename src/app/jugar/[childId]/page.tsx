@@ -182,9 +182,9 @@ export default function CiudadCentralPage() {
           <div className="anim-rise world-quest-panel mb-2 flex items-start gap-3 rounded-2xl border-2 border-cyan-400/40 px-4 py-3">
             <span
               aria-hidden="true"
-              className="world-ring-glow flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/40 bg-cyan-500/10 text-3xl"
+              className="world-ring-glow flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-cyan-300/40 bg-cyan-500/10"
             >
-              🧑‍🔬
+              <img src="/illustrations/ada-portrait.webp" alt="" className="h-full w-full object-cover" />
             </span>
             <div className="flex-1">
               <p className="text-sm font-bold text-cyan-100">
