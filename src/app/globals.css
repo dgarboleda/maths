@@ -238,13 +238,14 @@ body {
   }
 }
 
+/* Sin opacity: un modal debe ser legible (y pasar un lector de pantalla o un
+   análisis de contraste) desde el primer frame, no solo al terminar de
+   aparecer. El "rise" es puro movimiento. */
 @keyframes world-rise {
   from {
-    opacity: 0;
     transform: translateY(14px) scale(0.98);
   }
   to {
-    opacity: 1;
     transform: translateY(0) scale(1);
   }
 }

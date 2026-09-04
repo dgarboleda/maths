@@ -40,7 +40,7 @@ export function WorldTopBar({
         type="button"
         onClick={onOpenAvatar}
         aria-label={`Personalizar el personaje de ${childName}`}
-        className="anim-idle rounded-2xl border border-white/15 bg-slate-900/80 px-2 py-1 transition-transform hover:scale-105 hover:border-white/40"
+        className="rounded-2xl border border-white/15 bg-slate-900/80 px-2 py-1 transition-transform hover:scale-105 hover:border-white/40"
       >
         <Avatar look={look} className="h-9 w-7" title={`Personaje de ${childName}`} />
       </button>
