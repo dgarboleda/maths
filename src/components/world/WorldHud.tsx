@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { getBadge } from "@/lib/badges";
 import { moduleHref, type ModuleDef } from "@/lib/curriculum";
-import type { QuestProgress } from "@/lib/world/quests";
 import { Avatar } from "./Avatar";
 
 /**
- * HUD del mundo: barra compacta arriba (personaje, estrellas, insignias,
- * sonido) y panel de misión abajo. Todos los valores vienen del estado real
- * —`starLedger` vía `useTotalStars`, insignias de Firestore, misión derivada
- * de `skillsProgress`—; el HUD no guarda nada por su cuenta.
+ * Barra superior compacta del mundo: personaje, estrellas, insignias, sonido.
+ * Todos los valores vienen del estado real —`starLedger` vía `useTotalStars`,
+ * insignias de Firestore—; el HUD no guarda nada por su cuenta. El registro
+ * de la misión activa vive ahora dentro de la propia escena (`QuestScene` /
+ * `MissionOverlay`), no aquí.
  */
 export function WorldTopBar({
   childId,
@@ -96,115 +96,5 @@ export function WorldTopBar({
         </Link>
       </div>
     </header>
-  );
-}
-
-export function QuestPanel({
-  childId,
-  quest,
-  onFocusZone,
-}: {
-  childId: string;
-  quest: QuestProgress | null;
-  onFocusZone: (strandSlug: string) => void;
-}) {
-  if (!quest) {
-    return (
-      <section
-        aria-label="Misión actual"
-        className="world-quest-panel anim-rise mt-2 rounded-2xl border border-emerald-400/40 px-4 py-3"
-      >
-        <p className="text-sm font-bold text-emerald-200">
-          <span aria-hidden="true">🏆 </span>Todas las misiones de la Ciudad Central están resueltas.
-        </p>
-        <p className="text-xs text-slate-400">Explora las zonas para dominar habilidades nuevas.</p>
-      </section>
-    );
-  }
-
-  const pct = Math.round((quest.doneCount / quest.total) * 100);
-
-  return (
-    <section
-      aria-label="Misión actual"
-      className="world-quest-panel anim-rise mt-2 rounded-2xl border border-amber-400/40 px-4 py-3"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-display text-sm font-bold uppercase tracking-wide text-amber-200">
-          <span aria-hidden="true">{quest.quest.icon} </span>
-          {quest.quest.title}
-          <span aria-hidden="true" className="anim-blink ml-1 text-amber-300/80">
-            ▮
-          </span>
-        </h2>
-        <span className="text-xs font-bold text-slate-300">
-          {quest.doneCount}/{quest.total}
-        </span>
-      </div>
-
-      <div
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`Progreso de la misión ${quest.quest.title}`}
-        className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/15"
-      >
-        <div className="h-1.5 rounded-full bg-amber-300" style={{ width: `${pct}%` }} />
-      </div>
-
-      <ul className="mt-2 flex flex-col gap-1">
-        {(() => {
-          const currentId = quest.objectives.find((o) => !o.done && !o.locked)?.id;
-          return quest.objectives.map((objective) => {
-            const current = objective.id === currentId;
-            return (
-              <li
-                key={objective.id}
-                className={`flex flex-wrap items-center gap-1.5 rounded-lg px-1.5 py-0.5 text-xs ${
-                  current
-                    ? "border border-amber-300/30 bg-amber-400/10 text-slate-100"
-                    : objective.done
-                      ? "text-emerald-300"
-                      : objective.locked
-                        ? "text-slate-400"
-                        : "text-slate-200"
-                }`}
-              >
-                <span aria-hidden="true">{objective.done ? "✓ " : objective.locked ? "🔒 " : "○ "}</span>
-                <span className="sr-only">
-                  {objective.done ? "Completado: " : objective.locked ? "Bloqueado: " : "Pendiente: "}
-                </span>
-                {objective.label}
-                {objective.locked && objective.missing.length > 0 && (
-                  <span className="text-slate-400"> — falta dominar {objective.missing.join(", ")}</span>
-                )}
-                {current && (
-                  <span className="rounded-full bg-amber-400/20 px-1.5 py-0.5 font-display text-[9px] font-bold uppercase tracking-[0.18em] text-amber-200">
-                    En curso
-                  </span>
-                )}
-              </li>
-            );
-          });
-        })()}
-      </ul>
-
-      <div className="mt-2.5 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onFocusZone(quest.quest.strandSlug)}
-          className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-xs font-bold text-slate-950"
-        >
-          ▶ Seguir la misión
-        </button>
-        <Link
-          href={`/jugar/${childId}/misiones`}
-          className="text-xs font-bold text-amber-200 underline underline-offset-2"
-        >
-          Ver diario de misiones
-        </Link>
-      </div>
-    </section>
   );
 }

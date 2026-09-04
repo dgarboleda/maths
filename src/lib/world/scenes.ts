@@ -1,7 +1,6 @@
 import { modulesForStrand, type ModuleDef } from "@/lib/curriculum";
 import { getStrandNarrative } from "@/lib/narrative";
 import { STRANDS } from "@/lib/strands";
-import type { BuildingVariant } from "@/components/world/BuildingArt";
 
 /**
  * Capa de metadatos narrativos sobre los módulos que ya existen. No define
@@ -126,52 +125,4 @@ export function zoneScene(strandSlug: string): ZoneScene | null {
       };
     }),
   };
-}
-
-/** Cada edificio de la ciudad es una zona; la posición es la del plano. */
-export interface CityBuilding {
-  strandSlug: string;
-  zoneName: string;
-  strandLabel: string;
-  icon: string;
-  x: number;
-  y: number;
-  /** Tinte del edificio, para que cada zona se reconozca de lejos. */
-  accent: string;
-  variant: BuildingVariant;
-}
-
-const BUILDING_LAYOUT: Record<
-  string,
-  { x: number; y: number; accent: string; variant: BuildingVariant }
-> = {
-  aritmetica: { x: 21, y: 25, accent: "#a78bfa", variant: "energia" },
-  algebra: { x: 79, y: 25, accent: "#e879f9", variant: "laboratorio" },
-  geometria: { x: 14, y: 52, accent: "#60a5fa", variant: "construccion" },
-  medicion: { x: 86, y: 52, accent: "#34d399", variant: "control" },
-  logica: { x: 50, y: 68, accent: "#fbbf24", variant: "misterio" },
-};
-
-/** Puntos del plano que no son zonas curriculares: la central (boss), la
- * tienda (canjes) y la plaza donde está el personaje. */
-export const CITY_LANDMARKS = {
-  central: { x: 50, y: 10, accent: "#f472b6" },
-  tienda: { x: 19, y: 84, accent: "#38bdf8" },
-  npc: { x: 81, y: 84 },
-  player: { x: 50, y: 43 },
-} as const;
-
-export function cityBuildings(): CityBuilding[] {
-  return STRANDS.map((strand) => {
-    const narrative = getStrandNarrative(strand.slug);
-    const layout =
-      BUILDING_LAYOUT[strand.slug] ?? { x: 50, y: 50, accent: "#a78bfa", variant: "energia" as BuildingVariant };
-    return {
-      strandSlug: strand.slug,
-      zoneName: narrative.zoneName,
-      strandLabel: strand.label,
-      icon: narrative.icon,
-      ...layout,
-    };
-  });
 }

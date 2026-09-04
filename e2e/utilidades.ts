@@ -78,7 +78,10 @@ export async function entrarAlPerfil(page: Page, nombre: string, pin: string, co
   // la primera vez que un worker la visita, así que aquí el margen es mayor
   // que el `expect.timeout` global (ver el comentario de playwright.config.ts).
   await expect(page.getByRole("heading", { name: "Ciudad Central" })).toBeVisible({ timeout: 45_000 });
-  await expect(page.getByRole("link", { name: "Centro de Energía" })).toBeVisible();
+  // El briefing de la misión "El apagón" se abre solo al entrar: confirma que
+  // la escena (y el progreso real que necesita para pintar sus objetivos) ya
+  // cargó. Se deja abierto a propósito — cada prueba decide si lo cierra.
+  await expect(page.getByRole("dialog", { name: "El apagón" })).toBeVisible();
 }
 
 /** Entra al perfil sin sembrar ninguna evaluación: como la evaluación queda

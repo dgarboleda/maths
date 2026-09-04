@@ -39,9 +39,13 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
 
   test("pantalla del hijo y lista de temas de un hilo", async ({ page }) => {
     await sesionDeHijo(page);
+    // El briefing de la misión se abre solo al entrar a Ciudad Central.
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
     expect(await revisar(page)).toEqual([]);
 
-    await page.getByRole("link", { name: "Álgebra" }).click();
+    // "Álgebra" ya no está suelto en el hub: vive en "Otras zonas" del registro.
+    await page.getByRole("button", { name: "Abrir registro de misión" }).click();
+    await page.getByRole("link", { name: /Álgebra/ }).click();
     await expect(page.getByText(/temas dominados/)).toBeVisible();
     expect(await revisar(page)).toEqual([]);
   });
@@ -122,11 +126,28 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
   });
 
   // El mundo mete botones y enlaces encima de un dibujo: el riesgo está en
-  // los nombres accesibles, el contraste sobre la escena y los diálogos.
+  // los nombres accesibles, el contraste sobre la escena y los diálogos —
+  // por eso se revisa la escena base y cada uno de los overlays nuevos
+  // (briefing, diálogo de Nia, registro de misión) por separado.
   test("mundo del niño: ciudad, evento y diario de misiones", async ({ page }) => {
     await sesionDeHijo(page);
+
+    const briefing = page.getByRole("dialog", { name: "El apagón" });
+    await expect(briefing).toBeVisible();
+    expect(await revisar(page), "briefing de misión").toEqual([]);
+
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
     await expect(page.getByRole("link", { name: /Tu próximo desafío/ })).toBeVisible();
-    expect(await revisar(page)).toEqual([]);
+    expect(await revisar(page), "escena base").toEqual([]);
+
+    await page.getByRole("button", { name: /^Dra\. Nia —/ }).click();
+    await expect(page.getByRole("dialog", { name: "Dra. Nia" })).toBeVisible();
+    expect(await revisar(page), "diálogo de la Dra. Nia").toEqual([]);
+    await page.getByRole("button", { name: "Cerrar" }).click();
+
+    await page.getByRole("button", { name: "Abrir registro de misión" }).click();
+    expect(await revisar(page), "registro de misión").toEqual([]);
+    await page.getByRole("button", { name: "Cerrar" }).click();
 
     const raiz = page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1");
 
@@ -142,13 +163,17 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
 
   test("diálogos del mundo: tienda, personaje y ficha de un objeto", async ({ page }) => {
     await sesionDeHijo(page);
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
 
+    // "Tienda" ya no está suelta en el hub: vive en "Otras zonas" del registro.
+    await page.getByRole("button", { name: "Abrir registro de misión" }).click();
     await page.getByRole("button", { name: "Tienda" }).click();
     await expect(page.getByRole("dialog", { name: "Tienda de la ciudad" })).toBeVisible();
     expect(await revisar(page), "tienda").toEqual([]);
     await page.getByRole("button", { name: "Salir" }).click();
 
-    await page.getByRole("link", { name: "Geometría" }).click();
+    await page.getByRole("button", { name: "Abrir registro de misión" }).click();
+    await page.getByRole("link", { name: /Geometría/ }).click();
     await page.getByRole("button", { name: /^Lados de figuras —/ }).click();
     await expect(page.getByRole("dialog", { name: /Lados de figuras/ })).toBeVisible();
     expect(await revisar(page), "objeto del mundo").toEqual([]);

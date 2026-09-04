@@ -293,6 +293,40 @@ body {
   animation: world-rise 0.3s ease-out both;
 }
 
+/* Humo de chimenea (Ciudad Central) y anillo de "reacción" de un hotspot al
+   acercarse — se suman al resto de esta sección con el mismo patrón. */
+@keyframes world-smoke {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  25% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(12px, -52px) scale(1.5);
+  }
+}
+
+@keyframes world-burst {
+  from {
+    opacity: 0.95;
+    transform: scale(0.35);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+.anim-smoke {
+  animation: world-smoke 6.5s linear infinite;
+}
+.anim-burst {
+  animation: world-burst 0.55s ease-out both;
+}
+
 /* Panel flotante del HUD (barra superior, insignia de misión discreta). */
 .world-hud-panel {
   background: rgba(15, 17, 41, 0.82);
