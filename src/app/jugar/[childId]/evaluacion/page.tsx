@@ -54,6 +54,8 @@ export default function EvaluacionPage() {
   const [feedback, setFeedback] = useState<{ correct: boolean; answer: number } | null>(null);
   const [strandResults, setStrandResults] = useState<Record<string, PlacementStrandRecord>>({});
   const [savedSummary, setSavedSummary] = useState<ReturnType<typeof summarizePlacement> | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -152,60 +154,81 @@ export default function EvaluacionPage() {
     setFeedback(null);
   }
 
+  /**
+   * Si esto falla (permisos, red, config de Firebase), NO hay que mostrar
+   * igual la pantalla de resultados: `placementStatus` nunca quedaría en
+   * "completo" y el niño volvería a caer en /evaluacion la próxima vez que
+   * intente jugar — un bucle invisible, porque de cara al niño la evaluación
+   * "funcionó" (sonó la fanfarria). El error queda visible y se puede
+   * reintentar sin rehacer el cuestionario completo (`results` ya está
+   * calculado).
+   */
   async function finishPlacement(results: Record<string, PlacementStrandRecord>) {
-    const summary = summarizePlacement(results);
-    const grants = grantsFromPlacement(results, progressBySkill);
+    setSaving(true);
+    setSaveError(null);
     try {
-      if (user) {
-        const { db, firestore } = await getFirebase();
-        const { collection, doc, writeBatch } = firestore;
-        const batch = writeBatch(db);
+      if (!user) throw new Error("No hay sesión activa.");
+      const summary = summarizePlacement(results);
+      const grants = grantsFromPlacement(results, progressBySkill);
+      const { db, firestore } = await getFirebase();
+      const { collection, doc, writeBatch } = firestore;
+      const batch = writeBatch(db);
 
-        const placementRef = doc(
-          collection(db, "parents", user.uid, "children", params.childId, "placements"),
+      const placementRef = doc(
+        collection(db, "parents", user.uid, "children", params.childId, "placements"),
+      );
+      batch.set(placementRef, {
+        startedAt: startedAtRef.current,
+        completedAt: Date.now(),
+        perStrand: results,
+        overallScore: summary.overallScore,
+        overallGradeBand: summary.overallGradeBand,
+        grantedModuleIds: grants,
+      });
+
+      const mergedProgress = { ...progressBySkill };
+      for (const moduleId of grants) {
+        const existing = progressBySkill[moduleId];
+        const granted: SkillProgress = {
+          recentResults: existing?.recentResults ?? [],
+          recentAccuracy: existing?.recentAccuracy ?? 1,
+          masteredAt: Date.now(),
+          masteredVia: "placement",
+        };
+        mergedProgress[moduleId] = granted;
+        batch.set(
+          doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", moduleId),
+          granted,
         );
-        batch.set(placementRef, {
-          startedAt: startedAtRef.current,
-          completedAt: Date.now(),
-          perStrand: results,
-          overallScore: summary.overallScore,
-          overallGradeBand: summary.overallGradeBand,
-          grantedModuleIds: grants,
-        });
-
-        const mergedProgress = { ...progressBySkill };
-        for (const moduleId of grants) {
-          const existing = progressBySkill[moduleId];
-          const granted: SkillProgress = {
-            recentResults: existing?.recentResults ?? [],
-            recentAccuracy: existing?.recentAccuracy ?? 1,
-            masteredAt: Date.now(),
-            masteredVia: "placement",
-          };
-          mergedProgress[moduleId] = granted;
-          batch.set(
-            doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", moduleId),
-            granted,
-          );
-        }
-
-        batch.update(doc(db, "parents", user.uid, "children", params.childId), {
-          placementStatus: "completo",
-        });
-
-        await batch.commit();
-        await awardBadge(firestore, db, user.uid, params.childId, "detective");
-        // El plan de la pantalla de resultados (próximo módulo por hilo)
-        // necesita ver los módulos recién otorgados, no el progreso de antes
-        // de rendir la evaluación.
-        setProgressBySkill(mergedProgress);
       }
+
+      batch.update(doc(db, "parents", user.uid, "children", params.childId), {
+        placementStatus: "completo",
+      });
+
+      await batch.commit();
+      // La insignia es un extra: si falla no debe impedir que el niño entre
+      // a jugar con su evaluación ya guardada de verdad.
+      await awardBadge(firestore, db, user.uid, params.childId, "detective").catch((err) =>
+        console.error("No se pudo otorgar la insignia de la evaluación", err),
+      );
+      // El plan de la pantalla de resultados (próximo módulo por hilo)
+      // necesita ver los módulos recién otorgados, no el progreso de antes
+      // de rendir la evaluación.
+      setProgressBySkill(mergedProgress);
+      playSound("fanfare", soundOn);
+      setSavedSummary(summary);
+      setPhase("results");
     } catch (err) {
       console.error("No se pudo guardar la evaluación", err);
+      setSaveError(
+        err instanceof Error && /permission|insufficient/i.test(err.message)
+          ? "No se pudo guardar tu evaluación: la base de datos rechazó el permiso. Avisa a tu familia — puede ser un problema de configuración."
+          : "No se pudo guardar tu evaluación. Revisa tu conexión a internet e intenta de nuevo.",
+      );
+    } finally {
+      setSaving(false);
     }
-    playSound("fanfare", soundOn);
-    setSavedSummary(summary);
-    setPhase("results");
   }
 
   useEffect(() => {
@@ -235,7 +258,17 @@ export default function EvaluacionPage() {
       soundOn={soundOn}
       onToggleSound={toggleSound}
     >
-      {phase === "intro" && (
+      {saving && (
+        <div role="status" className="mx-auto max-w-xl rounded-3xl border-2 border-indigo-300 bg-white p-8 text-center shadow-inner">
+          <p className="font-bold text-purple-800">Guardando tu evaluación…</p>
+        </div>
+      )}
+
+      {!saving && saveError && (
+        <SaveErrorScreen message={saveError} onRetry={() => void finishPlacement(strandResults)} />
+      )}
+
+      {!saving && !saveError && phase === "intro" && (
         <IntroScreen
           childName={child.name}
           ultimaEvaluacion={ultimaEvaluacion}
@@ -244,7 +277,7 @@ export default function EvaluacionPage() {
         />
       )}
 
-      {phase === "asking" && strandState && (
+      {!saving && !saveError && phase === "asking" && strandState && (
         <AskingScreen
           strandState={strandState}
           strandOrderIdx={strandOrderIdx}
@@ -257,7 +290,7 @@ export default function EvaluacionPage() {
         />
       )}
 
-      {phase === "results" && savedSummary && (
+      {!saving && !saveError && phase === "results" && savedSummary && (
         <ResultsScreen
           childId={params.childId}
           childName={child.name}
@@ -269,6 +302,28 @@ export default function EvaluacionPage() {
         />
       )}
     </GameShell>
+  );
+}
+
+function SaveErrorScreen({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div role="alert" className="mx-auto max-w-xl space-y-4 rounded-3xl border-2 border-red-300 bg-red-50 p-6 text-center shadow-inner sm:p-8">
+      <div aria-hidden="true" className="text-4xl">
+        ⚠️
+      </div>
+      <h2 className="text-xl font-bold text-red-900">No se pudo guardar tu evaluación</h2>
+      <p className="text-sm text-red-800">{message}</p>
+      <p className="text-xs text-red-700">
+        Tus respuestas no se perdieron: puedes reintentar sin volver a contestar todo el cuestionario.
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-2xl bg-red-600 px-6 py-2.5 font-bold text-white hover:bg-red-500"
+      >
+        Reintentar
+      </button>
+    </div>
   );
 }
 
