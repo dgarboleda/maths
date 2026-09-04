@@ -54,11 +54,12 @@ test.describe("Insignias", () => {
     await expect(insigniaHub).toContainText("🧠");
 
     await page.goto(`/panel/${childId}`);
-    const filaResolutor = page.locator("li", { hasText: "Resolutor" });
+    const insignias = page.getByRole("region", { name: "Insignias" });
+    const filaResolutor = insignias.locator("li", { hasText: "Resolutor" });
     await expect(filaResolutor).toBeVisible();
     await expect(filaResolutor).toHaveClass(/border-amber-400\/30/);
 
-    const filaRapido = page.locator("li", { hasText: "Rápido" });
+    const filaRapido = insignias.locator("li", { hasText: "Rápido" });
     await expect(filaRapido).not.toHaveClass(/border-amber-400\/30/);
   });
 });

@@ -1,324 +1,251 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
+import { Bell, ChartLine, Flame, History, Play, Star, Swords } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
-import { getFirebase } from "@/lib/firebase";
-import type { Attempt, ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
-import { STRANDS, getStrand } from "@/lib/strands";
-import { recommendedModule, countUnlocked } from "@/lib/curriculum";
-import { useTotalStars } from "@/lib/useTotalStars";
+import { useFamily, type ChildDoc } from "@/components/family/FamilyProvider";
+import { useChildDashboard, type ChildDashboard } from "@/lib/family/useChildDashboard";
+import {
+  ActivityRow,
+  ChildSwitcher,
+  EmptyState,
+  SectionCard,
+  SkeletonRows,
+  WeeklyChart,
+} from "@/components/family/ui";
 import { Avatar } from "@/components/world/Avatar";
 
-interface ChildDoc extends ChildProfile {
+const DAY_MS = 86_400_000;
+
+interface AlertItem {
   id: string;
+  icon: string;
+  text: string;
+}
+
+function buildAlerts(children: ChildDoc[], dashboards: Record<string, ChildDashboard>): AlertItem[] {
+  const alerts: AlertItem[] = [];
+  const now = Date.now();
+  for (const c of children) {
+    const d = dashboards[c.id];
+    if (!d) continue;
+    if (d.daysSinceLastAttempt !== null && d.daysSinceLastAttempt >= 3) {
+      alerts.push({
+        id: `inactividad-${c.id}`,
+        icon: "⚠️",
+        text: `${c.name} lleva ${d.daysSinceLastAttempt} días sin practicar.`,
+      });
+    }
+    const recentBadge = d.badges.find(
+      (b) => b.unlocked && b.earnedAt !== null && now - b.earnedAt < 7 * DAY_MS,
+    );
+    if (recentBadge) {
+      alerts.push({
+        id: `insignia-${c.id}-${recentBadge.id}`,
+        icon: "🏅",
+        text: `${c.name} desbloqueó la insignia «${recentBadge.label}».`,
+      });
+    }
+    if (d.pendingRedemptions.length > 0) {
+      const r = d.pendingRedemptions[0];
+      alerts.push({
+        id: `canje-${c.id}`,
+        icon: "🎁",
+        text: `${c.name} tiene un canje pendiente: «${r.rewardLabel}» · ${r.starsSpent} ★.`,
+      });
+    }
+  }
+  return alerts;
 }
 
 export default function PanelPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-  const [children, setChildren] = useState<ChildDoc[]>([]);
+  const { user } = useAuth();
+  const { parentId, children, loadingChildren, selectedChildId } = useFamily();
+  const [dashboards, setDashboards] = useState<Record<string, ChildDashboard>>({});
 
-  useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
+  const handleDashboard = useCallback((childId: string, dashboard: ChildDashboard) => {
+    setDashboards((prev) => (prev[childId] === dashboard ? prev : { ...prev, [childId]: dashboard }));
+  }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    let unsubscribe: (() => void) | undefined;
-    let cancelled = false;
-    getFirebase()
-      .then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
-        if (cancelled) return;
-        const q = query(collection(db, "parents", user.uid, "children"), orderBy("createdAt", "asc"));
-        unsubscribe = onSnapshot(q, (snap) => {
-          setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
-        });
-      })
-      .catch((err) => console.error("No se pudo cargar la lista de hijos", err));
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-    };
-  }, [user]);
+  const greeting = user?.email ? user.email.split("@")[0] : "";
+  const alerts = useMemo(() => buildAlerts(children, dashboards), [children, dashboards]);
+  const recentActivity = useMemo(
+    () =>
+      children
+        .flatMap((c) => (dashboards[c.id]?.activity ?? []).slice(0, 2).map((item) => ({ item, name: c.name })))
+        .sort((a, b) => b.item.when - a.item.when)
+        .slice(0, 6),
+    [children, dashboards],
+  );
+  const selectedDashboard = selectedChildId ? dashboards[selectedChildId] : undefined;
 
-  if (loading || !user) {
+  if (loadingChildren) {
     return (
-      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
-        <p role="status" className="text-indigo-200">
-          Cargando…
-        </p>
-      </main>
+      <p role="status" className="text-indigo-200">
+        Cargando…
+      </p>
     );
   }
 
   return (
-    <main
-      id="contenido"
-      tabIndex={-1}
-      className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-slate-950 px-6 py-10"
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="family-text-glow font-display text-2xl font-bold text-white">Panel de padre</h1>
-          <Link href="/perfiles" className="text-sm font-semibold text-indigo-300 underline-offset-2 hover:underline">
-            Volver a perfiles
-          </Link>
-        </div>
-        <button
-          type="button"
-          onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
-          className="text-sm font-semibold text-slate-400 underline-offset-2 hover:underline"
-        >
-          Cerrar sesión
-        </button>
-      </div>
+    <div className="space-y-5">
+      <header>
+        <h1 className="family-text-glow font-display text-2xl font-bold text-white sm:text-3xl">
+          {greeting ? `Hola, ${greeting}` : "Panel familiar"}
+        </h1>
+        <p className="mt-1 text-sm text-slate-400">Esto es lo que ha pasado en Math Quest esta semana.</p>
+      </header>
 
-      {children.length === 0 && (
-        <p className="family-panel rounded-2xl px-4 py-5 text-sm text-indigo-200">
-          Todavía no hay perfiles de hijos creados.
-        </p>
+      {children.length === 0 ? (
+        <EmptyState
+          icon={<Star className="size-5" aria-hidden="true" />}
+          title="Todavía no hay perfiles"
+          text="Crea el primer perfil desde «Perfiles» para ver aquí su progreso."
+        />
+      ) : (
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            {children.map((c) => (
+              <ChildResumenEntry key={c.id} parentId={parentId} child={c} onDashboard={handleDashboard} />
+            ))}
+          </div>
+
+          <SectionCard title="Avisos" icon={<Bell className="size-4" aria-hidden="true" />}>
+            {alerts.length === 0 ? (
+              <EmptyState
+                icon={<Bell className="size-5" aria-hidden="true" />}
+                title="Sin avisos"
+                text="Todo tranquilo por ahora."
+              />
+            ) : (
+              <ul className="divide-y divide-indigo-500/15">
+                {alerts.map((a) => (
+                  <li key={a.id} className="flex items-start gap-3 py-2.5">
+                    <span
+                      aria-hidden="true"
+                      className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-slate-800/60"
+                    >
+                      {a.icon}
+                    </span>
+                    <span className="min-w-0 flex-1 text-sm font-semibold leading-snug text-slate-100">
+                      {a.text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </SectionCard>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SectionCard
+              title="Ritmo de la semana"
+              icon={<ChartLine className="size-4" aria-hidden="true" />}
+              action={<ChildSwitcher />}
+            >
+              {selectedDashboard ? <WeeklyChart week={selectedDashboard.weeklyProblems} /> : <SkeletonRows rows={3} />}
+            </SectionCard>
+
+            <SectionCard title="Actividad reciente" icon={<History className="size-4" aria-hidden="true" />}>
+              {recentActivity.length === 0 ? (
+                <EmptyState
+                  icon={<History className="size-5" aria-hidden="true" />}
+                  title="Todavía no hay actividad."
+                  text="Cuando jueguen, la actividad aparecerá aquí."
+                />
+              ) : (
+                <ul className="divide-y divide-indigo-500/15">
+                  {recentActivity.map(({ item, name }) => (
+                    <ActivityRow key={item.id} item={item} childName={name} />
+                  ))}
+                </ul>
+              )}
+            </SectionCard>
+          </div>
+        </>
       )}
-
-      <div className="flex flex-col gap-6">
-        {children.map((child) => (
-          <ChildSection key={child.id} parentId={user.uid} child={child} />
-        ))}
-      </div>
-    </main>
+    </div>
   );
 }
 
-interface RequestDoc extends RedemptionRequest {
-  id: string;
-}
-interface AttemptDoc extends Attempt {
-  id: string;
-}
-
-function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }) {
-  const totalStars = useTotalStars(parentId, child.id);
-  const [requests, setRequests] = useState<RequestDoc[]>([]);
-  const [attempts, setAttempts] = useState<AttemptDoc[]>([]);
-  const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
-  const [resolvingId, setResolvingId] = useState<string | null>(null);
+function ChildResumenEntry({
+  parentId,
+  child,
+  onDashboard,
+}: {
+  parentId: string | undefined;
+  child: ChildDoc;
+  onDashboard: (childId: string, dashboard: ChildDashboard) => void;
+}) {
+  const dashboard = useChildDashboard(parentId, child.id);
 
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    let cancelled = false;
-    getFirebase()
-      .then(({ db, firestore: { collection, onSnapshot } }) => {
-        if (cancelled) return;
-        unsubscribe = onSnapshot(
-          collection(db, "parents", parentId, "children", child.id, "skillsProgress"),
-          (snap) => {
-            const map: Record<string, SkillProgress> = {};
-            snap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
-            setProgressBySkill(map);
-          },
-        );
-      })
-      .catch((err) => console.error("No se pudo cargar el progreso", err));
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-    };
-  }, [parentId, child.id]);
-
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    let cancelled = false;
-    getFirebase()
-      .then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
-        if (cancelled) return;
-        const q = query(
-          collection(db, "parents", parentId, "children", child.id, "redemptionRequests"),
-          orderBy("createdAt", "desc"),
-        );
-        unsubscribe = onSnapshot(q, (snap) => {
-          setRequests(snap.docs.map((d) => ({ id: d.id, ...(d.data() as RedemptionRequest) })));
-        });
-      })
-      .catch((err) => console.error("No se pudieron cargar los canjes", err));
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-    };
-  }, [parentId, child.id]);
-
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    let cancelled = false;
-    getFirebase()
-      .then(({ db, firestore: { collection, onSnapshot, orderBy, query, limit } }) => {
-        if (cancelled) return;
-        const q = query(
-          collection(db, "parents", parentId, "children", child.id, "attempts"),
-          orderBy("createdAt", "desc"),
-          limit(8),
-        );
-        unsubscribe = onSnapshot(q, (snap) => {
-          setAttempts(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Attempt) })));
-        });
-      })
-      .catch((err) => console.error("No se pudo cargar la actividad reciente", err));
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-    };
-  }, [parentId, child.id]);
-
-  const pending = requests.filter((r) => r.status === "pendiente");
-  const resolved = requests.filter((r) => r.status !== "pendiente").slice(0, 5);
-
-  async function resolveRequest(request: RequestDoc, approve: boolean) {
-    if (resolvingId) return;
-    setResolvingId(request.id);
-    try {
-      const {
-        db,
-        firestore: { addDoc, collection, doc, serverTimestamp, updateDoc },
-      } = await getFirebase();
-      if (approve) {
-        await addDoc(collection(db, "parents", parentId, "children", child.id, "starLedger"), {
-          delta: -request.starsSpent,
-          reason: "redemption",
-          attemptId: null,
-          createdAt: serverTimestamp(),
-        });
-      }
-      await updateDoc(
-        doc(db, "parents", parentId, "children", child.id, "redemptionRequests", request.id),
-        {
-          status: approve ? "aprobado" : "rechazado",
-          resolvedAt: serverTimestamp(),
-        },
-      );
-    } finally {
-      setResolvingId(null);
-    }
-  }
+    onDashboard(child.id, dashboard);
+  }, [child.id, dashboard, onDashboard]);
 
   return (
-    <section aria-label={`Progreso de ${child.name}`} className="family-panel flex flex-col gap-4 rounded-2xl p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30">
-            <Avatar className="h-7" title={child.name} />
-          </span>
-          <span className="font-display font-bold text-white">{child.name}</span>
+    <section aria-label={`Progreso de ${child.name}`} className="family-tile rounded-2xl p-4">
+      <header className="flex items-center gap-3">
+        <Avatar
+          variant="headshot"
+          title={child.name}
+          className="size-14 shrink-0 rounded-full border-2 border-indigo-500/30"
+        />
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-lg font-bold leading-tight text-white">{child.name}</h2>
+          <p className="text-xs text-slate-400">Nivel {dashboard.level}</p>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-slate-900/60 px-3 py-1 text-sm font-bold text-amber-300">
-          <span aria-hidden="true">⭐</span>
-          {totalStars === null ? "…" : `${totalStars} estrellas`}
-        </span>
+      </header>
+
+      <ul className="mt-3 flex flex-wrap gap-1.5">
+        <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-amber-300">
+          <Star className="size-3.5" aria-hidden="true" />
+          {dashboard.totalStars ?? "…"}
+          <span className="sr-only">estrellas</span>
+        </li>
+        <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-orange-300">
+          <Flame className="size-3.5" aria-hidden="true" />
+          {dashboard.streak} días
+          <span className="sr-only">de racha</span>
+        </li>
+        <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-slate-200">
+          {dashboard.masteryGlobal} % dominio
+        </li>
+      </ul>
+
+      <div className="mt-3 rounded-xl bg-slate-800/50 p-3">
+        {dashboard.currentMission ? (
+          <>
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-cyan-300">
+              <Swords className="size-3.5" aria-hidden="true" />
+              {dashboard.currentMission.zoneName}
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-100">
+              <span aria-hidden="true">{dashboard.currentMission.icon} </span>
+              {dashboard.currentMission.title}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">{dashboard.currentMission.progressLabel}</p>
+          </>
+        ) : (
+          <p className="text-sm font-semibold text-emerald-300">✓ Todas las misiones completadas</p>
+        )}
       </div>
 
-      <div className="flex flex-col gap-1">
-        <h3 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Progreso por hilo</h3>
-        <ul className="grid grid-cols-1 gap-1 text-sm text-slate-300 sm:grid-cols-2">
-          {STRANDS.map((s) => {
-            const recommended = recommendedModule(progressBySkill, s.slug);
-            const { unlocked, total } = countUnlocked(progressBySkill, s.slug);
-            return (
-              <li key={s.slug} className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-slate-200">{s.label}</span>
-                <span className="text-slate-400">
-                  {recommended ? recommended.label : "todo dominado"} · {unlocked}/{total}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+      <div className="mt-3 flex gap-2">
         <Link
           href={`/panel/${child.id}`}
-          className="mt-1 self-start text-sm font-semibold text-cyan-300 underline-offset-2 hover:underline"
+          className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-indigo-500/25 bg-slate-800/60 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
         >
-          Ver currícula completa
+          Ver perfil
+        </Link>
+        <Link
+          href={`/jugar/${child.id}`}
+          className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-sm font-bold text-white transition-colors hover:brightness-110"
+        >
+          <Play className="size-4" aria-hidden="true" />
+          Jugar
         </Link>
       </div>
-
-      {pending.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Canjes pendientes</h3>
-          {pending.map((r) => (
-            <div
-              key={r.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3"
-            >
-              <span className="text-sm font-semibold text-amber-100">
-                {r.rewardLabel} · {r.starsSpent} estrellas
-              </span>
-              <div className="flex gap-3 text-sm">
-                <button
-                  type="button"
-                  onClick={() => resolveRequest(r, true)}
-                  disabled={resolvingId === r.id}
-                  aria-label={`Aprobar el canje de ${r.rewardLabel} por ${r.starsSpent} estrellas`}
-                  className="font-bold text-emerald-300 underline-offset-2 hover:underline disabled:opacity-40"
-                >
-                  Aprobar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => resolveRequest(r, false)}
-                  disabled={resolvingId === r.id}
-                  aria-label={`Rechazar el canje de ${r.rewardLabel} por ${r.starsSpent} estrellas`}
-                  className="font-semibold text-slate-400 underline-offset-2 hover:underline disabled:opacity-40"
-                >
-                  Rechazar
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {resolved.length > 0 && (
-        <div className="flex flex-col gap-1">
-          <h3 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Canjes resueltos</h3>
-          {resolved.map((r) => (
-            <div key={r.id} className="flex items-center justify-between text-sm">
-              <span className="text-slate-300">
-                {r.rewardLabel} · {r.starsSpent} estrellas
-              </span>
-              <span className={r.status === "aprobado" ? "font-semibold text-emerald-300" : "font-semibold text-red-300"}>
-                {r.status === "aprobado" ? "Aprobado" : "Rechazado"}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {attempts.length > 0 && (
-        <div className="flex flex-col gap-1">
-          <h3 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Actividad reciente</h3>
-          <ul className="flex flex-col gap-1 text-sm text-slate-300">
-            {attempts.map((a) => (
-              <li key={a.id} className="flex items-center justify-between">
-                <span>{describeSkill(a.skillId)}</span>
-                <span className={a.correct ? "font-semibold text-emerald-300" : "text-slate-400"}>
-                  {a.correct ? "correcto" : "incorrecto"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {pending.length === 0 && resolved.length === 0 && attempts.length === 0 && (
-        <p className="text-sm text-slate-400">Todavía no hay actividad.</p>
-      )}
     </section>
   );
-}
-
-function describeSkill(skillId: string): string {
-  const parts = skillId.split("-");
-  const strandLabel = getStrand(parts[0])?.label ?? parts[0];
-  const kind = parts.slice(1, -1).join(" ").replaceAll("_", " ");
-  const level = parts[parts.length - 1]?.replace("d", "nivel ");
-  return `${strandLabel} · ${kind} · ${level}`;
 }

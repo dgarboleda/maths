@@ -2,14 +2,29 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Brain, ChartLine, Flame, History, Map as MapIcon, Medal, Play, Star, Target } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
+import { useFamily } from "@/components/family/FamilyProvider";
+import { useChildDashboard } from "@/lib/family/useChildDashboard";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, Placement, SkillProgress } from "@/lib/types";
 import { getStrand, STRANDS } from "@/lib/strands";
 import { MODULES, isMastered, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { moduleForTier } from "@/lib/placement";
-import { BADGES } from "@/lib/badges";
+import { ageFromBirthDate } from "@/lib/family/age";
+import { Avatar } from "@/components/world/Avatar";
+import {
+  ActivityRow,
+  Bar,
+  EmptyState,
+  MasteryBar,
+  SectionCard,
+  SkeletonRows,
+  StatusPill,
+  TrendChip,
+  WeeklyChart,
+} from "@/components/family/ui";
 
 const STRAND_COLORS: Record<string, string> = {
   aritmetica: "border-violet-400/30 bg-violet-500/15 text-violet-200",
@@ -23,18 +38,18 @@ interface PlacementDoc extends Placement {
   id: string;
 }
 
-export default function CurriculaPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+export default function ChildDetailPage() {
+  const { user } = useAuth();
+  const { parentId, setSelectedChildId } = useFamily();
   const params = useParams<{ childId: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [evaluaciones, setEvaluaciones] = useState<PlacementDoc[]>([]);
-  const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
+  const dashboard = useChildDashboard(parentId, params.childId);
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
+    setSelectedChildId(params.childId);
+  }, [params.childId, setSelectedChildId]);
 
   useEffect(() => {
     if (!user) return;
@@ -64,59 +79,162 @@ export default function CurriculaPage() {
         ),
       );
       if (cancelled) return;
-      setEvaluaciones(
-        placementsSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Placement) })),
-      );
-
-      const badgesSnap = await getDocs(
-        collection(db, "parents", user.uid, "children", params.childId, "badges"),
-      );
-      if (cancelled) return;
-      setEarnedBadgeIds(badgesSnap.docs.map((d) => d.id));
+      setEvaluaciones(placementsSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Placement) })));
     })().catch((err) => console.error("No se pudo cargar el progreso", err));
     return () => {
       cancelled = true;
     };
   }, [user, params.childId]);
 
-  if (loading || !user) {
-    return (
-      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
-        <p role="status" className="text-indigo-200">
-          Cargando…
-        </p>
-      </main>
-    );
-  }
-
   if (!child) {
     return (
-      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
-        <p role="status" className="text-indigo-200">
-          Cargando…
-        </p>
-      </main>
+      <p role="status" className="text-indigo-200">
+        Cargando…
+      </p>
     );
   }
 
   const tiers = [...new Set(MODULES.map((m) => m.tier))].sort((a, b) => a - b);
+  const age = ageFromBirthDate(child.birthDate);
 
   return (
-    <main
-      id="contenido"
-      tabIndex={-1}
-      className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-slate-950 px-6 py-10"
-    >
-      <div>
-        <h1 className="family-text-glow font-display text-2xl font-bold text-white">Currícula de {child.name}</h1>
-        <Link href="/panel" className="text-sm font-semibold text-indigo-300 underline-offset-2 hover:underline">
-          ← Volver al panel
+    <div className="flex flex-col gap-6">
+      <Link
+        href="/panel/hijos"
+        className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-1 text-sm font-semibold text-slate-400 transition-colors hover:text-white"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Hijos
+      </Link>
+
+      <header className="family-panel flex flex-wrap items-center gap-4 rounded-2xl p-4 sm:p-5">
+        <Avatar
+          variant="headshot"
+          title={child.name}
+          className="size-20 shrink-0 rounded-full border-2 border-cyan-400/40"
+        />
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-2xl font-bold leading-tight text-white">{child.name}</h1>
+          {age !== null && <p className="text-sm text-slate-400">{age} años</p>}
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-slate-200">
+              Nivel {dashboard.level}
+            </li>
+            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-amber-300">
+              <Star className="size-3.5" aria-hidden="true" />
+              {dashboard.totalStars ?? "…"}
+              <span className="sr-only">estrellas</span>
+            </li>
+            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-orange-300">
+              <Flame className="size-3.5" aria-hidden="true" />
+              {dashboard.streak} días de racha
+            </li>
+            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-cyan-300">
+              <Target className="size-3.5" aria-hidden="true" />
+              {dashboard.weeklyAccuracy} % de acierto
+            </li>
+          </ul>
+        </div>
+        <Link
+          href={`/jugar/${params.childId}`}
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 text-sm font-bold text-white transition-colors hover:brightness-110"
+        >
+          <Play className="size-4" aria-hidden="true" />
+          Jugar como {child.name}
         </Link>
-        <p className="mt-2 text-sm text-slate-400">
-          Cada franja agrupa temas de nivel similar. Un tema se desbloquea cuando se dominan todos sus prerrequisitos
-          (mostrados entre paréntesis cuando está bloqueado), sin importar de qué materia vengan.
-        </p>
+      </header>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <SectionCard title="Mundos" icon={<MapIcon className="size-4" aria-hidden="true" />}>
+          <ul className="space-y-4">
+            {dashboard.worlds.map((w) => (
+              <li key={w.id}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className={`text-sm font-bold ${w.status === "bloqueado" ? "text-slate-500" : "text-white"}`}>
+                    <span aria-hidden="true">{w.icon} </span>
+                    {w.title}
+                  </p>
+                  <StatusPill status={w.status} />
+                </div>
+                <Bar
+                  value={w.done}
+                  max={w.total}
+                  label={`${w.title}: ${w.done} de ${w.total} objetivos`}
+                  tone={w.status === "completado" ? "success" : w.status === "en-curso" ? "accent" : "primary"}
+                  className="mt-1.5"
+                />
+                <p className="mt-1 text-xs text-slate-400">
+                  {w.zoneName} · {w.done} de {w.total} objetivos
+                </p>
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
+
+        <SectionCard title="Dominio por hilo" icon={<Brain className="size-4" aria-hidden="true" />}>
+          <ul className="space-y-3.5">
+            {dashboard.strandRows.map((s) => (
+              <li key={s.slug}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-bold text-white">
+                    <span aria-hidden="true">{s.emoji} </span>
+                    {s.label}
+                  </p>
+                  <span className="flex items-center gap-2">
+                    <TrendChip trend={s.trend} />
+                    <span className="text-sm font-bold tabular-nums text-slate-200">{s.mastery} %</span>
+                  </span>
+                </div>
+                <MasteryBar value={s.mastery} label={`${s.label}: ${s.mastery} % de dominio`} />
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 rounded-lg bg-slate-800/50 px-3 py-2 text-xs text-slate-400">
+            La línea marca el umbral de dominio (85 % de aciertos en los últimos 12 intentos).
+          </p>
+        </SectionCard>
+
+        <SectionCard title="Insignias" icon={<Medal className="size-4" aria-hidden="true" />}>
+          <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            {dashboard.badges.map((b) => (
+              <li
+                key={b.id}
+                className={`rounded-xl border p-3 ${
+                  b.unlocked ? "border-amber-400/30 bg-amber-500/10" : "border-indigo-500/15 bg-slate-800/40"
+                }`}
+              >
+                <span aria-hidden="true" className="text-xl">
+                  {b.emoji}
+                </span>
+                <p className={`mt-2 text-sm font-bold leading-tight ${b.unlocked ? "text-amber-200" : "text-slate-500"}`}>
+                  {b.label}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400">{b.description}</p>
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
+
+        <SectionCard title="Actividad reciente" icon={<History className="size-4" aria-hidden="true" />}>
+          {dashboard.activity.length === 0 ? (
+            <EmptyState
+              icon={<History className="size-5" aria-hidden="true" />}
+              title="Sin actividad todavía"
+              text="Cuando practique, la actividad aparecerá aquí."
+            />
+          ) : (
+            <ul className="divide-y divide-indigo-500/15">
+              {dashboard.activity.map((item) => (
+                <ActivityRow key={item.id} item={item} />
+              ))}
+            </ul>
+          )}
+        </SectionCard>
       </div>
+
+      <SectionCard title="Ritmo de la semana" icon={<ChartLine className="size-4" aria-hidden="true" />}>
+        {dashboard.loading ? <SkeletonRows rows={3} /> : <WeeklyChart week={dashboard.weeklyProblems} />}
+      </SectionCard>
 
       <section aria-label="Evaluaciones de ubicación" className="family-panel flex flex-col gap-3 rounded-2xl p-5">
         <div className="flex items-center justify-between">
@@ -176,32 +294,13 @@ export default function CurriculaPage() {
         )}
       </section>
 
-      <section aria-label="Insignias" className="family-panel flex flex-col gap-3 rounded-2xl p-5">
-        <h2 className="text-sm font-bold text-white">Insignias</h2>
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {BADGES.map((badge) => {
-            const earned = earnedBadgeIds.includes(badge.id);
-            return (
-              <li
-                key={badge.id}
-                className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-sm ${
-                  earned ? "border-amber-400/30 bg-amber-500/10" : "border-indigo-500/15 text-slate-500"
-                }`}
-              >
-                <span aria-hidden="true" className="text-xl">
-                  {badge.emoji}
-                </span>
-                <span>
-                  <span className={`block font-semibold ${earned ? "text-amber-200" : "text-slate-500"}`}>
-                    {badge.label}
-                  </span>
-                  <span className="text-xs text-slate-400">{badge.description}</span>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      <div className="flex flex-col gap-2">
+        <h2 className="font-display text-lg font-bold text-white">Currícula completa</h2>
+        <p className="text-sm text-slate-400">
+          Cada franja agrupa temas de nivel similar. Un tema se desbloquea cuando se dominan todos sus prerrequisitos
+          (mostrados entre paréntesis cuando está bloqueado), sin importar de qué materia vengan.
+        </p>
+      </div>
 
       <div className="flex flex-col gap-6">
         {tiers.map((tier) => (
@@ -245,6 +344,6 @@ export default function CurriculaPage() {
           </section>
         ))}
       </div>
-    </main>
+    </div>
   );
 }
