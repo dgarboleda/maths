@@ -3,7 +3,6 @@ import {
   idDeHijo,
   otorgarDominio,
   resolverEnunciado,
-  sembrarEvaluacion,
   sembrarProgresoCercaDeDominio,
   sesionDeHijo,
 } from "./utilidades";
@@ -27,27 +26,31 @@ function respuestaFigura(enunciado: string): number {
 }
 
 test.describe("Narrativa Math Quest", () => {
-  test("la ciudad y la zona muestran la identidad narrativa de cada hilo", async ({ page }) => {
+  test("el registro de misión muestra las otras zonas con su identidad narrativa", async ({ page }) => {
     await sesionDeHijo(page);
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
+    await page.getByRole("button", { name: "Abrir registro de misión" }).click();
 
-    await expect(page.getByText("Centro de Energía")).toBeVisible();
-    await expect(page.getByText("Laboratorio")).toBeVisible();
-    await expect(page.getByText("Zona de Construcción")).toBeVisible();
-    await expect(page.getByText("Centro de Control")).toBeVisible();
-    await expect(page.getByText("Distrito Misterioso")).toBeVisible();
+    const registro = page.getByRole("dialog", { name: "El apagón" });
+    await expect(registro.getByText("Centro de Energía")).toBeVisible();
+    await expect(registro.getByText("Laboratorio")).toBeVisible();
+    await expect(registro.getByText("Zona de Construcción")).toBeVisible();
+    await expect(registro.getByText("Centro de Control")).toBeVisible();
+    await expect(registro.getByText("Distrito Misterioso")).toBeVisible();
     // El progreso visual es puramente decorativo sobre isMastered/isUnlocked.
-    await expect(page.getByRole("progressbar", { name: "Progreso en Centro de Energía" })).toHaveAttribute(
+    await expect(registro.getByRole("progressbar", { name: "Progreso en Centro de Energía" })).toHaveAttribute(
       "aria-valuenow",
       "0",
     );
 
-    await page.getByRole("link", { name: "Aritmética" }).click();
+    await registro.getByRole("link", { name: /Aritmética/ }).click();
     await expect(page).toHaveURL(/\/aritmetica$/);
     await expect(page.getByText("Resolver cálculos permite reparar sistemas.")).toBeVisible();
   });
 
   test("Tu próximo desafío enlaza al módulo real recomendado, no a un id inventado", async ({ page }) => {
     await sesionDeHijo(page);
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
 
     const desafio = page.getByRole("link", { name: /Tu próximo desafío/ });
     await expect(desafio).toBeVisible();
@@ -60,42 +63,95 @@ test.describe("Narrativa Math Quest", () => {
 
   test("Boss Challenge combina retos de varios hilos ya desbloqueados", async ({ page }) => {
     await sesionDeHijo(page);
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
+    await page.getByRole("button", { name: "Abrir registro de misión" }).click();
+    await page.getByRole("link", { name: "Central eléctrica · Boss Challenge" }).click();
 
-    await page.getByRole("link", { name: "Boss Challenge" }).click();
     await expect(page).toHaveURL(/\/boss$/);
     await expect(page.getByRole("heading", { name: "Boss Challenge" })).toBeVisible();
     await expect(page.getByText(/Boss Challenge · 1\/\d/)).toBeVisible();
   });
 });
 
-test.describe("Mundo: Ciudad Central", () => {
-  test("interactuar con un objeto resuelve un problema real del módulo y guarda el intento", async ({
-    page,
-  }) => {
+test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
+  test("hablar con la Dra. Nia desbloquea la terminal, y resolverla guarda el intento real", async ({ page }) => {
     await sesionDeHijo(page);
     const estrellas = page.locator("header").getByText(/^Estrellas:\s*-?\d+$/);
-
-    await page.getByRole("link", { name: "Geometría" }).click();
     await expect(estrellas).toHaveText("Estrellas: 0");
 
-    // "Lados de figuras" (geometria-d1) no tiene prerrequisitos: es el primer
-    // objeto explorable de la Zona de Construcción.
-    await page.getByRole("button", { name: /^Lados de figuras —/ }).click();
-    const ficha = page.getByRole("dialog", { name: /Lados de figuras/ });
+    // El briefing de misión abre la partida.
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
+
+    // La Dra. Nia es el primer paso: diálogo de 3 líneas, siempre se puede
+    // volver a saludar (no es un objetivo con moduleId real).
+    await page.getByRole("button", { name: /^Dra\. Nia —/ }).click();
+    const dialogoNia = page.getByRole("dialog", { name: "Dra. Nia" });
+    await expect(dialogoNia).toBeVisible();
+    await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
+    await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
+    await dialogoNia.getByRole("button", { name: "¡Voy a por el código!" }).click();
+    await expect(dialogoNia).not.toBeVisible();
+
+    // La terminal (aritmetica-d1) queda disponible: resolverla es un intento real.
+    await page.getByRole("button", { name: /^Terminal de acceso —/ }).click();
+    const ficha = page.getByRole("dialog", { name: "Terminal de acceso" });
     await expect(ficha).toBeVisible();
 
-    const enunciado = await ficha.getByText(/¿Cuántos (lados|vértices) tiene un/).innerText();
-    await ficha.getByRole("button", { name: String(respuestaFigura(enunciado)), exact: true }).click();
+    const enunciado = await ficha.getByText(/¿Cuánto es \d+ \+ \d+\?/).innerText();
+    const objetivo = resolverEnunciado(enunciado)!;
+    const recta = ficha.getByRole("slider");
+    await recta.focus();
+    let actual = Number(await recta.getAttribute("aria-valuenow"));
+    while (actual !== objetivo) {
+      await page.keyboard.press(actual < objetivo ? "ArrowRight" : "ArrowLeft");
+      actual = Number(await recta.getAttribute("aria-valuenow"));
+    }
+    await ficha.getByRole("button", { name: "Responder" }).click();
 
-    await expect(ficha.getByText(/CÓDIGO ACEPTADO/)).toBeVisible();
+    // Dos textos coinciden con "CÓDIGO ACEPTADO": el propio de la ficha de
+    // terminal (con el código) y el de consecuencia narrativa del hotspot.
+    await expect(ficha.getByText(/CÓDIGO ACEPTADO: \d/)).toBeVisible();
+    await ficha.getByRole("button", { name: "Seguir explorando" }).click();
+
     // El intento se guardó de verdad: el saldo sale de starLedger, no del mundo.
     await expect(estrellas).not.toHaveText("Estrellas: 0");
   });
 
+  test("resolver la compuerta con las tres etapas ya superadas restaura la central", async ({ page }) => {
+    const { correo } = await sesionDeHijo(page);
+    const childId = idDeHijo(page);
+    // Terminal y medidor ya superados de verdad: solo falta la compuerta
+    // (geometria-d1, "Lados de figuras", sin prerrequisitos).
+    await otorgarDominio(correo, childId, ["aritmetica-d1", "medicion-d1"]);
+    await page.reload();
+
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
+    await page.getByRole("button", { name: /^Dra\. Nia —/ }).click();
+    const dialogoNia = page.getByRole("dialog", { name: "Dra. Nia" });
+    await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
+    await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
+    await dialogoNia.getByRole("button", { name: "¡Voy a por el código!" }).click();
+
+    await page.getByRole("button", { name: /^Compuerta del generador —/ }).click();
+    const ficha = page.getByRole("dialog", { name: "Compuerta del generador" });
+    await expect(ficha).toBeVisible();
+
+    const enunciado = await ficha.getByText(/¿Cuántos (lados|vértices) tiene un/).innerText();
+    await ficha.getByRole("button", { name: String(respuestaFigura(enunciado)), exact: true }).click();
+    await expect(ficha.getByText(/CÓDIGO ACEPTADO/)).toBeVisible();
+    await ficha.getByRole("button", { name: "Seguir explorando" }).click();
+
+    // Misión completa: recompensa final (ciudad restaurada).
+    await expect(page.getByRole("dialog", { name: "La ciudad vuelve a la vida" })).toBeVisible();
+  });
+
   test("un objeto bloqueado explica el prerrequisito real, sin candados inventados", async ({ page }) => {
     await sesionDeHijo(page);
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
+    await page.getByRole("button", { name: "Abrir registro de misión" }).click();
+    await page.getByRole("link", { name: /Aritmética/ }).click();
+    await expect(page).toHaveURL(/\/aritmetica$/);
 
-    await page.getByRole("link", { name: "Aritmética" }).click();
     // "Multiplicación" (aritmetica-d5) exige dominar "Sumas y restas hasta 100".
     await page.getByRole("button", { name: /^Multiplicación — bloqueado/ }).click();
 
@@ -117,35 +173,25 @@ test.describe("Mundo: Ciudad Central", () => {
       .last();
     await expect(objetivo).toContainText("Pendiente:");
 
-    // Dominar de verdad el módulo del objetivo (aritmetica-d1) lo cierra.
+    // Dominar de verdad el módulo del objetivo (aritmetica-d1) lo cierra —
+    // se refleja igual en el diario y en el registro de la propia escena.
     await otorgarDominio(correo, childId, ["aritmetica-d1"]);
     await page.reload();
     await expect(objetivo).toContainText("Completado:");
-  });
-
-  test("Ada deja volver a evaluar desde el mundo cuando la evaluación ya está hecha", async ({
-    page,
-  }) => {
-    const { correo } = await sesionDeHijo(page);
-    const childId = idDeHijo(page);
-    await sembrarEvaluacion(correo, childId, {
-      perStrand: {
-        aritmetica: { itemsAsked: 2, itemsCorrect: 1, highestTierPassed: 0, gradeBand: "preescolar–1.º" },
-      },
-      overallScore: 10,
-      overallGradeBand: "preescolar–1.º",
-      grantedModuleIds: ["aritmetica-d1"],
-    });
 
     await page.goto(`/jugar/${childId}`);
-    // Con la evaluación hecha, Ada ya no interrumpe sola…
-    await expect(page.getByText("¿Volvemos a medir tu nivel?")).toBeHidden();
-
-    // …pero sigue siendo la puerta del niño a repetirla.
-    await page.getByRole("button", { name: /Ada, la ingeniera/ }).click();
-    await page.getByRole("link", { name: "Volver a evaluar" }).click();
-    await expect(page).toHaveURL(/\/evaluacion$/);
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
+    await page.getByRole("button", { name: "Abrir registro de misión" }).click();
+    const registro = page.getByRole("dialog", { name: "El apagón" });
+    await expect(
+      registro.getByRole("listitem").filter({ hasText: "Reactivar la terminal de la plaza" }),
+    ).toContainText("completado");
   });
+
+  // Ada, la ingeniera, ya no vive en esta pantalla: Ciudad Central pasa a ser
+  // la escena de la Dra. Nia y la oferta de "volver a evaluar" se retira por
+  // ahora (decisión explícita al portar la misión), sin trasladarse a otro
+  // sitio en este cambio.
 });
 
 test.describe("Celebración de mastery", () => {

@@ -7,9 +7,8 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { nextChallenge } from "@/lib/curriculum";
-import { activeQuest } from "@/lib/world/quests";
-import { CityScene } from "@/components/world/CityScene";
-import { QuestPanel, WorldTopBar } from "@/components/world/WorldHud";
+import { WorldTopBar } from "@/components/world/WorldHud";
+import { QuestScene } from "@/components/world/QuestScene";
 import { ShopPanel, type RequestDoc } from "@/components/world/ShopPanel";
 import { playSound } from "@/lib/gameSound";
 import { useTotalStars } from "@/lib/useTotalStars";
@@ -17,10 +16,13 @@ import { useSoundPreference } from "@/lib/useSoundPreference";
 import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 /**
- * Ciudad Central: la pantalla de entrada del niño ya no es un tablero de
- * tarjetas, sino el mundo. Todo lo que se ve —zonas encendidas, candados,
- * misión activa, estrellas, insignias— se lee del motor académico de siempre;
- * esta pantalla no guarda ningún estado de juego propio.
+ * Ciudad Central: la pantalla de entrada del niño es la misión "El apagón",
+ * puerto del prototipo de referencia — una sola escena pintada (no un
+ * tablero de zonas), con la Dra. Nia, una terminal, un medidor y una
+ * compuerta. Todo lo que se ve —qué punto está activo, qué se enciende, qué
+ * se abre— se lee del motor académico de siempre (`QUESTS[0]` en
+ * `lib/world/quests.ts`); esta pantalla no guarda ningún estado de misión
+ * propio (ver `QuestScene`/`lib/world/questScene.ts`).
  */
 export default function CiudadCentralPage() {
   const { user, loading } = useAuth();
@@ -32,7 +34,7 @@ export default function CiudadCentralPage() {
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
   const [panel, setPanel] = useState<"ninguno" | "tienda">("ninguno");
-  const [npcAbierto, setNpcAbierto] = useState(false);
+  const [streak, setStreak] = useState(0);
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
   const placementPending = useRequirePlacement(params.childId, child, router);
@@ -153,11 +155,6 @@ export default function CiudadCentralPage() {
     );
   }
 
-  const quest = activeQuest(progressBySkill);
-  // La evaluación inicial ya es obligatoria para llegar hasta aquí
-  // (useRequirePlacement redirige mientras esté pendiente): Ada solo
-  // ofrece repetirla, y únicamente cuando el niño la llama.
-
   return (
     <main id="contenido" tabIndex={-1} className="min-h-screen bg-slate-950 px-3 py-3 sm:px-4 sm:py-4">
       <div className="mx-auto w-full max-w-3xl">
@@ -171,60 +168,21 @@ export default function CiudadCentralPage() {
           nextChallengeModule={nextChallenge(progressBySkill)}
         />
 
-        {npcAbierto && (
-          <div className="anim-rise world-quest-panel mb-2 flex items-start gap-3 rounded-2xl border-2 border-cyan-400/40 px-4 py-3">
-            <span
-              aria-hidden="true"
-              className="world-ring-glow flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-cyan-300/40 bg-cyan-500/10"
-            >
-              <img src="/illustrations/ada-portrait.webp" alt="" className="h-full w-full object-cover" />
-            </span>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-cyan-100">
-                Ada, la ingeniera: <span aria-hidden="true">🎯 </span>¿Volvemos a medir tu nivel?
-              </p>
-              <p className="text-xs text-cyan-300/90">
-                —Repetirla te dice cuánto avanzaste desde la última vez. Empezamos justo encima de lo que ya dominas.
-              </p>
-              <div className="mt-2 flex items-center gap-3">
-                <Link
-                  href={`/jugar/${params.childId}/evaluacion`}
-                  onClick={() => playSound("click", soundOn)}
-                  className="rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 px-4 py-1.5 text-sm font-bold text-white"
-                >
-                  Volver a evaluar
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setNpcAbierto(false)}
-                  className="text-sm font-bold text-cyan-300 underline underline-offset-2"
-                >
-                  Ahora no
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <CityScene
+        <QuestScene
           childId={params.childId}
+          parentId={user.uid}
           childName={child.name}
           progressBySkill={progressBySkill}
-          questStrandSlug={quest?.quest.strandSlug ?? null}
+          streak={streak}
+          soundOn={soundOn}
+          onResolved={(moduleId, updated, correct) => {
+            setProgressBySkill((prev) => ({ ...prev, [moduleId]: updated }));
+            setStreak((s) => (correct ? s + 1 : 0));
+          }}
           onOpenShop={() => {
             playSound("click", soundOn);
             setPanel("tienda");
           }}
-          onOpenNpc={() => {
-            playSound("click", soundOn);
-            setNpcAbierto(true);
-          }}
-        />
-
-        <QuestPanel
-          childId={params.childId}
-          quest={quest}
-          onFocusZone={(strandSlug) => router.push(`/jugar/${params.childId}/${strandSlug}`)}
         />
       </div>
 

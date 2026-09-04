@@ -6,7 +6,10 @@ function estrellas(page: Page) {
   return page.locator("header").getByText(/^Estrellas:\s*-?\d+$/);
 }
 
+/** Las zonas ya no están sueltas en el hub: viven en "Otras zonas" del
+ * registro de misión (`MissionOverlay`), así que hay que abrirlo primero. */
 async function irATema(page: Page, hilo: string, url: RegExp) {
+  await page.getByRole("button", { name: "Abrir registro de misión" }).click();
   await page.getByRole("link", { name: hilo }).click();
   await expect(page).toHaveURL(url);
 }
@@ -14,6 +17,9 @@ async function irATema(page: Page, hilo: string, url: RegExp) {
 test.describe("Recorrido de juego", () => {
   test("del perfil al tema, y de vuelta con los enlaces de la cabecera", async ({ page }) => {
     const { nombre } = await sesionDeHijo(page);
+    // El briefing de la misión se abre solo al entrar: hay que cerrarlo antes
+    // de poder tocar cualquier otra cosa de la escena.
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
 
     await irATema(page, "Geometría", /\/geometria$/);
     await expect(page).toHaveTitle("Geometría · Math Quest");
@@ -31,6 +37,7 @@ test.describe("Recorrido de juego", () => {
 
   test("las pestañas se manejan con flechas y cada panel queda anunciado", async ({ page }) => {
     await sesionDeHijo(page);
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
     await irATema(page, "Aritmética", /\/aritmetica$/);
     await page.getByRole("link", { name: "Sumas hasta 5" }).click();
 
@@ -152,6 +159,7 @@ test.describe("Recorrido de juego", () => {
 
   test("la preferencia de sonido se recuerda al cambiar de pantalla", async ({ page }) => {
     await sesionDeHijo(page);
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
     const boton = page.getByRole("button", { name: "Efectos de sonido" });
     await expect(boton).toHaveAttribute("aria-pressed", "true");
 
@@ -191,7 +199,11 @@ test.describe("Recorrido de juego", () => {
     await page.getByRole("link", { name: /← Aritmética de Dani/ }).click();
     await page.getByRole("link", { name: "← Dani" }).click();
 
-    // El canje vive en la tienda de la ciudad: hay que entrar a ella.
+    // Al volver al hub, la escena se remonta y abre otra vez el briefing.
+    await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
+    // El canje vive en la tienda de la ciudad: hay que entrar a ella desde
+    // "Otras zonas" del registro de misión.
+    await page.getByRole("button", { name: "Abrir registro de misión" }).click();
     await page.getByRole("button", { name: "Tienda" }).click();
     await page.getByRole("button", { name: "Pedir canje" }).click();
     await page.getByLabel("¿Qué quieres canjear?").fill("Media hora de consola");
