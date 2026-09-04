@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { getModule, isMastered, isUnlocked, modulesForStrand } from "../src/lib/curriculum";
+import { getModule, isMastered, isUnlocked, modulesForStrand, recommendedModule } from "../src/lib/curriculum";
 import {
   answerPlacementItem,
   currentPlacementModule,
   gradeBandForTier,
   grantsFromPlacement,
   initStrandPlacement,
+  pickPersonalizedPlan,
   strandResultFrom,
   summarizePlacement,
 } from "../src/lib/placement";
@@ -191,6 +192,55 @@ test.describe("Motor de evaluación de ubicación (lógica pura)", () => {
 
     const result = strandResultFrom(state);
     expect(result.highestTierPassed).toBe(4); // lo probado (4) > piso heredado (3)
+  });
+
+  test("si el hilo con menor avance queda sin módulo recomendable (bloqueado por prerrequisito cruzado), el plan personalizado cae a otro hilo en vez de desaparecer", () => {
+    // Álgebra queda con el menor avance relativo (1/10) pero su único
+    // módulo siguiente (algebra-d2) exige aritmetica-d2, que la evaluación
+    // no llegó a acreditar (aritmética se quedó en la franja 0) — y ese
+    // bloqueo se propaga a toda la cadena de álgebra. Aritmética, con un
+    // avance apenas mayor (1/9), sí tiene un módulo libre para recomendar.
+    const perStrand: Record<string, PlacementStrandRecord> = {
+      aritmetica: { itemsAsked: 2, itemsCorrect: 1, highestTierPassed: 0, gradeBand: gradeBandForTier(0), weakTiers: [] },
+      algebra: { itemsAsked: 2, itemsCorrect: 1, highestTierPassed: 0, gradeBand: gradeBandForTier(0), weakTiers: [] },
+      geometria: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
+      medicion: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
+      logica: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
+    };
+    const progressBySkill: Record<string, SkillProgress> = {};
+    for (const id of grantsFromPlacement(perStrand, {})) {
+      progressBySkill[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
+    }
+
+    // Confirma la premisa del caso: álgebra tiene el menor avance relativo...
+    const ratio = (slug: string) =>
+      (perStrand[slug].highestTierPassed + 1) / (modulesForStrand(slug).at(-1)!.tier + 1);
+    expect(ratio("algebra")).toBeLessThan(ratio("aritmetica"));
+    // ...pero está bloqueada: no hay nada que recomendar ahí todavía.
+    expect(recommendedModule(progressBySkill, "algebra")).toBeNull();
+
+    const plan = pickPersonalizedPlan(perStrand, progressBySkill);
+    expect(plan).not.toBeNull();
+    expect(plan?.strand.slug).toBe("aritmetica");
+    expect(plan?.module.id).toBe("aritmetica-d2");
+  });
+
+  test("con todo dominado (evaluación perfecta en los cinco hilos), el plan personalizado no revienta: simplemente no hay nada que recomendar", () => {
+    const perStrand: Record<string, PlacementStrandRecord> = Object.fromEntries(
+      ["aritmetica", "algebra", "geometria", "medicion", "logica"].map((slug) => {
+        const maxTier = modulesForStrand(slug).at(-1)!.tier;
+        return [
+          slug,
+          { itemsAsked: maxTier + 1, itemsCorrect: maxTier + 1, highestTierPassed: maxTier, gradeBand: gradeBandForTier(maxTier), weakTiers: [] },
+        ];
+      }),
+    );
+    const progressBySkill: Record<string, SkillProgress> = {};
+    for (const id of grantsFromPlacement(perStrand, {})) {
+      progressBySkill[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
+    }
+
+    expect(pickPersonalizedPlan(perStrand, progressBySkill)).toBeNull();
   });
 });
 

@@ -12,8 +12,8 @@ import {
   currentPlacementModule,
   grantsFromPlacement,
   initStrandPlacement,
-  maxTierForStrand,
   moduleForTier,
+  pickPersonalizedPlan,
   strandResultFrom,
   summarizePlacement,
   type StrandPlacementState,
@@ -402,15 +402,9 @@ function ResultsScreen({
   progressBySkill: Record<string, SkillProgress>;
   childHref: string;
 }) {
-  // Hilo con menor avance relativo (franja alcanzada / franja máxima del
-  // hilo) — el punto de partida sugerido del plan, no una nota ni un ranking.
-  let priority: { slug: string; ratio: number } | null = null;
-  for (const [slug, r] of Object.entries(results)) {
-    const ratio = (r.highestTierPassed + 1) / (maxTierForStrand(slug) + 1);
-    if (!priority || ratio < priority.ratio) priority = { slug, ratio };
-  }
-  const priorityStrand = priority ? getStrand(priority.slug) : undefined;
-  const priorityModule = priorityStrand ? recommendedModule(progressBySkill, priorityStrand.slug) : null;
+  const plan = pickPersonalizedPlan(results, progressBySkill);
+  const priorityStrand = plan?.strand;
+  const priorityModule = plan?.module;
 
   return (
     <div role="status" className="mx-auto max-w-xl space-y-6 rounded-3xl border-2 border-emerald-300 bg-emerald-50 p-6 text-center shadow-inner sm:p-8">

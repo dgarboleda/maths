@@ -1,7 +1,7 @@
 import type { ModuleDef } from "./curriculum";
-import { modulesForStrand, isMastered } from "./curriculum";
+import { modulesForStrand, isMastered, nextChallenge, recommendedModule } from "./curriculum";
 import type { PlacementStrandRecord, SkillProgress } from "./types";
-import { STRANDS } from "./strands";
+import { getStrand, STRANDS, type StrandDef } from "./strands";
 
 /**
  * Evaluación diagnóstica inicial ("prueba de ubicación"), inspirada en dos
@@ -194,3 +194,38 @@ export function grantsFromPlacement(
 }
 
 export const PLACEMENT_STRAND_ORDER = STRANDS.map((s) => s.slug);
+
+export interface PersonalizedPlan {
+  strand: StrandDef;
+  module: ModuleDef;
+}
+
+/**
+ * Plan personalizado de la pantalla de resultados: arranca por el hilo con
+ * menor avance relativo (franja alcanzada / franja máxima del hilo), pero
+ * ese hilo puede no tener ya ningún módulo recomendable —lo dominó todo en
+ * la propia evaluación, o su siguiente módulo está bloqueado por un
+ * prerrequisito de otro hilo (ver "los otorgamientos resuelven
+ * prerrequisitos cruzados" más abajo)—. En ese caso, en vez de no mostrar
+ * ningún plan, se prueba con el siguiente hilo en la lista de prioridad; si
+ * ninguno de los hilos evaluados tiene nada, se cae al siguiente desafío
+ * general (`nextChallenge`), que sí mira toda la currícula.
+ */
+export function pickPersonalizedPlan(
+  perStrand: Record<string, PlacementStrandRecord>,
+  progressBySkill: Record<string, SkillProgress>,
+): PersonalizedPlan | null {
+  const priorityOrder = Object.entries(perStrand)
+    .map(([slug, r]) => ({ slug, ratio: (r.highestTierPassed + 1) / (maxTierForStrand(slug) + 1) }))
+    .sort((a, b) => a.ratio - b.ratio);
+
+  for (const candidate of priorityOrder) {
+    const strand = getStrand(candidate.slug);
+    const mod = strand ? recommendedModule(progressBySkill, strand.slug) : null;
+    if (strand && mod) return { strand, module: mod };
+  }
+
+  const fallback = nextChallenge(progressBySkill);
+  const fallbackStrand = fallback ? getStrand(fallback.strandSlug) : undefined;
+  return fallback && fallbackStrand ? { strand: fallbackStrand, module: fallback } : null;
+}
