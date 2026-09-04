@@ -249,7 +249,7 @@ export function QuestScene({
       : null;
 
   return (
-    <div className="relative mx-auto aspect-[3/4] w-full max-w-3xl overflow-clip rounded-3xl border border-indigo-500/25 bg-slate-950 sm:aspect-[4/3]">
+    <div className="relative mx-auto aspect-[3/4] w-full overflow-clip rounded-3xl border border-indigo-500/25 bg-slate-950 sm:aspect-[4/3]">
       <div className="world-scene-vignette absolute inset-0">
         <img
           src="/illustrations/city-central.webp"

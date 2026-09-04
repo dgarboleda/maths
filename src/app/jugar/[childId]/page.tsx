@@ -157,7 +157,7 @@ export default function CiudadCentralPage() {
 
   return (
     <main id="contenido" tabIndex={-1} className="min-h-screen bg-slate-950 px-3 py-3 sm:px-4 sm:py-4">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-3xl lg:max-w-none">
         <WorldTopBar
           childId={params.childId}
           childName={child.name}
