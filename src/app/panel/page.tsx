@@ -10,6 +10,8 @@ import type { Attempt, ChildProfile, RedemptionRequest, SkillProgress } from "@/
 import { STRANDS, getStrand } from "@/lib/strands";
 import { recommendedModule, countUnlocked } from "@/lib/curriculum";
 import { useTotalStars } from "@/lib/useTotalStars";
+import { normalizeAvatar } from "@/lib/world/avatar";
+import { Avatar } from "@/components/world/Avatar";
 
 interface ChildDoc extends ChildProfile {
   id: string;
@@ -45,9 +47,8 @@ export default function PanelPage() {
 
   if (loading || !user) {
     return (
-      <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-indigo-200">
           Cargando…
         </p>
       </main>
@@ -58,26 +59,28 @@ export default function PanelPage() {
     <main
       id="contenido"
       tabIndex={-1}
-      className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-white px-6 py-14"
+      className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-slate-950 px-6 py-10"
     >
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-900">Panel de padre</h1>
-          <Link href="/perfiles" className="text-sm text-neutral-500 underline underline-offset-2">
+          <h1 className="family-text-glow font-display text-2xl font-bold text-white">Panel de padre</h1>
+          <Link href="/perfiles" className="text-sm font-semibold text-indigo-300 underline-offset-2 hover:underline">
             Volver a perfiles
           </Link>
         </div>
         <button
           type="button"
           onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
-          className="text-sm text-neutral-600 underline underline-offset-2"
+          className="text-sm font-semibold text-slate-400 underline-offset-2 hover:underline"
         >
           Cerrar sesión
         </button>
       </div>
 
       {children.length === 0 && (
-        <p className="text-neutral-700">Todavía no hay perfiles de hijos creados.</p>
+        <p className="family-panel rounded-2xl px-4 py-5 text-sm text-indigo-200">
+          Todavía no hay perfiles de hijos creados.
+        </p>
       )}
 
       <div className="flex flex-col gap-6">
@@ -102,6 +105,7 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
   const [attempts, setAttempts] = useState<AttemptDoc[]>([]);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const look = normalizeAvatar(child.avatar);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -200,38 +204,31 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
   }
 
   return (
-    <section
-      aria-label={`Progreso de ${child.name}`}
-      className="flex flex-col gap-4 rounded-xl border border-neutral-200 p-5"
-    >
+    <section aria-label={`Progreso de ${child.name}`} className="family-panel flex flex-col gap-4 rounded-2xl p-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-800"
-          >
-            {child.name.charAt(0).toUpperCase()}
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30">
+            <Avatar look={look} className="h-7 w-5" title={child.name} />
           </span>
-          <span className="font-medium text-neutral-900">{child.name}</span>
+          <span className="font-display font-bold text-white">{child.name}</span>
         </div>
-        <span className="font-medium text-amber-700">
+        <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-slate-900/60 px-3 py-1 text-sm font-bold text-amber-300">
+          <span aria-hidden="true">⭐</span>
           {totalStars === null ? "…" : `${totalStars} estrellas`}
         </span>
       </div>
 
       <div className="flex flex-col gap-1">
-        <h3 className="text-xs font-medium uppercase tracking-wide text-neutral-700">
-          Progreso por hilo
-        </h3>
-        <ul className="grid grid-cols-1 gap-1 text-sm text-neutral-600 sm:grid-cols-2">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Progreso por hilo</h3>
+        <ul className="grid grid-cols-1 gap-1 text-sm text-slate-300 sm:grid-cols-2">
           {STRANDS.map((s) => {
             const recommended = recommendedModule(progressBySkill, s.slug);
             const { unlocked, total } = countUnlocked(progressBySkill, s.slug);
             return (
-              <li key={s.slug} className="flex items-center justify-between">
-                <span>{s.label}</span>
-                <span className="text-neutral-600">
-                  {recommended ? recommended.label : "todo dominado"} · {unlocked}/{total} desbloqueados
+              <li key={s.slug} className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-slate-200">{s.label}</span>
+                <span className="text-slate-400">
+                  {recommended ? recommended.label : "todo dominado"} · {unlocked}/{total}
                 </span>
               </li>
             );
@@ -239,7 +236,7 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
         </ul>
         <Link
           href={`/panel/${child.id}`}
-          className="mt-1 self-start text-sm text-neutral-500 underline underline-offset-2"
+          className="mt-1 self-start text-sm font-semibold text-cyan-300 underline-offset-2 hover:underline"
         >
           Ver currícula completa
         </Link>
@@ -247,15 +244,13 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
 
       {pending.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-neutral-700">
-            Canjes pendientes
-          </h3>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Canjes pendientes</h3>
           {pending.map((r) => (
             <div
               key={r.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3"
             >
-              <span className="text-sm text-neutral-900">
+              <span className="text-sm font-semibold text-amber-100">
                 {r.rewardLabel} · {r.starsSpent} estrellas
               </span>
               <div className="flex gap-3 text-sm">
@@ -264,7 +259,7 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
                   onClick={() => resolveRequest(r, true)}
                   disabled={resolvingId === r.id}
                   aria-label={`Aprobar el canje de ${r.rewardLabel} por ${r.starsSpent} estrellas`}
-                  className="font-medium text-emerald-700 underline underline-offset-2 disabled:opacity-40"
+                  className="font-bold text-emerald-300 underline-offset-2 hover:underline disabled:opacity-40"
                 >
                   Aprobar
                 </button>
@@ -273,7 +268,7 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
                   onClick={() => resolveRequest(r, false)}
                   disabled={resolvingId === r.id}
                   aria-label={`Rechazar el canje de ${r.rewardLabel} por ${r.starsSpent} estrellas`}
-                  className="text-neutral-600 underline underline-offset-2 disabled:opacity-40"
+                  className="font-semibold text-slate-400 underline-offset-2 hover:underline disabled:opacity-40"
                 >
                   Rechazar
                 </button>
@@ -285,15 +280,13 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
 
       {resolved.length > 0 && (
         <div className="flex flex-col gap-1">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-neutral-700">
-            Canjes resueltos
-          </h3>
+          <h3 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Canjes resueltos</h3>
           {resolved.map((r) => (
             <div key={r.id} className="flex items-center justify-between text-sm">
-              <span className="text-neutral-700">
+              <span className="text-slate-300">
                 {r.rewardLabel} · {r.starsSpent} estrellas
               </span>
-              <span className={r.status === "aprobado" ? "text-emerald-700" : "text-red-700"}>
+              <span className={r.status === "aprobado" ? "font-semibold text-emerald-300" : "font-semibold text-red-300"}>
                 {r.status === "aprobado" ? "Aprobado" : "Rechazado"}
               </span>
             </div>
@@ -303,14 +296,12 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
 
       {attempts.length > 0 && (
         <div className="flex flex-col gap-1">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-neutral-700">
-            Actividad reciente
-          </h3>
-          <ul className="flex flex-col gap-1 text-sm text-neutral-600">
+          <h3 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Actividad reciente</h3>
+          <ul className="flex flex-col gap-1 text-sm text-slate-300">
             {attempts.map((a) => (
               <li key={a.id} className="flex items-center justify-between">
                 <span>{describeSkill(a.skillId)}</span>
-                <span className={a.correct ? "text-emerald-700" : "text-neutral-700"}>
+                <span className={a.correct ? "font-semibold text-emerald-300" : "text-slate-400"}>
                   {a.correct ? "correcto" : "incorrecto"}
                 </span>
               </li>
@@ -320,7 +311,7 @@ function ChildSection({ parentId, child }: { parentId: string; child: ChildDoc }
       )}
 
       {pending.length === 0 && resolved.length === 0 && attempts.length === 0 && (
-        <p className="text-sm text-neutral-700">Todavía no hay actividad.</p>
+        <p className="text-sm text-slate-400">Todavía no hay actividad.</p>
       )}
     </section>
   );

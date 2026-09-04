@@ -7,11 +7,15 @@ import { signOut } from "firebase/auth";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { hashPin } from "@/lib/pin";
+import { normalizeAvatar } from "@/lib/world/avatar";
+import { Avatar } from "@/components/world/Avatar";
 import type { ChildProfile } from "@/lib/types";
 
 interface ChildDoc extends ChildProfile {
   id: string;
 }
+
+const KEYPAD = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
 export default function PerfilesPage() {
   const { user, loading } = useAuth();
@@ -70,9 +74,8 @@ export default function PerfilesPage() {
 
   if (loading || !user) {
     return (
-      <main id="contenido"
-        tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-white">
-        <p role="status" className="text-neutral-700">
+      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-indigo-200">
           Cargando…
         </p>
       </main>
@@ -83,36 +86,68 @@ export default function PerfilesPage() {
     <main
       id="contenido"
       tabIndex={-1}
-      className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-white px-6 py-14"
+      className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-slate-950 px-6 py-10"
     >
-      <p className="text-[10px] text-neutral-600">
-        build: diag-v4 · proyecto Firebase: {projectId ?? "cargando…"}
-      </p>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-neutral-900">¿Quién va a jugar?</h1>
-        <div className="flex items-center gap-4 text-sm">
-          <Link href="/panel" className="text-neutral-500 underline underline-offset-2">
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg">
+            <span aria-hidden="true" className="text-lg">✨</span>
+          </span>
+          <span>
+            <span className="block font-display text-lg font-bold leading-none tracking-wide text-white">
+              MATH QUEST
+            </span>
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300">
+              ¿Quién va a jugar?
+            </span>
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-sm">
+          <Link href="/panel" className="font-semibold text-indigo-300 underline-offset-2 hover:underline">
             Panel de padre
           </Link>
           <button
             type="button"
             onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
-            className="text-neutral-600 underline underline-offset-2"
+            className="font-semibold text-slate-400 underline-offset-2 hover:underline"
           >
             Cerrar sesión
           </button>
         </div>
       </div>
 
+      <header className="text-center">
+        <h1 className="family-text-glow font-display text-2xl font-bold text-white sm:text-3xl">
+          ¿Quién va a jugar?
+        </h1>
+        <p className="mt-1 text-sm text-indigo-200/80">Elige tu personaje y escribe tu PIN para continuar.</p>
+      </header>
+
       {listError && (
-        <p role="alert" className="text-sm font-bold text-red-700">
+        <p role="alert" className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-sm font-bold text-red-300">
           {listError}
         </p>
       )}
       {banner && (
-        <p role="status" className="text-sm font-bold text-green-700">
+        <p role="status" className="rounded-xl bg-emerald-500/10 px-3.5 py-2.5 text-sm font-bold text-emerald-300">
           {banner}
         </p>
+      )}
+
+      {children.length === 0 && !showForm && (
+        <div className="family-panel flex flex-col items-center gap-3 rounded-2xl px-6 py-8 text-center sm:flex-row sm:text-left">
+          <img
+            src="/illustrations/explorer.webp"
+            alt=""
+            className="h-28 w-auto shrink-0 drop-shadow-[0_0_18px_rgba(167,139,250,0.35)]"
+          />
+          <div>
+            <p className="font-display font-bold text-white">Todavía no hay exploradores por aquí.</p>
+            <p className="mt-1 text-sm text-indigo-200/80">
+              Crea el primer perfil para que empiece su aventura en Ciudad Central.
+            </p>
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -123,12 +158,12 @@ export default function PerfilesPage() {
           type="button"
           onClick={() => setShowForm(true)}
           aria-expanded={showForm}
-          className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-neutral-400 text-neutral-700 transition-colors hover:border-neutral-500 hover:text-neutral-900"
+          className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-indigo-500/30 text-indigo-300 transition-colors hover:border-indigo-400/60 hover:text-white"
         >
           <span aria-hidden="true" className="text-3xl leading-none">
             +
           </span>
-          <span className="text-sm">Agregar hijo</span>
+          <span className="text-sm font-semibold">Agregar hijo</span>
         </button>
       </div>
 
@@ -141,6 +176,10 @@ export default function PerfilesPage() {
           }}
         />
       )}
+
+      <p className="text-center text-[10px] text-indigo-300/80">
+        build: diag-v4 · proyecto Firebase: {projectId ?? "cargando…"}
+      </p>
     </main>
   );
 }
@@ -151,8 +190,12 @@ function ChildCard({ child }: { child: ChildDoc }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [shakes, setShakes] = useState(0);
+  const look = normalizeAvatar(child.avatar);
+  const pinId = `pin-${child.id}`;
 
-  async function handleConfirm() {
+  async function handleConfirm(e?: FormEvent) {
+    e?.preventDefault();
     if (pin.length !== 4 || checking) return;
     setChecking(true);
     const hashed = await hashPin(pin);
@@ -161,22 +204,34 @@ function ChildCard({ child }: { child: ChildDoc }) {
       router.push(`/jugar/${child.id}`);
     } else {
       setError(true);
+      setShakes((s) => s + 1);
       setPin("");
+    }
+  }
+
+  function press(d: string) {
+    if (checking) return;
+    setError(false);
+    if (d === "borrar") {
+      setPin((p) => p.slice(0, -1));
+    } else if (pin.length < 4) {
+      setPin((p) => p + d);
     }
   }
 
   if (open) {
     return (
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleConfirm();
-        }}
-        className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-neutral-300 p-3"
+        onSubmit={handleConfirm}
+        className="family-tile col-span-2 flex flex-col items-center gap-3 rounded-2xl p-4 sm:col-span-1"
       >
-        <label className="flex flex-col items-center gap-1 text-sm font-medium text-neutral-800">
+        <Avatar look={look} className="h-16 w-11" title={child.name} />
+
+        <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
           PIN de {child.name}
           <input
+            key={shakes}
+            id={pinId}
             type="password"
             inputMode="numeric"
             maxLength={4}
@@ -186,20 +241,52 @@ function ChildCard({ child }: { child: ChildDoc }) {
               setError(false);
               setPin(e.target.value.replace(/\D/g, ""));
             }}
-            placeholder="••••"
-            className="w-16 rounded-md border border-neutral-400 px-2 py-1 text-center tracking-[0.3em] focus:border-neutral-600"
+            className={`family-input mt-1.5 h-10 w-24 text-center text-lg tracking-[0.6em]${
+              error ? " anim-shake has-error" : ""
+            }`}
           />
         </label>
-        <span role="alert" className="text-xs font-bold text-red-700">
+
+        <span role="alert" className="min-h-4 text-xs font-semibold text-red-300">
           {error ? "PIN incorrecto" : ""}
         </span>
-        <div className="flex gap-3 text-xs">
+
+        <div role="group" aria-label={`Teclado numérico para ${child.name}`} className="grid grid-cols-3 gap-1.5">
+          {KEYPAD.map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => press(d)}
+              className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
+            >
+              {d}
+            </button>
+          ))}
+          <span aria-hidden="true" />
+          <button
+            type="button"
+            onClick={() => press("0")}
+            className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
+          >
+            0
+          </button>
+          <button
+            type="button"
+            onClick={() => press("borrar")}
+            aria-label="Borrar último dígito"
+            className="family-keycap grid min-h-9 min-w-9 place-items-center rounded-lg text-xs"
+          >
+            ⌫
+          </button>
+        </div>
+
+        <div className="flex gap-4 text-xs">
           <button
             type="submit"
             disabled={pin.length !== 4 || checking}
-            className="text-neutral-900 underline underline-offset-2 disabled:opacity-40"
+            className="font-bold text-cyan-300 underline-offset-2 hover:underline disabled:opacity-40"
           >
-            Entrar
+            {checking ? "Comprobando…" : "Entrar"}
           </button>
           <button
             type="button"
@@ -208,7 +295,7 @@ function ChildCard({ child }: { child: ChildDoc }) {
               setPin("");
               setError(false);
             }}
-            className="text-neutral-700"
+            className="font-semibold text-indigo-300 underline-offset-2 hover:underline"
           >
             Cancelar
           </button>
@@ -222,15 +309,12 @@ function ChildCard({ child }: { child: ChildDoc }) {
       type="button"
       onClick={() => setOpen(true)}
       aria-label={`Entrar al perfil de ${child.name}`}
-      className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-neutral-50 transition-colors hover:border-neutral-500"
+      className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3"
     >
-      <span
-        aria-hidden="true"
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-lg font-semibold text-neutral-800"
-      >
-        {child.name.charAt(0).toUpperCase()}
+      <span className="grid size-16 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30">
+        <Avatar look={look} className="h-11 w-8" title={child.name} />
       </span>
-      <span className="text-sm font-medium text-neutral-800">{child.name}</span>
+      <span className="font-display text-sm font-bold text-white">{child.name}</span>
     </button>
   );
 }
@@ -311,32 +395,24 @@ function NewChildForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 rounded-xl border border-neutral-200 p-6"
-    >
-      <h2 className="font-medium text-neutral-900">Nuevo perfil</h2>
-      <label className="flex flex-col gap-1 text-sm text-neutral-700">
+    <form onSubmit={handleSubmit} className="family-panel flex flex-col gap-4 rounded-2xl p-6">
+      <h2 className="font-display text-base font-bold text-white">Nuevo perfil</h2>
+      <label className="flex flex-col gap-1 text-sm text-indigo-200">
         Nombre
-        <input
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="rounded-md border border-neutral-300 px-3 py-2 focus:border-neutral-500"
-        />
+        <input required value={name} onChange={(e) => setName(e.target.value)} className="family-input" />
       </label>
-      <label className="flex flex-col gap-1 text-sm text-neutral-700">
+      <label className="flex flex-col gap-1 text-sm text-indigo-200">
         Fecha de nacimiento
         <input
           type="date"
           required
           value={birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
-          className="rounded-md border border-neutral-300 px-3 py-2 focus:border-neutral-500"
+          className="family-input"
         />
       </label>
       <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1 text-sm text-neutral-700">
+        <label className="flex flex-col gap-1 text-sm text-indigo-200">
           PIN (4 dígitos)
           <input
             inputMode="numeric"
@@ -344,10 +420,10 @@ function NewChildForm({
             required
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-            className="rounded-md border border-neutral-300 px-3 py-2 focus:border-neutral-500"
+            className="family-input"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm text-neutral-700">
+        <label className="flex flex-col gap-1 text-sm text-indigo-200">
           Confirmar PIN
           <input
             inputMode="numeric"
@@ -355,12 +431,12 @@ function NewChildForm({
             required
             value={confirmPin}
             onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
-            className="rounded-md border border-neutral-300 px-3 py-2 focus:border-neutral-500"
+            className="family-input"
           />
         </label>
       </div>
       {error && (
-        <p role="alert" className="text-sm font-bold text-red-700">
+        <p role="alert" className="text-sm font-bold text-red-300">
           {error}
         </p>
       )}
@@ -368,11 +444,11 @@ function NewChildForm({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
         >
           Guardar
         </button>
-        <button type="button" onClick={() => onDone()} className="text-sm text-neutral-700">
+        <button type="button" onClick={() => onDone()} className="text-sm font-semibold text-indigo-300 hover:underline">
           Cancelar
         </button>
       </div>
