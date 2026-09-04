@@ -8,11 +8,9 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { nextChallenge } from "@/lib/curriculum";
 import { activeQuest } from "@/lib/world/quests";
-import { normalizeAvatar, type AvatarLook } from "@/lib/world/avatar";
 import { CityScene } from "@/components/world/CityScene";
 import { QuestPanel, WorldTopBar } from "@/components/world/WorldHud";
 import { ShopPanel, type RequestDoc } from "@/components/world/ShopPanel";
-import { AvatarEditor } from "@/components/world/AvatarEditor";
 import { playSound } from "@/lib/gameSound";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
@@ -33,8 +31,7 @@ export default function CiudadCentralPage() {
   const [requests, setRequests] = useState<RequestDoc[]>([]);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
-  const [look, setLook] = useState<AvatarLook | null>(null);
-  const [panel, setPanel] = useState<"ninguno" | "tienda" | "personaje">("ninguno");
+  const [panel, setPanel] = useState<"ninguno" | "tienda">("ninguno");
   const [npcAbierto, setNpcAbierto] = useState(false);
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
@@ -53,9 +50,7 @@ export default function CiudadCentralPage() {
         return getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
           if (cancelled) return;
           if (snap.exists()) {
-            const profile = snap.data() as ChildProfile;
-            setChild(profile);
-            setLook(normalizeAvatar(profile.avatar));
+            setChild(snap.data() as ChildProfile);
           } else setNotFound(true);
         });
       })
@@ -148,7 +143,7 @@ export default function CiudadCentralPage() {
     );
   }
 
-  if (!child || !look || placementPending) {
+  if (!child || placementPending) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
@@ -169,12 +164,10 @@ export default function CiudadCentralPage() {
         <WorldTopBar
           childId={params.childId}
           childName={child.name}
-          look={look}
           stars={totalStars}
           earnedBadgeIds={earnedBadgeIds}
           soundOn={soundOn}
           onToggleSound={toggleSound}
-          onOpenAvatar={() => setPanel("personaje")}
           nextChallengeModule={nextChallenge(progressBySkill)}
         />
 
@@ -216,7 +209,6 @@ export default function CiudadCentralPage() {
         <CityScene
           childId={params.childId}
           childName={child.name}
-          look={look}
           progressBySkill={progressBySkill}
           questStrandSlug={quest?.quest.strandSlug ?? null}
           onOpenShop={() => {
@@ -242,16 +234,6 @@ export default function CiudadCentralPage() {
           childId={params.childId}
           maxStars={totalStars ?? 0}
           requests={requests}
-          onClose={() => setPanel("ninguno")}
-        />
-      )}
-
-      {panel === "personaje" && (
-        <AvatarEditor
-          parentId={user.uid}
-          childId={params.childId}
-          look={look}
-          onChange={setLook}
           onClose={() => setPanel("ninguno")}
         />
       )}

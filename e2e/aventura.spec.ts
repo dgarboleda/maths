@@ -146,21 +146,6 @@ test.describe("Mundo: Ciudad Central", () => {
     await page.getByRole("link", { name: "Volver a evaluar" }).click();
     await expect(page).toHaveURL(/\/evaluacion$/);
   });
-
-  test("el personaje se guarda en Firestore y sigue igual al recargar", async ({ page }) => {
-    await sesionDeHijo(page);
-
-    await page.getByRole("button", { name: /Personalizar el personaje/ }).click();
-    const ropa = page.getByRole("button", { name: "Ropa 3" });
-    await ropa.click();
-    await expect(ropa).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: "Guardar personaje" }).click();
-    await expect(page.getByRole("dialog", { name: "Tu personaje" })).toBeHidden();
-
-    await page.reload();
-    await page.getByRole("button", { name: /Personalizar el personaje/ }).click();
-    await expect(page.getByRole("button", { name: "Ropa 3" })).toHaveAttribute("aria-pressed", "true");
-  });
 });
 
 test.describe("Celebración de mastery", () => {

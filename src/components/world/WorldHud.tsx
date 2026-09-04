@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { getBadge } from "@/lib/badges";
 import { moduleHref, type ModuleDef } from "@/lib/curriculum";
-import type { AvatarLook } from "@/lib/world/avatar";
 import type { QuestProgress } from "@/lib/world/quests";
 import { Avatar } from "./Avatar";
 
@@ -16,34 +15,25 @@ import { Avatar } from "./Avatar";
 export function WorldTopBar({
   childId,
   childName,
-  look,
   stars,
   earnedBadgeIds,
   soundOn,
   onToggleSound,
-  onOpenAvatar,
   nextChallengeModule,
 }: {
   childId: string;
   childName: string;
-  look: AvatarLook;
   stars: number | null;
   earnedBadgeIds: string[];
   soundOn: boolean;
   onToggleSound: () => void;
-  onOpenAvatar: () => void;
   nextChallengeModule: ModuleDef | null;
 }) {
   return (
     <header className="world-hud-panel mb-2 flex flex-wrap items-center gap-2 rounded-full px-3 py-2 sm:gap-3 sm:px-4">
-      <button
-        type="button"
-        onClick={onOpenAvatar}
-        aria-label={`Personalizar el personaje de ${childName}`}
-        className="rounded-2xl border border-white/15 bg-slate-900/80 px-2 py-1 transition-transform hover:scale-105 hover:border-white/40"
-      >
-        <Avatar look={look} className="h-9 w-7" title={`Personaje de ${childName}`} />
-      </button>
+      <span className="anim-idle flex h-9 items-center justify-center rounded-2xl border border-white/15 bg-slate-900/80 px-1.5">
+        <Avatar className="h-8" title={`Personaje de ${childName}`} />
+      </span>
 
       <div>
         <h1 className="world-text-glow bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text font-display text-base font-bold text-transparent sm:text-lg">

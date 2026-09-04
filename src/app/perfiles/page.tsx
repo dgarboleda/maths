@@ -7,7 +7,6 @@ import { signOut } from "firebase/auth";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { hashPin } from "@/lib/pin";
-import { normalizeAvatar } from "@/lib/world/avatar";
 import { Avatar } from "@/components/world/Avatar";
 import type { ChildProfile } from "@/lib/types";
 
@@ -191,7 +190,6 @@ function ChildCard({ child }: { child: ChildDoc }) {
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(false);
   const [shakes, setShakes] = useState(0);
-  const look = normalizeAvatar(child.avatar);
   const pinId = `pin-${child.id}`;
 
   async function handleConfirm(e?: FormEvent) {
@@ -225,7 +223,7 @@ function ChildCard({ child }: { child: ChildDoc }) {
         onSubmit={handleConfirm}
         className="family-tile col-span-2 flex flex-col items-center gap-3 rounded-2xl p-4 sm:col-span-1"
       >
-        <Avatar look={look} className="h-16 w-11" title={child.name} />
+        <Avatar className="h-16" title={child.name} />
 
         <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
           PIN de {child.name}
@@ -312,7 +310,7 @@ function ChildCard({ child }: { child: ChildDoc }) {
       className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3"
     >
       <span className="grid size-16 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30">
-        <Avatar look={look} className="h-11 w-8" title={child.name} />
+        <Avatar className="h-11" title={child.name} />
       </span>
       <span className="font-display text-sm font-bold text-white">{child.name}</span>
     </button>
