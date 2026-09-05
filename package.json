@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/liberar-puerto-dev.mjs && node -e \"require('fs').rmSync('.next/dev/cache/turbopack', { recursive: true, force: true })\"",
     "dev": "next dev",
     "build": "opennextjs-cloudflare build",
     "start": "next start",
@@ -17,6 +18,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
+    "claude": "^0.1.1",
     "firebase": "^12.18.0",
     "lucide-react": "^1.41.0",
     "next": "16.3.3",
