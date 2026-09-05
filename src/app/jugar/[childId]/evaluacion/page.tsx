@@ -422,39 +422,57 @@ function AskingScreen({
   const strand = getStrand(strandState.strandSlug);
   if (!problem || !strand) return null;
 
+  // La terminal de la evaluación (docs/guion-narrativa-math-quest.md §6-7):
+  // mismo lenguaje visual que PuzzleOverlay (world-terminal-panel,
+  // world-screen-glass, scanlines, cursor parpadeante) para que se sienta
+  // como la misma máquina, aunque aquí no hay un `Interactable` real detrás
+  // — es la terminal de la plaza, antes de que exista ningún objeto del mundo.
   return (
-    <div className="mx-auto max-w-xl space-y-6 rounded-3xl border-2 border-indigo-300 bg-gradient-to-b from-purple-50 to-pink-50 p-6 text-center shadow-inner sm:p-8">
-      <div className="flex items-center justify-between text-sm font-bold text-purple-700">
-        <span>
-          Hilo {strandOrderIdx + 1} de {STRANDS.length}: {strand.emoji} {strand.label}
-        </span>
-        <span>Pregunta {strandState.itemsAsked + 1}</span>
-      </div>
+    <div className="mx-auto max-w-xl">
+      <div className="world-terminal-panel world-scanlines anim-rise overflow-hidden rounded-3xl border-2 border-cyan-400/40 p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b-2 border-cyan-400/25 pb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-400/90">
+          <span>
+            Hilo {strandOrderIdx + 1} de {STRANDS.length} · {strand.emoji} {strand.label}
+          </span>
+          <span>
+            Pregunta {strandState.itemsAsked + 1}
+            <span aria-hidden="true" className="anim-blink ml-1">
+              ▮
+            </span>
+          </span>
+        </div>
 
-      <p id={promptId} className="text-2xl font-extrabold text-purple-900 sm:text-3xl">
-        {problem.prompt}
-      </p>
+        <div className="world-screen-glass mt-4 rounded-2xl p-5 text-center">
+          <p id={promptId} className="text-xl font-extrabold text-slate-50 sm:text-2xl">
+            {problem.prompt}
+          </p>
 
-      {!feedback && <QuestionWidget problem={problem} onSubmit={onSubmit} promptId={promptId} />}
+          {!feedback && (
+            <div className="mt-4">
+              <QuestionWidget problem={problem} onSubmit={onSubmit} promptId={promptId} />
+            </div>
+          )}
+        </div>
 
-      <div role="status" aria-live="polite">
-        {feedback && (
-          <div className="space-y-3">
-            {feedback.correct ? (
-              <p className="text-lg font-bold text-emerald-700">¡Correcto! 🎉</p>
-            ) : (
-              <p className="text-lg font-bold text-slate-700">Casi — la respuesta era {feedback.answer}</p>
-            )}
-            <button
-              ref={nextButtonRef}
-              type="button"
-              onClick={onNext}
-              className="rounded-2xl bg-purple-600 px-6 py-2 font-bold text-white"
-            >
-              Siguiente
-            </button>
-          </div>
-        )}
+        <div role="status" aria-live="polite" className="mt-4 text-center">
+          {feedback && (
+            <div className="anim-rise space-y-3">
+              {feedback.correct ? (
+                <p className="font-mono text-lg font-bold text-emerald-300">✓ ¡Correcto! 🎉</p>
+              ) : (
+                <p className="font-mono text-lg font-bold text-amber-200">Casi — la respuesta era {feedback.answer}</p>
+              )}
+              <button
+                ref={nextButtonRef}
+                type="button"
+                onClick={onNext}
+                className="rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-2 font-bold text-white"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

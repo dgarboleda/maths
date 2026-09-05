@@ -281,7 +281,7 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     await expect(page.getByRole("heading", { name: "Evaluación inicial" })).toBeVisible();
 
     await page.getByRole("button", { name: "Activar la terminal ▸" }).click();
-    await expect(page.getByText(/Hilo 1 de 5: .*Aritmética/)).toBeVisible();
+    await expect(page.getByText(/Hilo 1 de 5.*Aritmética/)).toBeVisible();
     await expect(page.getByText("Pregunta 1")).toBeVisible();
 
     // La primera pregunta de Aritmética es siempre una suma con recta
@@ -300,7 +300,7 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     await expect(page.getByRole("status")).toContainText("¡Correcto!");
 
     await page.getByRole("button", { name: "Siguiente" }).click();
-    await expect(page.getByText(/Hilo 1 de 5: .*Aritmética/)).toBeVisible();
+    await expect(page.getByText(/Hilo 1 de 5.*Aritmética/)).toBeVisible();
     await expect(page.getByText("Pregunta 2")).toBeVisible();
   });
 
