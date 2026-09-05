@@ -28,12 +28,14 @@ export interface Interactable {
 
 export interface ZoneScene {
   strandSlug: string;
-  /** Nombre narrativo de la zona ("Centro de Energía"). */
+  /** Nombre narrativo de la zona ("Ciudad Central"). */
   zoneName: string;
   /** Nombre académico del hilo ("Aritmética"). */
   strandLabel: string;
   tagline: string;
   icon: string;
+  /** Ilustración de fondo de la región, en public/illustrations/. */
+  background: string;
   interactables: Interactable[];
 }
 
@@ -112,6 +114,7 @@ export function zoneScene(strandSlug: string): ZoneScene | null {
     strandLabel: strand.label,
     tagline: narrative.tagline,
     icon: narrative.icon,
+    background: narrative.background,
     interactables: modules.map((mod, i) => {
       const kind = KIND_CYCLE[i % KIND_CYCLE.length];
       return {

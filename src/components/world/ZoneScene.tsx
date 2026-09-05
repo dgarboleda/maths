@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { getModule, moduleHref } from "@/lib/curriculum";
+import { getModule, masteredCountForStrand, moduleHref } from "@/lib/curriculum";
 import type { SkillProgress } from "@/lib/types";
 import type { Interactable, ZoneScene as ZoneSceneDef } from "@/lib/world/scenes";
 import { interactableState } from "@/lib/world/state";
+import { MINOR_NULL_CYCLE, ZONE_GUARDIAN } from "@/lib/world/guardians";
 import { Hotspot } from "./Hotspot";
 
 /**
@@ -13,6 +14,10 @@ import { Hotspot } from "./Hotspot";
  * problema generado por el propio módulo. La lista académica sigue accesible
  * con el enlace "Entrar" de cada objeto, que lleva a la pantalla completa del
  * tema (concepto, práctica, cohete, ejemplos).
+ *
+ * El guardián de la zona (docs/guion-narrativa-math-quest.md §19) se muestra
+ * "vencido" cuando `masteredCountForStrand` ya está completo — es una
+ * lectura del mismo progreso real, no un jefe con su propio estado.
  */
 export function ZoneScene({
   childId,
@@ -28,25 +33,28 @@ export function ZoneScene({
   onSelect: (interactable: Interactable) => void;
 }) {
   const rows = Math.ceil(scene.interactables.length / 2);
+  const { mastered, total } = masteredCountForStrand(progressBySkill, scene.strandSlug);
+  const guardian = ZONE_GUARDIAN[scene.strandSlug];
+  const guardianDefeated = guardian && total > 0 && mastered === total;
 
   return (
     <div
       className="world-scene-vignette relative w-full overflow-hidden rounded-3xl border border-indigo-500/25 bg-slate-950"
       style={{ height: `${170 + rows * 132}px` }}
     >
+      <img
+        src={scene.background}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 size-full object-cover brightness-[0.55] saturate-125"
+      />
+      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/20 to-slate-950/70" />
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
         aria-hidden="true"
         className="absolute inset-0 h-full w-full"
       >
-        <defs>
-          <linearGradient id="zoneBg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0b1026" />
-            <stop offset="100%" stopColor="#1a1038" />
-          </linearGradient>
-        </defs>
-        <rect width="100" height="100" fill="url(#zoneBg)" />
         {/* pasillo que une los objetos en zigzag */}
         <polyline
           points={scene.interactables.map((it) => `${it.x},${it.y}`).join(" ")}
@@ -71,10 +79,36 @@ export function ZoneScene({
         />
       </div>
 
-      {scene.interactables.map((interactable) => {
+      {guardian && (
+        <div
+          className={`absolute inset-x-2 top-2 z-20 flex items-center gap-2 rounded-2xl border px-3 py-1.5 backdrop-blur-sm transition-opacity ${
+            guardianDefeated
+              ? "border-emerald-400/40 bg-emerald-950/70"
+              : "border-rose-400/30 bg-rose-950/60"
+          }`}
+        >
+          <img
+            src={guardian.art}
+            alt=""
+            aria-hidden="true"
+            className={`size-8 shrink-0 rounded-full border border-white/20 object-cover ${
+              guardianDefeated ? "opacity-50 grayscale" : ""
+            }`}
+          />
+          <p className="min-w-0 text-[11px] font-semibold leading-tight text-slate-100">
+            <span className={guardianDefeated ? "text-emerald-300" : "text-rose-300"}>
+              {guardianDefeated ? `${guardian.name} vencido · ` : `${guardian.name} · `}
+            </span>
+            {guardianDefeated ? guardian.defeated : guardian.corruption}
+          </p>
+        </div>
+      )}
+
+      {scene.interactables.map((interactable, index) => {
         const mod = getModule(interactable.moduleId);
         if (!mod) return null;
         const state = interactableState(progressBySkill, interactable.moduleId);
+        const nullThreat = MINOR_NULL_CYCLE[index % MINOR_NULL_CYCLE.length];
         return (
           <div
             key={interactable.id}
@@ -87,6 +121,7 @@ export function ZoneScene({
               state={state}
               pulse={questModuleIds.includes(interactable.moduleId)}
               onSelect={() => onSelect(interactable)}
+              nullThreat={nullThreat}
             />
             {state !== "bloqueado" && (
               <Link

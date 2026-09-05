@@ -6,11 +6,13 @@ import { moduleHref, type ModuleDef } from "@/lib/curriculum";
 import { Avatar } from "./Avatar";
 
 /**
- * Barra superior compacta del mundo: personaje, estrellas, insignias, sonido.
+ * Barra superior compacta del mundo: personaje, AXIA, insignias, sonido.
  * Todos los valores vienen del estado real —`starLedger` vía `useTotalStars`,
- * insignias de Firestore—; el HUD no guarda nada por su cuenta. El registro
- * de la misión activa vive ahora dentro de la propia escena (`QuestScene` /
- * `MissionOverlay`), no aquí.
+ * insignias de Firestore—; el HUD no guarda nada por su cuenta. "AXIA" es
+ * solo el nombre narrativo que se muestra para las estrellas ya existentes
+ * (docs/guion-narrativa-math-quest.md §21): no hay una moneda nueva, ni un
+ * dato nuevo en Firestore. El registro de la misión activa vive ahora dentro
+ * de la propia escena (`QuestScene` / `MissionOverlay`), no aquí.
  */
 export function WorldTopBar({
   childId,
@@ -30,7 +32,10 @@ export function WorldTopBar({
   nextChallengeModule: ModuleDef | null;
 }) {
   return (
-    <header className="world-hud-panel mb-2 flex flex-wrap items-center gap-2 rounded-full px-3 py-2 sm:gap-3 sm:px-4">
+    <header
+      className="world-hud-panel mb-2 flex flex-wrap items-center gap-2 rounded-full bg-cover bg-center px-3 py-2 sm:gap-3 sm:px-4"
+      style={{ backgroundImage: "linear-gradient(rgba(15,12,35,0.82),rgba(15,12,35,0.82)), url(/illustrations/icon-hud-frame.webp)" }}
+    >
       <span className="anim-idle flex h-9 items-center justify-center rounded-2xl border border-white/15 bg-slate-900/80 px-1.5">
         <Avatar className="h-8" title={`Personaje de ${childName}`} />
       </span>
@@ -43,14 +48,16 @@ export function WorldTopBar({
       </div>
 
       <span className="flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-slate-900/70 px-3 py-1.5">
-        <span aria-hidden="true">⭐</span>
+        <img src="/illustrations/icon-axia.webp" alt="" aria-hidden="true" className="size-4" />
         <span className="font-bold text-amber-300">
-          <span className="sr-only">Estrellas: </span>
+          <span className="sr-only">AXIA: </span>
           {stars ?? "…"}
         </span>
       </span>
 
       {earnedBadgeIds.length > 0 && (
+        <div className="flex items-center gap-1.5">
+        <img src="/illustrations/icon-insignias.webp" alt="" aria-hidden="true" className="size-5" />
         <ul className="flex items-center gap-1.5" aria-label="Insignias ganadas">
           {earnedBadgeIds.map((id) => {
             const badge = getBadge(id);
@@ -67,6 +74,7 @@ export function WorldTopBar({
             );
           })}
         </ul>
+        </div>
       )}
 
       <div className="ml-auto flex items-center gap-2">

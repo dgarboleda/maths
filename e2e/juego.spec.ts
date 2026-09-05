@@ -67,7 +67,8 @@ test.describe("Recorrido de juego", () => {
     page,
   }) => {
     const hijo = await sesionDeHijo(page);
-    await expect(estrellas(page)).toHaveText("Estrellas: 0");
+    // En el hub del mundo (WorldTopBar) el mismo saldo se muestra como AXIA.
+    await expect(page.locator("header").getByText(/^AXIA:\s*-?\d+$/)).toHaveText("AXIA: 0");
 
     await page.goto(page.url().replace(/\/jugar\/([^/]+).*/, "/jugar/$1/aritmetica/aritmetica-d1"));
     await expect(page.getByRole("heading", { name: `Sumas hasta 5` })).toBeVisible();
@@ -207,7 +208,7 @@ test.describe("Recorrido de juego", () => {
     await page.getByRole("button", { name: "Tienda" }).click();
     await page.getByRole("button", { name: "Pedir canje" }).click();
     await page.getByLabel("¿Qué quieres canjear?").fill("Media hora de consola");
-    await page.getByLabel(/¿Cuántas estrellas\?/).fill("1");
+    await page.getByLabel(/¿Cuánta AXIA\?/).fill("1");
     await page.getByRole("button", { name: "Enviar" }).click();
 
     await expect(page.getByText("Media hora de consola · 1")).toBeVisible();

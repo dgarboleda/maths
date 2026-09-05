@@ -8,6 +8,10 @@ import { hasCorrectAttempt } from "./state";
  * de misión guardado en ningún lado, se deriva del progreso académico. Por
  * eso una misión no puede "desincronizarse" del currículo: es una lectura de
  * él, no una copia.
+ *
+ * Las premisas siguen el guion maestro (docs/guion-narrativa-math-quest.md):
+ * cada incidente de la ciudad es obra de un tipo de Null al servicio de
+ * Khaos, que drena o corrompe el AXIA que Alex empieza a generar.
  */
 export interface QuestObjective {
   id: string;
@@ -32,7 +36,7 @@ export const QUESTS: Quest[] = [
     icon: "⚡",
     title: "El apagón",
     premise:
-      "La ciudad perdió energía durante la noche. La central sigue funcionando, pero alguien activó el protocolo de emergencia. Hay que descubrir el código de acceso.",
+      "La ciudad perdió energía durante la noche: un Null Drenador se instaló en el generador y absorbe el AXIA antes de que llegue a las luces. Hay que resolver el código de la terminal para recuperar el flujo.",
     strandSlug: "aritmetica",
     objectives: [
       { id: "terminal", label: "Reactivar la terminal de la plaza", moduleId: "aritmetica-d1" },
@@ -45,7 +49,7 @@ export const QUESTS: Quest[] = [
     icon: "🏪",
     title: "La tienda cerrada",
     premise:
-      "La tienda del barrio bajó la persiana con el apagón. Su dueña dejó el inventario a medias y el sistema de precios sin cerrar.",
+      "Un Null Fragmentador aprovechó el apagón para corromper el inventario de la tienda y el sistema de precios, convirtiendo AXIA en NEXUS mientras nadie miraba.",
     strandSlug: "algebra",
     objectives: [
       { id: "patron", label: "Ordenar el estante por su patrón", moduleId: "algebra-d1" },
@@ -58,7 +62,7 @@ export const QUESTS: Quest[] = [
     icon: "🚧",
     title: "El túnel de servicio",
     premise:
-      "Alguien entró por el túnel la noche del apagón. El acceso sigue sellado y las cámaras estaban apagadas.",
+      "Un Null Controlador se coló por el túnel de servicio la noche del apagón y tomó el panel de acceso con NEXUS. Las cámaras siguen apagadas hasta que se recalibre el sistema.",
     strandSlug: "logica",
     objectives: [
       { id: "huellas", label: "Interpretar las huellas del túnel", moduleId: "logica-d1" },

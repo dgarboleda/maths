@@ -32,20 +32,20 @@ test.describe("Narrativa Math Quest", () => {
     await page.getByRole("button", { name: "Abrir registro de misión" }).click();
 
     const registro = page.getByRole("dialog", { name: "El apagón" });
-    await expect(registro.getByText("Centro de Energía")).toBeVisible();
-    await expect(registro.getByText("Laboratorio")).toBeVisible();
-    await expect(registro.getByText("Zona de Construcción")).toBeVisible();
-    await expect(registro.getByText("Centro de Control")).toBeVisible();
-    await expect(registro.getByText("Distrito Misterioso")).toBeVisible();
+    await expect(registro.getByText("Ciudad Central")).toBeVisible();
+    await expect(registro.getByText("Laboratorio Futuro")).toBeVisible();
+    await expect(registro.getByText("Desierto Geométrico")).toBeVisible();
+    await expect(registro.getByText("Cumbres Numéricas")).toBeVisible();
+    await expect(registro.getByText("Islas del Pensamiento")).toBeVisible();
     // El progreso visual es puramente decorativo sobre isMastered/isUnlocked.
-    await expect(registro.getByRole("progressbar", { name: "Progreso en Centro de Energía" })).toHaveAttribute(
+    await expect(registro.getByRole("progressbar", { name: "Progreso en Ciudad Central" })).toHaveAttribute(
       "aria-valuenow",
       "0",
     );
 
     await registro.getByRole("link", { name: /Aritmética/ }).click();
     await expect(page).toHaveURL(/\/aritmetica$/);
-    await expect(page.getByText("Resolver cálculos permite reparar sistemas.")).toBeVisible();
+    await expect(page.getByText("Resolver cálculos genera AXIA y despierta la ciudad dormida.")).toBeVisible();
   });
 
   test("Tu próximo desafío enlaza al módulo real recomendado, no a un id inventado", async ({ page }) => {
@@ -76,8 +76,8 @@ test.describe("Narrativa Math Quest", () => {
 test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
   test("hablar con la Dra. Nia desbloquea la terminal, y resolverla guarda el intento real", async ({ page }) => {
     await sesionDeHijo(page);
-    const estrellas = page.locator("header").getByText(/^Estrellas:\s*-?\d+$/);
-    await expect(estrellas).toHaveText("Estrellas: 0");
+    const estrellas = page.locator("header").getByText(/^AXIA:\s*-?\d+$/);
+    await expect(estrellas).toHaveText("AXIA: 0");
 
     // El briefing de misión abre la partida.
     await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
@@ -114,7 +114,7 @@ test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
     await ficha.getByRole("button", { name: "Seguir explorando" }).click();
 
     // El intento se guardó de verdad: el saldo sale de starLedger, no del mundo.
-    await expect(estrellas).not.toHaveText("Estrellas: 0");
+    await expect(estrellas).not.toHaveText("AXIA: 0");
   });
 
   test("resolver la compuerta con las tres etapas ya superadas restaura la central", async ({ page }) => {
@@ -220,7 +220,7 @@ test.describe("Celebración de mastery", () => {
     const celebracion = page.getByRole("status").filter({ hasText: "Habilidad dominada" });
     await expect(celebracion).toBeVisible();
     await expect(celebracion).toContainText("Sumas hasta 5");
-    await expect(celebracion).toContainText("Centro de Energía");
+    await expect(celebracion).toContainText("Ciudad Central");
 
     await celebracion.getByRole("button", { name: "Continuar" }).click();
     await expect(celebracion).not.toBeVisible();
