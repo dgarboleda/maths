@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { deleteApp, initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { collection, connectFirestoreEmulator, doc, getFirestore, setDoc, writeBatch } from "firebase/firestore";
+import { collection, connectFirestoreEmulator, doc, getDocs, getFirestore, setDoc, writeBatch } from "firebase/firestore";
 import { STRANDS } from "../src/lib/strands";
 
 export const CLAVE_PADRE = "secreto123";
@@ -140,6 +140,29 @@ export async function otorgarDominio(correo: string, childId: string, moduleIds:
         }),
       ),
     );
+  } finally {
+    await deleteApp(app);
+  }
+}
+
+/** Cuenta los documentos de una subcolección del hijo — para confirmar que
+ * borrar un perfil no deja huérfanos (Firestore no borra subcolecciones en
+ * cascada al borrar el documento padre). */
+export async function contarDocumentos(correo: string, childId: string, subcoleccion: string): Promise<number> {
+  const app = initializeApp(
+    { apiKey: "demo-api-key", projectId: "demo-numerario" },
+    `contar-${crypto.randomUUID()}`,
+  );
+  try {
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
+
+    const db = getFirestore(app);
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+    const snap = await getDocs(collection(db, "parents", user.uid, "children", childId, subcoleccion));
+    return snap.size;
   } finally {
     await deleteApp(app);
   }
