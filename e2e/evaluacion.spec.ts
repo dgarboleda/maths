@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { getModule, isMastered, isUnlocked, modulesForStrand, recommendedModule } from "../src/lib/curriculum";
+import { generateProblem } from "../src/lib/medicion";
 import {
   answerPlacementItem,
   currentPlacementModule,
@@ -244,6 +245,17 @@ test.describe("Motor de evaluación de ubicación (lógica pura)", () => {
   });
 });
 
+test.describe("Generador de problemas — medición (lógica pura)", () => {
+  test("el promedio (dificultad 5) siempre da un entero exacto, nunca un decimal con inputType \"integer\"", () => {
+    for (let i = 0; i < 200; i++) {
+      const problem = generateProblem(5);
+      expect(problem.kind).toBe("media");
+      expect(problem.inputType).toBe("integer");
+      expect(Number.isInteger(problem.answer)).toBe(true);
+    }
+  });
+});
+
 test.describe("Evaluación de ubicación en el navegador", () => {
   test("sin evaluación completa, el niño no puede entrar al mundo: todo redirige a la evaluación", async ({
     page,
@@ -268,8 +280,8 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     await entrarAPerfilSinEvaluar(page, nombre, pin);
     await expect(page.getByRole("heading", { name: "Evaluación inicial" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Comenzar evaluación" }).click();
-    await expect(page.getByText(/Hilo 1 de 5: .*Aritmética/)).toBeVisible();
+    await page.getByRole("button", { name: "Activar la terminal ▸" }).click();
+    await expect(page.getByText(/Hilo 1 de 5.*Aritmética/)).toBeVisible();
     await expect(page.getByText("Pregunta 1")).toBeVisible();
 
     // La primera pregunta de Aritmética es siempre una suma con recta
@@ -288,7 +300,7 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     await expect(page.getByRole("status")).toContainText("¡Correcto!");
 
     await page.getByRole("button", { name: "Siguiente" }).click();
-    await expect(page.getByText(/Hilo 1 de 5: .*Aritmética/)).toBeVisible();
+    await expect(page.getByText(/Hilo 1 de 5.*Aritmética/)).toBeVisible();
     await expect(page.getByText("Pregunta 2")).toBeVisible();
   });
 
@@ -308,7 +320,7 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     const { nombre, pin } = await crearHijo(page);
     await entrarAPerfilSinEvaluar(page, nombre, pin);
 
-    await page.getByRole("button", { name: "Comenzar evaluación" }).click();
+    await page.getByRole("button", { name: "Activar la terminal ▸" }).click();
 
     // Todos los controles de respuesta viven dentro de <main>: el botón de
     // sonido del encabezado queda fuera, así que un "primer botón visible"

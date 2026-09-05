@@ -9,6 +9,7 @@ import type { Interactable, InteractionKind } from "@/lib/world/scenes";
 import { QUESTS, questProgress } from "@/lib/world/quests";
 import {
   CIUDAD_CENTRAL_HOTSPOTS,
+  NIA_ORIGIN_INTRO,
   PLAYER_START,
   hotspotState,
   stepFromQuestProgress,
@@ -70,7 +71,15 @@ export function QuestScene({
   const router = useRouter();
   const quest = questProgress(progressBySkill, QUESTS[0]);
   const [npcGreeted, setNpcGreeted] = useState(false);
-  const [active, setActive] = useState<Active>({ kind: "mission", intro: true });
+  // "Nueva misión" mientras la misión siga abierta (aunque ya tenga algún
+  // objetivo hecho): ese es el único momento en que tiene sentido el botón
+  // "Comenzar a explorar". Una vez completa, seguir marcándola como nueva —
+  // con sus objetivos ya tachados — no tiene sentido: en su lugar se abre el
+  // panel completo (otras zonas, tienda), para no dejar al jugador sin salida.
+  // El padre (jugar/[childId]/page.tsx) no monta esta escena hasta que
+  // progressBySkill viene de Firestore, así que este cálculo inicial ya lee
+  // progreso real, nunca el estado vacío de mientras carga.
+  const [active, setActive] = useState<Active>(() => ({ kind: "mission", intro: !quest.complete }));
   const [pose, setPose] = useState<Pose>({ ...PLAYER_START, facing: "left" });
   const [walking, setWalking] = useState(false);
   const [walkMs, setWalkMs] = useState(700);
@@ -142,6 +151,17 @@ export function QuestScene({
           ...h,
           intro: ["Los escombros del túnel ya se movieron. El camino al Laboratorio está despejado."],
         },
+      });
+      return;
+    }
+    if (h.id === "nia" && quest.doneCount === 0) {
+      // Primera vez de verdad (sin ningún objetivo hecho aún): antes de
+      // entrar en "El apagón" hay que presentar a Khaos
+      // (docs/guion-narrativa-math-quest.md §7-13) — si no, "Null Drenador"
+      // y "NEXUS" son jerga sin sentido para quien recién llega.
+      setActive({
+        kind: "dialog",
+        hotspot: { ...h, intro: [...NIA_ORIGIN_INTRO, ...h.intro] },
       });
       return;
     }
@@ -249,7 +269,12 @@ export function QuestScene({
       : null;
 
   return (
-    <div className="relative mx-auto aspect-[3/4] w-full overflow-clip rounded-3xl border border-indigo-500/25 bg-slate-950 sm:aspect-[4/3]">
+    // El fondo (city-central.webp) es una toma panorámica 16:9: en un
+    // recorte 3:4 solo se ve ~42% de su ancho (le sacaba de encuadre la
+    // central y el taller de los costados). 1:1 en móvil deja ver ~56%
+    // sin perder el layout vertical de los hotspots, que están en % — no
+    // dependen de una proporción de caja concreta.
+    <div className="relative mx-auto aspect-square w-full overflow-clip rounded-3xl border border-indigo-500/25 bg-slate-950 sm:aspect-[4/3]">
       <div className="world-scene-vignette absolute inset-0">
         <img
           src="/illustrations/city-central.webp"

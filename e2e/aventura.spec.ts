@@ -82,13 +82,17 @@ test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
     // El briefing de misión abre la partida.
     await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
 
-    // La Dra. Nia es el primer paso: diálogo de 3 líneas, siempre se puede
-    // volver a saludar (no es un objetivo con moduleId real).
+    // La Dra. Nia es el primer paso: la primera vez incluye la presentación
+    // de Khaos (NIA_ORIGIN_INTRO, 2 líneas — el origen de AXIA ya se contó
+    // al terminar la evaluación) antes de las 3 del apagón — siempre se
+    // puede volver a saludar (no es un objetivo con moduleId real).
     await page.getByRole("button", { name: /^Dra\. Nia —/ }).click();
     const dialogoNia = page.getByRole("dialog", { name: "Dra. Nia" });
     await expect(dialogoNia).toBeVisible();
-    await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
-    await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
+    await expect(dialogoNia.getByText(/no pasó desapercibido/)).toBeVisible();
+    for (let i = 0; i < 4; i++) {
+      await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
+    }
     await dialogoNia.getByRole("button", { name: "¡Voy a por el código!" }).click();
     await expect(dialogoNia).not.toBeVisible();
 
@@ -128,6 +132,9 @@ test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
     await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
     await page.getByRole("button", { name: /^Dra\. Nia —/ }).click();
     const dialogoNia = page.getByRole("dialog", { name: "Dra. Nia" });
+    // Con progreso ya avanzado, el origen de AXIA/Khaos no se repite: solo
+    // las 3 líneas del apagón (2 "Continuar" y ya está el botón final).
+    await expect(dialogoNia.getByText(/no pasó desapercibido/)).not.toBeVisible();
     await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
     await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
     await dialogoNia.getByRole("button", { name: "¡Voy a por el código!" }).click();
@@ -143,6 +150,23 @@ test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
 
     // Misión completa: recompensa final (ciudad restaurada).
     await expect(page.getByRole("dialog", { name: "La ciudad vuelve a la vida" })).toBeVisible();
+  });
+
+  test("con la misión ya completa, recargar el hub no la vuelve a marcar como nueva", async ({ page }) => {
+    const { correo } = await sesionDeHijo(page);
+    const childId = idDeHijo(page);
+    // Los tres objetivos de "El apagón" ya superados de verdad.
+    await otorgarDominio(correo, childId, ["aritmetica-d1", "medicion-d1", "geometria-d1"]);
+    await page.reload();
+
+    const registro = page.getByRole("dialog", { name: "El apagón" });
+    await expect(registro).toBeVisible();
+    // Ya no es una misión nueva: no hay botón de "Comenzar a explorar" (que
+    // dejaría al jugador sin salida frente a objetivos ya tachados) — en su
+    // lugar se ve el panel completo con las demás zonas.
+    await expect(registro.getByText("NUEVA MISIÓN")).not.toBeVisible();
+    await expect(registro.getByRole("button", { name: "Comenzar a explorar ▸" })).not.toBeVisible();
+    await expect(registro.getByText("Otras zonas")).toBeVisible();
   });
 
   test("un objeto bloqueado explica el prerrequisito real, sin candados inventados", async ({ page }) => {

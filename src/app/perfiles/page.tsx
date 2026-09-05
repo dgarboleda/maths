@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { hashPin } from "@/lib/pin";
 import { Avatar } from "@/components/world/Avatar";
+import { useDialogFocus } from "@/components/world/useDialogFocus";
 import type { ChildProfile } from "@/lib/types";
 
 interface ChildDoc extends ChildProfile {
@@ -184,13 +185,57 @@ export default function PerfilesPage() {
 }
 
 function ChildCard({ child }: { child: ChildDoc }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  if (open) {
+    return <PinDialog child={child} onClose={() => setOpen(false)} />;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      aria-label={`Entrar al perfil de ${child.name}`}
+      className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3"
+    >
+      <span className="grid size-16 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30">
+        <Avatar className="h-11" title={child.name} />
+      </span>
+      <span className="font-display text-sm font-bold text-white">{child.name}</span>
+    </button>
+  );
+}
+
+// Modal aparte (no una rama condicional dentro de ChildCard): así
+// useDialogFocus se monta y desmonta junto con el diálogo, igual que
+// ResetPinDialog/DeleteChildDialog — su bloqueo de scroll del documento
+// mientras el diálogo está abierto necesita ese ciclo de vida real, y con
+// ChildCard siempre montado (una tarjeta por hijo) un `useEffect` con `[]`
+// dentro del mismo componente solo corre una vez al montar la tarjeta, no
+// cada vez que se abre el diálogo.
+function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void }) {
+  const router = useRouter();
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(false);
   const [shakes, setShakes] = useState(0);
   const pinId = `pin-${child.id}`;
+  const pinInputRef = useRef<HTMLInputElement>(null);
+
+  function handleClose() {
+    onClose();
+  }
+
+  const { dialogRef, handleKeyDown } = useDialogFocus(handleClose, pinInputRef);
+
+  // El input se remonta (key={shakes}) en cada intento fallido para reiniciar
+  // la animación anim-shake; el foco inicial ya lo pone useDialogFocus, pero
+  // tras el remonte hay que devolverlo a mano — sin `autoFocus` nativo, que
+  // en Chrome móvil competía en el tiempo con el bloqueo de scroll y volvía a
+  // disparar el mismo zoom que useDialogFocus evita en el montaje inicial.
+  useEffect(() => {
+    if (shakes > 0) pinInputRef.current?.focus();
+  }, [shakes]);
 
   async function handleConfirm(e?: FormEvent) {
     e?.preventDefault();
@@ -217,103 +262,101 @@ function ChildCard({ child }: { child: ChildDoc }) {
     }
   }
 
-  if (open) {
-    return (
-      <form
-        onSubmit={handleConfirm}
-        className="family-tile col-span-2 flex flex-col items-center gap-3 rounded-2xl p-4 sm:col-span-1"
+  // Modal centrado y de ancho fijo (no una celda del grid de perfiles): antes
+  // este formulario se devolvía en el lugar de la tarjeta dentro del grid, así
+  // que su ancho salía del track de columna — angosto incluso en pantallas
+  // grandes, donde el grid pasa a 3 columnas dentro de un contenedor ya
+  // acotado a max-w-2xl.
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 backdrop-blur-sm sm:p-6">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={pinId}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        className="family-panel anim-rise flex w-64 flex-col items-center gap-3 rounded-2xl p-5 focus:outline-none"
       >
-        <Avatar className="h-16" title={child.name} />
+        <form onSubmit={handleConfirm} className="flex w-full flex-col items-center gap-3">
+          <Avatar className="h-16" title={child.name} />
 
-        <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
-          PIN de {child.name}
-          <input
-            key={shakes}
-            id={pinId}
-            type="password"
-            inputMode="numeric"
-            maxLength={4}
-            autoFocus
-            value={pin}
-            onChange={(e) => {
-              setError(false);
-              setPin(e.target.value.replace(/\D/g, ""));
-            }}
-            className={`family-input mt-1.5 h-10 w-24 text-center text-lg tracking-[0.6em]${
-              error ? " anim-shake has-error" : ""
-            }`}
-          />
-        </label>
+          <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
+            PIN de {child.name}
+            <input
+              key={shakes}
+              ref={pinInputRef}
+              id={pinId}
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={pin}
+              onChange={(e) => {
+                setError(false);
+                setPin(e.target.value.replace(/\D/g, ""));
+              }}
+              className={`family-input mt-1.5 h-10 w-24 text-center text-lg tracking-[0.6em]${
+                error ? " anim-shake has-error" : ""
+              }`}
+            />
+          </label>
 
-        <span role="alert" className="min-h-4 text-xs font-semibold text-red-300">
-          {error ? "PIN incorrecto" : ""}
-        </span>
+          <span role="alert" className="min-h-4 text-xs font-semibold text-red-300">
+            {error ? "PIN incorrecto" : ""}
+          </span>
 
-        <div role="group" aria-label={`Teclado numérico para ${child.name}`} className="grid grid-cols-3 gap-1.5">
-          {KEYPAD.map((d) => (
+          <div
+            role="group"
+            aria-label={`Teclado numérico para ${child.name}`}
+            className="grid grid-cols-3 gap-1.5"
+          >
+            {KEYPAD.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => press(d)}
+                className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
+              >
+                {d}
+              </button>
+            ))}
+            <span aria-hidden="true" />
             <button
-              key={d}
               type="button"
-              onClick={() => press(d)}
+              onClick={() => press("0")}
               className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
             >
-              {d}
+              0
             </button>
-          ))}
-          <span aria-hidden="true" />
-          <button
-            type="button"
-            onClick={() => press("0")}
-            className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
-          >
-            0
-          </button>
-          <button
-            type="button"
-            onClick={() => press("borrar")}
-            aria-label="Borrar último dígito"
-            className="family-keycap grid min-h-9 min-w-9 place-items-center rounded-lg text-xs"
-          >
-            ⌫
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => press("borrar")}
+              aria-label="Borrar último dígito"
+              className="family-keycap grid min-h-9 min-w-9 place-items-center rounded-lg text-xs"
+            >
+              ⌫
+            </button>
+          </div>
 
-        <div className="flex gap-4 text-xs">
-          <button
-            type="submit"
-            disabled={pin.length !== 4 || checking}
-            className="font-bold text-cyan-300 underline-offset-2 hover:underline disabled:opacity-40"
-          >
-            {checking ? "Comprobando…" : "Entrar"}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              setPin("");
-              setError(false);
-            }}
-            className="font-semibold text-indigo-300 underline-offset-2 hover:underline"
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => setOpen(true)}
-      aria-label={`Entrar al perfil de ${child.name}`}
-      className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3"
-    >
-      <span className="grid size-16 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30">
-        <Avatar className="h-11" title={child.name} />
-      </span>
-      <span className="font-display text-sm font-bold text-white">{child.name}</span>
-    </button>
+          <div className="flex gap-4 text-xs">
+            <button
+              type="submit"
+              disabled={pin.length !== 4 || checking}
+              className="font-bold text-cyan-300 underline-offset-2 hover:underline disabled:opacity-40"
+            >
+              {checking ? "Comprobando…" : "Entrar"}
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="font-semibold text-indigo-300 underline-offset-2 hover:underline"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 

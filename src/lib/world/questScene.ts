@@ -88,6 +88,20 @@ export interface CiudadCentralHotspot {
   outcome: string;
 }
 
+/**
+ * Se antepone al diálogo normal de la Dra. Nia solo la primera vez que se le
+ * habla en toda la partida (quest.doneCount === 0, ver QuestScene). Qué es
+ * AXIA ya se reveló al terminar la evaluación de ubicación —el "despertar de
+ * la terminal" de docs/guion-narrativa-math-quest.md §7-8, ver
+ * jugar/[childId]/evaluacion/page.tsx—, así que esto no repite esa parte:
+ * presenta a Khaos por primera vez (§12-13), la pieza que faltaba para que
+ * "Null Drenador" y "NEXUS" en el resto del diálogo tengan sentido.
+ */
+export const NIA_ORIGIN_INTRO: string[] = [
+  "Lo que hiciste en la terminal no pasó desapercibido. Durante generaciones nadie había vuelto a generar AXIA... y alguien lo ha notado.",
+  "Se llama Khaos. Hace siglos hizo desaparecer el AXIA para poder controlarlo todo. Ahora que ha vuelto a aparecer, Khaos también ha despertado.",
+];
+
 export const PLAYER_START = { x: 57, y: 71 };
 
 export const CIUDAD_CENTRAL_HOTSPOTS: CiudadCentralHotspot[] = [

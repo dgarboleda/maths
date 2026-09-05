@@ -32,8 +32,9 @@ test.describe("Acceso de la familia", () => {
     const { nombre } = await crearHijo(page, { nombre: "Bruno", pin: "4321" });
 
     await page.getByRole("button", { name: `Entrar al perfil de ${nombre}` }).click();
-    await page.getByLabel(`PIN de ${nombre}`).fill("1111");
-    await page.getByRole("button", { name: "Entrar" }).click();
+    const campoPin = page.getByLabel(`PIN de ${nombre}`);
+    await campoPin.fill("1111");
+    await campoPin.press("Enter");
 
     await expect(page.locator("main").getByRole("alert")).toHaveText("PIN incorrecto");
     await expect(page).toHaveURL(/\/perfiles$/);
