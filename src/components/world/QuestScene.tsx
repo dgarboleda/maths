@@ -9,6 +9,7 @@ import type { Interactable, InteractionKind } from "@/lib/world/scenes";
 import { QUESTS, questProgress } from "@/lib/world/quests";
 import {
   CIUDAD_CENTRAL_HOTSPOTS,
+  NIA_ORIGIN_INTRO,
   PLAYER_START,
   hotspotState,
   stepFromQuestProgress,
@@ -150,6 +151,17 @@ export function QuestScene({
           ...h,
           intro: ["Los escombros del túnel ya se movieron. El camino al Laboratorio está despejado."],
         },
+      });
+      return;
+    }
+    if (h.id === "nia" && quest.doneCount === 0) {
+      // Primera vez de verdad (sin ningún objetivo hecho aún): antes de
+      // entrar en "El apagón" hay que explicar qué es AXIA y quién es Khaos
+      // (docs/guion-narrativa-math-quest.md §7-13) — si no, "Null Drenador"
+      // y "NEXUS" son jerga sin sentido para quien recién llega.
+      setActive({
+        kind: "dialog",
+        hotspot: { ...h, intro: [...NIA_ORIGIN_INTRO, ...h.intro] },
       });
       return;
     }

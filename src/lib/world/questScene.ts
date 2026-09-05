@@ -88,6 +88,18 @@ export interface CiudadCentralHotspot {
   outcome: string;
 }
 
+/**
+ * Se antepone al diálogo normal de la Dra. Nia solo la primera vez que se le
+ * habla en toda la partida (quest.doneCount === 0, ver QuestScene). Sin esto,
+ * "Null Drenador", "AXIA" y "Khaos" son jerga sin explicar para quien recién
+ * entra al juego (docs/guion-narrativa-math-quest.md §7-13).
+ */
+export const NIA_ORIGIN_INTRO: string[] = [
+  "Espera... eso que acaba de pasar en la terminal tiene nombre: AXIA. Es la energía que construyó esta ciudad, y que lleva generaciones dormida.",
+  "Se genera resolviendo problemas matemáticos. Nadie había conseguido hacerlo en todo ese tiempo... hasta ti.",
+  "Hace siglos, alguien llamado Khaos hizo desaparecer el AXIA para poder controlarlo todo. Ahora que ha vuelto a aparecer, Khaos también ha despertado.",
+];
+
 export const PLAYER_START = { x: 57, y: 71 };
 
 export const CIUDAD_CENTRAL_HOTSPOTS: CiudadCentralHotspot[] = [
