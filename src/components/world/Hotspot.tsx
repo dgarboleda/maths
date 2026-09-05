@@ -29,6 +29,7 @@ export function Hotspot({
   state,
   onSelect,
   pulse = false,
+  nullThreat,
 }: {
   kind: InteractionKind;
   label: string;
@@ -36,14 +37,25 @@ export function Hotspot({
   onSelect: () => void;
   /** Resalta el objeto de la misión activa. */
   pulse?: boolean;
+  /** Decoración cosmética en estado bloqueado: qué Null lo mantiene corrompido. El candado real sigue siendo `state`, no esto. */
+  nullThreat?: { label: string; art: string };
 }) {
+  const showThreat = state === "bloqueado" && nullThreat;
   return (
     <button
       type="button"
       onClick={onSelect}
-      aria-label={`${label} — ${STATE_LABEL[state]}`}
+      aria-label={`${label} — ${STATE_LABEL[state]}${showThreat ? ` (${nullThreat.label} vigila el acceso)` : ""}`}
       className="group relative block w-full focus:outline-none"
     >
+      {showThreat && (
+        <img
+          src={nullThreat.art}
+          alt=""
+          aria-hidden="true"
+          className="absolute -right-1 -top-1 z-10 size-6 rounded-full border-2 border-slate-950 object-cover shadow-[0_0_8px_rgba(0,0,0,0.6)]"
+        />
+      )}
       {pulse && (
         <span
           aria-hidden="true"
