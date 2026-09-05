@@ -83,103 +83,103 @@ export default function PerfilesPage() {
   }
 
   return (
-    <main
-      id="contenido"
-      tabIndex={-1}
-      className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 bg-slate-950 px-6 py-10"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg">
-            <span aria-hidden="true" className="text-lg">✨</span>
-          </span>
-          <span>
-            <span className="block font-display text-lg font-bold leading-none tracking-wide text-white">
-              MATH QUEST
+    <main id="contenido" tabIndex={-1} className="min-h-screen w-full bg-slate-950 px-6 py-10 md:py-14">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 md:max-w-4xl md:gap-10 lg:max-w-5xl xl:max-w-6xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg">
+              <span aria-hidden="true" className="text-lg">✨</span>
             </span>
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300">
-              ¿Quién va a jugar?
+            <span>
+              <span className="block font-display text-lg font-bold leading-none tracking-wide text-white">
+                MATH QUEST
+              </span>
+              <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300">
+                ¿Quién va a jugar?
+              </span>
             </span>
-          </span>
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <Link href="/panel" className="font-semibold text-indigo-300 underline-offset-2 hover:underline">
-            Panel de padre
-          </Link>
-          <button
-            type="button"
-            onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
-            className="font-semibold text-slate-400 underline-offset-2 hover:underline"
-          >
-            Cerrar sesión
-          </button>
-        </div>
-      </div>
-
-      <header className="text-center">
-        <h1 className="family-text-glow font-display text-2xl font-bold text-white sm:text-3xl">
-          ¿Quién va a jugar?
-        </h1>
-        <p className="mt-1 text-sm text-indigo-200/80">Elige tu personaje y escribe tu PIN para continuar.</p>
-      </header>
-
-      {listError && (
-        <p role="alert" className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-sm font-bold text-red-300">
-          {listError}
-        </p>
-      )}
-      {banner && (
-        <p role="status" className="rounded-xl bg-emerald-500/10 px-3.5 py-2.5 text-sm font-bold text-emerald-300">
-          {banner}
-        </p>
-      )}
-
-      {children.length === 0 && !showForm && (
-        <div className="family-panel flex flex-col items-center gap-3 rounded-2xl px-6 py-8 text-center sm:flex-row sm:text-left">
-          <img
-            src="/illustrations/explorer.webp"
-            alt=""
-            className="h-28 w-auto shrink-0 drop-shadow-[0_0_18px_rgba(167,139,250,0.35)]"
-          />
-          <div>
-            <p className="font-display font-bold text-white">Todavía no hay exploradores por aquí.</p>
-            <p className="mt-1 text-sm text-indigo-200/80">
-              Crea el primer perfil para que empiece su aventura en Ciudad Central.
-            </p>
+          </div>
+          <div className="flex items-center gap-3 text-sm">
+            <Link href="/panel" className="font-semibold text-indigo-300 underline-offset-2 hover:underline">
+              Panel de padre
+            </Link>
+            <button
+              type="button"
+              onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
+              className="font-semibold text-slate-400 underline-offset-2 hover:underline"
+            >
+              Cerrar sesión
+            </button>
           </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        {children.map((child) => (
-          <ChildCard key={child.id} child={child} />
-        ))}
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          aria-expanded={showForm}
-          className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-indigo-500/30 text-indigo-300 transition-colors hover:border-indigo-400/60 hover:text-white"
-        >
-          <span aria-hidden="true" className="text-3xl leading-none">
-            +
-          </span>
-          <span className="text-sm font-semibold">Agregar hijo</span>
-        </button>
+        <header className="text-center">
+          <h1 className="family-text-glow font-display text-2xl font-bold text-white sm:text-3xl md:text-4xl">
+            ¿Quién va a jugar?
+          </h1>
+          <p className="mt-1 text-sm text-indigo-200/80 md:text-base">
+            Elige tu personaje y escribe tu PIN para continuar.
+          </p>
+        </header>
+
+        {listError && (
+          <p role="alert" className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-sm font-bold text-red-300">
+            {listError}
+          </p>
+        )}
+        {banner && (
+          <p role="status" className="rounded-xl bg-emerald-500/10 px-3.5 py-2.5 text-sm font-bold text-emerald-300">
+            {banner}
+          </p>
+        )}
+
+        {children.length === 0 && !showForm && (
+          <div className="family-panel flex flex-col items-center gap-3 rounded-2xl px-6 py-8 text-center sm:flex-row sm:text-left">
+            <img
+              src="/illustrations/explorer.webp"
+              alt=""
+              className="h-28 w-auto shrink-0 drop-shadow-[0_0_18px_rgba(167,139,250,0.35)]"
+            />
+            <div>
+              <p className="font-display font-bold text-white">Todavía no hay exploradores por aquí.</p>
+              <p className="mt-1 text-sm text-indigo-200/80">
+                Crea el primer perfil para que empiece su aventura en Ciudad Central.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 md:gap-5 xl:grid-cols-5">
+          {children.map((child) => (
+            <ChildCard key={child.id} child={child} />
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            aria-expanded={showForm}
+            className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-indigo-500/30 text-indigo-300 transition-colors hover:border-indigo-400/60 hover:text-white"
+          >
+            <span aria-hidden="true" className="text-3xl leading-none md:text-4xl">
+              +
+            </span>
+            <span className="text-sm font-semibold md:text-base">Agregar hijo</span>
+          </button>
+        </div>
+
+        {showForm && (
+          <NewChildForm
+            parentId={user.uid}
+            onDone={(message) => {
+              setShowForm(false);
+              setBanner(message ?? null);
+            }}
+          />
+        )}
+
+        <p className="text-center text-[10px] text-indigo-300/80">
+          build: diag-v4 · proyecto Firebase: {projectId ?? "cargando…"}
+        </p>
       </div>
-
-      {showForm && (
-        <NewChildForm
-          parentId={user.uid}
-          onDone={(message) => {
-            setShowForm(false);
-            setBanner(message ?? null);
-          }}
-        />
-      )}
-
-      <p className="text-center text-[10px] text-indigo-300/80">
-        build: diag-v4 · proyecto Firebase: {projectId ?? "cargando…"}
-      </p>
     </main>
   );
 }
@@ -196,12 +196,12 @@ function ChildCard({ child }: { child: ChildDoc }) {
       type="button"
       onClick={() => setOpen(true)}
       aria-label={`Entrar al perfil de ${child.name}`}
-      className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3"
+      className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3 md:gap-3 md:p-4"
     >
-      <span className="grid size-16 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30">
-        <Avatar className="h-11" title={child.name} />
+      <span className="grid size-16 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30 md:size-20">
+        <Avatar className="h-11 md:h-14" title={child.name} />
       </span>
-      <span className="font-display text-sm font-bold text-white">{child.name}</span>
+      <span className="font-display text-sm font-bold text-white md:text-base">{child.name}</span>
     </button>
   );
 }
