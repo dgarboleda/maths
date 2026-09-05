@@ -156,7 +156,7 @@ export function QuestScene({
     }
     if (h.id === "nia" && quest.doneCount === 0) {
       // Primera vez de verdad (sin ningún objetivo hecho aún): antes de
-      // entrar en "El apagón" hay que explicar qué es AXIA y quién es Khaos
+      // entrar en "El apagón" hay que presentar a Khaos
       // (docs/guion-narrativa-math-quest.md §7-13) — si no, "Null Drenador"
       // y "NEXUS" son jerga sin sentido para quien recién llega.
       setActive({

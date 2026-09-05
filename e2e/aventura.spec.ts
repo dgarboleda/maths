@@ -82,14 +82,15 @@ test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
     // El briefing de misión abre la partida.
     await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
 
-    // La Dra. Nia es el primer paso: la primera vez incluye el origen de
-    // AXIA/Khaos (NIA_ORIGIN_INTRO, 3 líneas) antes de las 3 del apagón —
-    // siempre se puede volver a saludar (no es un objetivo con moduleId real).
+    // La Dra. Nia es el primer paso: la primera vez incluye la presentación
+    // de Khaos (NIA_ORIGIN_INTRO, 2 líneas — el origen de AXIA ya se contó
+    // al terminar la evaluación) antes de las 3 del apagón — siempre se
+    // puede volver a saludar (no es un objetivo con moduleId real).
     await page.getByRole("button", { name: /^Dra\. Nia —/ }).click();
     const dialogoNia = page.getByRole("dialog", { name: "Dra. Nia" });
     await expect(dialogoNia).toBeVisible();
-    await expect(dialogoNia.getByText(/eso que acaba de pasar en la terminal/)).toBeVisible();
-    for (let i = 0; i < 5; i++) {
+    await expect(dialogoNia.getByText(/no pasó desapercibido/)).toBeVisible();
+    for (let i = 0; i < 4; i++) {
       await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
     }
     await dialogoNia.getByRole("button", { name: "¡Voy a por el código!" }).click();
@@ -133,7 +134,7 @@ test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
     const dialogoNia = page.getByRole("dialog", { name: "Dra. Nia" });
     // Con progreso ya avanzado, el origen de AXIA/Khaos no se repite: solo
     // las 3 líneas del apagón (2 "Continuar" y ya está el botón final).
-    await expect(dialogoNia.getByText(/eso que acaba de pasar en la terminal/)).not.toBeVisible();
+    await expect(dialogoNia.getByText(/no pasó desapercibido/)).not.toBeVisible();
     await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
     await dialogoNia.getByRole("button", { name: "Continuar ▸" }).click();
     await dialogoNia.getByRole("button", { name: "¡Voy a por el código!" }).click();

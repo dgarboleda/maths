@@ -280,7 +280,7 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     await entrarAPerfilSinEvaluar(page, nombre, pin);
     await expect(page.getByRole("heading", { name: "Evaluación inicial" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Comenzar evaluación" }).click();
+    await page.getByRole("button", { name: "Activar la terminal ▸" }).click();
     await expect(page.getByText(/Hilo 1 de 5: .*Aritmética/)).toBeVisible();
     await expect(page.getByText("Pregunta 1")).toBeVisible();
 
@@ -320,7 +320,7 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     const { nombre, pin } = await crearHijo(page);
     await entrarAPerfilSinEvaluar(page, nombre, pin);
 
-    await page.getByRole("button", { name: "Comenzar evaluación" }).click();
+    await page.getByRole("button", { name: "Activar la terminal ▸" }).click();
 
     // Todos los controles de respuesta viven dentro de <main>: el botón de
     // sonido del encabezado queda fuera, así que un "primer botón visible"

@@ -338,44 +338,64 @@ function IntroScreen({
   onStart: () => void;
   childHref: string;
 }) {
+  // El primer contacto con el juego es literalmente el arranque del guion
+  // maestro (docs/guion-narrativa-math-quest.md §6-7): Alex llega a Ciudad
+  // Central y encuentra una terminal dormida. La evaluación de ubicación YA
+  // es, mecánicamente, "resolver los patrones que aparecen en la terminal" —
+  // esto solo pone en palabras lo que ya iba a pasar, sin tocar la lógica de
+  // `initStrandPlacement`/`answerPlacementItem`. Una reevaluación no repite
+  // la escena de descubrimiento: ya se conoció la terminal la primera vez.
   return (
     <div className="mx-auto max-w-xl space-y-6 rounded-3xl border-2 border-indigo-300 bg-gradient-to-b from-purple-50 to-pink-50 p-6 text-center shadow-inner sm:p-8">
-      <h2 className="text-2xl font-bold text-purple-900">¡Hola, {childName}! 👋</h2>
-      <p className="text-slate-700">
-        Antes de empezar a practicar, hagamos una evaluación rápida para saber por dónde conviene arrancar. Vamos a
-        preguntarte cosas de aritmética, álgebra, geometría, medición y lógica — empezando fácil y subiendo de nivel
-        mientras vayas acertando. Cuando falles dos seguidas en un tema, pasamos al siguiente.
-      </p>
-      <p className="text-sm text-slate-500">Dura entre 10 y 20 minutos. No es examen — no hay una nota, solo nos ayuda a ubicarte.</p>
-
       {ultimaEvaluacion?.completedAt ? (
-        <div className="rounded-2xl border-2 border-purple-100 bg-white p-4 text-left text-sm text-slate-600">
-          <p className="font-bold text-purple-800">
-            Ya hiciste esta evaluación antes: nivel general aproximado {ultimaEvaluacion.overallGradeBand}.
+        <>
+          <h2 className="text-2xl font-bold text-purple-900">De vuelta en la terminal, {childName}</h2>
+          <p className="text-slate-700">
+            Vuelves a la terminal de la plaza para ver cuánto ha crecido tu AXIA. Preguntas de aritmética, álgebra,
+            geometría, medición y lógica — empezando justo por encima de donde llegaste la última vez.
           </p>
-          <p>Puedes volver a hacerla para ver cuánto has avanzado — esta vez arrancamos desde ahí, no desde cero.</p>
-        </div>
+          <div className="rounded-2xl border-2 border-purple-100 bg-white p-4 text-left text-sm text-slate-600">
+            <p className="font-bold text-purple-800">
+              Tu evaluación anterior dio un nivel general aproximado de {ultimaEvaluacion.overallGradeBand}.
+            </p>
+            <p>No es examen — no hay una nota, solo nos ayuda a ubicarte.</p>
+          </div>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              onClick={onStart}
+              className="rounded-2xl bg-purple-600 px-8 py-3 text-lg font-bold text-white shadow-md hover:bg-purple-500"
+            >
+              Evaluar de nuevo
+            </button>
+            <Link href={childHref} className="text-sm font-bold text-slate-600 underline underline-offset-2">
+              Omitir por ahora
+            </Link>
+          </div>
+        </>
       ) : (
-        <p className="text-sm font-bold text-purple-800">
-          Es el primer paso: sin esta evaluación no armamos tu plan de temas, así que hay que completarla para
-          empezar a practicar.
-        </p>
+        <>
+          <h2 className="text-2xl font-bold text-purple-900">Llegas a Ciudad Central</h2>
+          <p className="italic text-slate-600">
+            Una antigua ciudad tecnológica que lleva generaciones casi abandonada.
+          </p>
+          <p className="text-slate-700">
+            En la plaza encuentras una terminal. Todavía conserva algo de energía. La tocas... y no sucede nada.
+          </p>
+          <p className="text-slate-700">Entonces, en la pantalla, aparece un patrón matemático.</p>
+          <p className="text-sm text-slate-500">
+            Resuelve los patrones que vayan apareciendo — de aritmética, álgebra, geometría, medición y lógica — para
+            ver qué pasa. Dura entre 10 y 20 minutos. No es examen: no hay una nota.
+          </p>
+          <button
+            type="button"
+            onClick={onStart}
+            className="rounded-2xl bg-purple-600 px-8 py-3 text-lg font-bold text-white shadow-md hover:bg-purple-500"
+          >
+            Activar la terminal ▸
+          </button>
+        </>
       )}
-
-      <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-        <button
-          type="button"
-          onClick={onStart}
-          className="rounded-2xl bg-purple-600 px-8 py-3 text-lg font-bold text-white shadow-md hover:bg-purple-500"
-        >
-          {ultimaEvaluacion ? "Evaluar de nuevo" : "Comenzar evaluación"}
-        </button>
-        {ultimaEvaluacion && (
-          <Link href={childHref} className="text-sm font-bold text-slate-600 underline underline-offset-2">
-            Omitir por ahora
-          </Link>
-        )}
-      </div>
     </div>
   );
 }
@@ -467,6 +487,24 @@ function ResultsScreen({
         🏆
       </div>
       <h2 className="text-2xl font-bold text-emerald-900">¡Evaluación completada, {childName}!</h2>
+
+      {!previa && (
+        // La activación de la terminal (docs/guion-narrativa-math-quest.md
+        // §7-8): la Dra. Nia aparece por primera vez y revela qué es AXIA.
+        // Solo la primera vez — en una reevaluación ya se conoce la escena.
+        <div className="space-y-2 rounded-2xl border-2 border-cyan-200 bg-cyan-50 p-4 text-left text-sm text-slate-700">
+          <p>La terminal empieza a emitir energía. Una luz recorre la estructura. La pantalla se enciende.</p>
+          <p className="italic">—¿Qué hiciste? —pregunta una mujer con bata, sin poder creerlo.</p>
+          <p className="italic">—Solo resolví los problemas.</p>
+          <p className="italic">Ella mira la terminal. —No. No se activó sola. Tú la activaste. Soy la Dra. Nia.</p>
+          <p>
+            Eso que sientes tiene nombre: <strong>AXIA</strong>. Es la energía que construyó esta ciudad, dormida
+            durante generaciones. Se genera resolviendo problemas matemáticos — nadie lo había conseguido en todo
+            este tiempo. Hasta ti.
+          </p>
+        </div>
+      )}
+
       <p className="text-lg font-bold text-emerald-800">
         Nivel general aproximado: {summary.overallGradeBand} ({summary.overallScore}/100)
       </p>

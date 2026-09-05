@@ -42,13 +42,27 @@ export function ZoneScene({
       className="world-scene-vignette relative w-full overflow-hidden rounded-3xl border border-indigo-500/25 bg-slate-950"
       style={{ height: `${170 + rows * 132}px` }}
     >
-      <img
-        src={scene.background}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 size-full object-cover brightness-[0.55] saturate-125"
-      />
-      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/20 to-slate-950/70" />
+      {/*
+        A diferencia de city-central.webp (un mapa isométrico 1:1 con cada
+        hotspot), estos fondos son ambientación decorativa sin correspondencia
+        con la posición de los objetos (`positionFor` en scenes.ts es puro
+        layout en zigzag). Por eso van como faja superior a ancho completo y
+        alto natural (sin recorte 16:9→caja angosta) en vez de estirados con
+        object-cover por toda la caja: en una zona con muchos módulos, esa caja
+        es mucho más alta que ancha y solo se vería ~26-42% del ancho real de
+        la imagen.
+      */}
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 aspect-video overflow-hidden">
+        {/* aspect-video (los assets ya son ~16:9) en vez de h-auto: sin
+            dimensiones conocidas de antemano, un <img> sin cargar todavía
+            colapsa a alto 0 y el fondo desaparece hasta que termina de bajar. */}
+        <img
+          src={scene.background}
+          alt=""
+          className="size-full object-cover brightness-[0.55] saturate-125"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/10 via-transparent to-slate-950" />
+      </div>
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
