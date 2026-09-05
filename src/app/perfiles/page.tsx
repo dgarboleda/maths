@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { hashPin } from "@/lib/pin";
 import { Avatar } from "@/components/world/Avatar";
+import { useDialogFocus } from "@/components/world/useDialogFocus";
 import type { ChildProfile } from "@/lib/types";
 
 interface ChildDoc extends ChildProfile {
@@ -192,6 +193,14 @@ function ChildCard({ child }: { child: ChildDoc }) {
   const [shakes, setShakes] = useState(0);
   const pinId = `pin-${child.id}`;
 
+  function handleClose() {
+    setOpen(false);
+    setPin("");
+    setError(false);
+  }
+
+  const { dialogRef, handleKeyDown } = useDialogFocus(handleClose);
+
   async function handleConfirm(e?: FormEvent) {
     e?.preventDefault();
     if (pin.length !== 4 || checking) return;
@@ -217,88 +226,105 @@ function ChildCard({ child }: { child: ChildDoc }) {
     }
   }
 
+  // Modal centrado y de ancho fijo (no una celda del grid de perfiles): antes
+  // este formulario se devolvía en el lugar de la tarjeta dentro del grid, así
+  // que su ancho salía del track de columna — angosto incluso en pantallas
+  // grandes, donde el grid pasa a 3 columnas dentro de un contenedor ya
+  // acotado a max-w-2xl.
   if (open) {
     return (
-      <form
-        onSubmit={handleConfirm}
-        className="family-tile col-span-2 flex flex-col items-center gap-3 rounded-2xl p-4 sm:col-span-1"
-      >
-        <Avatar className="h-16" title={child.name} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 backdrop-blur-sm sm:p-6">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={pinId}
+          tabIndex={-1}
+          onKeyDown={handleKeyDown}
+          className="anim-rise focus:outline-none"
+        >
+          <form
+            onSubmit={handleConfirm}
+            className="family-tile flex w-64 flex-col items-center gap-3 rounded-2xl p-5"
+          >
+            <Avatar className="h-16" title={child.name} />
 
-        <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
-          PIN de {child.name}
-          <input
-            key={shakes}
-            id={pinId}
-            type="password"
-            inputMode="numeric"
-            maxLength={4}
-            autoFocus
-            value={pin}
-            onChange={(e) => {
-              setError(false);
-              setPin(e.target.value.replace(/\D/g, ""));
-            }}
-            className={`family-input mt-1.5 h-10 w-24 text-center text-lg tracking-[0.6em]${
-              error ? " anim-shake has-error" : ""
-            }`}
-          />
-        </label>
+            <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
+              PIN de {child.name}
+              <input
+                key={shakes}
+                id={pinId}
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                autoFocus
+                value={pin}
+                onChange={(e) => {
+                  setError(false);
+                  setPin(e.target.value.replace(/\D/g, ""));
+                }}
+                className={`family-input mt-1.5 h-10 w-24 text-center text-lg tracking-[0.6em]${
+                  error ? " anim-shake has-error" : ""
+                }`}
+              />
+            </label>
 
-        <span role="alert" className="min-h-4 text-xs font-semibold text-red-300">
-          {error ? "PIN incorrecto" : ""}
-        </span>
+            <span role="alert" className="min-h-4 text-xs font-semibold text-red-300">
+              {error ? "PIN incorrecto" : ""}
+            </span>
 
-        <div role="group" aria-label={`Teclado numérico para ${child.name}`} className="grid grid-cols-3 gap-1.5">
-          {KEYPAD.map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => press(d)}
-              className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
+            <div
+              role="group"
+              aria-label={`Teclado numérico para ${child.name}`}
+              className="grid grid-cols-3 gap-1.5"
             >
-              {d}
-            </button>
-          ))}
-          <span aria-hidden="true" />
-          <button
-            type="button"
-            onClick={() => press("0")}
-            className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
-          >
-            0
-          </button>
-          <button
-            type="button"
-            onClick={() => press("borrar")}
-            aria-label="Borrar último dígito"
-            className="family-keycap grid min-h-9 min-w-9 place-items-center rounded-lg text-xs"
-          >
-            ⌫
-          </button>
-        </div>
+              {KEYPAD.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => press(d)}
+                  className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
+                >
+                  {d}
+                </button>
+              ))}
+              <span aria-hidden="true" />
+              <button
+                type="button"
+                onClick={() => press("0")}
+                className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
+              >
+                0
+              </button>
+              <button
+                type="button"
+                onClick={() => press("borrar")}
+                aria-label="Borrar último dígito"
+                className="family-keycap grid min-h-9 min-w-9 place-items-center rounded-lg text-xs"
+              >
+                ⌫
+              </button>
+            </div>
 
-        <div className="flex gap-4 text-xs">
-          <button
-            type="submit"
-            disabled={pin.length !== 4 || checking}
-            className="font-bold text-cyan-300 underline-offset-2 hover:underline disabled:opacity-40"
-          >
-            {checking ? "Comprobando…" : "Entrar"}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              setPin("");
-              setError(false);
-            }}
-            className="font-semibold text-indigo-300 underline-offset-2 hover:underline"
-          >
-            Cancelar
-          </button>
+            <div className="flex gap-4 text-xs">
+              <button
+                type="submit"
+                disabled={pin.length !== 4 || checking}
+                className="font-bold text-cyan-300 underline-offset-2 hover:underline disabled:opacity-40"
+              >
+                {checking ? "Comprobando…" : "Entrar"}
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="font-semibold text-indigo-300 underline-offset-2 hover:underline"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     );
   }
 
