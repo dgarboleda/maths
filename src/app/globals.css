@@ -449,7 +449,10 @@ body {
   border: 1px solid rgba(129, 140, 248, 0.28);
   background: rgba(30, 27, 65, 0.6);
   padding: 0 0.875rem;
-  font-size: 0.875rem;
+  /* 1rem (16px), no menos: por debajo de eso Chrome/Safari móvil hacen zoom
+     automático al enfocar el campo, lo que desplaza el viewport de layout
+     entero y descoloca cualquier overlay `position: fixed` centrado sobre él. */
+  font-size: 1rem;
   font-weight: 600;
   color: #f1f0fb;
   outline: none;

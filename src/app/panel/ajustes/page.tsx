@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import { signOut } from "firebase/auth";
 import { KeyRound, Trash2, UserRound, Users } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
@@ -107,7 +107,8 @@ function ResetPinDialog({
   onClose: () => void;
 }) {
   const titleId = useId();
-  const { dialogRef, handleKeyDown } = useDialogFocus(onClose);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+  const { dialogRef, handleKeyDown } = useDialogFocus(onClose, firstInputRef);
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -159,9 +160,9 @@ function ResetPinDialog({
           <label className="flex flex-col gap-1 text-sm font-bold text-slate-200">
             PIN nuevo (4 dígitos)
             <input
+              ref={firstInputRef}
               inputMode="numeric"
               maxLength={4}
-              autoFocus
               required
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
@@ -221,7 +222,8 @@ function DeleteChildDialog({
 }) {
   const titleId = useId();
   const confirmId = useId();
-  const { dialogRef, handleKeyDown } = useDialogFocus(onClose);
+  const confirmInputRef = useRef<HTMLInputElement>(null);
+  const { dialogRef, handleKeyDown } = useDialogFocus(onClose, confirmInputRef);
   const [confirmName, setConfirmName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -264,8 +266,8 @@ function DeleteChildDialog({
           <label htmlFor={confirmId} className="flex flex-col gap-1 text-sm font-bold text-slate-200">
             Escribe &quot;{child.name}&quot; para confirmar
             <input
+              ref={confirmInputRef}
               id={confirmId}
-              autoFocus
               autoComplete="off"
               value={confirmName}
               onChange={(e) => setConfirmName(e.target.value)}
