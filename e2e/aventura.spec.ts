@@ -145,6 +145,23 @@ test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
     await expect(page.getByRole("dialog", { name: "La ciudad vuelve a la vida" })).toBeVisible();
   });
 
+  test("con la misión ya completa, recargar el hub no la vuelve a marcar como nueva", async ({ page }) => {
+    const { correo } = await sesionDeHijo(page);
+    const childId = idDeHijo(page);
+    // Los tres objetivos de "El apagón" ya superados de verdad.
+    await otorgarDominio(correo, childId, ["aritmetica-d1", "medicion-d1", "geometria-d1"]);
+    await page.reload();
+
+    const registro = page.getByRole("dialog", { name: "El apagón" });
+    await expect(registro).toBeVisible();
+    // Ya no es una misión nueva: no hay botón de "Comenzar a explorar" (que
+    // dejaría al jugador sin salida frente a objetivos ya tachados) — en su
+    // lugar se ve el panel completo con las demás zonas.
+    await expect(registro.getByText("NUEVA MISIÓN")).not.toBeVisible();
+    await expect(registro.getByRole("button", { name: "Comenzar a explorar ▸" })).not.toBeVisible();
+    await expect(registro.getByText("Otras zonas")).toBeVisible();
+  });
+
   test("un objeto bloqueado explica el prerrequisito real, sin candados inventados", async ({ page }) => {
     await sesionDeHijo(page);
     await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();

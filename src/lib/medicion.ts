@@ -85,7 +85,10 @@ export function generateProblem(difficulty: number): Problem {
     case 5: {
       const count = 3;
       const avg = randInt(2, 15);
-      const values = [avg - randInt(1, 3), avg, avg + randInt(1, 3)];
+      // Mismo delta a ambos lados: el promedio real de los 3 valores siempre
+      // da `avg` exacto, nunca un decimal periódico con inputType "integer".
+      const delta = randInt(1, 3);
+      const values = [avg - delta, avg, avg + delta];
       const total = values.reduce((s, v) => s + v, 0);
       return {
         id,

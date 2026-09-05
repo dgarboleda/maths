@@ -32,6 +32,7 @@ export default function CiudadCentralPage() {
   const [notFound, setNotFound] = useState(false);
   const [requests, setRequests] = useState<RequestDoc[]>([]);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
+  const [progressLoaded, setProgressLoaded] = useState(false);
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
   const [panel, setPanel] = useState<"ninguno" | "tienda">("ninguno");
   const [streak, setStreak] = useState(0);
@@ -75,7 +76,10 @@ export default function CiudadCentralPage() {
         snap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
         setProgressBySkill(map);
       })
-      .catch((err) => console.error("No se pudo cargar el progreso", err));
+      .catch((err) => console.error("No se pudo cargar el progreso", err))
+      .finally(() => {
+        if (!cancelled) setProgressLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -145,7 +149,7 @@ export default function CiudadCentralPage() {
     );
   }
 
-  if (!child || placementPending) {
+  if (!child || placementPending || !progressLoaded) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">

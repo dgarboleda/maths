@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { getModule, isMastered, isUnlocked, modulesForStrand, recommendedModule } from "../src/lib/curriculum";
+import { generateProblem } from "../src/lib/medicion";
 import {
   answerPlacementItem,
   currentPlacementModule,
@@ -241,6 +242,17 @@ test.describe("Motor de evaluación de ubicación (lógica pura)", () => {
     }
 
     expect(pickPersonalizedPlan(perStrand, progressBySkill)).toBeNull();
+  });
+});
+
+test.describe("Generador de problemas — medición (lógica pura)", () => {
+  test("el promedio (dificultad 5) siempre da un entero exacto, nunca un decimal con inputType \"integer\"", () => {
+    for (let i = 0; i < 200; i++) {
+      const problem = generateProblem(5);
+      expect(problem.kind).toBe("media");
+      expect(problem.inputType).toBe("integer");
+      expect(Number.isInteger(problem.answer)).toBe(true);
+    }
   });
 });
 
