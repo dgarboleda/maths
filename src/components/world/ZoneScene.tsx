@@ -7,6 +7,7 @@ import type { Interactable, ZoneScene as ZoneSceneDef } from "@/lib/world/scenes
 import { interactableState } from "@/lib/world/state";
 import { MINOR_NULL_CYCLE, ZONE_GUARDIAN } from "@/lib/world/guardians";
 import { Hotspot } from "./Hotspot";
+import { ZoneSceneFx } from "./ZoneSceneFx";
 
 /**
  * Interior de una zona. Cada objeto es un módulo real del hilo: el candado
@@ -92,6 +93,7 @@ export function ZoneScene({
           style={{ left: "-10%", right: "-10%", animationDuration: "32s", animationDelay: "-8s" }}
         />
       </div>
+      <ZoneSceneFx />
 
       {guardian && (
         <div
