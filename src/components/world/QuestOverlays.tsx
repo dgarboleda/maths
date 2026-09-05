@@ -69,7 +69,7 @@ export function DialogOverlay({
 
           <div className="min-w-0 flex-1">
             <p className="font-display text-[11px] uppercase tracking-[0.22em] text-cyan-300">
-              {isNpc ? "Ingeniera de la Central" : hotspot.label}
+              {isNpc ? "Investigadora de AXIA" : hotspot.label}
             </p>
             <h2 id={titleId} className="font-display text-lg font-bold text-slate-50 sm:text-xl">
               {isNpc ? "Dra. Nia" : hotspot.label}
@@ -311,8 +311,8 @@ export function RewardOverlay({
           La ciudad vuelve a la vida
         </h2>
         <p className="mt-3 text-[15px] leading-relaxed text-slate-200">
-          El generador ruge, las farolas se encienden una a una y la plaza recupera su color. La Dra. Nia te espera
-          junto a la fuente para la próxima misión.
+          El AXIA vuelve a fluir: el generador ruge, las farolas se encienden una a una y la plaza recupera su color.
+          El Null Drenador se retira, por ahora. La Dra. Nia te espera junto a la fuente para la próxima misión.
         </p>
         {masteredLabel && (
           <ul className="mt-4 grid gap-2">

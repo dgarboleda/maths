@@ -102,9 +102,9 @@ export const CIUDAD_CENTRAL_HOTSPOTS: CiudadCentralHotspot[] = [
     activeAt: "npc",
     lockedNote: "Ya te dio su pista",
     intro: [
-      "La central está fuera de servicio desde anoche. Sin ella, toda la ciudad queda a oscuras.",
+      "La central está fuera de servicio desde anoche. Un Null Drenador se instaló en el generador y absorbe el AXIA antes de que llegue a las luces.",
       "Vi luz parpadeando en la terminal junto a la puerta blindada. Creo que aún pide un código de acceso.",
-      "Si consigues el código, iremos abriendo camino hacia el generador. ¿Vamos?",
+      "Si consigues el código, iremos abriendo camino hacia el generador antes de que Khaos convierta más AXIA en NEXUS. ¿Vamos?",
     ],
     outcome: "✓ PISTA OBTENIDA · La terminal junto a la Central sigue encendida",
   },
@@ -148,7 +148,7 @@ export const CIUDAD_CENTRAL_HOTSPOTS: CiudadCentralHotspot[] = [
     lockedNote: "Zona inaccesible",
     objectiveId: "compuerta",
     intro: ["NÚCLEO EN ESPERA", "Para arrancar el reactor hay que abrir la compuerta con la combinación correcta."],
-    outcome: "⚡ CENTRAL RESTAURADA · Las luces de la ciudad vuelven a encenderse",
+    outcome: "⚡ CENTRAL RESTAURADA · El AXIA vuelve a fluir y las luces de la ciudad se encienden",
   },
   {
     id: "siguiente-mision",

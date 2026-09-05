@@ -18,7 +18,9 @@ export interface RequestDoc extends RedemptionRequest {
 /**
  * La tienda de la ciudad: es el sistema de canjes de siempre
  * (`redemptionRequests`), presentado como un lugar del mundo. No hay moneda
- * nueva — se gastan las estrellas reales de `starLedger`.
+ * nueva — se gasta el mismo `starLedger` de siempre, mostrado aquí como AXIA
+ * (ver comentario en WorldHud.tsx). `starsSpent`/`maxStars` son nombres
+ * internos de Firestore y se dejan sin tocar.
  */
 export function ShopPanel({
   parentId,
@@ -36,7 +38,7 @@ export function ShopPanel({
   const [showForm, setShowForm] = useState(false);
 
   return (
-    <WorldDialog icon="🏪" title="Tienda de la ciudad" subtitle={`Tienes ${maxStars} ★`} onClose={onClose}>
+    <WorldDialog icon="🏪" title="Tienda de la ciudad" subtitle={`Tienes ${maxStars} AXIA`} onClose={onClose}>
       <div className="space-y-4">
         <p className="text-sm italic text-slate-300">
           —Aquí no se paga con monedas: se paga con lo que aprendiste. Dime qué quieres y lo hablo con tu familia.
@@ -70,8 +72,7 @@ export function ShopPanel({
                 className="flex items-center justify-between gap-2 rounded-xl border border-indigo-500/20 bg-slate-950/50 px-3 py-2 text-sm"
               >
                 <span className="text-slate-200">
-                  {r.rewardLabel} · {r.starsSpent} <span aria-hidden="true">★</span>
-                  <span className="sr-only">estrellas</span>
+                  {r.rewardLabel} · {r.starsSpent} AXIA
                 </span>
                 <span
                   className={
@@ -114,11 +115,11 @@ function RedeemForm({
     setError(null);
     const amount = parseInt(starsSpent, 10);
     if (!Number.isInteger(amount) || amount <= 0) {
-      setError("Ingresa una cantidad válida de estrellas.");
+      setError("Ingresa una cantidad válida de AXIA.");
       return;
     }
     if (amount > maxStars) {
-      setError(`Solo tienes ${maxStars} ★ disponibles.`);
+      setError(`Solo tienes ${maxStars} AXIA disponibles.`);
       return;
     }
     if (!rewardLabel.trim()) {
@@ -161,7 +162,7 @@ function RedeemForm({
         />
       </label>
       <label className="flex flex-col gap-1 text-sm font-bold text-indigo-200">
-        ¿Cuántas estrellas? (tienes {maxStars} ★)
+        ¿Cuánta AXIA? (tienes {maxStars})
         <input
           inputMode="numeric"
           value={starsSpent}

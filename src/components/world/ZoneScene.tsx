@@ -34,19 +34,19 @@ export function ZoneScene({
       className="world-scene-vignette relative w-full overflow-hidden rounded-3xl border border-indigo-500/25 bg-slate-950"
       style={{ height: `${170 + rows * 132}px` }}
     >
+      <img
+        src={scene.background}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 size-full object-cover brightness-[0.55] saturate-125"
+      />
+      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/20 to-slate-950/70" />
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
         aria-hidden="true"
         className="absolute inset-0 h-full w-full"
       >
-        <defs>
-          <linearGradient id="zoneBg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0b1026" />
-            <stop offset="100%" stopColor="#1a1038" />
-          </linearGradient>
-        </defs>
-        <rect width="100" height="100" fill="url(#zoneBg)" />
         {/* pasillo que une los objetos en zigzag */}
         <polyline
           points={scene.interactables.map((it) => `${it.x},${it.y}`).join(" ")}
