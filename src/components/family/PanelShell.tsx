@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { ChartLine, Gift, LayoutDashboard, LogOut, Settings, Sparkles, Users } from "lucide-react";
+import { ChartLine, Gift, LayoutDashboard, LogOut, Settings, Sparkles, Users, Wand2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { FamilyProvider } from "./FamilyProvider";
@@ -14,6 +14,7 @@ const NAV = [
   { href: "/panel/hijos", label: "Hijos", icon: Users, exact: false },
   { href: "/panel/progreso", label: "Progreso", icon: ChartLine, exact: false },
   { href: "/panel/recompensas", label: "Recompensas", icon: Gift, exact: false },
+  { href: "/panel/editor", label: "Editor", icon: Wand2, exact: false },
   { href: "/panel/ajustes", label: "Ajustes", icon: Settings, exact: false },
 ] as const;
 
@@ -44,6 +45,16 @@ export function PanelShell({ children }: { children: ReactNode }) {
         </p>
       </main>
     );
+  }
+
+  // El editor de un nivel concreto (no la lista) es una herramienta a pantalla
+  // completa con su propio canvas de zoom/pan — no cabe bien dentro del
+  // `max-w-5xl` con padding del panel familiar, y compite por espacio con un
+  // sidebar que no necesita. Sigue viviendo bajo /panel/editor (mismo dueño,
+  // misma sesión) pero sin el chrome del panel — la lista en /panel/editor sí
+  // lo conserva, como cualquier otra pantalla de /panel/*.
+  if (/^\/panel\/editor\/[^/]+$/.test(pathname)) {
+    return <FamilyProvider>{children}</FamilyProvider>;
   }
 
   return (

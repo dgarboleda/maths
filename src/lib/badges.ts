@@ -9,9 +9,19 @@ import { STRANDS } from "./strands";
 export interface BadgeDef {
   id: string;
   emoji: string;
+  /** Medallón ilustrado opcional (public/illustrations); si falta, se usa el emoji. */
+  image?: string;
   label: string;
   description: string;
 }
+
+/** Medallón por hilo — solo los que tienen un símbolo matemático claro (π, √, ∞, △). */
+const STRAND_BADGE_IMAGE: Record<string, string> = {
+  aritmetica: "/illustrations/badge-aritmetica.webp",
+  algebra: "/illustrations/badge-algebra.webp",
+  logica: "/illustrations/badge-logica.webp",
+  geometria: "/illustrations/badge-geometria.webp",
+};
 
 export const BADGES: BadgeDef[] = [
   {
@@ -41,6 +51,7 @@ export const BADGES: BadgeDef[] = [
   ...STRANDS.map((s) => ({
     id: `maestro-${s.slug}`,
     emoji: "🏆",
+    image: STRAND_BADGE_IMAGE[s.slug],
     label: `Maestro de ${s.label}`,
     description: `Dominaste todos los temas de ${s.label}.`,
   })),

@@ -390,10 +390,10 @@ body {
   background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 3px);
 }
 
-/* Viñeta de profundidad sobre la escena principal. */
-.world-scene-vignette {
-  position: relative;
-}
+/* Viñeta de profundidad sobre la escena principal. La posición (relative en
+   ZoneScene, absolute en QuestScene) la decide cada sitio de uso con sus
+   propias clases de Tailwind — fijarla aquí la pisaría, porque esta regla
+   vive fuera de cualquier @layer y por eso gana siempre a las utilidades. */
 .world-scene-vignette::after {
   content: "";
   position: absolute;
@@ -538,4 +538,29 @@ body {
 
 .skip-link:focus {
   top: 0.5rem;
+}
+
+/* Level Editor (docs/level-editor-plan.md §5.1/§17 Fase 4). */
+
+/* Fondo del lienzo: un cuadriculado sutil detrás del "stage" transformado —
+   se ve en los márgenes cuando el zoom aleja la imagen del nivel, para que
+   quede claro que ahí no hay contenido (no es solo negro liso). */
+.editor-canvas {
+  background-color: #020617;
+  background-image:
+    linear-gradient(45deg, rgba(148, 163, 184, 0.06) 25%, transparent 25%, transparent 75%, rgba(148, 163, 184, 0.06) 75%),
+    linear-gradient(45deg, rgba(148, 163, 184, 0.06) 25%, transparent 25%, transparent 75%, rgba(148, 163, 184, 0.06) 75%);
+  background-size: 24px 24px;
+  background-position:
+    0 0,
+    12px 12px;
+}
+
+/* Resalte de selección — mismo criterio en editor y runtime (docs/level-
+   editor-plan.md §7.2): nunca solo color, también un anillo con offset
+   propio para que no se confunda con el borde normal del elemento. */
+.editor-selected {
+  outline: 2px dashed #22d3ee;
+  outline-offset: 3px;
+  border-radius: 0.375rem;
 }

@@ -160,8 +160,12 @@ export default function CiudadCentralPage() {
   }
 
   return (
-    <main id="contenido" tabIndex={-1} className="min-h-screen bg-slate-950 px-3 py-3 sm:px-4 sm:py-4">
-      <div className="mx-auto w-full max-w-3xl lg:max-w-none">
+    // `h-dvh overflow-hidden`: la escena es una cámara que sigue al
+    // personaje (ver QuestScene/useCameraBox), no un lienzo que crece con
+    // el contenido — nunca debe haber scroll vertical de página, solo la
+    // imagen desplazándose por debajo del "visor" de tamaño fijo.
+    <main id="contenido" tabIndex={-1} className="h-dvh overflow-hidden bg-slate-950 px-3 py-3 sm:px-4 sm:py-4">
+      <div className="mx-auto h-full w-full max-w-3xl lg:max-w-none">
         <WorldTopBar
           childId={params.childId}
           childName={child.name}
