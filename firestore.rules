@@ -48,6 +48,21 @@ service cloud.firestore {
           allow read, write: if isParent(parentId);
         }
       }
+
+      // Niveles del Level Editor (docs/level-editor-plan.md §10.2): propiedad
+      // del padre-autor, no de un hijo — cualquier hijo de la familia puede
+      // jugarlos, igual que /curriculum es del catálogo, no de un hijo.
+      match /levels/{levelId} {
+        allow read, write: if isParent(parentId);
+
+        // Cada guardado deja un snapshot inmutable — nunca se pisa ni se
+        // borra una versión ya escrita (versionado optimista, §10.4).
+        match /versions/{versionId} {
+          allow read: if isParent(parentId);
+          allow create: if isParent(parentId);
+          allow update, delete: if false;
+        }
+      }
     }
 
     // Contenido curricular: catálogo compartido de hilos/unidades, de solo
