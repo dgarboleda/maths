@@ -74,7 +74,7 @@ export function BalanceWeightInput({
           <div
             ref={slotRef}
             aria-label={chosen === null ? "Hueco vacío del platillo izquierdo" : `Hueco con el peso ${chosen}`}
-            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-neutral-500 text-sm font-semibold text-neutral-900"
+            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-neutral-500 bg-white text-sm font-semibold text-neutral-900"
           >
             {chosen ?? ""}
           </div>
@@ -85,7 +85,7 @@ export function BalanceWeightInput({
           </div>
         </div>
       </div>
-      <p className="text-sm text-slate-700">Elige el peso que equilibra la balanza:</p>
+      <p className="text-sm text-slate-200">Elige el peso que equilibra la balanza:</p>
       <div className="flex gap-3">
         {weights.map((w) => (
           <button
@@ -100,7 +100,7 @@ export function BalanceWeightInput({
               setDragValue(w);
               setDragPos({ x: e.clientX, y: e.clientY });
             }}
-            className="flex h-9 w-9 touch-none items-center justify-center rounded-full border border-neutral-400 text-sm font-semibold text-neutral-900 disabled:opacity-40"
+            className="flex h-9 w-9 touch-none items-center justify-center rounded-full border border-neutral-400 bg-white text-sm font-semibold text-neutral-900 disabled:opacity-40"
             style={
               dragValue === w && dragPos
                 ? { position: "fixed", left: dragPos.x - 18, top: dragPos.y - 18, zIndex: 50 }

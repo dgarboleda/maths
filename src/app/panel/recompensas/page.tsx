@@ -139,9 +139,13 @@ export default function RecompensasPage() {
                     b.unlocked ? "border-amber-400/30 bg-amber-500/10" : "border-indigo-500/15 bg-slate-800/40"
                   }`}
                 >
-                  <span aria-hidden="true" className="text-xl">
-                    {b.emoji}
-                  </span>
+                  {b.image ? (
+                    <img src={b.image} alt="" aria-hidden="true" className="size-6" />
+                  ) : (
+                    <span aria-hidden="true" className="text-xl">
+                      {b.emoji}
+                    </span>
+                  )}
                   <p className={`mt-2 text-sm font-bold leading-tight ${b.unlocked ? "text-amber-200" : "text-slate-500"}`}>
                     {b.label}
                   </p>

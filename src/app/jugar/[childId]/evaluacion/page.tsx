@@ -19,7 +19,7 @@ import {
   type StrandPlacementState,
 } from "@/lib/placement";
 import { moduleHref, recommendedModule } from "@/lib/curriculum";
-import { isCorrectAnswer, type Problem } from "@/lib/problem";
+import { formatAnswer, isCorrectAnswer, type Problem } from "@/lib/problem";
 import { awardBadge } from "@/lib/awardBadge";
 import { GameShell } from "@/components/GameShell";
 import { QuestionWidget } from "@/components/topic/QuestionWidget";
@@ -460,7 +460,9 @@ function AskingScreen({
               {feedback.correct ? (
                 <p className="font-mono text-lg font-bold text-emerald-300">✓ ¡Correcto! 🎉</p>
               ) : (
-                <p className="font-mono text-lg font-bold text-amber-200">Casi — la respuesta era {feedback.answer}</p>
+                <p className="font-mono text-lg font-bold text-amber-200">
+                  Casi — la respuesta era {formatAnswer(problem, feedback.answer)}
+                </p>
               )}
               <button
                 ref={nextButtonRef}

@@ -94,7 +94,7 @@ export function QuestionWidget({
         aria-labelledby={promptId}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        className="w-32 rounded-xl border-2 border-purple-300 px-3 py-2 text-center text-xl focus:border-purple-500"
+        className="w-32 rounded-xl border-2 border-purple-300 bg-white px-3 py-2 text-center text-xl text-purple-900 focus:border-purple-500"
       />
       <button
         type="submit"

@@ -30,6 +30,22 @@ export function hasCorrectAttempt(
   return progress.masteredAt !== null || progress.recentResults.some((r) => r.correct);
 }
 
+/**
+ * Hubo juego real en algún módulo — a diferencia de `hasCorrectAttempt`, NO
+ * cuenta lo que la evaluación de ubicación otorgó de entrada
+ * (`masteredVia: "placement"`, ver evaluacion/page.tsx): un alumno puede
+ * llegar al mundo con varios módulos ya "dominados" por esa vía sin haber
+ * pisado nunca la ciudad. Sirve para distinguir "primera vez de verdad en el
+ * mundo" de "doneCount === 0", que la evaluación puede adelantar a falso.
+ */
+export function hasAnyRealPlay(progressBySkill: Record<string, SkillProgress>): boolean {
+  return Object.values(progressBySkill).some(
+    (progress) =>
+      progress.recentResults.some((r) => r.correct) ||
+      (progress.masteredAt !== null && progress.masteredVia !== "placement"),
+  );
+}
+
 export const STATE_ICON: Record<WorldState, string> = {
   bloqueado: "🔒",
   disponible: "❔",

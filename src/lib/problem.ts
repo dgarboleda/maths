@@ -51,6 +51,15 @@ export function shuffle<T>(items: T[]): T[] {
   return copy;
 }
 
+/** Texto a mostrar para una respuesta: la choiceLabel correspondiente si existe, si no el número tal cual. */
+export function formatAnswer(problem: Problem, answer: number): string | number {
+  if (problem.choices && problem.choiceLabels) {
+    const idx = problem.choices.indexOf(answer);
+    if (idx !== -1) return problem.choiceLabels[idx];
+  }
+  return answer;
+}
+
 /** Distractores numéricos cercanos a la respuesta correcta, sin negativos. */
 export function choiceSet(answer: number, spread: number): number[] {
   const options = new Set<number>([answer]);

@@ -5,10 +5,14 @@ import { useRouter } from "next/navigation";
 import { Zap } from "lucide-react";
 import { getModule } from "@/lib/curriculum";
 import type { SkillProgress } from "@/lib/types";
+import { dedupeArea, findPath, nearestWalkablePoint, type Point } from "@/lib/world/navmesh";
 import type { Interactable, InteractionKind } from "@/lib/world/scenes";
 import { QUESTS, questProgress } from "@/lib/world/quests";
+import { hasAnyRealPlay } from "@/lib/world/state";
 import {
   CIUDAD_CENTRAL_HOTSPOTS,
+  CIUDAD_CENTRAL_IMAGE_SIZE,
+  CIUDAD_CENTRAL_WALKABLE,
   NIA_ORIGIN_INTRO,
   PLAYER_START,
   hotspotState,
@@ -16,11 +20,13 @@ import {
   worldFlags,
   type CiudadCentralHotspot,
 } from "@/lib/world/questScene";
+import { WalkDebugOverlay } from "./WalkDebugOverlay";
 import { SceneFx } from "./SceneFx";
 import { QuestHotspot } from "./QuestHotspot";
 import { PuzzleOverlay } from "./PuzzleOverlay";
 import { DialogOverlay, MissionOverlay, RewardOverlay } from "./QuestOverlays";
 import { Avatar } from "./Avatar";
+import { useCameraBox } from "./useCameraBox";
 
 type Active =
   | { kind: "none" }
@@ -36,11 +42,27 @@ function now(): number {
   return Date.now();
 }
 
+/** Igual que `now()`, para el reloj de mayor resolución que usa `walkPath`. */
+function rafNow(): number {
+  return performance.now();
+}
+
 function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 type Pose = { x: number; y: number; facing: "left" | "right" };
+
+/**
+ * `CIUDAD_CENTRAL_WALKABLE` se edita a mano (o con `WalkDebugOverlay`), así
+ * que puede colarse algún vértice pegado a otro (arista de longitud ~0) sin
+ * que se note a simple vista — eso rompe la asunción de "polígono simple"
+ * del pathfinding y hace que una ruta corte por donde no debería. Se
+ * normaliza una sola vez acá, a nivel de módulo, para el pathfinding real;
+ * `WalkDebugOverlay` sigue recibiendo el `CIUDAD_CENTRAL_WALKABLE` crudo
+ * (es la fuente de verdad que edita y guarda).
+ */
+const GAME_WALKABLE = dedupeArea(CIUDAD_CENTRAL_WALKABLE);
 
 /**
  * Ciudad Central: la misión "El apagón" tal como la definió el prototipo,
@@ -82,22 +104,38 @@ export function QuestScene({
   const [active, setActive] = useState<Active>(() => ({ kind: "mission", intro: !quest.complete }));
   const [pose, setPose] = useState<Pose>({ ...PLAYER_START, facing: "left" });
   const [walking, setWalking] = useState(false);
-  const [walkMs, setWalkMs] = useState(700);
   const [reactingId, setReactingId] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
   const [starFly, setStarFly] = useState<{ x: number; y: number; key: number } | null>(null);
   const [flashKey, setFlashKey] = useState<number | null>(null);
   const [masteredLabel, setMasteredLabel] = useState<string | null>(null);
+  const [walkDebug, setWalkDebug] = useState(false);
 
   const timers = useRef<number[]>([]);
   const busyRef = useRef(false);
   const walkToken = useRef(0);
+  const rafRef = useRef<number | null>(null);
   const bannerToken = useRef(0);
   const justSolvedRef = useRef(false);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const sceneBox = useCameraBox(sceneRef, CIUDAD_CENTRAL_IMAGE_SIZE, pose);
 
   useEffect(() => {
     const pending = timers.current;
-    return () => pending.forEach((t) => window.clearTimeout(t));
+    return () => {
+      pending.forEach((t) => window.clearTimeout(t));
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  // Herramienta de autoría del polígono caminable (ver WalkDebugOverlay):
+  // nunca en producción, y en dev solo si se pide explícitamente por URL —
+  // por eso se resuelve en un efecto (tras montar) y no durante el render,
+  // que en el servidor no conoce `window.location`.
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const hasFlag = new URLSearchParams(window.location.search).has("walkdebug");
+    queueMicrotask(() => setWalkDebug(hasFlag));
   }, []);
 
   function schedule(fn: () => void, ms: number) {
@@ -116,17 +154,83 @@ export function QuestScene({
   const flags = worldFlags(step);
   const visibleHotspots = CIUDAD_CENTRAL_HOTSPOTS.filter((h) => h.id !== "compuerta" || flags.compuertaVisible);
 
-  function walkTo(x: number, y: number) {
-    const dist = Math.hypot(x - pose.x, y - pose.y);
-    const ms = prefersReducedMotion() ? 0 : Math.round(Math.min(1500, Math.max(420, dist * 30)));
-    setWalkMs(ms);
-    setPose({ x, y, facing: x < pose.x ? "left" : "right" });
+  function segmentMs(dist: number): number {
+    return prefersReducedMotion() ? 0 : Math.round(Math.min(1500, Math.max(420, dist * 30)));
+  }
+
+  /**
+   * Anima el avatar a lo largo de una ruta de varios tramos (salida de
+   * `findPath`, que puede rodear obstáculos en vez de una sola línea recta).
+   * Un único bucle de `requestAnimationFrame` interpola la posición según
+   * cuánto tiempo real pasó desde que arrancó la ruta — nunca "fija" un
+   * tramo y espera que la animación llegue a tiempo: la posición pintada
+   * siempre es un punto calculado sobre el camino, así que aunque un frame
+   * se retrase (pestaña en segundo plano, jank), al volver retoma
+   * exactamente donde el reloj dice que debería estar, nunca salta directo
+   * al destino saltándose los tramos de en medio (eso era lo que pasaba
+   * antes: cada tramo dependía de que un `setTimeout` disparara justo
+   * cuando terminaba la transición CSS del tramo anterior). `walkToken`
+   * sigue cancelando una ruta vieja si el jugador hace otro clic a mitad de
+   * camino.
+   */
+  function walkPath(waypoints: Point[]): number {
+    if (waypoints.length <= 1) return 0;
     const token = ++walkToken.current;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
+    const segments = waypoints.slice(1).map((to, i) => ({
+      from: waypoints[i],
+      to,
+      ms: segmentMs(Math.hypot(to.x - waypoints[i].x, to.y - waypoints[i].y)),
+    }));
+    const total = segments.reduce((sum, s) => sum + s.ms, 0);
+    const last = segments[segments.length - 1];
+
+    function facingFor(seg: { from: Point; to: Point }, fallback: Pose["facing"]): Pose["facing"] {
+      if (seg.to.x < seg.from.x) return "left";
+      if (seg.to.x > seg.from.x) return "right";
+      return fallback;
+    }
+
+    if (total === 0) {
+      // `prefers-reduced-motion`: sin animación, salto directo al destino.
+      setPose((p) => ({ x: last.to.x, y: last.to.y, facing: facingFor(last, p.facing) }));
+      setWalking(false);
+      return 0;
+    }
+
     setWalking(true);
-    schedule(() => {
-      if (walkToken.current === token) setWalking(false);
-    }, ms);
-    return ms;
+    const start = rafNow();
+
+    function frame(now: number) {
+      if (walkToken.current !== token) return; // otra ruta la reemplazó
+      const elapsed = now - start;
+      if (elapsed >= total) {
+        setPose((p) => ({ x: last.to.x, y: last.to.y, facing: facingFor(last, p.facing) }));
+        setWalking(false);
+        rafRef.current = null;
+        return;
+      }
+      let remaining = elapsed;
+      let current = segments[0];
+      for (const s of segments) {
+        if (remaining <= s.ms) {
+          current = s;
+          break;
+        }
+        remaining -= s.ms;
+      }
+      const frac = current.ms === 0 ? 1 : remaining / current.ms;
+      const x = current.from.x + (current.to.x - current.from.x) * frac;
+      const y = current.from.y + (current.to.y - current.from.y) * frac;
+      setPose((p) => ({ x, y, facing: facingFor(current, p.facing) }));
+      rafRef.current = requestAnimationFrame(frame);
+    }
+    rafRef.current = requestAnimationFrame(frame);
+    return total;
   }
 
   function continueLabelFor(h: CiudadCentralHotspot): string {
@@ -154,11 +258,12 @@ export function QuestScene({
       });
       return;
     }
-    if (h.id === "nia" && quest.doneCount === 0) {
-      // Primera vez de verdad (sin ningún objetivo hecho aún): antes de
-      // entrar en "El apagón" hay que presentar a Khaos
-      // (docs/guion-narrativa-math-quest.md §7-13) — si no, "Null Drenador"
-      // y "NEXUS" son jerga sin sentido para quien recién llega.
+    if (h.id === "nia" && !hasAnyRealPlay(progressBySkill)) {
+      // Primera vez de verdad en el mundo (nunca antes hubo un acierto real,
+      // sin contar lo que la evaluación de ubicación otorgó de entrada — ver
+      // `hasAnyRealPlay`): antes de entrar en "El apagón" hay que presentar a
+      // Khaos (docs/guion-narrativa-math-quest.md §7-13) — si no, "Null
+      // Drenador" y "NEXUS" son jerga sin sentido para quien recién llega.
       setActive({
         kind: "dialog",
         hotspot: { ...h, intro: [...NIA_ORIGIN_INTRO, ...h.intro] },
@@ -171,7 +276,7 @@ export function QuestScene({
   function approach(h: CiudadCentralHotspot) {
     if (busyRef.current || active.kind !== "none") return;
     busyRef.current = true;
-    const ms = walkTo(h.standX, h.standY);
+    const ms = walkPath(findPath(pose, { x: h.standX, y: h.standY }, GAME_WALKABLE));
     schedule(() => {
       setPose((p) => ({ ...p, facing: h.x < h.standX ? "left" : "right" }));
       setReactingId(h.id);
@@ -188,10 +293,17 @@ export function QuestScene({
 
   function wander(e: MouseEvent<HTMLDivElement>) {
     if (busyRef.current || active.kind !== "none") return;
+    // `e.currentTarget` es el div que llena la caja de la cámara (`inset-0`
+    // dentro del div posicionado en sceneBox.left/top): su
+    // getBoundingClientRect() ya cae exactamente sobre esa caja, así que
+    // resta directamente contra sus propios bordes da la posición en % de
+    // la imagen completa — sin volver a restar sceneBox.left/top, que ya
+    // están incluidos en el rect y duplicarían el desplazamiento.
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    walkTo(Math.min(90, Math.max(10, x)), Math.min(86, Math.max(42, y)));
+    const x = ((e.clientX - rect.left) / sceneBox.width) * 100;
+    const y = ((e.clientY - rect.top) / sceneBox.height) * 100;
+    const target = nearestWalkablePoint({ x, y }, GAME_WALKABLE);
+    walkPath(findPath(pose, target, GAME_WALKABLE));
   }
 
   function closeMission(wasIntro: boolean) {
@@ -269,66 +381,100 @@ export function QuestScene({
       : null;
 
   return (
-    // El fondo (city-central.webp) es una toma panorámica 16:9: en un
-    // recorte 3:4 solo se ve ~42% de su ancho (le sacaba de encuadre la
-    // central y el taller de los costados). 1:1 en móvil deja ver ~56%
-    // sin perder el layout vertical de los hotspots, que están en % — no
-    // dependen de una proporción de caja concreta.
-    <div className="relative mx-auto aspect-square w-full overflow-clip rounded-3xl border border-indigo-500/25 bg-slate-950 sm:aspect-[4/3]">
-      <div className="world-scene-vignette absolute inset-0">
-        <img
-          src="/illustrations/city-central.webp"
-          alt="Ciudad Central de noche: plaza con fuente, central eléctrica apagada, tienda, taller, laboratorio y un túnel bloqueado."
-          className={`size-full object-cover transition-[filter] duration-1000 ${
-            flags.cityRestored ? "brightness-110 saturate-125" : "brightness-90"
-          }`}
-        />
-        <SceneFx {...flags} />
-      </div>
-
+    // El contenedor ocupa toda la altura que le deja el layout (ver
+    // `h-full` en jugar/[childId]/page.tsx, que a su vez encaja en el
+    // viewport con `h-dvh` — nunca scroll vertical de página). Como esa
+    // altura no tiene por qué guardar la proporción de la imagen,
+    // `useCameraBox` la escala para cubrir siempre el contenedor (igual que
+    // `object-cover`) y sigue la posición del personaje (`pose`) en vez de
+    // centrarla de forma fija: la cámara "recorta" la imagen y se desplaza
+    // con el jugador, como el lente de una cámara de videojuego. Todo lo
+    // que pertenece al mundo (fondo, avatar, hotspots, flecha guía,
+    // estrella) vive dentro de ese `div` con esa geometría exacta en px —
+    // así el % de cada uno sigue siendo "% de la imagen completa" sin
+    // importar cuánto se vea del contenedor ni hacia dónde mire la cámara.
+    <div
+      ref={sceneRef}
+      className="relative h-full w-full overflow-clip rounded-3xl border border-indigo-500/25 bg-slate-950"
+    >
       <div
-        aria-hidden="true"
-        className="pointer-events-none absolute z-20"
+        className="absolute"
         style={{
-          left: `${pose.x}%`,
-          top: `${pose.y}%`,
-          transition: `left ${walkMs}ms ease-in-out, top ${walkMs}ms ease-in-out`,
+          left: sceneBox.left,
+          top: sceneBox.top,
+          width: sceneBox.width,
+          height: sceneBox.height,
         }}
       >
-        <div style={{ transform: "translate(-50%, -97%)", transformOrigin: "50% 100%" }}>
-          <span className="absolute bottom-0 left-1/2 h-3 w-16 -translate-x-1/2 rounded-full bg-black/50 blur-md" />
-          <div style={{ transform: pose.facing === "left" ? "scaleX(-1)" : undefined }}>
-            <Avatar
-              variant="explorer"
-              walking={walking}
-              className="h-16 drop-shadow-[0_0_12px_rgba(34,211,238,0.5)]"
-              title={`${childName}, en Ciudad Central`}
-            />
+        <div className="world-scene-vignette absolute inset-0">
+          <img
+            src="/illustrations/city-central.webp"
+            alt="Ciudad Central de noche: plaza con fuente, central eléctrica apagada, tienda, taller, laboratorio y un túnel bloqueado."
+            className={`block size-full transition-[filter] duration-1000 ${
+              flags.cityRestored ? "brightness-110 saturate-125" : "brightness-90"
+            }`}
+          />
+          <SceneFx {...flags} />
+        </div>
+
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute z-20"
+          style={{
+            left: `${pose.x}%`,
+            top: `${pose.y}%`,
+          }}
+        >
+          <div style={{ transform: "translate(-50%, -97%)", transformOrigin: "50% 100%" }}>
+            <span className="absolute bottom-0 left-1/2 h-3 w-16 -translate-x-1/2 rounded-full bg-black/50 blur-md" />
+            <div style={{ transform: pose.facing === "left" ? "scaleX(-1)" : undefined }}>
+              <Avatar
+                variant="explorer"
+                walking={walking}
+                className="h-16 drop-shadow-[0_0_12px_rgba(34,211,238,0.5)]"
+                title={`${childName}, en Ciudad Central`}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="absolute inset-0" onClick={wander}>
-        {visibleHotspots.map((h) => (
-          <QuestHotspot
-            key={h.id}
-            data={h}
-            state={hotspotState(h, step)}
-            reacting={reactingId === h.id}
-            onSelect={approach}
-          />
-        ))}
-      </div>
+        <div className="absolute inset-0" onClick={wander}>
+          {visibleHotspots.map((h) => (
+            <QuestHotspot
+              key={h.id}
+              data={h}
+              state={hotspotState(h, step)}
+              reacting={reactingId === h.id}
+              onSelect={approach}
+            />
+          ))}
+        </div>
 
-      {guide && (
-        <span
-          aria-hidden="true"
-          className="anim-guide world-text-glow pointer-events-none absolute z-10 font-display text-xl font-bold text-amber-300"
-          style={{ left: `${guide.x}%`, top: `${guide.y - 8}%` }}
-        >
-          ▼
-        </span>
-      )}
+        {walkDebug && (
+          <WalkDebugOverlay area={CIUDAD_CENTRAL_WALKABLE} sceneId="ciudad-central" exportName="CIUDAD_CENTRAL_WALKABLE" />
+        )}
+
+        {guide && (
+          <span
+            aria-hidden="true"
+            className="anim-guide world-text-glow pointer-events-none absolute z-10 font-display text-xl font-bold text-amber-300"
+            style={{ left: `${guide.x}%`, top: `${guide.y - 8}%` }}
+          >
+            ▼
+          </span>
+        )}
+
+        {starFly && (
+          <span
+            key={`star-${starFly.key}`}
+            aria-hidden="true"
+            className="anim-star-float absolute z-30 font-display text-lg font-bold text-amber-300"
+            style={{ left: `${starFly.x}%`, top: `${starFly.y}%` }}
+          >
+            +★
+          </span>
+        )}
+      </div>
 
       {banner && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center px-4">
@@ -336,17 +482,6 @@ export function QuestScene({
             {banner}
           </p>
         </div>
-      )}
-
-      {starFly && (
-        <span
-          key={`star-${starFly.key}`}
-          aria-hidden="true"
-          className="anim-star-float absolute z-30 font-display text-lg font-bold text-amber-300"
-          style={{ left: `${starFly.x}%`, top: `${starFly.y}%` }}
-        >
-          +★
-        </span>
       )}
 
       {flashKey && (
@@ -357,7 +492,11 @@ export function QuestScene({
         />
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-end p-2 sm:p-3">
+      {/* `fixed`, no `absolute`: la caja de la escena crece con el aspect-ratio
+          de la imagen (aspect-square en móvil) y puede acabar más alta que el
+          viewport, dejando este indicador fuera de la vista si dependiera de
+          los bordes de la escena en vez de los de la ventana. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex items-end p-2 sm:p-3">
         <button
           type="button"
           onClick={() => setActive({ kind: "mission" })}

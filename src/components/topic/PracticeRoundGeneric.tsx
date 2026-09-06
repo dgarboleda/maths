@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { QuestionWidget } from "./QuestionWidget";
-import { generateUniqueBatch, isCorrectAnswer, type Problem } from "@/lib/problem";
+import { formatAnswer, generateUniqueBatch, isCorrectAnswer, type Problem } from "@/lib/problem";
 import { getModule } from "@/lib/curriculum";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
@@ -190,7 +190,9 @@ export function PracticeRoundGeneric({
             {feedback.correct ? (
               <p className="text-lg font-bold text-emerald-700">¡Correcto! 🎉</p>
             ) : (
-              <p className="text-lg font-bold text-slate-700">Casi — la respuesta era {feedback.answer}</p>
+              <p className="text-lg font-bold text-slate-700">
+                Casi — la respuesta era {formatAnswer(problem, feedback.answer)}
+              </p>
             )}
             <button
               ref={nextButtonRef}
