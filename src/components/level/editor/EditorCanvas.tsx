@@ -7,7 +7,9 @@ import { useEditorViewport } from "./useEditorViewport";
 import { BackgroundLayer } from "./layers/BackgroundLayer";
 import { GridLayer } from "./layers/GridLayer";
 import { NavigationLayer } from "./layers/NavigationLayer";
+import { EntityLayer } from "./layers/EntityLayer";
 import { PolygonEditor } from "./PolygonEditor";
+import { SelectionLayer } from "./SelectionLayer";
 
 /**
  * Lienzo del editor — docs/level-editor-plan.md §5.4. `EntityLayer`/etc. se
@@ -101,6 +103,13 @@ export function EditorCanvas() {
         )}
         {state.layerVisibility.navigation && <NavigationLayer navigation={state.level.navigation} selection={state.selection} />}
         <PolygonEditor screenToImagePercent={screenToImagePercent} />
+        {/* Encima de `PolygonEditor`: sus botones deben poder recibir el clic
+            antes que el div de clic-catching de navegación (ambos son
+            `position: absolute` sin z-index — el orden en el DOM decide). */}
+        {state.layerVisibility.entities && (
+          <EntityLayer entities={state.level.entities} selection={state.selection} onSelect={(id) => dispatch({ type: "SELECT", selection: { kind: "entity", id } })} />
+        )}
+        <SelectionLayer screenToImagePercent={screenToImagePercent} />
       </div>
     </div>
   );

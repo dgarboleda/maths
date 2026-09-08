@@ -7,8 +7,8 @@ import type { EditorAction, EditorState } from "./editorReducer";
 /**
  * Atajos de teclado del editor — docs/level-editor-plan.md §5.6. Solo se
  * cablean los que ya tienen un efecto observable en la fase actual: el
- * resto de la lista (`Ctrl+D` duplicar, flechas para mover…) se activa
- * recién cuando su herramienta exista (Fase 6+).
+ * resto de la lista (flechas para mover…) se activa recién cuando su
+ * herramienta exista (Fase 7+).
  *
  * Se desactiva con el foco en un campo de texto, y durante el Play Test
  * (Fase 11): el juego real tiene sus propios controles.
@@ -39,6 +39,11 @@ export function useEditorHotkeys(params: { state: EditorState; dispatch: Dispatc
         onSave();
         return;
       }
+      if (ctrl && e.key.toLowerCase() === "d" && state.selection.kind === "entity") {
+        e.preventDefault();
+        dispatch({ type: "DUPLICATE_ENTITY", id: state.selection.id });
+        return;
+      }
       if (e.key === "Escape") {
         dispatch({ type: "DRAFT_CANCEL" });
         dispatch({ type: "SELECT", selection: { kind: "none" } });
@@ -63,7 +68,10 @@ export function useEditorHotkeys(params: { state: EditorState; dispatch: Dispatc
           dispatch({ type: "DELETE_POLYGON", role: state.selection.role, id: state.selection.id });
         } else if (state.selection.kind === "exit") {
           dispatch({ type: "DELETE_EXIT", id: state.selection.id });
+        } else if (state.selection.kind === "entity") {
+          dispatch({ type: "DELETE_ENTITY", id: state.selection.id });
         }
+        return;
       }
     }
 

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { closestPointOnSegment, pointInPolygon } from "@/lib/world/navmesh";
-import { newExitId, newPolygonId } from "@/lib/level/ids";
+import { newEntityId, newExitId, newPolygonId } from "@/lib/level/ids";
+import { createEntityDefaults, getEntityType } from "@/lib/level/entities";
 import type { NavPolygon, Vec2 } from "@/lib/level/schema";
 import { findSelectedPolygon } from "./editorReducer";
 import { useLevelEditor } from "./LevelEditorProvider";
@@ -135,14 +136,15 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
 
   function onContainerClick(e: ReactMouseEvent<HTMLDivElement>) {
     const point = toPoint(e.clientX, e.clientY);
+    const { tool } = state;
 
-    if (state.tool.kind === "setSpawn") {
+    if (tool.kind === "setSpawn") {
       dispatch({ type: "SET_SPAWN", point });
       dispatch({ type: "SET_TOOL", tool: { kind: "select" } });
       return;
     }
 
-    if (state.tool.kind === "setExit") {
+    if (tool.kind === "setExit") {
       const id = newExitId();
       const half = 1.5;
       dispatch({
@@ -164,9 +166,26 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
       return;
     }
 
-    if (state.tool.kind === "drawPolygon") {
-      if (!state.drafting) dispatch({ type: "DRAFT_START", role: state.tool.role });
+    if (tool.kind === "drawPolygon") {
+      if (!state.drafting) dispatch({ type: "DRAFT_START", role: tool.role });
       dispatch({ type: "DRAFT_ADD_POINT", point });
+      return;
+    }
+
+    if (tool.kind === "placeEntity") {
+      const typeDef = getEntityType(tool.entityType);
+      dispatch({
+        type: "ADD_ENTITY",
+        entity: { id: newEntityId(), type: typeDef.id, name: typeDef.label, position: point, ...createEntityDefaults(typeDef) },
+      });
+      dispatch({ type: "SET_TOOL", tool: { kind: "select" } });
+      return;
+    }
+
+    if (tool.kind === "pickStandPoint") {
+      const entity = state.level.entities.find((e) => e.id === tool.entityId);
+      if (entity) dispatch({ type: "UPDATE_ENTITY", id: entity.id, patch: { interaction: { ...entity.interaction, standPoint: point } } });
+      dispatch({ type: "SET_TOOL", tool: { kind: "select" } });
       return;
     }
 
@@ -175,7 +194,7 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
   }
 
   function onContainerDoubleClick(e: ReactMouseEvent<HTMLDivElement>) {
-    if (state.tool.kind === "drawPolygon" || state.tool.kind === "setSpawn" || state.tool.kind === "setExit") return;
+    if (state.tool.kind !== "select") return;
     const selected = findSelectedPolygon(state.level, state.selection);
     if (!selected) return;
     const point = toPoint(e.clientX, e.clientY);
@@ -191,7 +210,9 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
     <>
       <div
         className="absolute inset-0"
-        style={{ cursor: state.tool.kind === "drawPolygon" ? "crosshair" : "default" }}
+        style={{
+          cursor: state.tool.kind === "drawPolygon" || state.tool.kind === "placeEntity" || state.tool.kind === "pickStandPoint" ? "crosshair" : "default",
+        }}
         onClick={onContainerClick}
         onDoubleClick={onContainerDoubleClick}
       >
