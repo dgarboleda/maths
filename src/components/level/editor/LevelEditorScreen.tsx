@@ -7,6 +7,8 @@ import { EditorBottomBar } from "./EditorBottomBar";
 import { EditorCanvas } from "./EditorCanvas";
 import { EditorToolbox } from "./EditorToolbox";
 import { EditorPropertyPanel } from "./EditorPropertyPanel";
+import { ZoneEditor } from "./ZoneEditor";
+import { DialogEditor } from "./DialogEditor";
 import { IssuesPanel } from "./IssuesPanel";
 
 /**
@@ -60,6 +62,16 @@ export function LevelEditorScreen() {
           {state.selection.kind === "entity" && (
             <div className="mt-4 border-t border-indigo-500/10 pt-4">
               <EditorPropertyPanel />
+            </div>
+          )}
+          {state.selection.kind === "zone" && (
+            <div className="mt-4 border-t border-indigo-500/10 pt-4">
+              <ZoneEditor />
+            </div>
+          )}
+          {state.selection.kind === "dialog" && (
+            <div className="mt-4 border-t border-indigo-500/10 pt-4">
+              <DialogEditor />
             </div>
           )}
         </aside>

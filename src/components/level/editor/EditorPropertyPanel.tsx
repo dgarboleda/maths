@@ -5,6 +5,7 @@ import { getEntityType } from "@/lib/level/entities";
 import type { EntityInteraction, PropertyValue } from "@/lib/level/schema";
 import { useLevelEditor } from "./LevelEditorProvider";
 import { PropertyField } from "./fields/PropertyFields";
+import { ChallengePicker } from "./ChallengePicker";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50";
@@ -176,6 +177,11 @@ export function EditorPropertyPanel() {
             </button>
           </>
         )}
+      </section>
+
+      <section className="space-y-2 border-t border-indigo-500/10 pt-3">
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Desafío</h3>
+        <ChallengePicker entityId={entity.id} />
       </section>
     </div>
   );

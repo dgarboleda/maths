@@ -1,0 +1,154 @@
+"use client";
+
+import { useState } from "react";
+import { Link2, Unlink } from "lucide-react";
+import { MODULES } from "@/lib/curriculum";
+import { STRANDS } from "@/lib/strands";
+import { newChallengeId } from "@/lib/level/ids";
+import type { Problem } from "@/lib/problem";
+import { QuestionWidget } from "@/components/topic/QuestionWidget";
+import { useLevelEditor } from "./LevelEditorProvider";
+
+/**
+ * Vincula un `ChallengePlacement` a la entidad seleccionada — docs/level-
+ * editor-plan.md §9.2. El editor NUNCA define contenido académico: solo
+ * elige un `ModuleDef` real de `MODULES` y previsualiza `mod.generateProblem()`
+ * con el mismo `QuestionWidget` que usa el juego, en modo solo lectura
+ * (`disabled`, sin `onSubmit` funcional) — lo que se ve acá es exactamente
+ * lo que le va a tocar resolver al jugador, con datos reales.
+ *
+ * Tras confirmar, vuelve a seleccionar la entidad (no el `challenge` recién
+ * creado) para no sacar al usuario del panel desde el que abrió el picker.
+ */
+export function ChallengePicker({ entityId }: { entityId: string }) {
+  const { state, dispatch } = useLevelEditor();
+  const [picking, setPicking] = useState(false);
+  const [query, setQuery] = useState("");
+  const [previewModuleId, setPreviewModuleId] = useState<string | null>(null);
+  // Generado UNA vez al elegir el módulo (no en cada render): `generateProblem`
+  // devuelve un problema distinto cada vez que se llama, así que el enunciado
+  // mostrado y el que resuelve `QuestionWidget` tienen que ser el mismo objeto.
+  const [previewProblem, setPreviewProblem] = useState<Problem | null>(null);
+
+  const existing = state.level.challenges.find((c) => c.sourceEntityId === entityId);
+
+  if (existing && !picking) {
+    const existingMod = MODULES.find((m) => m.id === existing.moduleId);
+    return (
+      <div className="space-y-2 rounded-lg border border-indigo-500/15 bg-slate-900/40 p-2">
+        <p className="text-[11px] text-slate-300">
+          <span className="font-bold text-slate-100">{existingMod ? `${existingMod.emoji} ${existingMod.label}` : existing.moduleId}</span>
+        </p>
+        <div className="flex gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              setPreviewModuleId(existing.moduleId);
+              setPreviewProblem(existingMod ? existingMod.generateProblem() : null);
+              setPicking(true);
+            }}
+            className="flex-1 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700"
+          >
+            Cambiar
+          </button>
+          <button
+            type="button"
+            aria-label="Desvincular"
+            onClick={() => dispatch({ type: "DELETE_CHALLENGE", id: existing.id })}
+            className="rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10"
+          >
+            <Unlink className="size-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!picking) {
+    return (
+      <button
+        type="button"
+        onClick={() => setPicking(true)}
+        className="flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700"
+      >
+        <Link2 className="size-3.5" aria-hidden="true" />
+        Vincular desafío
+      </button>
+    );
+  }
+
+  const q = query.trim().toLowerCase();
+  const filtered = MODULES.filter((m) => !q || m.label.toLowerCase().includes(q) || m.id.includes(q));
+  const previewMod = MODULES.find((m) => m.id === previewModuleId);
+
+  function confirm(moduleId: string) {
+    dispatch({ type: "ADD_CHALLENGE", challenge: { id: newChallengeId(), moduleId, activityId: "puzzle", sourceEntityId: entityId } });
+    dispatch({ type: "SELECT", selection: { kind: "entity", id: entityId } });
+    setPicking(false);
+    setPreviewModuleId(null);
+    setPreviewProblem(null);
+  }
+
+  return (
+    <div className="space-y-2 rounded-lg border border-indigo-500/15 bg-slate-900/40 p-2">
+      <input
+        type="text"
+        placeholder="Buscar módulo…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        className="w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50"
+      />
+
+      <ul className="max-h-40 space-y-0.5 overflow-y-auto">
+        {STRANDS.map((strand) => {
+          const mods = filtered.filter((m) => m.strandSlug === strand.slug);
+          if (mods.length === 0) return null;
+          return (
+            <li key={strand.slug}>
+              <p className="px-1 pt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                {strand.emoji} {strand.label}
+              </p>
+              {mods.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    setPreviewModuleId(m.id);
+                    setPreviewProblem(m.generateProblem());
+                  }}
+                  className={`block w-full rounded-md px-2 py-1 text-left ${previewModuleId === m.id ? "bg-cyan-500/15 text-cyan-300" : "text-slate-300 hover:bg-slate-800"}`}
+                >
+                  {m.emoji} {m.label}
+                </button>
+              ))}
+            </li>
+          );
+        })}
+      </ul>
+
+      {previewMod && previewProblem && (
+        <div className="space-y-2 rounded-lg border border-cyan-500/20 bg-slate-950/60 p-2">
+          <p className="text-[11px] font-semibold text-slate-100">{previewProblem.prompt}</p>
+          <div className="pointer-events-none opacity-70">
+            <QuestionWidget problem={previewProblem} disabled onSubmit={() => {}} />
+          </div>
+          <button type="button" onClick={() => confirm(previewMod.id)} className="w-full rounded-md bg-cyan-600 px-2 py-1.5 font-bold text-white hover:bg-cyan-500">
+            Vincular {previewMod.label}
+          </button>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => {
+          setPicking(false);
+          setPreviewModuleId(null);
+          setPreviewProblem(null);
+        }}
+        className="w-full rounded-md px-2 py-1 text-center text-[11px] font-bold text-slate-400 hover:text-slate-200"
+      >
+        Cancelar
+      </button>
+    </div>
+  );
+}

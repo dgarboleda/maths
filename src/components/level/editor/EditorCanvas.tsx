@@ -7,6 +7,7 @@ import { useEditorViewport } from "./useEditorViewport";
 import { BackgroundLayer } from "./layers/BackgroundLayer";
 import { GridLayer } from "./layers/GridLayer";
 import { NavigationLayer } from "./layers/NavigationLayer";
+import { ZoneLayer } from "./layers/ZoneLayer";
 import { EntityLayer } from "./layers/EntityLayer";
 import { PolygonEditor } from "./PolygonEditor";
 import { SelectionLayer } from "./SelectionLayer";
@@ -102,6 +103,7 @@ export function EditorCanvas() {
           <GridLayer visible={state.grid.visible} sizePct={state.grid.sizePct} projection={state.level.background.projection} />
         )}
         {state.layerVisibility.navigation && <NavigationLayer navigation={state.level.navigation} selection={state.selection} />}
+        {state.layerVisibility.zones && <ZoneLayer zones={state.level.zones} selection={state.selection} />}
         <PolygonEditor screenToImagePercent={screenToImagePercent} />
         {/* Encima de `PolygonEditor`: sus botones deben poder recibir el clic
             antes que el div de clic-catching de navegación (ambos son
