@@ -6,12 +6,13 @@ import { useLevelEditor } from "./LevelEditorProvider";
 import { useEditorViewport } from "./useEditorViewport";
 import { BackgroundLayer } from "./layers/BackgroundLayer";
 import { GridLayer } from "./layers/GridLayer";
+import { NavigationLayer } from "./layers/NavigationLayer";
+import { PolygonEditor } from "./PolygonEditor";
 
 /**
- * Lienzo del editor — docs/level-editor-plan.md §5.4. Fase 4 solo pinta
- * fondo + rejilla; `NavigationLayer`/`EntityLayer`/etc. se agregan en fases
- * posteriores como hermanos dentro del mismo `stageRef` (mismo sistema de
- * coordenadas en %, nada que reestructurar).
+ * Lienzo del editor — docs/level-editor-plan.md §5.4. `EntityLayer`/etc. se
+ * agregan en fases posteriores como hermanos dentro del mismo `stageRef`
+ * (mismo sistema de coordenadas en %, nada que reestructurar).
  */
 export function EditorCanvas() {
   const { state, dispatch } = useLevelEditor();
@@ -19,7 +20,7 @@ export function EditorCanvas() {
     (patch: Partial<EditorViewport>) => dispatch({ type: "SET_VIEWPORT", viewport: patch }),
     [dispatch],
   );
-  const { stageRef, zoomBy } = useEditorViewport(state.viewport, setViewport);
+  const { stageRef, zoomBy, screenToImagePercent } = useEditorViewport(state.viewport, setViewport);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const spaceHeldRef = useRef(false);
@@ -98,6 +99,8 @@ export function EditorCanvas() {
         {state.layerVisibility.grid && (
           <GridLayer visible={state.grid.visible} sizePct={state.grid.sizePct} projection={state.level.background.projection} />
         )}
+        {state.layerVisibility.navigation && <NavigationLayer navigation={state.level.navigation} selection={state.selection} />}
+        <PolygonEditor screenToImagePercent={screenToImagePercent} />
       </div>
     </div>
   );

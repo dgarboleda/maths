@@ -5,12 +5,14 @@ import { useEditorHotkeys } from "./useEditorHotkeys";
 import { EditorTopBar } from "./EditorTopBar";
 import { EditorBottomBar } from "./EditorBottomBar";
 import { EditorCanvas } from "./EditorCanvas";
+import { EditorToolbox } from "./EditorToolbox";
+import { IssuesPanel } from "./IssuesPanel";
 
 /**
- * Shell de 5 zonas del editor — docs/level-editor-plan.md §5.1. Toolbox y
- * PropertyPanel quedan como columnas vacías hasta que Fase 5/6 las llenen
- * (`EditorToolbox`, `EditorPropertyPanel`) — la estructura de grilla no
- * necesita reescribirse cuando eso pase, solo dejar de estar vacía.
+ * Shell de 5 zonas del editor — docs/level-editor-plan.md §5.1. El panel de
+ * propiedades del elemento seleccionado queda como placeholder hasta Fase 6
+ * (`EditorPropertyPanel`) — la estructura de grilla no necesita
+ * reescribirse cuando eso pase, solo dejar de estar vacía.
  */
 export function LevelEditorScreen() {
   const { state, dispatch, loading, saveNow, draftRecovery, applyDraftRecovery, dismissDraftRecovery } = useLevelEditor();
@@ -43,16 +45,20 @@ export function LevelEditorScreen() {
       )}
 
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-56 shrink-0 border-r border-indigo-500/20 bg-slate-900/40 p-3 text-xs text-slate-500 lg:block">
-          Herramientas — próximamente
+        <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-indigo-500/20 bg-slate-900/40 p-3 lg:block">
+          <EditorToolbox />
         </aside>
 
         <main className="min-w-0 flex-1">
           <EditorCanvas />
         </main>
 
-        <aside className="hidden w-64 shrink-0 border-l border-indigo-500/20 bg-slate-900/40 p-3 text-xs text-slate-500 lg:block">
-          Propiedades — próximamente
+        <aside className="hidden w-64 shrink-0 overflow-y-auto border-l border-indigo-500/20 bg-slate-900/40 p-3 lg:block">
+          <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Problemas</h2>
+          <IssuesPanel />
+          <p className="mt-4 rounded-lg border border-dashed border-indigo-500/20 px-2 py-3 text-center text-[11px] text-slate-600">
+            Propiedades del elemento seleccionado — próximamente
+          </p>
         </aside>
       </div>
 

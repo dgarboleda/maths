@@ -186,6 +186,20 @@ const MUTATING = new Set<EditorAction["type"]>([
 
 const HISTORY_LIMIT = 50;
 
+/** El polígono al que apunta `selection`, o `null` si la selección no es un
+ *  polígono (o apunta a uno que ya no existe). Lo usan `PolygonEditor` y
+ *  `EditorBottomBar` (contador de vértices) — una sola fuente de verdad
+ *  para "cuál es el polígono seleccionado ahora mismo". */
+export function findSelectedPolygon(
+  level: LevelDefinition,
+  selection: Selection,
+): { role: "walkable" | "blocked"; polygon: NavPolygon } | null {
+  if (selection.kind !== "polygon") return null;
+  const list = selection.role === "walkable" ? level.navigation.walkablePolygons : level.navigation.blockedPolygons;
+  const polygon = list.find((p) => p.id === selection.id);
+  return polygon ? { role: selection.role, polygon } : null;
+}
+
 export function createInitialEditorState(level: LevelDefinition): EditorState {
   return {
     level,

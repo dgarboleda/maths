@@ -5,11 +5,10 @@ import type { Dispatch } from "react";
 import type { EditorAction, EditorState } from "./editorReducer";
 
 /**
- * Atajos de teclado del editor — docs/level-editor-plan.md §5.6. Fase 4 solo
- * cablea los que ya tienen un efecto observable (deshacer/rehacer/guardar/
- * cancelar): el resto de la lista (`W`, `B`, `Ctrl+D`, flechas para mover…)
- * se activa recién cuando su herramienta exista (Fase 5+) — no tiene sentido
- * escuchar una tecla que no hace nada todavía.
+ * Atajos de teclado del editor — docs/level-editor-plan.md §5.6. Solo se
+ * cablean los que ya tienen un efecto observable en la fase actual: el
+ * resto de la lista (`Ctrl+D` duplicar, flechas para mover…) se activa
+ * recién cuando su herramienta exista (Fase 6+).
  *
  * Se desactiva con el foco en un campo de texto, y durante el Play Test
  * (Fase 11): el juego real tiene sus propios controles.
@@ -45,12 +44,30 @@ export function useEditorHotkeys(params: { state: EditorState; dispatch: Dispatc
         dispatch({ type: "SELECT", selection: { kind: "none" } });
         return;
       }
-      if (e.key.toLowerCase() === "v" && !ctrl) {
+      if (ctrl) return; // el resto son atajos de una sola tecla
+      const key = e.key.toLowerCase();
+      if (key === "v") {
         dispatch({ type: "SET_TOOL", tool: { kind: "select" } });
+        return;
+      }
+      if (key === "w") {
+        dispatch({ type: "SET_TOOL", tool: { kind: "drawPolygon", role: "walkable" } });
+        return;
+      }
+      if (key === "b") {
+        dispatch({ type: "SET_TOOL", tool: { kind: "drawPolygon", role: "blocked" } });
+        return;
+      }
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (state.selection.kind === "polygon") {
+          dispatch({ type: "DELETE_POLYGON", role: state.selection.role, id: state.selection.id });
+        } else if (state.selection.kind === "exit") {
+          dispatch({ type: "DELETE_EXIT", id: state.selection.id });
+        }
       }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [state.playtestSessionId, dispatch, onSave]);
+  }, [state.playtestSessionId, state.selection, dispatch, onSave]);
 }
