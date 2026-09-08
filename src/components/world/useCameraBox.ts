@@ -22,6 +22,21 @@ export interface CameraBox {
  * "angosto" que la imagen — sin cámara, gran parte del mundo quedaría fuera
  * de vista para siempre; con ella, basta con caminar para traerla a la vista.
  */
+/**
+ * En un contenedor de aspect ratio muy distinto al de la imagen (típico en
+ * un teléfono en vertical: alto/ancho ~2:1, contra una imagen de mundo en
+ * paisaje ~1.76:1 — casi 4× de diferencia), cubrir sin dejar huecos exige
+ * tanto zoom que gran parte del mapa queda fuera del "visor" sin ningún
+ * scroll real para alcanzarla (la cámara sigue al personaje; la página nunca
+ * scrollea, ver jugar/[childId]/page.tsx) — un hotspot lejos del foco puede
+ * quedar permanentemente inalcanzable, no solo difícil de ver. Por eso el
+ * zoom nunca baja de mostrar al menos esta fracción del ancho Y del alto de
+ * la imagen; si eso deja un margen sin cubrir en algún lado, se ve el fondo
+ * oscuro del contenedor ahí (encaja con la estética del juego) en vez de
+ * recortar el mundo más allá de este límite.
+ */
+const MIN_VISIBLE_FRACTION = 0.55;
+
 function cameraBox(
   containerWidth: number,
   containerHeight: number,
@@ -31,16 +46,28 @@ function cameraBox(
   if (containerWidth === 0 || containerHeight === 0) {
     return { left: 0, top: 0, width: containerWidth, height: containerHeight };
   }
-  const scale = Math.max(containerWidth / size.width, containerHeight / size.height);
+  const coverScale = Math.max(containerWidth / size.width, containerHeight / size.height);
+  const maxReachableScale = Math.min(
+    containerWidth / (size.width * MIN_VISIBLE_FRACTION),
+    containerHeight / (size.height * MIN_VISIBLE_FRACTION),
+  );
+  const scale = Math.min(coverScale, maxReachableScale);
   const width = size.width * scale;
   const height = size.height * scale;
   const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-  // `containerWidth - width` (y su análogo en alto) es <= 0 porque `scale`
-  // garantiza width/height >= contenedor: ese es el desplazamiento máximo
-  // hacia la izquierda/arriba antes de que se vea el borde derecho/inferior
-  // de la imagen; 0 es el límite del lado contrario.
-  const left = clamp(containerWidth / 2 - (focus.x / 100) * width, containerWidth - width, 0);
-  const top = clamp(containerHeight / 2 - (focus.y / 100) * height, containerHeight - height, 0);
+  // Con `scale` topeado por `maxReachableScale`, un eje puede quedar más
+  // chico que el contenedor (el caso de arriba): ahí se centra en vez de
+  // seguir el foco, porque la imagen entera ya entra en ese eje. En el otro
+  // eje (el que sigue dominando el zoom), `containerWidth - width` (o su
+  // análogo en alto) sigue siendo <= 0 y el clamp de siempre aplica.
+  const left =
+    width <= containerWidth
+      ? (containerWidth - width) / 2
+      : clamp(containerWidth / 2 - (focus.x / 100) * width, containerWidth - width, 0);
+  const top =
+    height <= containerHeight
+      ? (containerHeight - height) / 2
+      : clamp(containerHeight / 2 - (focus.y / 100) * height, containerHeight - height, 0);
   return { left, top, width, height };
 }
 
