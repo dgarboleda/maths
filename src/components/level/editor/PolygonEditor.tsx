@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { closestPointOnSegment, pointInPolygon } from "@/lib/world/navmesh";
-import { newEntityId, newExitId, newPolygonId } from "@/lib/level/ids";
+import { newEntityId, newExitId, newPolygonId, newZoneId } from "@/lib/level/ids";
 import { createEntityDefaults, getEntityType } from "@/lib/level/entities";
-import type { NavPolygon, Vec2 } from "@/lib/level/schema";
+import type { LevelZone, NavPolygon, Vec2 } from "@/lib/level/schema";
 import { findSelectedPolygon } from "./editorReducer";
 import { useLevelEditor } from "./LevelEditorProvider";
 import { snapToGrid } from "./useEditorViewport";
@@ -54,6 +54,15 @@ function polygonAt(
   }
   for (let i = walkable.length - 1; i >= 0; i--) {
     if (pointInPolygon(point, walkable[i].points)) return { role: "walkable", id: walkable[i].id };
+  }
+  return null;
+}
+
+function zoneAt(point: Vec2, zones: LevelZone[]): string | null {
+  for (let i = zones.length - 1; i >= 0; i--) {
+    const shape = zones[i].shape;
+    const hit = shape.kind === "polygon" ? pointInPolygon(point, shape.points) : Math.hypot(point.x - shape.center.x, point.y - shape.center.y) <= shape.radius;
+    if (hit) return zones[i].id;
   }
   return null;
 }
@@ -126,10 +135,14 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
   }
 
   function closeDraft() {
-    if (!state.drafting || state.drafting.points.length < 3 || state.drafting.role === "zone") return;
-    const role = state.drafting.role;
-    const polygon: NavPolygon = { id: newPolygonId(), points: state.drafting.points, initiallyEnabled: true };
-    dispatch({ type: "ADD_POLYGON", role, polygon });
+    if (!state.drafting || state.drafting.points.length < 3) return;
+    if (state.drafting.role === "zone") {
+      const zone: LevelZone = { id: newZoneId(), name: "Zona", shape: { kind: "polygon", points: state.drafting.points } };
+      dispatch({ type: "ADD_ZONE", zone });
+    } else {
+      const polygon: NavPolygon = { id: newPolygonId(), points: state.drafting.points, initiallyEnabled: true };
+      dispatch({ type: "ADD_POLYGON", role: state.drafting.role, polygon });
+    }
     dispatch({ type: "DRAFT_CANCEL" });
     dispatch({ type: "SET_TOOL", tool: { kind: "select" } });
   }
@@ -189,8 +202,27 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
       return;
     }
 
-    const hit = polygonAt(point, state.level.navigation.walkablePolygons, state.level.navigation.blockedPolygons);
-    dispatch({ type: "SELECT", selection: hit ? { kind: "polygon", role: hit.role, id: hit.id } : { kind: "none" } });
+    if (tool.kind === "drawCircleZone") {
+      if (!tool.center) {
+        dispatch({ type: "SET_TOOL", tool: { kind: "drawCircleZone", center: point } });
+        return;
+      }
+      const radius = Math.hypot(point.x - tool.center.x, point.y - tool.center.y);
+      if (radius >= 0.5) {
+        const zone: LevelZone = { id: newZoneId(), name: "Zona", shape: { kind: "circle", center: tool.center, radius } };
+        dispatch({ type: "ADD_ZONE", zone });
+      }
+      dispatch({ type: "SET_TOOL", tool: { kind: "select" } });
+      return;
+    }
+
+    const hitPolygon = polygonAt(point, state.level.navigation.walkablePolygons, state.level.navigation.blockedPolygons);
+    if (hitPolygon) {
+      dispatch({ type: "SELECT", selection: { kind: "polygon", role: hitPolygon.role, id: hitPolygon.id } });
+      return;
+    }
+    const hitZone = zoneAt(point, state.level.zones);
+    dispatch({ type: "SELECT", selection: hitZone ? { kind: "zone", id: hitZone } : { kind: "none" } });
   }
 
   function onContainerDoubleClick(e: ReactMouseEvent<HTMLDivElement>) {
@@ -211,7 +243,13 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
       <div
         className="absolute inset-0"
         style={{
-          cursor: state.tool.kind === "drawPolygon" || state.tool.kind === "placeEntity" || state.tool.kind === "pickStandPoint" ? "crosshair" : "default",
+          cursor:
+            state.tool.kind === "drawPolygon" ||
+            state.tool.kind === "placeEntity" ||
+            state.tool.kind === "pickStandPoint" ||
+            state.tool.kind === "drawCircleZone"
+              ? "crosshair"
+              : "default",
         }}
         onClick={onContainerClick}
         onDoubleClick={onContainerDoubleClick}
@@ -247,12 +285,16 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
               </g>
             ))}
 
+          {state.tool.kind === "drawCircleZone" && state.tool.center && (
+            <circle cx={state.tool.center.x} cy={state.tool.center.y} r="0.8" fill="#a78bfa" stroke="#0f172a" strokeWidth="0.15" />
+          )}
+
           {state.drafting && state.drafting.points.length > 0 && (
             <>
               <polyline
                 points={state.drafting.points.map((p) => `${p.x},${p.y}`).join(" ")}
                 fill="none"
-                stroke={state.drafting.role === "blocked" ? "#f43f5e" : "#22c55e"}
+                stroke={state.drafting.role === "blocked" ? "#f43f5e" : state.drafting.role === "zone" ? "#a78bfa" : "#22c55e"}
                 strokeDasharray="1 1"
                 strokeWidth="0.3"
               />

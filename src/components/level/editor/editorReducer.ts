@@ -32,7 +32,10 @@ export type EditorTool =
   | { kind: "setExit" }
   /** Elegir dónde se detiene Alex antes de interactuar con `entityId` —
    *  activada desde el botón "Fijar en el mapa" del panel de propiedades. */
-  | { kind: "pickStandPoint"; entityId: string };
+  | { kind: "pickStandPoint"; entityId: string }
+  /** Zona circular (§7 Fase 7): primer clic fija `center` (null → punto),
+   *  segundo clic fija el radio y crea la zona. */
+  | { kind: "drawCircleZone"; center: Vec2 | null };
 
 export type Selection =
   | { kind: "none" }

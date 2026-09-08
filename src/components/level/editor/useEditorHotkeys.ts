@@ -46,6 +46,7 @@ export function useEditorHotkeys(params: { state: EditorState; dispatch: Dispatc
       }
       if (e.key === "Escape") {
         dispatch({ type: "DRAFT_CANCEL" });
+        dispatch({ type: "SET_TOOL", tool: { kind: "select" } });
         dispatch({ type: "SELECT", selection: { kind: "none" } });
         return;
       }
@@ -70,6 +71,10 @@ export function useEditorHotkeys(params: { state: EditorState; dispatch: Dispatc
           dispatch({ type: "DELETE_EXIT", id: state.selection.id });
         } else if (state.selection.kind === "entity") {
           dispatch({ type: "DELETE_ENTITY", id: state.selection.id });
+        } else if (state.selection.kind === "zone") {
+          dispatch({ type: "DELETE_ZONE", id: state.selection.id });
+        } else if (state.selection.kind === "dialog") {
+          dispatch({ type: "DELETE_DIALOG", id: state.selection.id });
         }
         return;
       }
