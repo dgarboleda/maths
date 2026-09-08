@@ -6,6 +6,7 @@ import { EditorTopBar } from "./EditorTopBar";
 import { EditorBottomBar } from "./EditorBottomBar";
 import { EditorCanvas } from "./EditorCanvas";
 import { EditorToolbox } from "./EditorToolbox";
+import { EditorPropertyPanel } from "./EditorPropertyPanel";
 import { IssuesPanel } from "./IssuesPanel";
 
 /**
@@ -56,9 +57,11 @@ export function LevelEditorScreen() {
         <aside className="hidden w-64 shrink-0 overflow-y-auto border-l border-indigo-500/20 bg-slate-900/40 p-3 lg:block">
           <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Problemas</h2>
           <IssuesPanel />
-          <p className="mt-4 rounded-lg border border-dashed border-indigo-500/20 px-2 py-3 text-center text-[11px] text-slate-600">
-            Propiedades del elemento seleccionado — próximamente
-          </p>
+          {state.selection.kind === "entity" && (
+            <div className="mt-4 border-t border-indigo-500/10 pt-4">
+              <EditorPropertyPanel />
+            </div>
+          )}
         </aside>
       </div>
 

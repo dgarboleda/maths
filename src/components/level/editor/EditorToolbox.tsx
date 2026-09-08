@@ -1,20 +1,25 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { MapPin, Hexagon, Octagon, LogOut } from "lucide-react";
+import { listEntityTypes } from "@/lib/level/entities";
 import { useLevelEditor } from "./LevelEditorProvider";
 import type { EditorTool } from "./editorReducer";
 
+type ToolIcon = ComponentType<{ className?: string }>;
+
 /**
- * Caja de herramientas — docs/level-editor-plan.md §5.1. Fase 5 solo llena
- * la sección NAVIGATION (área transitable, zona prohibida, punto de inicio,
- * punto de destino); OBJECTS/GAMEPLAY/EDITING se agregan en fases
- * posteriores cuando sus herramientas existan de verdad.
+ * Caja de herramientas — docs/level-editor-plan.md §5.1. NAVIGATION (Fase 5)
+ * + OBJECTS (Fase 6, un botón por cada `EntityTypeDef` registrado — nunca
+ * hardcodeado, así un tipo nuevo aparece solo con registrarlo, §7.5).
+ * GAMEPLAY/EDITING se agregan en fases posteriores.
  */
 export function EditorToolbox() {
   const { state, dispatch } = useLevelEditor();
 
   function isActive(tool: EditorTool): boolean {
     if (tool.kind === "drawPolygon" && state.tool.kind === "drawPolygon") return tool.role === state.tool.role;
+    if (tool.kind === "placeEntity" && state.tool.kind === "placeEntity") return tool.entityType === state.tool.entityType;
     return tool.kind === state.tool.kind;
   }
 
@@ -25,44 +30,71 @@ export function EditorToolbox() {
     dispatch({ type: "SET_TOOL", tool });
   }
 
-  const items: { tool: EditorTool; label: string; icon: typeof Hexagon; hint: string }[] = [
+  const navItems: { tool: EditorTool; label: string; icon: ToolIcon; hint: string }[] = [
     { tool: { kind: "drawPolygon", role: "walkable" }, label: "Área transitable", icon: Hexagon, hint: "W" },
     { tool: { kind: "drawPolygon", role: "blocked" }, label: "Zona prohibida", icon: Octagon, hint: "B" },
     { tool: { kind: "setSpawn" }, label: "Punto de inicio", icon: MapPin, hint: "" },
     { tool: { kind: "setExit" }, label: "Punto de destino", icon: LogOut, hint: "" },
   ];
 
+  const objectItems: { tool: EditorTool; label: string; icon: ToolIcon; hint: string }[] = listEntityTypes().map((typeDef) => ({
+    tool: { kind: "placeEntity", entityType: typeDef.id },
+    label: typeDef.label,
+    icon: typeDef.Icon,
+    hint: "",
+  }));
+
   return (
     <div className="space-y-4 text-xs">
-      <section>
-        <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Navegación</h2>
-        <ul className="space-y-1">
-          {items.map(({ tool, label, icon: Icon, hint }) => (
-            <li key={label}>
-              <button
-                type="button"
-                aria-pressed={isActive(tool)}
-                onClick={() => selectTool(tool)}
-                className={`flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left font-bold transition-colors ${
-                  isActive(tool) ? "bg-cyan-500/15 text-cyan-300" : "text-slate-300 hover:bg-slate-800"
-                }`}
-              >
-                <Icon className="size-4 shrink-0" aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate">{label}</span>
-                {hint && <kbd className="rounded bg-slate-800 px-1 text-[10px] text-slate-400">{hint}</kbd>}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <ToolSection title="Navegación" items={navItems} isActive={isActive} onSelect={selectTool} />
+      <ToolSection title="Objetos" items={objectItems} isActive={isActive} onSelect={selectTool} />
 
       {state.tool.kind !== "select" && (
         <p className="rounded-lg border border-indigo-500/20 bg-slate-900/60 px-2 py-2 text-[11px] leading-snug text-slate-400">
           {state.tool.kind === "drawPolygon" && "Clic en el lienzo para agregar puntos; \"Cerrar\" con 3 o más."}
           {state.tool.kind === "setSpawn" && "Clic en el lienzo para fijar dónde empieza Alex."}
           {state.tool.kind === "setExit" && "Clic en el lienzo para crear un punto de destino."}
+          {state.tool.kind === "placeEntity" && "Clic en el lienzo para colocarla."}
+          {state.tool.kind === "pickStandPoint" && "Clic en el lienzo para fijar dónde se detiene Alex."}
         </p>
       )}
     </div>
+  );
+}
+
+function ToolSection({
+  title,
+  items,
+  isActive,
+  onSelect,
+}: {
+  title: string;
+  items: { tool: EditorTool; label: string; icon: ToolIcon; hint: string }[];
+  isActive: (tool: EditorTool) => boolean;
+  onSelect: (tool: EditorTool) => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <section>
+      <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">{title}</h2>
+      <ul className="space-y-1">
+        {items.map(({ tool, label, icon: Icon, hint }) => (
+          <li key={label}>
+            <button
+              type="button"
+              aria-pressed={isActive(tool)}
+              onClick={() => onSelect(tool)}
+              className={`flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left font-bold transition-colors ${
+                isActive(tool) ? "bg-cyan-500/15 text-cyan-300" : "text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              <Icon className="size-4 shrink-0" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">{label}</span>
+              {hint && <kbd className="rounded bg-slate-800 px-1 text-[10px] text-slate-400">{hint}</kbd>}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

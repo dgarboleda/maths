@@ -113,9 +113,20 @@ export interface LevelNavigation {
  * ENTIDADES
  * ════════════════════════════════════════════════════════════════════════ */
 
-export type EntityTypeId = "player-spawn" | "npc" | "enemy" | "door" | "terminal" | "collectible" | "interactive";
+/**
+ * Id de un `EntityTypeDef` registrado (Fase 6, `src/lib/level/entities/`).
+ * A propósito NO es una unión cerrada: el contrato de extensibilidad del
+ * plan (§7.5) exige que añadir un tipo nuevo toque solo 2 archivos —
+ * `types/nuevo.tsx` + una línea en `entities/index.ts` — y una unión
+ * cerrada acá obligaría a tocar este archivo también. Los 6 tipos base son
+ * `"npc" | "enemy" | "door" | "terminal" | "collectible" | "interactive"`
+ * (ver `src/lib/level/entities/index.ts`); cualquier otro string es válido
+ * en cuanto haya un `EntityTypeDef` registrado con ese id — `getEntityType`
+ * lanza en tiempo de ejecución si no lo hay.
+ */
+export type EntityTypeId = string;
 
-export type PropertyValue = string | number | boolean | Vec2 | string[];
+export type PropertyValue = string | number | boolean | Vec2 | string[] | Vec2[];
 
 export interface EntityInteraction {
   mode: "click" | "proximity" | "none";

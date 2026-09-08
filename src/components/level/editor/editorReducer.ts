@@ -29,7 +29,10 @@ export type EditorTool =
   | { kind: "drawPolygon"; role: "walkable" | "blocked" | "zone" }
   | { kind: "placeEntity"; entityType: LevelEntity["type"] }
   | { kind: "setSpawn" }
-  | { kind: "setExit" };
+  | { kind: "setExit" }
+  /** Elegir dónde se detiene Alex antes de interactuar con `entityId` —
+   *  activada desde el botón "Fijar en el mapa" del panel de propiedades. */
+  | { kind: "pickStandPoint"; entityId: string };
 
 export type Selection =
   | { kind: "none" }
