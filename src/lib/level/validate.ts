@@ -1,5 +1,5 @@
 import { isWalkableInMesh, polygonIsSimple, type NavigationMesh } from "@/lib/world/navmesh";
-import type { LevelDefinition, LevelIssue, NavPolygon } from "./schema";
+import type { LevelDefinition, LevelEventRule, LevelIssue, NavPolygon } from "./schema";
 
 /**
  * Valida un `LevelDefinition` y devuelve la lista de problemas encontrados
@@ -27,11 +27,15 @@ import type { LevelDefinition, LevelIssue, NavPolygon } from "./schema";
  * 7. `name` del nivel y `background.src` no están vacíos.
  * 8. Ningún id se repite dentro de su propia colección.
  *
- * NO incluye todavía la detección de ciclos en la cadena de eventos
- * (`ON_X → acción → entidad/zona → evento que eso puede disparar`): esa
- * comprobación necesita el catálogo de acciones (`events/catalog.ts`), que
- * no existe hasta la Fase 8 — se añade ahí, extendiendo esta misma función,
- * no antes (docs/level-editor-plan.md §17 Fase 8, §13 T4).
+ * 9. (Fase 8) Detección ESTÁTICA de ciclos en la cadena de eventos — T4
+ *    (§13): una regla que dispara un `START_CHALLENGE`/`UPDATE_MISSION`
+ *    puede indirectamente re-disparar su propio (u otro) trigger vía
+ *    `ON_CHALLENGE_STARTED`/`ON_MISSION_COMPLETE` (Fase 9 los re-emite tras
+ *    aplicar esos efectos). Es una aproximación conservadora, no una
+ *    ejecución simbólica completa (`ver validateEventCycles` para el mapeo
+ *    acción→evento exacto que usa) — el guardia real que evita que el juego
+ *    se cuelgue es `MAX_CHAIN_DEPTH` en tiempo de ejecución (`events/bus.ts`);
+ *    esto solo avisa al autor del nivel antes de publicar.
  *
  * Presupuestos blandos (warnings de tamaño/rendimiento, §14 P2) tampoco
  * viven acá todavía: dependen de `serialize.ts` (`assertSize`) y se añaden
@@ -47,6 +51,7 @@ export function validateLevel(level: LevelDefinition): LevelIssue[] {
   validateEntityInteractions(level, mesh, issues);
   validateReferences(level, issues);
   validateUniqueIds(level, issues);
+  validateEventCycles(level, issues);
 
   return issues;
 }
@@ -242,4 +247,64 @@ function validateUniqueIds(level: LevelDefinition, issues: LevelIssue[]): void {
   checkUnique(level.challenges.map((c) => c.id), "desafíos");
   checkUnique(level.missions.map((m) => m.id), "misiones");
   checkUnique(level.events.map((e) => e.id), "reglas de evento");
+}
+
+/**
+ * Qué `LevelEventType` puede volver a disparar cada tipo de acción, de forma
+ * indirecta, una vez que Fase 9 la aplique — el resto de acciones (cambiar
+ * el estado de un objeto, mover a Alex, un sonido...) no tienen ningún
+ * `LevelEventType` que las escuche automáticamente, así que no pueden ser
+ * parte de un ciclo por sí solas.
+ */
+const CYCLE_EDGES: Partial<Record<LevelEventRule["actions"][number]["type"], LevelEventRule["trigger"]["type"]>> = {
+  START_CHALLENGE: "ON_CHALLENGE_STARTED",
+  UPDATE_MISSION: "ON_MISSION_COMPLETE",
+};
+
+function validateEventCycles(level: LevelDefinition, issues: LevelIssue[]): void {
+  // arista regla → regla: la acción de `from` puede re-disparar el trigger de `to`
+  const graph = new Map<string, Set<string>>();
+  for (const from of level.events) {
+    const nextTypes = new Set(from.actions.map((a) => CYCLE_EDGES[a.type]).filter((t): t is LevelEventRule["trigger"]["type"] => !!t));
+    if (nextTypes.size === 0) continue;
+    const targets = new Set<string>();
+    for (const to of level.events) {
+      if (nextTypes.has(to.trigger.type)) targets.add(to.id);
+    }
+    if (targets.size > 0) graph.set(from.id, targets);
+  }
+
+  const WHITE = 0,
+    GRAY = 1,
+    BLACK = 2;
+  const color = new Map<string, number>();
+  const flagged = new Set<string>();
+
+  function visit(id: string): void {
+    color.set(id, GRAY);
+    for (const next of graph.get(id) ?? []) {
+      const c = color.get(next) ?? WHITE;
+      if (c === GRAY) {
+        flagged.add(id);
+        flagged.add(next);
+      } else if (c === WHITE) {
+        visit(next);
+      }
+    }
+    color.set(id, BLACK);
+  }
+
+  for (const rule of level.events) {
+    if ((color.get(rule.id) ?? WHITE) === WHITE) visit(rule.id);
+  }
+
+  for (const rule of level.events) {
+    if (flagged.has(rule.id)) {
+      issues.push({
+        severity: "warning",
+        message: `La regla "${rule.name}" podría formar un ciclo con otra regla de evento (una acción vuelve a disparar el trigger de una regla que ya está en la cadena).`,
+        target: { kind: "event", id: rule.id },
+      });
+    }
+  }
 }
