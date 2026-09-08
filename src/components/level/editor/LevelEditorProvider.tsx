@@ -72,6 +72,13 @@ export function LevelEditorProvider({ levelId, children }: { levelId: string; ch
     bootDispatch({ type: "HYDRATE", draftRecovery: draft && draft.savedAt > loadedLevel.metadata.updatedAt ? draft : null });
   }, [loadedLevel, levelId, boot.hydrated]);
 
+  // Validación en vivo: IssuesPanel siempre refleja el nivel tal como está
+  // en pantalla, no solo lo que había al último guardar.
+  useEffect(() => {
+    if (!boot.hydrated) return;
+    dispatch({ type: "SET_ISSUES", issues: validateLevel(state.level) });
+  }, [state.level, boot.hydrated]);
+
   const saveNow = useCallback(async () => {
     dispatch({ type: "SET_SAVE_STATE", state: "saving" });
     try {

@@ -1,11 +1,13 @@
 "use client";
 
 import { Bug, Grid3x3, Magnet, Minus, Plus, Play } from "lucide-react";
+import { findSelectedPolygon } from "./editorReducer";
 import { useLevelEditor } from "./LevelEditorProvider";
 
 /** Barra inferior — docs/level-editor-plan.md §5.1. */
 export function EditorBottomBar() {
   const { state, dispatch } = useLevelEditor();
+  const selectedPolygon = findSelectedPolygon(state.level, state.selection);
 
   function zoomStep(factor: number) {
     dispatch({ type: "SET_VIEWPORT", viewport: { zoom: state.viewport.zoom * factor } });
@@ -52,6 +54,12 @@ export function EditorBottomBar() {
         <Bug className="size-3.5" aria-hidden="true" />
         Debug
       </button>
+
+      {selectedPolygon && (
+        <span className="rounded-md bg-slate-800/60 px-2 py-1 font-bold tabular-nums text-slate-300">
+          {selectedPolygon.polygon.points.length} vértices
+        </span>
+      )}
 
       <button
         type="button"
