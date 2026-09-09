@@ -42,3 +42,6 @@ export function newExitId(): string {
 export function newBackgroundLayerId(): string {
   return generateId("bglayer");
 }
+export function newAssetId(): string {
+  return generateId("asset");
+}

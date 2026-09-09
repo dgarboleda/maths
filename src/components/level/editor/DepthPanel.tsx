@@ -1,11 +1,12 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
+import { useFamily } from "@/components/family/FamilyProvider";
 import { DEFAULT_DEPTH_CONFIG } from "@/lib/level/depth";
 import { newBackgroundLayerId } from "@/lib/level/ids";
-import { BACKGROUND_CATALOG } from "@/lib/level/backgroundCatalog";
 import type { LevelBackgroundLayer, LevelDepthConfig } from "@/lib/level/schema";
 import { useLevelEditor } from "./LevelEditorProvider";
+import { BackgroundPicker } from "./assets/BackgroundPicker";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50";
@@ -20,6 +21,7 @@ const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/
  * se había usado nunca) — cero acciones de reducer nuevas.
  */
 export function DepthPanel() {
+  const { parentId } = useFamily();
   const { state, dispatch } = useLevelEditor();
   const depth: LevelDepthConfig = state.level.depth ?? DEFAULT_DEPTH_CONFIG;
   const layers = state.level.background.layers ?? [];
@@ -33,9 +35,14 @@ export function DepthPanel() {
   }
 
   function addLayer() {
+    // `src: ""` a propósito (docs/asset-management-plan.md §E.3): antes de
+    // esta fase se preseleccionaba Ciudad Central (una escena completa y
+    // opaca), lo que dejaba el parallax inutilizable por defecto — ahora el
+    // autor elige explícitamente una imagen (de su biblioteca o de fábrica)
+    // desde el `BackgroundPicker` de abajo.
     const layer: LevelBackgroundLayer = {
       id: newBackgroundLayerId(),
-      src: BACKGROUND_CATALOG[0].src,
+      src: "",
       depth: 0.5,
       offsetY: 0,
       opacity: 1,
@@ -156,13 +163,13 @@ export function DepthPanel() {
 
       <section className="space-y-2 border-t border-indigo-500/10 pt-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Capas de fondo (parallax)</h3>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Capas de fondo (parallax)</h3>
           <button type="button" onClick={addLayer} aria-label="Añadir capa" className="rounded-md p-1.5 text-cyan-300 hover:bg-cyan-500/10">
             <Plus className="size-4" aria-hidden="true" />
           </button>
         </div>
 
-        {layers.length === 0 && <p className="text-[11px] text-slate-500">Sin capas adicionales — el fondo se mueve como siempre.</p>}
+        {layers.length === 0 && <p className="text-[11px] text-slate-400">Sin capas adicionales — el fondo se mueve como siempre.</p>}
 
         {layers.map((layer, i) => (
           <div key={layer.id} className="space-y-2 rounded-md border border-indigo-500/15 bg-slate-900/40 p-2">
@@ -172,16 +179,14 @@ export function DepthPanel() {
                 <Trash2 className="size-3.5" aria-hidden="true" />
               </button>
             </div>
-            <label className="block">
+            <div>
               <span className={LABEL_CLASS}>Imagen</span>
-              <select className={INPUT_CLASS} value={layer.src} onChange={(e) => updateLayer(layer.id, { src: e.target.value })}>
-                {BACKGROUND_CATALOG.map((opt) => (
-                  <option key={opt.src} value={opt.src}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              {parentId ? (
+                <BackgroundPicker parentId={parentId} for="layer" compact value={layer.src} onChange={(selection) => updateLayer(layer.id, { src: selection.src })} />
+              ) : (
+                !layer.src && <p className="text-[11px] text-amber-300">Elegí una imagen para esta capa.</p>
+              )}
+            </div>
             <label className="block">
               <span className={LABEL_CLASS}>Profundidad (0 fija · 1 como el fondo · &gt;1 primer plano)</span>
               <input

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /*
- * Arranca los emuladores de Auth y Firestore del proyecto de pruebas.
+ * Arranca los emuladores de Auth, Firestore y Storage del proyecto de
+ * pruebas (docs/asset-management-plan.md §G Paso 1).
  *
  * Si una ejecución anterior se cortó a lo bruto (Ctrl-C doble, un runner de
  * CI que mata el proceso), el .jar de Firestore puede sobrevivir al CLI y
@@ -39,7 +40,7 @@ cerrarEmuladorHuerfano();
 
 const hijo = spawn(
   process.platform === "win32" ? "npx.cmd" : "npx",
-  ["firebase", "emulators:start", "--only", "auth,firestore", "--project", PROYECTO],
+  ["firebase", "emulators:start", "--only", "auth,firestore,storage", "--project", PROYECTO],
   { stdio: "inherit" },
 );
 

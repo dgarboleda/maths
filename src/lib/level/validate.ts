@@ -81,6 +81,18 @@ function validateNames(level: LevelDefinition, issues: LevelIssue[]): void {
       target: { kind: "background" },
     });
   }
+  // docs/asset-management-plan.md §E.3/§G Paso 10: `warning`, nunca `error`
+  // — no bloquea el Play Test ni invalida un nivel ya guardado con uno de
+  // los 6 fondos de fábrica de baja resolución (backgroundCatalog.ts,
+  // `usage: "thumbnail"`). Umbral de 1200px: por debajo de la referencia
+  // recomendada (1600px, la de city-central.webp) pero con margen.
+  if (level.background.width > 0 && level.background.width < 1200) {
+    issues.push({
+      severity: "warning",
+      message: `El fondo tiene poca resolución (${level.background.width}px de ancho) para una escena a pantalla completa — se puede usar igual, pero puede verse borroso.`,
+      target: { kind: "background" },
+    });
+  }
 }
 
 function validatePolygons(level: LevelDefinition, issues: LevelIssue[]): void {

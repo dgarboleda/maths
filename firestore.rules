@@ -63,6 +63,13 @@ service cloud.firestore {
           allow update, delete: if false;
         }
       }
+
+      // Metadata de las imágenes subidas por el padre-autor
+      // (docs/asset-management-plan.md §C.2). El archivo vive en Storage
+      // (storage.rules); acá solo su ficha: etiqueta, tipo, dimensiones.
+      match /levelAssets/{assetId} {
+        allow read, write: if isParent(parentId);
+      }
     }
 
     // Contenido curricular: catálogo compartido de hilos/unidades, de solo

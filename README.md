@@ -107,6 +107,34 @@ npx firebase deploy --only firestore:rules --project <tu-project-id>
 falta repetir este despliegue cada vez que cambie `firestore.rules` — no es
 automático como sí lo es la compilación del Worker en cada push.
 
+### Reglas de Storage: mismo problema, mismo comando aparte
+
+`storage.rules` (biblioteca de imágenes del Level Editor,
+docs/asset-management-plan.md) tiene exactamente el mismo problema que
+`firestore.rules` de arriba — vive en el repo, protege el emulador local, pero
+nada la sube sola al proyecto real:
+
+```bash
+npx firebase deploy --only storage --project <tu-project-id>
+```
+
+Sin este paso, subir una imagen desde `/panel/editor` falla con
+`storage/unauthorized` en producción aunque todo compile en verde — el mismo
+síntoma descrito arriba, ahora sobre Storage. Se puede desplegar junto con las
+reglas de Firestore en un solo comando:
+
+```bash
+npx firebase deploy --only firestore:rules,storage --project <tu-project-id>
+```
+
+**Prerrequisito que no depende del repo**: el proyecto de Firebase necesita
+tener un bucket de Cloud Storage aprovisionado. Desde el 30 de octubre de
+2024, Firebase exige plan **Blaze** (facturación activada) para crear el
+bucket por defecto en proyectos nuevos; se confirma en Firebase Console →
+Storage. Si el proyecto no tiene bucket todavía, hay que crearlo ahí antes de
+desplegar las reglas — no es algo que `firebase deploy` resuelva por su
+cuenta.
+
 Si el plan gratuito de Cloudflare Workers se queda corto, [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) sigue siendo la opción sin fricción para Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

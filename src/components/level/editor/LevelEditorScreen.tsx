@@ -20,7 +20,7 @@ import { DialogEditor } from "./DialogEditor";
 import { MissionEditor } from "./MissionEditor";
 import { EventChainEditor } from "./EventChainEditor";
 import { IssuesPanel } from "./IssuesPanel";
-import { DepthPanel } from "./DepthPanel";
+import { ScenePanel } from "./ScenePanel";
 
 /**
  * Play Test (Fase 11, §11.2 del plan): monta el mismo `LevelRuntime` que el
@@ -182,7 +182,7 @@ export function LevelEditorScreen() {
               )}
               {state.selection.kind === "level" && (
                 <div className="mt-4 border-t border-indigo-500/10 pt-4">
-                  <DepthPanel />
+                  <ScenePanel />
                 </div>
               )}
             </aside>

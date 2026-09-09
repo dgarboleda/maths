@@ -200,6 +200,31 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
     expect(await revisar(page), "formulario de nuevo nivel").toEqual([]);
   });
 
+  // docs/asset-management-plan.md §H.5: biblioteca de imágenes y diálogo de
+  // subida abiertos, no solo el selector de la creación de nivel (ya cubierto
+  // arriba).
+  test("Level Editor: panel «Escena», biblioteca de imágenes y subida abiertos", async ({ page }) => {
+    await registrarPadre(page);
+    await page.goto("/panel/editor");
+    await page.getByRole("button", { name: "Nuevo nivel" }).click();
+    await page.getByLabel("Nombre del nivel").fill("Nivel de assets");
+    await page.getByRole("button", { name: "Crear nivel" }).click();
+    await expect(page.getByText("Nivel de assets", { exact: true }).first()).toBeVisible();
+    await page.getByRole("link", { name: "Abrir" }).click();
+    await expect(page.getByLabel("Nombre del nivel")).toHaveValue("Nivel de assets");
+
+    await page.getByRole("button", { name: "Escena" }).click();
+    await expect(page.getByRole("heading", { name: "Fondo", exact: true })).toBeVisible();
+    expect(await revisar(page), "panel Escena abierto").toEqual([]);
+
+    await page.getByText("Gestionar mis imágenes", { exact: false }).click();
+    expect(await revisar(page), "biblioteca de imágenes expandida").toEqual([]);
+
+    await page.getByRole("button", { name: "Subir imagen" }).first().click();
+    await expect(page.getByLabel(/Archivo \(WebP, PNG o JPEG\)/)).toBeVisible();
+    expect(await revisar(page), "diálogo de subida abierto").toEqual([]);
+  });
+
   test("Level Editor: lienzo, panel de propiedades y Play Test de un nivel", async ({ page }) => {
     await registrarPadre(page);
     await crearHijo(page, { nombre: "Ana" });

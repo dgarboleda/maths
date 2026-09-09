@@ -6,8 +6,8 @@ import { Copy, Pencil, Play, Plus, Trash2, Wand2 } from "lucide-react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { SectionCard, EmptyState, SkeletonRows } from "@/components/family/ui";
 import { getFirebase } from "@/lib/firebase";
-import { BACKGROUND_CATALOG, loadImageSize } from "@/lib/level/backgroundCatalog";
 import { createLevel, deleteLevel, duplicateLevel, listLevels, type LevelSummary } from "@/lib/level/persistence/levelRepository";
+import { BackgroundPicker, type ResolvedBackgroundSelection } from "@/components/level/editor/assets/BackgroundPicker";
 
 /**
  * Lista de niveles del Level Editor — Fase 3 (docs/level-editor-plan.md §17).
@@ -182,24 +182,22 @@ export default function EditorPage() {
 function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCreated: () => void | Promise<void> }) {
   const { parentId } = useFamily();
   const [name, setName] = useState("");
-  const [backgroundSrc, setBackgroundSrc] = useState(BACKGROUND_CATALOG[0].src);
+  const [background, setBackground] = useState<ResolvedBackgroundSelection | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!parentId || name.trim() === "") return;
+    if (!parentId || name.trim() === "" || !background) return;
     setSaving(true);
     setError(null);
     try {
-      const option = BACKGROUND_CATALOG.find((b) => b.src === backgroundSrc)!;
-      const { width, height } = await loadImageSize(option.src);
       const { db, firestore } = await getFirebase();
       await createLevel(firestore, db, parentId, name.trim(), {
-        src: option.src,
-        width,
-        height,
-        alt: option.alt,
+        src: background.src,
+        width: background.width,
+        height: background.height,
+        alt: background.alt,
         projection: "flat",
       });
       await onCreated();
@@ -228,37 +226,14 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
         />
       </div>
 
-      <fieldset>
-        <legend className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-400">Fondo</legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {BACKGROUND_CATALOG.map((option) => (
-            <label
-              key={option.src}
-              className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-2 text-center transition-colors ${
-                backgroundSrc === option.src ? "border-cyan-400/60 bg-cyan-500/10" : "border-indigo-500/20 bg-slate-900/40 hover:border-indigo-400/40"
-              }`}
-            >
-              <input
-                type="radio"
-                name="background"
-                value={option.src}
-                checked={backgroundSrc === option.src}
-                onChange={() => setBackgroundSrc(option.src)}
-                className="sr-only"
-              />
-              <img src={option.src} alt="" aria-hidden="true" className="h-16 w-full rounded-lg object-cover" />
-              <span className="text-[11px] font-bold text-slate-200">{option.label}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      {parentId && <BackgroundPicker parentId={parentId} for="scene" value={background?.src ?? ""} onChange={setBackground} autoSelectDefault />}
 
       {error && <p role="alert" className="text-sm text-rose-300">{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={saving || name.trim() === ""}
+          disabled={saving || name.trim() === "" || !background}
           className="flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 text-sm font-bold text-white disabled:opacity-40"
         >
           {saving ? "Creando…" : "Crear nivel"}

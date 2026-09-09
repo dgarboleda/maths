@@ -41,6 +41,22 @@ import {
 import { buildRuntimeMesh } from "@/lib/level/runtime/navigation";
 import { DEFAULT_DEPTH_CONFIG, depthScaleFor, parallaxAxis, shadowOpacityFor } from "@/lib/level/depth";
 import type { LevelDepthConfig } from "@/lib/level/schema";
+import {
+  MAX_ASSETS_PER_PARENT,
+  MAX_INPUT_BYTES,
+  MAX_OUTPUT_WIDTH,
+  RECOMMENDED_TOTAL_BYTES_PER_PARENT,
+  assetStoragePath,
+  checkQuota,
+  decideResize,
+  gradeResolution,
+  pickOutputFormat,
+  sanitizeLabel,
+  thumbStoragePath,
+  validateFileMeta,
+} from "@/lib/level/assets/imageRules";
+import { mergeBackgroundOptions } from "@/lib/level/assets/backgroundOptions";
+import { BACKGROUND_CATALOG } from "@/lib/level/backgroundCatalog";
 
 /**
  * Pruebas puras de lógica (sin `page`, sin red, sin Firestore) para el
@@ -519,6 +535,21 @@ test.describe("validate — validateLevel", () => {
     const level = emptyLevel();
     level.background.alt = "";
     expect(validateLevel(level).some((i) => i.target?.kind === "background")).toBe(true);
+  });
+
+  test("fondo de baja resolución (< 1200px): warning, nunca error (docs/asset-management-plan.md §G Paso 10)", () => {
+    const level = emptyLevel();
+    level.background.width = 340;
+    const issues = validateLevel(level);
+    const backgroundIssues = issues.filter((i) => i.target?.kind === "background");
+    expect(backgroundIssues).toHaveLength(1);
+    expect(backgroundIssues[0].severity).toBe("warning");
+  });
+
+  test("fondo de resolución adecuada (>= 1200px): sin ningún aviso de resolución", () => {
+    const level = emptyLevel();
+    level.background.width = 1600;
+    expect(validateLevel(level).some((i) => i.target?.kind === "background")).toBe(false);
   });
 
   test("spawn fuera del área transitable: error", () => {
@@ -1235,5 +1266,133 @@ test.describe("runtime/state — misiones (Fase 12)", () => {
       entityStates: { [gem.id]: "collected" },
     });
     expect(activeMission(level, solved(challenge.moduleId), doneState)).toBeNull();
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+ * SUITE — imageRules: reglas puras de la biblioteca de imágenes
+ * (docs/asset-management-plan.md §C.4/§C.5/§C.6/§H.1). Sin DOM, sin red.
+ * ════════════════════════════════════════════════════════════════════════ */
+test.describe("imageRules — biblioteca de imágenes", () => {
+  test("validateFileMeta: acepta webp/png/jpeg", () => {
+    expect(validateFileMeta({ name: "a.webp", type: "image/webp", size: 1000 })).toEqual([]);
+    expect(validateFileMeta({ name: "a.png", type: "image/png", size: 1000 })).toEqual([]);
+    expect(validateFileMeta({ name: "a.jpg", type: "image/jpeg", size: 1000 })).toEqual([]);
+  });
+
+  test("validateFileMeta: rechaza formatos no admitidos (gif, svg) y vacíos", () => {
+    expect(validateFileMeta({ name: "a.gif", type: "image/gif", size: 1000 })).toHaveLength(1);
+    expect(validateFileMeta({ name: "a.svg", type: "image/svg+xml", size: 1000 })).toHaveLength(1);
+    expect(validateFileMeta({ name: "a.webp", type: "image/webp", size: 0 })).toHaveLength(1);
+  });
+
+  test("validateFileMeta: rechaza por encima de MAX_INPUT_BYTES", () => {
+    expect(validateFileMeta({ name: "a.webp", type: "image/webp", size: MAX_INPUT_BYTES })).toEqual([]);
+    expect(validateFileMeta({ name: "a.webp", type: "image/webp", size: MAX_INPUT_BYTES + 1 })).toHaveLength(1);
+  });
+
+  test("gradeResolution: matriz completa para 'scene' (min 800x450, recomendado 1600)", () => {
+    expect(gradeResolution(640, 360, "scene")).toBe("error");
+    expect(gradeResolution(799, 450, "scene")).toBe("error"); // borde exacto de ancho
+    expect(gradeResolution(800, 449, "scene")).toBe("error"); // borde exacto de alto
+    expect(gradeResolution(800, 450, "scene")).toBe("warning"); // justo en el mínimo, bajo lo recomendado
+    expect(gradeResolution(1000, 600, "scene")).toBe("warning");
+    expect(gradeResolution(1599, 900, "scene")).toBe("warning"); // borde exacto bajo lo recomendado
+    expect(gradeResolution(1600, 900, "scene")).toBe("ok");
+    expect(gradeResolution(1920, 1080, "scene")).toBe("ok");
+  });
+
+  test("gradeResolution: 'layer' admite una franja de horizonte baja que 'scene' rechazaría", () => {
+    expect(gradeResolution(1200, 160, "layer")).toBe("ok"); // franja horizontal legítima
+    expect(gradeResolution(1200, 160, "scene")).toBe("error"); // la misma imagen, como escena completa, no alcanza
+    expect(gradeResolution(300, 100, "layer")).toBe("error"); // por debajo del mínimo de layer también
+  });
+
+  test("decideResize: no escala una imagen que ya cabe en MAX_OUTPUT_WIDTH", () => {
+    expect(decideResize(1600, 900)).toEqual({ width: 1600, height: 900 });
+    expect(decideResize(MAX_OUTPUT_WIDTH, 1440)).toEqual({ width: MAX_OUTPUT_WIDTH, height: 1440 });
+    expect(decideResize(320, 180)).toEqual({ width: 320, height: 180 }); // nunca amplía
+  });
+
+  test("decideResize: redimensiona preservando la relación de aspecto, sin ampliar nunca", () => {
+    const result = decideResize(4000, 3000);
+    expect(result.width).toBe(MAX_OUTPUT_WIDTH);
+    expect(result.height).toBe(1920); // 4000x3000 -> 2560x1920, misma proporción 4:3
+  });
+
+  test("pickOutputFormat: nunca devuelve JPEG para una entrada con alfa", () => {
+    expect(pickOutputFormat(true, true)).toBe("image/webp");
+    expect(pickOutputFormat(true, false)).toBe("image/png");
+  });
+
+  test("pickOutputFormat: sin alfa, WebP si se pudo, si no JPEG", () => {
+    expect(pickOutputFormat(false, true)).toBe("image/webp");
+    expect(pickOutputFormat(false, false)).toBe("image/jpeg");
+  });
+
+  test("assetStoragePath/thumbStoragePath: un solo segmento bajo level-assets/, con la extensión correcta", () => {
+    expect(assetStoragePath("padre1", "asset_x", "image/webp")).toBe("parents/padre1/level-assets/asset_x.webp");
+    expect(assetStoragePath("padre1", "asset_x", "image/png")).toBe("parents/padre1/level-assets/asset_x.png");
+    expect(assetStoragePath("padre1", "asset_x", "image/jpeg")).toBe("parents/padre1/level-assets/asset_x.jpg");
+    expect(thumbStoragePath("padre1", "asset_x")).toBe("parents/padre1/level-assets/asset_x-thumb.webp");
+  });
+
+  test("checkQuota: permite hasta MAX_ASSETS_PER_PARENT, bloquea en el límite", () => {
+    expect(checkQuota(MAX_ASSETS_PER_PARENT - 1, 0).allowed).toBe(true);
+    const blocked = checkQuota(MAX_ASSETS_PER_PARENT, 0);
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.reason).toContain(String(MAX_ASSETS_PER_PARENT));
+  });
+
+  test("checkQuota: por encima del presupuesto de bytes recomendado, permite pero avisa", () => {
+    const result = checkQuota(5, RECOMMENDED_TOTAL_BYTES_PER_PARENT + 1);
+    expect(result.allowed).toBe(true);
+    expect(result.reason).toBeDefined();
+  });
+
+  test("sanitizeLabel: recorta a 60, colapsa espacios/guiones, quita la extensión, nunca queda vacío", () => {
+    expect(sanitizeLabel("mi_fondo-de_ciudad.webp")).toBe("mi fondo de ciudad");
+    expect(sanitizeLabel("   .png")).toBe("Imagen sin nombre");
+    expect(sanitizeLabel("a".repeat(100) + ".jpg")).toHaveLength(60);
+    expect(sanitizeLabel("foto   con    espacios.png")).toBe("foto con espacios");
+  });
+
+  const ASSETS = [
+    { url: "https://x/a", thumbUrl: "https://x/a-thumb", label: "Mi fondo", alt: "alt a", kind: "scene" as const },
+    { url: "https://x/b", thumbUrl: "https://x/b-thumb", label: "Mi capa", alt: "alt b", kind: "layer" as const },
+  ];
+
+  test("mergeBackgroundOptions: los assets del padre van primero, con `source` correcto", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, ASSETS, { for: "scene" });
+    expect(merged[0].source).toBe("parent");
+    expect(merged[1].source).toBe("parent");
+    expect(merged.slice(2).every((o) => o.source === "factory")).toBe(true);
+    expect(merged).toHaveLength(ASSETS.length + BACKGROUND_CATALOG.length);
+  });
+
+  test("mergeBackgroundOptions: con for:'layer', los assets kind:'layer' van antes que los kind:'scene', pero ninguno se oculta", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, ASSETS, { for: "layer" });
+    const parentSrcs = merged.filter((o) => o.source === "parent").map((o) => o.src);
+    expect(parentSrcs[0]).toBe("https://x/b"); // la capa, matchesKind:true, va primero
+    expect(parentSrcs[1]).toBe("https://x/a"); // la escena sigue presente, no se oculta
+    expect(merged.find((o) => o.src === "https://x/a")?.matchesKind).toBe(false);
+  });
+
+  test("mergeBackgroundOptions: las 6 miniaturas de fábrica quedan marcadas lowResolution, las 2 escenas no", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, [], { for: "scene" });
+    const lowRes = merged.filter((o) => o.lowResolution);
+    const ok = merged.filter((o) => !o.lowResolution);
+    expect(lowRes).toHaveLength(6);
+    expect(ok).toHaveLength(2);
+  });
+
+  test("mergeBackgroundOptions: un src ya seleccionado que no está en ninguna lista aparece como opción 'no disponible'", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, ASSETS, { for: "scene", selectedSrc: "https://x/borrado" });
+    expect(merged[0]).toMatchObject({ src: "https://x/borrado", available: false });
+  });
+
+  test("mergeBackgroundOptions: un src seleccionado que SÍ existe no genera ninguna entrada duplicada", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, ASSETS, { for: "scene", selectedSrc: "https://x/a" });
+    expect(merged.filter((o) => o.src === "https://x/a")).toHaveLength(1);
   });
 });
