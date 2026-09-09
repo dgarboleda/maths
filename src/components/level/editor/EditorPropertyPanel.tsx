@@ -126,7 +126,7 @@ export function EditorPropertyPanel() {
 
       {typeDef.properties.length > 0 && (
         <section className="space-y-2 border-t border-indigo-500/10 pt-3">
-          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Propiedades</h3>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Propiedades</h3>
           {typeDef.properties.map((field) => (
             <PropertyField
               key={field.key}
@@ -140,7 +140,7 @@ export function EditorPropertyPanel() {
       )}
 
       <section className="space-y-2 border-t border-indigo-500/10 pt-3">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Interacción</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Interacción</h3>
         <label className="block">
           <span className={LABEL_CLASS}>Modo</span>
           <select className={INPUT_CLASS} value={entity.interaction.mode} onChange={(e) => setInteraction({ mode: e.target.value as EntityInteraction["mode"] })}>
@@ -180,7 +180,7 @@ export function EditorPropertyPanel() {
       </section>
 
       <section className="space-y-2 border-t border-indigo-500/10 pt-3">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Desafío</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Desafío</h3>
         <ChallengePicker entityId={entity.id} />
       </section>
     </div>

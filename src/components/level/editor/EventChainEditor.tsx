@@ -88,7 +88,7 @@ export function EventChainEditor() {
       </label>
 
       <section className="space-y-2 border-t border-indigo-500/10 pt-3">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Disparador</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Disparador</h3>
         <label className="block">
           <span className={LABEL_CLASS}>Tipo</span>
           <select className={INPUT_CLASS} value={rule.trigger.type} onChange={(e) => setTrigger({ type: e.target.value as LevelEventType })}>
@@ -121,12 +121,12 @@ export function EventChainEditor() {
       </section>
 
       <section className="space-y-2 border-t border-indigo-500/10 pt-3">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Condición</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Condición</h3>
         <ConditionEditor expr={rule.when} onChange={(when) => dispatch({ type: "UPDATE_EVENT", id: rule.id, patch: { when } })} />
       </section>
 
       <section className="space-y-2 border-t border-indigo-500/10 pt-3">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Acciones</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Acciones</h3>
         {rule.actions.map((action, i) => (
           <div key={i} className="space-y-1.5 rounded-lg border border-indigo-500/15 bg-slate-900/40 p-2">
             <div className="flex items-center gap-1">

@@ -12,6 +12,7 @@ import {
   pointInPolygon,
   polygonIsSimple,
   segmentsIntersect,
+  simplifyPolygon,
   type NavigationMesh,
   type Point,
   type Polygon,
@@ -460,6 +461,41 @@ test.describe("geometry — polygonIsSimple", () => {
   });
 });
 
+test.describe("geometry — simplifyPolygon", () => {
+  test("quita un vértice colineal en medio de un lado recto, sin cambiar la forma", () => {
+    // Cuadrado con un vértice extra a mitad del lado inferior.
+    const square = [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }];
+    expect(simplifyPolygon(square)).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
+  });
+
+  test("no toca los vértices que sobreviven — misma posición exacta", () => {
+    const square = [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }];
+    const result = simplifyPolygon(square);
+    expect(result).toContainEqual({ x: 0, y: 0 });
+    expect(result).toContainEqual({ x: 10, y: 10 });
+  });
+
+  test("un polígono ya sin vértices redundantes no cambia", () => {
+    const triangle = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }];
+    expect(simplifyPolygon(triangle)).toEqual(triangle);
+  });
+
+  test("caso límite: un triángulo (3 vértices) se devuelve intacto sin evaluarlo", () => {
+    const triangle = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }];
+    expect(simplifyPolygon(triangle)).toBe(triangle);
+  });
+
+  test("caso límite: un polígono degenerado (todo colineal) nunca queda con menos de 3 vértices — se devuelve intacto", () => {
+    const degenerate = [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 10, y: 0 }, { x: 15, y: 0 }];
+    expect(simplifyPolygon(degenerate)).toEqual(degenerate);
+  });
+
+  test("descarta un vértice duplicado (arista de longitud 0)", () => {
+    const withDuplicate = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }];
+    expect(simplifyPolygon(withDuplicate)).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
+  });
+});
+
 /* ════════════════════════════════════════════════════════════════════════
  * SUITE 10 — validate: las 8 comprobaciones de validateLevel
  * (docs/level-editor-plan.md §4/§16.1/§17 Fase 2).
@@ -583,6 +619,59 @@ test.describe("validate — validateLevel", () => {
     };
     level.entities.push(entity, { ...entity });
     expect(validateLevel(level).some((i) => i.message.includes("mismo id"))).toBe(true);
+  });
+});
+
+test.describe("validate — presupuestos blandos de tamaño (Fase 13, §14 P2)", () => {
+  test("un nivel recién creado no dispara ningún presupuesto", () => {
+    const issues = validateLevel(emptyLevel());
+    expect(issues.some((i) => /vértices de navegación|entidades|serializado/.test(i.message))).toBe(false);
+  });
+
+  test("más de 300 vértices de navegación/zona: warning, nunca error (no bloquea el Play Test)", () => {
+    const level = emptyLevel();
+    const bigRing = Array.from({ length: 301 }, (_, i) => {
+      const angle = (2 * Math.PI * i) / 301;
+      return { x: 50 + 40 * Math.cos(angle), y: 50 + 40 * Math.sin(angle) };
+    });
+    level.navigation.walkablePolygons = [{ id: "poly_big", points: bigRing, initiallyEnabled: true }];
+    level.navigation.spawn = { x: 50, y: 50 };
+    const issue = validateLevel(level).find((i) => i.message.includes("vértices de navegación"));
+    expect(issue?.severity).toBe("warning");
+  });
+
+  test("más de 150 entidades: warning", () => {
+    const level = emptyLevel();
+    const typeDef = getEntityType("interactive");
+    level.entities = Array.from({ length: 151 }, (_, i) => ({
+      id: `entity_${i}`,
+      type: "interactive" as const,
+      name: `Objeto ${i}`,
+      position: { x: 50, y: 50 },
+      ...createEntityDefaults(typeDef),
+    }));
+    const issue = validateLevel(level).find((i) => i.message.includes("entidades"));
+    expect(issue?.severity).toBe("warning");
+  });
+
+  test("tamaño serializado por encima de 150KB: warning", () => {
+    const level = emptyLevel();
+    const typeDef = getEntityType("interactive");
+    // 50 entidades (bien por debajo del presupuesto de cantidad) con una
+    // propiedad larga cada una — aísla el aviso de TAMAÑO del de cantidad.
+    level.entities = Array.from({ length: 50 }, (_, i) => {
+      const defaults = createEntityDefaults(typeDef);
+      return {
+        id: `entity_${i}`,
+        type: "interactive" as const,
+        name: `Objeto ${i}`,
+        position: { x: 50, y: 50 },
+        ...defaults,
+        properties: { ...defaults.properties, note: "x".repeat(4000) },
+      };
+    });
+    const issue = validateLevel(level).find((i) => i.message.includes("serializado"));
+    expect(issue?.severity).toBe("warning");
   });
 });
 

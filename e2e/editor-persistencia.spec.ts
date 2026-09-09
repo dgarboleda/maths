@@ -11,7 +11,8 @@ import {
   listVersions,
   saveLevel,
 } from "@/lib/level/persistence/levelRepository";
-import type { LevelBackground } from "@/lib/level/schema";
+import { LevelTooLargeError } from "@/lib/level/serialize";
+import type { LevelBackground, LevelEntity } from "@/lib/level/schema";
 
 /**
  * Persistencia del Level Editor contra el emulador de Firestore real — Fase
@@ -106,6 +107,34 @@ test.describe("persistencia — levelRepository", () => {
 
       const current = await getLevel(firestoreFns, db, parentId, created.id);
       expect(current!.name).toBe("Guardado por la otra pestaña");
+    } finally {
+      await deleteApp(app);
+    }
+  });
+
+  test("guardar un nivel que excede el límite duro de tamaño lanza LevelTooLargeError, sin escribir nada (Fase 13, §14 P2)", async () => {
+    const { app, db, parentId } = await nuevoPadre();
+    try {
+      const created = await createLevel(firestoreFns, db, parentId, "Nivel de prueba", BACKGROUND);
+      const entities: LevelEntity[] = Array.from({ length: 50 }, (_, i) => ({
+        id: `entity_${i}`,
+        type: "interactive",
+        name: `Objeto ${i}`,
+        position: { x: 50, y: 50 },
+        rotation: 0,
+        scale: 1,
+        layer: 0,
+        visible: true,
+        interaction: { mode: "none", standPoint: null, radius: 4, prompt: "", lockedNote: "", enabledWhen: { kind: "always" } },
+        state: { initial: "default" },
+        properties: { note: "x".repeat(10_000) }, // 50×10.000 ≈ 488KB, por encima del límite duro de assertSize (400KB)
+      }));
+      const huge = { ...created, entities };
+
+      await expect(saveLevel(firestoreFns, db, parentId, created.id, huge)).rejects.toThrow(LevelTooLargeError);
+
+      const current = await getLevel(firestoreFns, db, parentId, created.id);
+      expect(current!.version).toBe(1); // la transacción abortó: nunca avanzó ni escribió una versión nueva
     } finally {
       await deleteApp(app);
     }
