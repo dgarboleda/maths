@@ -6,6 +6,8 @@ import { getModule } from "@/lib/curriculum";
 import type { InteractionKind } from "@/lib/world/scenes";
 import type { ChallengePlacement, LevelEntity } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
+import type { recordModuleAttempt } from "@/lib/attemptRecorder";
+import type { awardMasteryBadges } from "@/lib/masteryRewards";
 
 /** Icono/tono más cercano de cada tipo de entidad — solo estilo, no cambia
  *  qué desafío se resuelve ni cómo (docs/level-editor-plan.md §9.3). */
@@ -40,6 +42,8 @@ export function LevelChallengeOverlay({
   soundOn,
   onClose,
   onResolved,
+  recordAttempt,
+  awardBadges,
 }: {
   placement: ChallengePlacement;
   entity: LevelEntity | undefined;
@@ -50,6 +54,10 @@ export function LevelChallengeOverlay({
   soundOn: boolean;
   onClose: () => void;
   onResolved: (result: { moduleId: string; updated: SkillProgress; correct: boolean; stars: number }) => void;
+  /** Overrides de Play Test (Fase 11) — reenviados tal cual a `PuzzleOverlay`.
+   *  `undefined` en el juego real: ese es el comportamiento por defecto. */
+  recordAttempt?: typeof recordModuleAttempt;
+  awardBadges?: typeof awardMasteryBadges;
 }) {
   const pendingRef = useRef<{ moduleId: string; updated: SkillProgress; correct: boolean } | null>(null);
   const mod = getModule(placement.moduleId);
@@ -76,6 +84,8 @@ export function LevelChallengeOverlay({
       streak={streak}
       soundOn={soundOn}
       onClose={onClose}
+      recordAttempt={recordAttempt}
+      awardBadges={awardBadges}
       onResolved={(moduleId, updated, correct) => {
         pendingRef.current = { moduleId, updated, correct };
       }}

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { LevelDefinition, LevelEntity } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
 import { useLevelRuntime } from "@/lib/level/runtime/useLevelRuntime";
-import { createLiveServices } from "@/lib/level/runtime/services";
+import { createLiveServices, createSandboxServices } from "@/lib/level/runtime/services";
 import { LevelHud } from "./LevelHud";
 import { RuntimeCanvas } from "./RuntimeCanvas";
 import { LevelChallengeOverlay } from "./LevelChallengeOverlay";
@@ -31,6 +31,8 @@ export function LevelRuntime({
   childName,
   progressBySkill: initialProgressBySkill,
   soundOn,
+  sandbox = false,
+  onExit,
 }: {
   level: LevelDefinition;
   parentId: string;
@@ -38,6 +40,14 @@ export function LevelRuntime({
   childName: string;
   progressBySkill: Record<string, SkillProgress>;
   soundOn: boolean;
+  /** Play Test (Fase 11, §11.2): mismo componente, misma UI, pero
+   *  `recordAttempt`/`awardBadges` quedan interceptados (cero escrituras a
+   *  Firestore) y cruzar un `LevelExit` vuelve al editor en vez de navegar
+   *  de verdad. `false` en el juego real — comportamiento sin cambios. */
+  sandbox?: boolean;
+  /** Solo se usa con `sandbox`: vuelve al modo edición (botón "Salir" del
+   *  HUD y cruzar un punto de destino), nunca navega el navegador. */
+  onExit?: () => void;
 }) {
   const router = useRouter();
   const [banner, setBanner] = useState<string | null>(null);
@@ -63,7 +73,14 @@ export function LevelRuntime({
     onOpenChallenge: setOpenChallengeId,
   });
 
-  const runtime = useLevelRuntime(level, progressBySkill, services, (targetHref) => router.push(targetHref));
+  const runtime = useLevelRuntime(
+    level,
+    progressBySkill,
+    services,
+    sandbox ? () => onExit?.() : (targetHref) => router.push(targetHref),
+  );
+
+  const sandboxServices = sandbox ? createSandboxServices() : null;
 
   function onGroundClick(xPct: number, yPct: number) {
     const target = runtime.nearestWalkablePoint({ x: xPct, y: yPct });
@@ -114,7 +131,7 @@ export function LevelRuntime({
         onEntityClick={onEntityClick}
       />
 
-      <LevelHud levelName={level.name} childId={childId} />
+      <LevelHud levelName={level.name} childId={childId} onExit={sandbox ? onExit : undefined} />
 
       {banner && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center px-4">
@@ -144,6 +161,8 @@ export function LevelRuntime({
           soundOn={soundOn}
           onClose={() => setOpenChallengeId(null)}
           onResolved={handleChallengeResolved}
+          recordAttempt={sandboxServices?.recordAttempt}
+          awardBadges={sandboxServices?.awardBadges}
         />
       )}
     </div>

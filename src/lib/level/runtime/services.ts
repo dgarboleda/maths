@@ -1,5 +1,9 @@
 import { playSound, type SoundType } from "@/lib/gameSound";
 import type { SideEffect } from "@/lib/level/events/bus";
+import { recordAttempt as computeUpdatedProgress, todayKey } from "@/lib/mastery";
+import { starsForAnswer } from "@/lib/economy";
+import { recordModuleAttempt } from "@/lib/attemptRecorder";
+import { awardMasteryBadges } from "@/lib/masteryRewards";
 
 /**
  * A dónde van los `side` de un `RuntimeEffect` (docs/level-editor-plan.md
@@ -70,4 +74,43 @@ export function createLiveServices(opts: {
       if (KNOWN_SOUNDS.has(sound as SoundType)) playSound(sound as SoundType, opts.soundOn);
     },
   };
+}
+
+/**
+ * Sustitutos de `recordModuleAttempt`/`awardMasteryBadges` para el Play Test
+ * (Fase 11, §11.2): calculan exactamente el mismo resultado (mismas reglas
+ * de `mastery.ts`/`economy.ts`) para que resolver un desafío se sienta
+ * igual, pero sin ningún `addDoc`/`setDoc` — ni intento, ni progreso, ni
+ * estrellas, ni insignia quedan escritos en Firestore. `LevelChallengeOverlay`
+ * los pasa a `PuzzleOverlay` en las dos props opcionales que ya existen para
+ * eso (`recordAttempt`/`awardBadges`), así que es el mismo componente que en
+ * el juego real, no una copia — cumple el criterio 21/A7 (cero escrituras
+ * durante una sesión de prueba).
+ */
+export interface SandboxChallengeServices {
+  recordAttempt: typeof recordModuleAttempt;
+  awardBadges: typeof awardMasteryBadges;
+}
+
+const sandboxRecordAttempt: typeof recordModuleAttempt = async (
+  _firestoreFns,
+  _db,
+  _parentId,
+  _childId,
+  mod,
+  prevProgress,
+  correct,
+  streak,
+  hintsUsed = 0,
+) => {
+  const wasMastered = Boolean(prevProgress?.masteredAt);
+  const updatedProgress = computeUpdatedProgress(prevProgress, correct, todayKey());
+  const stars = correct ? starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday: 0, hintsUsed }) : 0;
+  return { updatedProgress, wasMastered, stars };
+};
+
+const sandboxAwardBadges: typeof awardMasteryBadges = async () => {};
+
+export function createSandboxServices(): SandboxChallengeServices {
+  return { recordAttempt: sandboxRecordAttempt, awardBadges: sandboxAwardBadges };
 }

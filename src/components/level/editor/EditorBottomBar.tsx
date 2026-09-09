@@ -3,11 +3,13 @@
 import { Bug, Grid3x3, Magnet, Minus, Plus, Play } from "lucide-react";
 import { findSelectedPolygon } from "./editorReducer";
 import { useLevelEditor } from "./LevelEditorProvider";
+import { useStartPlaytest } from "./usePlaytestGate";
 
 /** Barra inferior — docs/level-editor-plan.md §5.1. */
 export function EditorBottomBar() {
   const { state, dispatch } = useLevelEditor();
   const selectedPolygon = findSelectedPolygon(state.level, state.selection);
+  const playtest = useStartPlaytest();
 
   function zoomStep(factor: number) {
     dispatch({ type: "SET_VIEWPORT", viewport: { zoom: state.viewport.zoom * factor } });
@@ -63,9 +65,10 @@ export function EditorBottomBar() {
 
       <button
         type="button"
-        disabled
-        title="Disponible cuando el Play Test esté implementado"
-        className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 font-bold opacity-40"
+        onClick={playtest.start}
+        disabled={playtest.disabled}
+        title={playtest.reason ?? undefined}
+        className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 font-bold hover:bg-slate-800 disabled:opacity-40"
       >
         <Play className="size-3.5" aria-hidden="true" />
         Probar nivel
