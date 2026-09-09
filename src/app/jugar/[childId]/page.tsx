@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
@@ -10,20 +10,33 @@ import { nextChallenge } from "@/lib/curriculum";
 import { WorldTopBar } from "@/components/world/WorldHud";
 import { QuestScene } from "@/components/world/QuestScene";
 import { ShopPanel, type RequestDoc } from "@/components/world/ShopPanel";
+import { LevelRuntime } from "@/components/level/runtime/LevelRuntime";
+import { ciudadCentralAsLevel } from "@/lib/level/legacy/ciudadCentral";
 import { playSound } from "@/lib/gameSound";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
 import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 /**
- * Ciudad Central: la pantalla de entrada del niño es la misión "El apagón",
- * puerto del prototipo de referencia — una sola escena pintada (no un
- * tablero de zonas), con la Dra. Nia, una terminal, un medidor y una
- * compuerta. Todo lo que se ve —qué punto está activo, qué se enciende, qué
- * se abre— se lee del motor académico de siempre (`QUESTS[0]` en
- * `lib/world/quests.ts`); esta pantalla no guarda ningún estado de misión
- * propio (ver `QuestScene`/`lib/world/questScene.ts`).
+ * Ciudad Central: la pantalla de entrada del niño es la misión "El apagón".
+ *
+ * Con `NEXT_PUBLIC_LEVELS_V2` apagado (el default hoy) sigue siendo el
+ * puerto del prototipo de referencia de siempre — una sola escena pintada
+ * (no un tablero de zonas), con la Dra. Nia, una terminal, un medidor y una
+ * compuerta, leyendo `QUESTS[0]` (`lib/world/quests.ts`) sin ningún estado
+ * de misión propio (`QuestScene`/`lib/world/questScene.ts`).
+ *
+ * Con el flag activo (Fase 14, docs/level-editor-plan.md §12.4, "decisión
+ * explícita" ya tomada), la escena la pinta el motor genérico del Level
+ * Editor (`LevelRuntime`) sobre `ciudadCentralAsLevel()` — mismo mundo,
+ * mismos 3 desafíos y la misma restauración final, con algunas piezas muy
+ * específicas de `QuestScene.tsx` simplificadas (ver el comentario largo de
+ * `ciudadCentral.ts`: sin la presentación especial de Khaos la primera vez,
+ * sin flecha guía). `QuestScene.tsx` no se toca ni se borra — sigue siendo
+ * la escena real mientras el flag esté apagado (§12.1, "coexistencia, no
+ * reemplazo").
  */
+const LEVELS_V2 = process.env.NEXT_PUBLIC_LEVELS_V2 === "1";
 export default function CiudadCentralPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -39,6 +52,12 @@ export default function CiudadCentralPage() {
   const totalStars = useTotalStars(user?.uid, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
   const placementPending = useRequirePlacement(params.childId, child, router);
+  // Un solo `LevelDefinition` por sesión de la página: `ciudadCentralAsLevel`
+  // genera ids nuevos en cada llamada (`newLevelId`/`newEntityId`/...), así
+  // que recrearlo en cada render perdería la identidad de entidades/eventos
+  // a mitad de partida (el bus de eventos vive en un `useState` que nunca se
+  // reemplaza, atado a las referencias de este `level` — ver useLevelRuntime.ts).
+  const levelV2 = useMemo(() => (LEVELS_V2 && user ? ciudadCentralAsLevel(user.uid) : null), [user]);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -176,22 +195,51 @@ export default function CiudadCentralPage() {
           nextChallengeModule={nextChallenge(progressBySkill)}
         />
 
-        <QuestScene
-          childId={params.childId}
-          parentId={user.uid}
-          childName={child.name}
-          progressBySkill={progressBySkill}
-          streak={streak}
-          soundOn={soundOn}
-          onResolved={(moduleId, updated, correct) => {
-            setProgressBySkill((prev) => ({ ...prev, [moduleId]: updated }));
-            setStreak((s) => (correct ? s + 1 : 0));
-          }}
-          onOpenShop={() => {
-            playSound("click", soundOn);
-            setPanel("tienda");
-          }}
-        />
+        {levelV2 ? (
+          <LevelRuntime
+            level={levelV2}
+            parentId={user.uid}
+            childId={params.childId}
+            childName={child.name}
+            progressBySkill={progressBySkill}
+            soundOn={soundOn}
+          />
+        ) : (
+          <QuestScene
+            childId={params.childId}
+            parentId={user.uid}
+            childName={child.name}
+            progressBySkill={progressBySkill}
+            streak={streak}
+            soundOn={soundOn}
+            onResolved={(moduleId, updated, correct) => {
+              setProgressBySkill((prev) => ({ ...prev, [moduleId]: updated }));
+              setStreak((s) => (correct ? s + 1 : 0));
+            }}
+            onOpenShop={() => {
+              playSound("click", soundOn);
+              setPanel("tienda");
+            }}
+          />
+        )}
+
+        {/* La tienda (`ShopPanel`) solo se abre hoy desde el registro de
+            misión de `QuestScene` (`MissionOverlay`, no genérico) — con el
+            motor nuevo activo ese botón no existe todavía, así que este es
+            el único acceso mientras tanto (Fase 14, simplificación
+            documentada en `ciudadCentral.ts`). */}
+        {levelV2 && (
+          <button
+            type="button"
+            onClick={() => {
+              playSound("click", soundOn);
+              setPanel("tienda");
+            }}
+            className="pointer-events-auto fixed bottom-3 right-3 z-30 flex min-h-11 items-center gap-1.5 rounded-full world-hud-panel px-3 py-1.5 text-sm font-semibold text-slate-100 sm:bottom-4 sm:right-4"
+          >
+            🏪 Tienda
+          </button>
+        )}
       </div>
 
       {panel === "tienda" && (

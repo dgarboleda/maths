@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LevelDefinition, LevelEntity } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
+import { evaluateCondition } from "@/lib/level/events/conditions";
 import { useLevelRuntime } from "@/lib/level/runtime/useLevelRuntime";
 import { createLiveServices, createSandboxServices } from "@/lib/level/runtime/services";
 import { activeMission } from "@/lib/level/runtime/state";
@@ -114,6 +115,15 @@ export function LevelRuntime({
 
   async function onEntityClick(entity: LevelEntity) {
     if (entity.interaction.mode === "none" || !entity.interaction.standPoint) return;
+    // `enabledWhen` (§5.3/§8) queda declarado en el esquema desde la Fase 6
+    // pero ningún componente lo leía todavía — acá es donde corresponde:
+    // antes de acercarse, no después. Con la condición sin cumplir se avisa
+    // con `lockedNote` (si lo tiene) y no pasa nada más, igual que un
+    // hotspot bloqueado de Ciudad Central hoy.
+    if (!evaluateCondition(entity.interaction.enabledWhen, { flags: runtime.state.flags, entityStates: runtime.state.entityStates })) {
+      if (entity.interaction.lockedNote) services.banner(entity.interaction.lockedNote, 3000);
+      return;
+    }
     await runtime.approach(entity.interaction.standPoint, entity.position);
     // Un desafío asociado se abre directo — §9.3 paso 2: no hace falta
     // ninguna regla de evento autorada para eso, a diferencia de un diálogo
