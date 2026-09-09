@@ -7,9 +7,11 @@ function EnemyRender({ entity, activeState, selected, onSelect }: EntityRenderPr
 }
 
 /**
- * `properties.patrol: Vec2[]` y `properties.blockerPolygonId` ya están en el
- * esquema (§7.3) para cuando exista `useEntityMovement` (Fase 9+) — hoy solo
- * se guardan, sin ningún efecto en el runtime todavía.
+ * `properties.patrol: Vec2[]` ya está en el esquema (§7.3) para cuando
+ * exista `useEntityMovement` (Fase 9+, opcional) — hoy solo se guarda, sin
+ * ningún efecto en el runtime todavía. `blockerPolygonId` sí se resuelve
+ * (mismo criterio que `door`): un enemigo activo bloquea su casilla, uno
+ * derrotado no.
  */
 export const ENEMY_TYPE: EntityTypeDef = {
   id: "enemy",
@@ -38,4 +40,9 @@ export const ENEMY_TYPE: EntityTypeDef = {
     { kind: "polygonRef", key: "blockerPolygonId", label: "Bloqueador", default: "", role: "blocked" },
   ],
   Render: EnemyRender,
+  resolveBlockerIds: (entity, activeState) => {
+    const blockerId = entity.properties.blockerPolygonId;
+    if (typeof blockerId !== "string" || blockerId === "" || activeState.id !== "active") return [];
+    return [blockerId];
+  },
 };

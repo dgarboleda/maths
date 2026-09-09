@@ -59,6 +59,22 @@ export interface EntityTypeDef {
   /** Mismo componente en editor y runtime — `mode` solo añade el resalte de
    *  selección. Lo que se ve editando es lo que se ve jugando. */
   Render: ComponentType<EntityRenderProps>;
+  /**
+   * Qué `NavPolygon` bloquea esta entidad AHORA (Fase 9, `runtime/
+   * navigation.ts:buildRuntimeMesh`) — por defecto `activeState.
+   * activeBlockerIds` (fijo por tipo, §7.3). Un tipo cuyo bloqueador es dato
+   * de INSTANCIA en vez de estar fijo en `defaultStates` (p. ej. `door`:
+   * `properties.blockerPolygonId` es el vano que dibujó quien construyó ESE
+   * nivel, no algo que el tipo pueda declarar de antemano) lo sobreescribe
+   * acá — ver `types/door.tsx`.
+   */
+  resolveBlockerIds?: (entity: LevelEntity, activeState: EntityStateDef) => string[];
+}
+
+/** Bloqueadores activos de `entity` ahora mismo — nunca se lee
+ *  `activeState.activeBlockerIds` directo fuera de este helper (Fase 9). */
+export function activeBlockerIdsOf(entity: LevelEntity, typeDef: EntityTypeDef, activeState: EntityStateDef): string[] {
+  return typeDef.resolveBlockerIds ? typeDef.resolveBlockerIds(entity, activeState) : activeState.activeBlockerIds;
 }
 
 const registry = new Map<EntityTypeId, EntityTypeDef>();
