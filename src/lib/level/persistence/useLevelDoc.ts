@@ -69,5 +69,17 @@ export function useLevelDoc(parentId: string | undefined, levelId: string) {
     [parentId, levelId],
   );
 
-  return { level, loading, saveState, saveError, save };
+  /** Trae la versión viva más reciente sin pasar por `save()` — la usa el
+   *  diálogo de conflicto de `StaleLevelError` (Fase 13, §10.4) para que
+   *  "Recargar" muestre de verdad lo que hay en el servidor ahora, no lo que
+   *  había al abrir el editor. */
+  const reload = useCallback(async (): Promise<LevelDefinition | null> => {
+    if (!parentId) return null;
+    const { db, firestore } = await getFirebase();
+    const fresh = await getLevel(firestore, db, parentId, levelId);
+    setLevel(fresh);
+    return fresh;
+  }, [parentId, levelId]);
+
+  return { level, loading, saveState, saveError, save, reload };
 }

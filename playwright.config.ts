@@ -48,9 +48,13 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     {
       // Un móvil pequeño: la app se usa sobre todo en tablet o teléfono.
+      // `editor.spec.ts` queda fuera: el Level Editor (herramienta del
+      // padre-autor, no el juego) todavía no tiene drawers para Toolbox/
+      // PropertyPanel por debajo de `lg` (quedan `hidden` sin más, Fase 13),
+      // así que sus pruebas asumen viewport de escritorio a propósito.
       name: "móvil",
       use: { ...devices["Pixel 7"] },
-      testIgnore: /accesibilidad\.spec\.ts/,
+      testIgnore: /(accesibilidad|editor)\.spec\.ts/,
     },
   ],
   webServer: [

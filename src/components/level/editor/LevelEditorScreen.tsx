@@ -90,7 +90,18 @@ function PlaytestStage({ level, sessionId, onReset, onExit }: { level: LevelDefi
  * reescribirse cuando eso pase, solo dejar de estar vacía.
  */
 export function LevelEditorScreen() {
-  const { state, dispatch, loading, saveNow, draftRecovery, applyDraftRecovery, dismissDraftRecovery } = useLevelEditor();
+  const {
+    state,
+    dispatch,
+    loading,
+    saveNow,
+    draftRecovery,
+    applyDraftRecovery,
+    dismissDraftRecovery,
+    conflict,
+    reloadFromConflict,
+    dismissConflict,
+  } = useLevelEditor();
   useEditorHotkeys({ state, dispatch, onSave: () => void saveNow() });
   const inPlaytest = state.playtestSessionId !== null;
 
@@ -141,7 +152,7 @@ export function LevelEditorScreen() {
             </main>
 
             <aside className="hidden w-64 shrink-0 overflow-y-auto border-l border-indigo-500/20 bg-slate-900/40 p-3 lg:block">
-              <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Problemas</h2>
+              <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Problemas</h2>
               <IssuesPanel />
               {state.selection.kind === "entity" && (
                 <div className="mt-4 border-t border-indigo-500/10 pt-4">
@@ -174,6 +185,36 @@ export function LevelEditorScreen() {
       </div>
 
       {!inPlaytest && <EditorBottomBar />}
+
+      {conflict && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 p-4">
+          <div role="alertdialog" aria-modal="true" aria-labelledby="conflicto-titulo" className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-slate-900 p-5">
+            <h2 id="conflicto-titulo" className="text-sm font-bold text-amber-200">
+              Se guardó una versión más nueva desde otra sesión
+            </h2>
+            <p className="mt-2 text-xs leading-relaxed text-slate-300">{conflict.message}</p>
+            <p className="mt-2 text-xs leading-relaxed text-slate-400">
+              Tus cambios locales no se guardaron. Recargá para ver la versión del servidor (perdés lo que editaste acá desde el último guardado), o seguí editando y volvé a intentar guardar más tarde.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={dismissConflict}
+                className="rounded-lg px-3 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800"
+              >
+                Seguir editando
+              </button>
+              <button
+                type="button"
+                onClick={() => void reloadFromConflict()}
+                className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-2 text-xs font-bold text-white"
+              >
+                Recargar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

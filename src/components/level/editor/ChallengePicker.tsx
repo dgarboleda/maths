@@ -105,7 +105,7 @@ export function ChallengePicker({ entityId }: { entityId: string }) {
           if (mods.length === 0) return null;
           return (
             <li key={strand.slug}>
-              <p className="px-1 pt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              <p className="px-1 pt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                 {strand.emoji} {strand.label}
               </p>
               {mods.map((m) => (

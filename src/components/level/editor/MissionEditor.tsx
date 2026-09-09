@@ -97,7 +97,7 @@ export function MissionEditor() {
       </label>
 
       <div className="space-y-2 border-t border-indigo-500/10 pt-3">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Objetivos</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Objetivos</h3>
         {mission.objectives.map((objective, i) => (
           <div key={objective.id} className="space-y-1.5 rounded-lg border border-indigo-500/15 bg-slate-900/40 p-2">
             <div className="flex items-center gap-1.5">

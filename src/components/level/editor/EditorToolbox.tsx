@@ -72,7 +72,7 @@ export function EditorToolbox() {
       <ToolSection title="Navegación" items={navItems} isActive={isActive} onSelect={selectTool} />
       <ToolSection title="Objetos" items={objectItems} isActive={isActive} onSelect={selectTool} />
       <section>
-        <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Gameplay</h2>
+        <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Gameplay</h2>
         <ul className="space-y-1">
           {gameplayItems.map(({ tool, label, icon: Icon, hint }) => (
             <li key={label}>
@@ -209,7 +209,7 @@ function ToolSection({
   if (items.length === 0) return null;
   return (
     <section>
-      <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">{title}</h2>
+      <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{title}</h2>
       <ul className="space-y-1">
         {items.map(({ tool, label, icon: Icon, hint }) => (
           <li key={label}>

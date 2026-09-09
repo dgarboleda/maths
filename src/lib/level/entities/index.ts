@@ -16,6 +16,7 @@ import { DOOR_TYPE } from "./types/door";
 import { TERMINAL_TYPE } from "./types/terminal";
 import { COLLECTIBLE_TYPE } from "./types/collectible";
 import { INTERACTIVE_TYPE } from "./types/interactive";
+import { PALANCA_TYPE } from "./types/palanca";
 
 registerEntityType(NPC_TYPE);
 registerEntityType(ENEMY_TYPE);
@@ -23,6 +24,9 @@ registerEntityType(DOOR_TYPE);
 registerEntityType(TERMINAL_TYPE);
 registerEntityType(COLLECTIBLE_TYPE);
 registerEntityType(INTERACTIVE_TYPE);
+// Tipo de prueba de extensibilidad (Fase 13, criterio A10, §17) — su propio
+// PR es exactamente esta línea + types/palanca.tsx; ver el comentario ahí.
+registerEntityType(PALANCA_TYPE);
 
 export { getEntityType, listEntityTypes, resolveActiveState, createEntityDefaults, activeBlockerIdsOf } from "./registry";
 export type { EntityTypeDef, EntityRenderProps, PropertyFieldDef } from "./registry";

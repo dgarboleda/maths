@@ -43,7 +43,10 @@ function zoneContains(zone: RuntimeZone, p: Vec2): boolean {
 function rafNow(): number {
   return performance.now();
 }
-function prefersReducedMotion(): boolean {
+/** Exportado para que `useLevelRuntime` (Fase 13, criterio A12) también
+ *  colapse los `delayMs` de la cadena de eventos a 0 con esta preferencia —
+ *  mismo criterio, un solo lugar que sepa leer el media query. */
+export function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 function segmentMs(dist: number): number {

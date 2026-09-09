@@ -37,9 +37,12 @@ import type { LevelDefinition, LevelEventRule, LevelIssue, NavPolygon } from "./
  *    se cuelgue es `MAX_CHAIN_DEPTH` en tiempo de ejecución (`events/bus.ts`);
  *    esto solo avisa al autor del nivel antes de publicar.
  *
- * Presupuestos blandos (warnings de tamaño/rendimiento, §14 P2) tampoco
- * viven acá todavía: dependen de `serialize.ts` (`assertSize`) y se añaden
- * en el mismo lugar cuando ese módulo esté completo dentro de esta fase.
+ * 10. (Fase 13) Presupuestos blandos de tamaño (§14 P2): número de vértices
+ *     de navegación/zona, número de entidades, y tamaño serializado —
+ *     siempre `warning`, muy por debajo del límite duro de `assertSize`
+ *     (`serialize.ts`, que sí lanza justo antes de escribir a Firestore):
+ *     avisan con margen para que el autor simplifique (`simplifyPolygon`,
+ *     `navmesh.ts`) antes de llegar ahí.
  */
 export function validateLevel(level: LevelDefinition): LevelIssue[] {
   const issues: LevelIssue[] = [];
@@ -52,6 +55,7 @@ export function validateLevel(level: LevelDefinition): LevelIssue[] {
   validateReferences(level, issues);
   validateUniqueIds(level, issues);
   validateEventCycles(level, issues);
+  validateBudgets(level, issues);
 
   return issues;
 }
@@ -260,6 +264,44 @@ const CYCLE_EDGES: Partial<Record<LevelEventRule["actions"][number]["type"], Lev
   START_CHALLENGE: "ON_CHALLENGE_STARTED",
   UPDATE_MISSION: "ON_MISSION_COMPLETE",
 };
+
+/** Muy por debajo del límite duro de `assertSize` (`serialize.ts`, 400KiB
+ *  por defecto) y del límite real de Firestore (1MiB) — dan margen para
+ *  simplificar antes de que un guardado real falle. */
+const SOFT_VERTEX_BUDGET = 300;
+const SOFT_ENTITY_BUDGET = 150;
+const SOFT_SIZE_BUDGET_BYTES = 150 * 1024;
+
+function validateBudgets(level: LevelDefinition, issues: LevelIssue[]): void {
+  const vertexCount =
+    level.navigation.walkablePolygons.reduce((n, p) => n + p.points.length, 0) +
+    level.navigation.blockedPolygons.reduce((n, p) => n + p.points.length, 0) +
+    level.zones.reduce((n, z) => n + (z.shape.kind === "polygon" ? z.shape.points.length : 0), 0);
+  if (vertexCount > SOFT_VERTEX_BUDGET) {
+    issues.push({
+      severity: "warning",
+      message: `El nivel tiene ${vertexCount} vértices de navegación/zona, por encima de ${SOFT_VERTEX_BUDGET} — conviene simplificar los polígonos más grandes.`,
+      target: { kind: "level" },
+    });
+  }
+
+  if (level.entities.length > SOFT_ENTITY_BUDGET) {
+    issues.push({
+      severity: "warning",
+      message: `El nivel tiene ${level.entities.length} entidades, por encima de ${SOFT_ENTITY_BUDGET}.`,
+      target: { kind: "level" },
+    });
+  }
+
+  const sizeBytes = new TextEncoder().encode(JSON.stringify(level)).length;
+  if (sizeBytes > SOFT_SIZE_BUDGET_BYTES) {
+    issues.push({
+      severity: "warning",
+      message: `El nivel serializado pesa ${(sizeBytes / 1024).toFixed(0)}KB, por encima de ${(SOFT_SIZE_BUDGET_BYTES / 1024).toFixed(0)}KB — se acerca al límite de guardado.`,
+      target: { kind: "level" },
+    });
+  }
+}
 
 function validateEventCycles(level: LevelDefinition, issues: LevelIssue[]): void {
   // arista regla → regla: la acción de `from` puede re-disparar el trigger de `to`
