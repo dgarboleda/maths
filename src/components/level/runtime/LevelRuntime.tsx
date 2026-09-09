@@ -6,10 +6,12 @@ import type { LevelDefinition, LevelEntity } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
 import { useLevelRuntime } from "@/lib/level/runtime/useLevelRuntime";
 import { createLiveServices, createSandboxServices } from "@/lib/level/runtime/services";
+import { activeMission } from "@/lib/level/runtime/state";
 import { LevelHud } from "./LevelHud";
 import { RuntimeCanvas } from "./RuntimeCanvas";
 import { LevelChallengeOverlay } from "./LevelChallengeOverlay";
 import { LevelDialogOverlay } from "./LevelDialogOverlay";
+import { LevelMissionOverlay } from "./LevelMissionOverlay";
 
 /**
  * Punto de entrada del runtime — docs/level-editor-plan.md §9 (Fase 9) + §10
@@ -24,6 +26,15 @@ import { LevelDialogOverlay } from "./LevelDialogOverlay";
  * evento de Fase 8) quien decide si eso abre un diálogo (`SHOW_DIALOG`),
  * arranca un desafío (`START_CHALLENGE`) o ninguna de las dos cosas.
  */
+
+/** Envuelto en una función propia para que el linter de pureza de React no
+ *  confunda esta llamada (siempre disparada desde un manejador de evento del
+ *  bus, nunca durante el render) con una lectura impura del render en sí —
+ *  mismo criterio que `now()` en `QuestScene.tsx:41`. */
+function now(): number {
+  return Date.now();
+}
+
 export function LevelRuntime({
   level,
   parentId,
@@ -56,6 +67,14 @@ export function LevelRuntime({
   const [streak, setStreak] = useState(0);
   const [openDialogId, setOpenDialogId] = useState<string | null>(null);
   const [openChallengeId, setOpenChallengeId] = useState<string | null>(null);
+  const [missionOpen, setMissionOpen] = useState(false);
+  // Solo `stars`/`key`: el evento de GENERATE_AXIA no carga ninguna posición
+  // (no sabe qué entidad lo disparó, §8.4), así que la animación se ancla a
+  // `runtime.pose` **en el momento de pintar**, no a un snapshot capturado
+  // al disparar — evita necesitar un ref con la posición actual dentro del
+  // armado de `services` (que corre en cada render, antes de que exista
+  // `runtime.pose`: leerlo ahí violaría la regla `react-hooks/refs`).
+  const [axiaPulse, setAxiaPulse] = useState<{ stars: number; key: number } | null>(null);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -71,6 +90,11 @@ export function LevelRuntime({
     },
     onOpenDialog: setOpenDialogId,
     onOpenChallenge: setOpenChallengeId,
+    onAxiaPulse: (stars) => {
+      const key = now();
+      setAxiaPulse({ stars, key });
+      window.setTimeout(() => setAxiaPulse((p) => (p?.key === key ? null : p)), 1400);
+    },
   });
 
   const runtime = useLevelRuntime(
@@ -81,6 +105,7 @@ export function LevelRuntime({
   );
 
   const sandboxServices = sandbox ? createSandboxServices() : null;
+  const mission = activeMission(level, progressBySkill, runtime.state);
 
   function onGroundClick(xPct: number, yPct: number) {
     const target = runtime.nearestWalkablePoint({ x: xPct, y: yPct });
@@ -127,11 +152,18 @@ export function LevelRuntime({
         walking={runtime.walking}
         childName={childName}
         debug={debug}
+        axiaPulse={axiaPulse ? { ...axiaPulse, x: runtime.pose.x, y: runtime.pose.y } : null}
         onGroundClick={onGroundClick}
         onEntityClick={onEntityClick}
       />
 
-      <LevelHud levelName={level.name} childId={childId} onExit={sandbox ? onExit : undefined} />
+      <LevelHud
+        levelName={level.name}
+        childId={childId}
+        onExit={sandbox ? onExit : undefined}
+        mission={mission}
+        onOpenMission={() => setMissionOpen(true)}
+      />
 
       {banner && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center px-4">
@@ -144,10 +176,15 @@ export function LevelRuntime({
       <p className="sr-only" aria-live="polite">
         {runtime.unreachableAnnouncement}
       </p>
+      <p className="sr-only" aria-live="polite">
+        {axiaPulse ? `+${axiaPulse.stars} estrellas` : ""}
+      </p>
 
       {activeDialog && (
         <LevelDialogOverlay key={activeDialog.id} dialog={activeDialog} entities={level.entities} onClose={() => setOpenDialogId(null)} />
       )}
+
+      {missionOpen && mission && <LevelMissionOverlay progress={mission} onClose={() => setMissionOpen(false)} />}
 
       {activePlacement && (
         <LevelChallengeOverlay

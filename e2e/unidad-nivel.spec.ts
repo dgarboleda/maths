@@ -24,9 +24,18 @@ import { LEVEL_SCHEMA_VERSION, type LevelDefinition } from "@/lib/level/schema";
 import { LevelTooLargeError, NestedArrayError, assertNoNestedArrays, assertSize, stripUndefined } from "@/lib/level/serialize";
 import { validateLevel } from "@/lib/level/validate";
 import { MAX_CHAIN_DEPTH, createEventBus, emit } from "@/lib/level/events/bus";
-import type { ChallengePlacement, LevelEntity, LevelEventRule } from "@/lib/level/schema";
+import type { ChallengePlacement, LevelEntity, LevelEventRule, LevelMission, LevelZone } from "@/lib/level/schema";
 import { createEntityDefaults, getEntityType } from "@/lib/level/entities";
-import { applyRuntimePatch, createEmptyRuntimeState, currentStateOf, deriveInitialState, isEntityVisible } from "@/lib/level/runtime/state";
+import {
+  activeMission,
+  applyRuntimePatch,
+  createEmptyRuntimeState,
+  currentStateOf,
+  deriveInitialState,
+  deriveObjectiveDone,
+  isEntityVisible,
+  missionProgress,
+} from "@/lib/level/runtime/state";
 import { buildRuntimeMesh } from "@/lib/level/runtime/navigation";
 
 /**
@@ -883,5 +892,109 @@ test.describe("runtime/state", () => {
 
     const openMesh = buildRuntimeMesh(level, applyRuntimePatch(createEmptyRuntimeState(level), { entityStates: { [door.id]: "open" } }));
     expect(openMesh.blocked).toHaveLength(0);
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+ * SUITE 16 — Misiones y HUD: `deriveObjectiveDone` para los 4
+ * `ObjectiveSource` y su agregación en `missionProgress`/`activeMission`
+ * (docs/level-editor-plan.md §9.5, §17 Fase 12). Ninguno persiste como
+ * progreso de nivel — "zone"/"collectible"/"flag" son estado de sesión puro.
+ * ════════════════════════════════════════════════════════════════════════ */
+function missionLevel(): { level: LevelDefinition; challenge: ChallengePlacement; zone: LevelZone; gem: LevelEntity; mission: LevelMission } {
+  const { level: base, challenge } = doorLevel();
+  const gem: LevelEntity = {
+    id: "ent_gema",
+    type: "collectible",
+    name: "Gema",
+    position: { x: 2, y: 2 },
+    ...createEntityDefaults(getEntityType("collectible")),
+  };
+  const zone: LevelZone = { id: "zone_patio", name: "Patio", shape: { kind: "circle", center: { x: 5, y: 5 }, radius: 2 } };
+  const mission: LevelMission = {
+    id: "mission_1",
+    title: "Misión de prueba",
+    premise: "",
+    objectives: [
+      { id: "obj_challenge", label: "Resolver la puerta", source: { kind: "challenge", challengeId: challenge.id } },
+      { id: "obj_zone", label: "Entrar al patio", source: { kind: "zone", zoneId: zone.id } },
+      { id: "obj_collectible", label: "Recoger la gema", source: { kind: "collectible", entityId: gem.id } },
+      { id: "obj_flag", label: "Encender las luces", source: { kind: "flag", flag: "luces", value: true } },
+    ],
+  };
+  const level: LevelDefinition = { ...base, entities: [...base.entities, gem], zones: [zone], missions: [mission] };
+  return { level, challenge, zone, gem, mission };
+}
+
+test.describe("runtime/state — misiones (Fase 12)", () => {
+  test("deriveObjectiveDone: challenge — sigue hasCorrectAttempt sobre skillsProgress, nunca un booleano propio", () => {
+    const { level, challenge } = missionLevel();
+    const state = createEmptyRuntimeState(level);
+    const source = { kind: "challenge" as const, challengeId: challenge.id };
+    expect(deriveObjectiveDone(source, level, {}, state)).toBe(false);
+    expect(deriveObjectiveDone(source, level, solved(challenge.moduleId), state)).toBe(true);
+  });
+
+  test("deriveObjectiveDone: challenge — un id de desafío que ya no existe nunca revienta, solo da false", () => {
+    const { level } = missionLevel();
+    const state = createEmptyRuntimeState(level);
+    expect(deriveObjectiveDone({ kind: "challenge", challengeId: "no-existe" }, level, {}, state)).toBe(false);
+  });
+
+  test("deriveObjectiveDone: zone — se cumple al pisarla (state.visitedZones), no por estar parado ahí ahora", () => {
+    const { level, zone } = missionLevel();
+    const source = { kind: "zone" as const, zoneId: zone.id };
+    const state = createEmptyRuntimeState(level);
+    expect(deriveObjectiveDone(source, level, {}, state)).toBe(false);
+    const visited = applyRuntimePatch(state, { visitedZones: { [zone.id]: true } });
+    expect(deriveObjectiveDone(source, level, {}, visited)).toBe(true);
+  });
+
+  test("deriveObjectiveDone: collectible — se cumple cuando el estado vivo de la entidad deja de ser su estado inicial de autor", () => {
+    const { level, gem } = missionLevel();
+    const source = { kind: "collectible" as const, entityId: gem.id };
+    const state = createEmptyRuntimeState(level);
+    expect(deriveObjectiveDone(source, level, {}, state)).toBe(false);
+    const collected = applyRuntimePatch(state, { entityStates: { [gem.id]: "collected" } });
+    expect(deriveObjectiveDone(source, level, {}, collected)).toBe(true);
+  });
+
+  test("deriveObjectiveDone: flag — compara el valor vivo con el declarado, no solo si existe", () => {
+    const { level } = missionLevel();
+    const source = { kind: "flag" as const, flag: "luces", value: true };
+    const state = createEmptyRuntimeState(level);
+    expect(deriveObjectiveDone(source, level, {}, state)).toBe(false);
+    expect(deriveObjectiveDone(source, level, {}, applyRuntimePatch(state, { flags: { luces: false } }))).toBe(false);
+    expect(deriveObjectiveDone(source, level, {}, applyRuntimePatch(state, { flags: { luces: true } }))).toBe(true);
+  });
+
+  test("missionProgress agrega doneCount/total/complete sobre los 4 objetivos", () => {
+    const { level, challenge } = missionLevel();
+    const empty = missionProgress(level.missions[0], level, {}, createEmptyRuntimeState(level));
+    expect(empty.doneCount).toBe(0);
+    expect(empty.total).toBe(4);
+    expect(empty.complete).toBe(false);
+
+    const state = applyRuntimePatch(createEmptyRuntimeState(level), { flags: { luces: true } });
+    const partial = missionProgress(level.missions[0], level, solved(challenge.moduleId), state);
+    expect(partial.doneCount).toBe(2);
+    expect(partial.objectives.find((o) => o.id === "obj_challenge")?.done).toBe(true);
+    expect(partial.objectives.find((o) => o.id === "obj_flag")?.done).toBe(true);
+    expect(partial.complete).toBe(false);
+  });
+
+  test("activeMission: la primera misión incompleta; null si no hay ninguna o ya se completaron todas", () => {
+    const { level, challenge, zone, gem } = missionLevel();
+    expect(activeMission(level, {}, createEmptyRuntimeState(level))?.mission.id).toBe("mission_1");
+
+    const noMissions: LevelDefinition = { ...level, missions: [] };
+    expect(activeMission(noMissions, {}, createEmptyRuntimeState(noMissions))).toBeNull();
+
+    const doneState = applyRuntimePatch(createEmptyRuntimeState(level), {
+      flags: { luces: true },
+      visitedZones: { [zone.id]: true },
+      entityStates: { [gem.id]: "collected" },
+    });
+    expect(activeMission(level, solved(challenge.moduleId), doneState)).toBeNull();
   });
 });

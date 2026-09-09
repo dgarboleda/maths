@@ -1,5 +1,5 @@
 import { getEntityType, resolveActiveState } from "@/lib/level/entities";
-import type { EntityStateDef, LevelDefinition, LevelEntity } from "@/lib/level/schema";
+import type { LevelDefinition, LevelEntity, LevelMission, LevelMissionObjective, EntityStateDef, ObjectiveSource } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
 import { hasCorrectAttempt } from "@/lib/world/state";
 import { emit, MAX_CHAIN_DEPTH, type EventBus, type RuntimeStatePatch } from "@/lib/level/events/bus";
@@ -24,6 +24,8 @@ export interface LevelRuntimeState {
    *  (`SPAWN_OBJECT`). Una entidad `visible: true` de autor no necesita
    *  aparecer acá para ser visible — ver `isEntityVisible`. */
   spawned: Record<string, boolean>;
+  /** Zonas ya pisadas en esta sesión — ver `RuntimeStatePatch.visitedZones`. */
+  visitedZones: Record<string, boolean>;
 }
 
 export function createEmptyRuntimeState(level: LevelDefinition): LevelRuntimeState {
@@ -32,6 +34,7 @@ export function createEmptyRuntimeState(level: LevelDefinition): LevelRuntimeSta
     entityStates: Object.fromEntries(level.entities.map((e) => [e.id, e.state.initial])),
     enabledPolygons: {},
     spawned: {},
+    visitedZones: {},
   };
 }
 
@@ -44,6 +47,7 @@ export function applyRuntimePatch(state: LevelRuntimeState, patch: RuntimeStateP
     entityStates: { ...state.entityStates, ...patch.entityStates },
     enabledPolygons: { ...state.enabledPolygons, ...patch.enabledPolygons },
     spawned: { ...state.spawned, ...patch.spawned },
+    visitedZones: { ...state.visitedZones, ...patch.visitedZones },
   };
 }
 
@@ -115,4 +119,89 @@ export function deriveInitialState(
     if (JSON.stringify(state) === before) break;
   }
   return state;
+}
+
+/**
+ * Misiones y HUD — docs/level-editor-plan.md §9.5/§17 Fase 12. Un objetivo
+ * NUNCA guarda un booleano propio de "hecho": se deriva en cada render de la
+ * fuente que declara su `ObjectiveSource` (mismo principio que ya aplica
+ * `world/quests.ts:hasCorrectAttempt` para las misiones de Ciudad Central).
+ *
+ * - `"challenge"`: el módulo del `ChallengePlacement` referenciado tiene un
+ *   acierto real (`hasCorrectAttempt` sobre `skillsProgress`) — sobrevive a
+ *   un recargo de página sin que el nivel guarde nada (criterio 21/A7).
+ * - `"zone"`: el jugador ya pisó esa zona en esta sesión (`state.
+ *   visitedZones`, fijado directo por `useLevelRuntime` al cruzarla — nunca
+ *   por una acción de evento, es automático).
+ * - `"collectible"`: el estado vivo de la entidad ya no es su estado
+ *   inicial de autor — así funciona para cualquier tipo de entidad, sin
+ *   asumir que el id de un estado en particular se llama "collected"; el
+ *   autor del nivel es quien decide, con una regla de evento propia
+ *   (`ON_INTERACT` → `ACTIVATE_OBJECT`/`CHANGE_OBJECT_STATE`), cuándo pasa.
+ * - `"flag"`: el valor vivo de esa bandera coincide con el declarado.
+ *
+ * Ninguno de los 4 persiste como progreso de nivel — "zone"/"collectible"/
+ * "flag" son estado de sesión puro (como `entityStates`/`enabledPolygons`) y
+ * se reinician con la partida, igual que ya pasa con una puerta abierta que
+ * no vino de un desafío resuelto de verdad.
+ */
+export function deriveObjectiveDone(
+  source: ObjectiveSource,
+  level: LevelDefinition,
+  progressBySkill: Record<string, SkillProgress>,
+  state: LevelRuntimeState,
+): boolean {
+  switch (source.kind) {
+    case "challenge": {
+      const challenge = level.challenges.find((c) => c.id === source.challengeId);
+      return challenge ? hasCorrectAttempt(progressBySkill, challenge.moduleId) : false;
+    }
+    case "zone":
+      return state.visitedZones[source.zoneId] === true;
+    case "collectible": {
+      const entity = level.entities.find((e) => e.id === source.entityId);
+      return entity ? state.entityStates[entity.id] !== entity.state.initial : false;
+    }
+    case "flag":
+      return state.flags[source.flag] === source.value;
+  }
+}
+
+export interface ObjectiveProgress extends LevelMissionObjective {
+  done: boolean;
+}
+
+export interface MissionProgress {
+  mission: LevelMission;
+  objectives: ObjectiveProgress[];
+  doneCount: number;
+  total: number;
+  complete: boolean;
+}
+
+export function missionProgress(
+  mission: LevelMission,
+  level: LevelDefinition,
+  progressBySkill: Record<string, SkillProgress>,
+  state: LevelRuntimeState,
+): MissionProgress {
+  const objectives = mission.objectives.map((o) => ({ ...o, done: deriveObjectiveDone(o.source, level, progressBySkill, state) }));
+  const doneCount = objectives.filter((o) => o.done).length;
+  return { mission, objectives, doneCount, total: objectives.length, complete: doneCount === objectives.length };
+}
+
+/** La primera misión del nivel que todavía no está completa; `null` si no
+ *  hay ninguna misión o ya se hicieron todas — mismo criterio que
+ *  `world/quests.ts:activeQuest`. Es lo que muestra la barra de objetivo
+ *  actual del HUD (`LevelHud`) y lo que abre `LevelMissionOverlay`. */
+export function activeMission(
+  level: LevelDefinition,
+  progressBySkill: Record<string, SkillProgress>,
+  state: LevelRuntimeState,
+): MissionProgress | null {
+  for (const mission of level.missions) {
+    const progress = missionProgress(mission, level, progressBySkill, state);
+    if (!progress.complete) return progress;
+  }
+  return null;
 }

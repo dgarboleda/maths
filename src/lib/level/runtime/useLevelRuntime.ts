@@ -73,6 +73,11 @@ export function useLevelRuntime(
         if (exit) onExitEnter?.(exit.targetHref);
         return;
       }
+      // Marcar la zona como pisada es automático (nunca depende de que el
+      // autor haya cableado una regla de evento) — es lo que consume
+      // `ObjectiveSource: "zone"` (Fase 12, §9.5). El evento se emite igual,
+      // para cualquier otra consecuencia que sí quiera autorarse.
+      if (crossing === "enter") setState((s) => applyRuntimePatch(s, { visitedZones: { [id]: true } }));
       applyEvent(crossing === "enter" ? "ON_ENTER_ZONE" : "ON_EXIT_ZONE", id);
     },
     onUnreachable: () => setUnreachableAnnouncement("Ese lugar no se puede alcanzar desde acá."),

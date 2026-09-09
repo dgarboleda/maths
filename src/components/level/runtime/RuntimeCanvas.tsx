@@ -23,6 +23,7 @@ export function RuntimeCanvas({
   walking,
   childName,
   debug,
+  axiaPulse,
   onGroundClick,
   onEntityClick,
 }: {
@@ -32,6 +33,12 @@ export function RuntimeCanvas({
   walking: boolean;
   childName: string;
   debug: boolean;
+  /** Animación "+★" de `GENERATE_AXIA` (Fase 12, §8.4) — mismo patrón que
+   *  `starFly` de `QuestScene.tsx:467-476`, anclada a la posición de Alex en
+   *  el momento del pulso (el evento en sí no carga ninguna posición: no
+   *  sabe qué entidad lo disparó). `null` mientras no hay ninguna animación
+   *  en curso. */
+  axiaPulse: { x: number; y: number; stars: number; key: number } | null;
   onGroundClick: (xPct: number, yPct: number) => void;
   onEntityClick: (entity: LevelEntity) => void;
 }) {
@@ -69,6 +76,17 @@ export function RuntimeCanvas({
         </div>
 
         <RuntimePlayer pose={pose} walking={walking} childName={childName} />
+
+        {axiaPulse && (
+          <span
+            key={`axia-${axiaPulse.key}`}
+            aria-hidden="true"
+            className="anim-star-float absolute z-30 font-display text-lg font-bold text-amber-300"
+            style={{ left: `${axiaPulse.x}%`, top: `${axiaPulse.y}%` }}
+          >
+            +{axiaPulse.stars}★
+          </span>
+        )}
       </div>
     </div>
   );
