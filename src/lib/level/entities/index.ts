@@ -24,5 +24,5 @@ registerEntityType(TERMINAL_TYPE);
 registerEntityType(COLLECTIBLE_TYPE);
 registerEntityType(INTERACTIVE_TYPE);
 
-export { getEntityType, listEntityTypes, resolveActiveState, createEntityDefaults } from "./registry";
+export { getEntityType, listEntityTypes, resolveActiveState, createEntityDefaults, activeBlockerIdsOf } from "./registry";
 export type { EntityTypeDef, EntityRenderProps, PropertyFieldDef } from "./registry";

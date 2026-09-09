@@ -43,4 +43,9 @@ export const DOOR_TYPE: EntityTypeDef = {
     { kind: "image", key: "sprite", label: "Arte", default: "" },
   ],
   Render: DoorRender,
+  resolveBlockerIds: (entity, activeState) => {
+    const blockerId = entity.properties.blockerPolygonId;
+    if (typeof blockerId !== "string" || blockerId === "" || activeState.id === "open") return [];
+    return [blockerId];
+  },
 };

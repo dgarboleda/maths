@@ -24,7 +24,10 @@ import { LEVEL_SCHEMA_VERSION, type LevelDefinition } from "@/lib/level/schema";
 import { LevelTooLargeError, NestedArrayError, assertNoNestedArrays, assertSize, stripUndefined } from "@/lib/level/serialize";
 import { validateLevel } from "@/lib/level/validate";
 import { MAX_CHAIN_DEPTH, createEventBus, emit } from "@/lib/level/events/bus";
-import type { LevelEventRule } from "@/lib/level/schema";
+import type { ChallengePlacement, LevelEntity, LevelEventRule } from "@/lib/level/schema";
+import { createEntityDefaults, getEntityType } from "@/lib/level/entities";
+import { applyRuntimePatch, createEmptyRuntimeState, currentStateOf, deriveInitialState, isEntityVisible } from "@/lib/level/runtime/state";
+import { buildRuntimeMesh } from "@/lib/level/runtime/navigation";
 
 /**
  * Pruebas puras de lógica (sin `page`, sin red, sin Firestore) para el
@@ -770,5 +773,115 @@ test.describe("events/bus", () => {
     };
     const issues = validateLevel(level);
     expect(issues.filter((i) => i.severity === "warning" && i.target?.kind === "event")).toEqual([]);
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+ * SUITE 15 — runtime/state y runtime/navigation: estado vivo derivado de
+ * progreso académico real, nunca persistido aparte (docs/level-editor-
+ * plan.md §9.6/§1.9 R2-C4, §17 Fase 9).
+ * ════════════════════════════════════════════════════════════════════════ */
+function doorLevel(): { level: LevelDefinition; door: LevelEntity; challenge: ChallengePlacement } {
+  const doorType = getEntityType("door");
+  const door: LevelEntity = {
+    id: "ent_puerta",
+    type: "door",
+    name: "Puerta",
+    position: { x: 5, y: 5 },
+    ...createEntityDefaults(doorType),
+  };
+  door.properties = { ...door.properties, blockerPolygonId: "poly_vano" };
+
+  const challenge: ChallengePlacement = { id: "ch_1", moduleId: "aritmetica-d1", activityId: "puzzle", sourceEntityId: door.id };
+
+  const rule: LevelEventRule = {
+    id: "r1",
+    name: "abrir puerta",
+    trigger: { type: "ON_CHALLENGE_SUCCESS", challengeId: challenge.id },
+    when: { kind: "always" },
+    once: true,
+    actions: [{ type: "OPEN_DOOR", params: { entityId: door.id }, delayMs: 0 }],
+  };
+
+  const base = createEmptyLevel("l1", "padre-de-prueba", { src: "/x.webp", width: 100, height: 100, alt: "x", projection: "flat" });
+  const level: LevelDefinition = {
+    ...base,
+    navigation: {
+      walkablePolygons: [{ id: "poly_1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }], initiallyEnabled: true }],
+      // `initiallyEnabled: false`: el vano no es un obstáculo estático — solo
+      // bloquea cuando la puerta lo trae entre sus bloqueadores activos
+      // (`resolveBlockerIds`, ver types/door.tsx), no por sí mismo.
+      blockedPolygons: [{ id: "poly_vano", points: [{ x: 4, y: 4 }, { x: 6, y: 4 }, { x: 6, y: 6 }, { x: 4, y: 6 }], initiallyEnabled: false }],
+      spawn: { x: 1, y: 1 },
+      exits: [],
+    },
+    entities: [door],
+    challenges: [challenge],
+    events: [rule],
+  };
+  return { level, door, challenge };
+}
+
+function solved(moduleId: string): Record<string, { recentResults: { correct: boolean; day: string }[]; recentAccuracy: number; masteredAt: number | null }> {
+  return { [moduleId]: { recentResults: [{ correct: true, day: "2026-01-01" }], recentAccuracy: 1, masteredAt: null } };
+}
+
+test.describe("runtime/state", () => {
+  test("applyRuntimePatch mezcla campo a campo, nunca reemplaza el estado completo", () => {
+    const { level } = doorLevel();
+    const state0 = createEmptyRuntimeState(level);
+    const state1 = applyRuntimePatch(state0, { flags: { luces: true } });
+    const state2 = applyRuntimePatch(state1, { entityStates: { ent_puerta: "open" } });
+    expect(state2.flags).toEqual({ luces: true });
+    expect(state2.entityStates.ent_puerta).toBe("open");
+  });
+
+  test("currentStateOf cae al estado inicial de la entidad por defecto", () => {
+    const { level, door } = doorLevel();
+    const state = createEmptyRuntimeState(level);
+    expect(currentStateOf(door, state).id).toBe("locked");
+  });
+
+  test("currentStateOf resuelve el centinela __NEXT_STATE__ (ACTIVATE_OBJECT) al segundo estado declarado del tipo", () => {
+    const { level, door } = doorLevel();
+    const state = applyRuntimePatch(createEmptyRuntimeState(level), { entityStates: { [door.id]: "__NEXT_STATE__" } });
+    // La puerta declara sus estados en orden locked, closed, open — el segundo es "closed".
+    expect(currentStateOf(door, state).id).toBe("closed");
+  });
+
+  test("isEntityVisible: una entidad visible de autor es visible salvo que su estado activo diga lo contrario", () => {
+    const { level, door } = doorLevel();
+    expect(isEntityVisible(door, createEmptyRuntimeState(level))).toBe(true);
+  });
+
+  test("isEntityVisible: una entidad visible:false de autor solo aparece tras SPAWN_OBJECT (spawned=true)", () => {
+    const { level, door } = doorLevel();
+    const hidden: LevelEntity = { ...door, visible: false };
+    const state = createEmptyRuntimeState(level);
+    expect(isEntityVisible(hidden, state)).toBe(false);
+    expect(isEntityVisible(hidden, applyRuntimePatch(state, { spawned: { [door.id]: true } }))).toBe(true);
+  });
+
+  test("deriveInitialState no cambia nada si el desafío del nivel todavía no se resolvió de verdad", () => {
+    const { level, door } = doorLevel();
+    const bus = createEventBus(level.events);
+    const state = deriveInitialState(bus, level, {});
+    expect(currentStateOf(door, state).id).toBe("locked");
+  });
+
+  test("deriveInitialState re-emite en silencio los eventos de los desafíos ya resueltos de verdad, sin escribir nada — la puerta abre sola al recargar", () => {
+    const { level, door, challenge } = doorLevel();
+    const bus = createEventBus(level.events);
+    const state = deriveInitialState(bus, level, solved(challenge.moduleId));
+    expect(currentStateOf(door, state).id).toBe("open");
+  });
+
+  test("buildRuntimeMesh: la puerta cerrada bloquea su vano; abierta, lo libera", () => {
+    const { level, door } = doorLevel();
+    const closedMesh = buildRuntimeMesh(level, createEmptyRuntimeState(level));
+    expect(closedMesh.blocked).toHaveLength(1);
+
+    const openMesh = buildRuntimeMesh(level, applyRuntimePatch(createEmptyRuntimeState(level), { entityStates: { [door.id]: "open" } }));
+    expect(openMesh.blocked).toHaveLength(0);
   });
 });
