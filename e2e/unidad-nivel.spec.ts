@@ -23,6 +23,8 @@ import { UnknownSchemaVersionError, migrateLevel } from "@/lib/level/migrate";
 import { LEVEL_SCHEMA_VERSION, type LevelDefinition } from "@/lib/level/schema";
 import { LevelTooLargeError, NestedArrayError, assertNoNestedArrays, assertSize, stripUndefined } from "@/lib/level/serialize";
 import { validateLevel } from "@/lib/level/validate";
+import { MAX_CHAIN_DEPTH, createEventBus, emit } from "@/lib/level/events/bus";
+import type { LevelEventRule } from "@/lib/level/schema";
 
 /**
  * Pruebas puras de lógica (sin `page`, sin red, sin Firestore) para el
@@ -651,5 +653,122 @@ test.describe("legacy — ciudadCentralAsLevel", () => {
     expect(level.challenges).toEqual([]);
     expect(level.dialogs).toEqual([]);
     expect(level.events).toEqual([]);
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+ * SUITE 14 — events/bus: índice, disparo, condiciones, `once`, guardia
+ * anti-ciclo (docs/level-editor-plan.md §8, §17 Fase 8).
+ * ════════════════════════════════════════════════════════════════════════ */
+function rule(overrides: Partial<LevelEventRule> & Pick<LevelEventRule, "id" | "trigger">): LevelEventRule {
+  return { name: overrides.id, when: { kind: "always" }, once: false, actions: [], ...overrides };
+}
+
+test.describe("events/bus", () => {
+  test("emit dispara la regla cuyo trigger coincide en tipo y objetivo exacto", () => {
+    const r = rule({ id: "r1", trigger: { type: "ON_INTERACT", entityId: "ent_1" }, actions: [{ type: "SET_FLAG", params: { flag: "f", value: true }, delayMs: 0 }] });
+    const other = rule({ id: "r2", trigger: { type: "ON_INTERACT", entityId: "ent_2" }, actions: [{ type: "SET_FLAG", params: { flag: "g", value: true }, delayMs: 0 }] });
+    const bus = createEventBus([r, other]);
+    const effects = emit(bus, { type: "ON_INTERACT", targetId: "ent_1", data: {} }, { flags: {}, entityStates: {} });
+    expect(effects).toHaveLength(1);
+    expect(effects[0].patch?.flags).toEqual({ f: true });
+  });
+
+  test("una regla con objetivo comodín (sin entityId/challengeId/zoneId/missionId) dispara con cualquier objetivo, además de la que coincide exacto", () => {
+    const wildcard = rule({ id: "rw", trigger: { type: "ON_ENTER_ZONE" }, actions: [{ type: "SHOW_CLUE", params: { text: "pista", ms: 1000 }, delayMs: 0 }] });
+    const exact = rule({ id: "re", trigger: { type: "ON_ENTER_ZONE", zoneId: "z1" }, actions: [{ type: "SET_FLAG", params: { flag: "f", value: true }, delayMs: 0 }] });
+    const bus = createEventBus([wildcard, exact]);
+    const effects = emit(bus, { type: "ON_ENTER_ZONE", targetId: "z1", data: {} }, { flags: {}, entityStates: {} });
+    expect(effects).toHaveLength(2);
+  });
+
+  test("una regla `once` dispara la primera vez y no la segunda", () => {
+    const r = rule({ id: "r1", trigger: { type: "ON_INTERACT", entityId: "e" }, once: true, actions: [{ type: "SET_FLAG", params: { flag: "f", value: true }, delayMs: 0 }] });
+    const bus = createEventBus([r]);
+    const ctx = { flags: {}, entityStates: {} };
+    expect(emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, ctx)).toHaveLength(1);
+    expect(emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, ctx)).toHaveLength(0);
+  });
+
+  test("una regla sin `once` dispara todas las veces", () => {
+    const r = rule({ id: "r1", trigger: { type: "ON_INTERACT", entityId: "e" }, once: false, actions: [{ type: "SET_FLAG", params: { flag: "f", value: true }, delayMs: 0 }] });
+    const bus = createEventBus([r]);
+    const ctx = { flags: {}, entityStates: {} };
+    expect(emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, ctx)).toHaveLength(1);
+    expect(emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, ctx)).toHaveLength(1);
+  });
+
+  test("una regla cuya condición no se cumple no dispara", () => {
+    const r = rule({ id: "r1", trigger: { type: "ON_INTERACT", entityId: "e" }, when: { kind: "flag", flag: "luces", value: true }, actions: [{ type: "SET_FLAG", params: { flag: "f", value: true }, delayMs: 0 }] });
+    const bus = createEventBus([r]);
+    expect(emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, { flags: { luces: false }, entityStates: {} })).toHaveLength(0);
+    expect(emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, { flags: { luces: true }, entityStates: {} })).toHaveLength(1);
+  });
+
+  test("una condición `all` requiere que se cumplan todas sus hijas", () => {
+    const when = { kind: "all" as const, of: [{ kind: "flag" as const, flag: "a", value: true }, { kind: "flag" as const, flag: "b", value: true }] };
+    const r = rule({ id: "r1", trigger: { type: "ON_INTERACT", entityId: "e" }, when, actions: [{ type: "SET_FLAG", params: { flag: "f", value: true }, delayMs: 0 }] });
+    const bus = createEventBus([r]);
+    expect(emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, { flags: { a: true, b: false }, entityStates: {} })).toHaveLength(0);
+    expect(emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, { flags: { a: true, b: true }, entityStates: {} })).toHaveLength(1);
+  });
+
+  test("las acciones se ejecutan en orden, y `atMs` acumula los `delayMs` de las acciones anteriores", () => {
+    const r = rule({
+      id: "r1",
+      trigger: { type: "ON_CHALLENGE_SUCCESS", challengeId: "ch" },
+      actions: [
+        { type: "GENERATE_AXIA", params: { source: "challenge" }, delayMs: 0 },
+        { type: "CHANGE_OBJECT_STATE", params: { entityId: "ent_terminal", state: "on" }, delayMs: 200 },
+        { type: "SET_FLAG", params: { flag: "luces", value: true }, delayMs: 200 },
+        { type: "OPEN_DOOR", params: { entityId: "ent_puerta" }, delayMs: 500 },
+      ],
+    });
+    const bus = createEventBus([r]);
+    const effects = emit(bus, { type: "ON_CHALLENGE_SUCCESS", targetId: "ch", data: { stars: 14 } }, { flags: {}, entityStates: {} });
+    expect(effects.map((e) => e.atMs)).toEqual([0, 200, 400, 900]);
+    expect(effects[0].side).toEqual({ kind: "axiaPulse", stars: 14 });
+    expect(effects[3].patch?.entityStates).toEqual({ ent_puerta: "open" });
+  });
+
+  test("MAX_CHAIN_DEPTH aborta la cadena sin lanzar, en vez de recorrerla", () => {
+    const r = rule({ id: "r1", trigger: { type: "ON_INTERACT", entityId: "e" }, actions: [{ type: "SET_FLAG", params: { flag: "f", value: true }, delayMs: 0 }] });
+    const bus = createEventBus([r]);
+    expect(() => emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, { flags: {}, entityStates: {} }, MAX_CHAIN_DEPTH)).not.toThrow();
+    expect(emit(bus, { type: "ON_INTERACT", targetId: "e", data: {} }, { flags: {}, entityStates: {} }, MAX_CHAIN_DEPTH)).toHaveLength(0);
+  });
+
+  test("validateLevel avisa (warning) de un posible ciclo: A dispara START_CHALLENGE y B, disparada por ON_CHALLENGE_STARTED, vuelve a disparar a A", () => {
+    const level: LevelDefinition = {
+      ...createEmptyLevel("l1", "padre-de-prueba", { src: "/x.webp", width: 100, height: 100, alt: "x", projection: "flat" }),
+      navigation: {
+        walkablePolygons: [{ id: "poly_1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }], initiallyEnabled: true }],
+        blockedPolygons: [],
+        spawn: { x: 5, y: 5 },
+        exits: [],
+      },
+      events: [
+        rule({ id: "A", trigger: { type: "ON_MISSION_COMPLETE", missionId: "m" }, actions: [{ type: "START_CHALLENGE", params: { challengeId: "ch" }, delayMs: 0 }] }),
+        rule({ id: "B", trigger: { type: "ON_CHALLENGE_STARTED", challengeId: "ch" }, actions: [{ type: "UPDATE_MISSION", params: { missionId: "m", objectiveId: "o" }, delayMs: 0 }] }),
+      ],
+    };
+    const issues = validateLevel(level);
+    const cycleWarnings = issues.filter((i) => i.severity === "warning" && i.target?.kind === "event");
+    expect(cycleWarnings.map((i) => i.target?.id).sort()).toEqual(["A", "B"]);
+  });
+
+  test("validateLevel no avisa de ciclo cuando las reglas no se realimentan entre sí", () => {
+    const level: LevelDefinition = {
+      ...createEmptyLevel("l1", "padre-de-prueba", { src: "/x.webp", width: 100, height: 100, alt: "x", projection: "flat" }),
+      navigation: {
+        walkablePolygons: [{ id: "poly_1", points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }], initiallyEnabled: true }],
+        blockedPolygons: [],
+        spawn: { x: 5, y: 5 },
+        exits: [],
+      },
+      events: [rule({ id: "A", trigger: { type: "ON_INTERACT", entityId: "e" }, actions: [{ type: "OPEN_DOOR", params: { entityId: "e" }, delayMs: 0 }] })],
+    };
+    const issues = validateLevel(level);
+    expect(issues.filter((i) => i.severity === "warning" && i.target?.kind === "event")).toEqual([]);
   });
 });

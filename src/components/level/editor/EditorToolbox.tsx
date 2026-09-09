@@ -1,9 +1,9 @@
 "use client";
 
 import type { ComponentType } from "react";
-import { MapPin, Hexagon, Octagon, LogOut, Shapes, Circle, MessageSquarePlus } from "lucide-react";
+import { MapPin, Hexagon, Octagon, LogOut, Shapes, Circle, MessageSquarePlus, Zap } from "lucide-react";
 import { listEntityTypes } from "@/lib/level/entities";
-import { newDialogId } from "@/lib/level/ids";
+import { newDialogId, newEventId } from "@/lib/level/ids";
 import { useLevelEditor } from "./LevelEditorProvider";
 import type { EditorTool } from "./editorReducer";
 
@@ -56,6 +56,13 @@ export function EditorToolbox() {
     dispatch({ type: "ADD_DIALOG", dialog: { id: newDialogId(), name: "Diálogo nuevo", lines: [] } });
   }
 
+  function newRule() {
+    dispatch({
+      type: "ADD_EVENT",
+      rule: { id: newEventId(), name: "Regla nueva", trigger: { type: "ON_INTERACT" }, when: { kind: "always" }, once: true, actions: [] },
+    });
+  }
+
   return (
     <div className="space-y-4 text-xs">
       <ToolSection title="Navegación" items={navItems} isActive={isActive} onSelect={selectTool} />
@@ -89,7 +96,56 @@ export function EditorToolbox() {
               <span className="min-w-0 flex-1 truncate">Diálogo nuevo</span>
             </button>
           </li>
+          <li>
+            <button
+              type="button"
+              onClick={newRule}
+              className="flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left font-bold text-slate-300 transition-colors hover:bg-slate-800"
+            >
+              <Zap className="size-4 shrink-0" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">Regla nueva</span>
+            </button>
+          </li>
         </ul>
+
+        {/* Ni un diálogo ni una regla de evento tienen representación
+            espacial en el canvas (a diferencia de zonas/entidades/polígonos,
+            que se re-seleccionan haciendo clic en el mapa) — sin esta lista,
+            solo se podrían editar justo después de crearlos. */}
+        {state.level.dialogs.length > 0 && (
+          <ul className="mt-2 space-y-0.5 border-t border-indigo-500/10 pt-2">
+            {state.level.dialogs.map((d) => (
+              <li key={d.id}>
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "SELECT", selection: { kind: "dialog", id: d.id } })}
+                  className={`block w-full truncate rounded-md px-2 py-1 text-left ${
+                    state.selection.kind === "dialog" && state.selection.id === d.id ? "bg-cyan-500/15 text-cyan-300" : "text-slate-400 hover:bg-slate-800"
+                  }`}
+                >
+                  {d.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {state.level.events.length > 0 && (
+          <ul className="mt-2 space-y-0.5 border-t border-indigo-500/10 pt-2">
+            {state.level.events.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "SELECT", selection: { kind: "event", id: r.id } })}
+                  className={`block w-full truncate rounded-md px-2 py-1 text-left ${
+                    state.selection.kind === "event" && state.selection.id === r.id ? "bg-cyan-500/15 text-cyan-300" : "text-slate-400 hover:bg-slate-800"
+                  }`}
+                >
+                  {r.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {state.tool.kind !== "select" && (

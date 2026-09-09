@@ -75,6 +75,8 @@ export function useEditorHotkeys(params: { state: EditorState; dispatch: Dispatc
           dispatch({ type: "DELETE_ZONE", id: state.selection.id });
         } else if (state.selection.kind === "dialog") {
           dispatch({ type: "DELETE_DIALOG", id: state.selection.id });
+        } else if (state.selection.kind === "event") {
+          dispatch({ type: "DELETE_EVENT", id: state.selection.id });
         }
         return;
       }
