@@ -803,6 +803,16 @@ test.describe("legacy — ciudadCentralAsLevel", () => {
       { id: "restaurada", when: { kind: "flag", flag: "cityRestored", value: true }, css: "brightness(1.1) saturate(1.25)" },
     ]);
   });
+
+  // Escena 2.5D (docs/scene-25d-plan.md): profundidad activada con cero
+  // assets nuevos — solo escala/sombra por posición Y sobre el arte ya
+  // existente. Sin `background.layers` todavía (ver comentario de
+  // `CIUDAD_CENTRAL_DEPTH` en ciudadCentral.ts).
+  test("la profundidad 2.5D está activada, sin capas de parallax todavía", () => {
+    expect(level.depth?.enabled).toBe(true);
+    expect(level.depth?.range.nearY).toBeGreaterThan(level.depth?.range.farY ?? 0);
+    expect(level.background.layers ?? []).toEqual([]);
+  });
 });
 
 /* ════════════════════════════════════════════════════════════════════════

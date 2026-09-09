@@ -12,6 +12,7 @@ import {
   type ChallengePlacement,
   type EntityTypeId,
   type LevelDefinition,
+  type LevelDepthConfig,
   type LevelEntity,
   type LevelEventRule,
   type LevelMission,
@@ -71,6 +72,28 @@ const INITIAL_STATE: Record<CiudadCentralHotspotKind, string> = {
   mecanismo: "default",
   puerta: "locked",
   barrera: "default",
+};
+
+/**
+ * Profundidad 2.5D (docs/scene-25d-plan.md, escena 2.5D — Ciudad Central) —
+ * cero assets nuevos: solo escala por posición Y + sombra de contacto sobre
+ * el arte y las entidades ya existentes. `range` cubre el recorrido real de
+ * `CIUDAD_CENTRAL_WALKABLE` (la compuerta del generador, la entidad más al
+ * fondo, está en `y≈24`; la plaza frente a la fuente, la más cercana, baja
+ * hasta `y≈100`), así que Alex/las entidades se ven un poco más grandes
+ * cerca de la fuente y un poco más chicas junto al generador — la misma
+ * sensación de profundidad que ya sugiere la ilustración, ahora reforzada.
+ * Deliberadamente NO se agrega `background.layers` (parallax de capas)
+ * todavía: requeriría arte nuevo o reutilizar la ilustración de otra zona
+ * superpuesta sobre `city-central.webp`, y sin poder previsualizarlo en un
+ * navegador real en este entorno no vale el riesgo visual sobre la escena
+ * que juegan los niños — queda para cuando se pueda revisar en vivo.
+ */
+const CIUDAD_CENTRAL_DEPTH: LevelDepthConfig = {
+  enabled: true,
+  range: { nearY: 96, farY: 24 },
+  scale: { near: 1.12, far: 0.86 },
+  shadow: { enabled: true, opacityNear: 0.45, opacityFar: 0.15 },
 };
 
 function hotspotToEntity(hotspot: CiudadCentralHotspot): LevelEntity {
@@ -249,5 +272,6 @@ export function ciudadCentralAsLevel(authorUid: string): LevelDefinition {
     missions: [mission],
     events,
     metadata: { authorUid, createdAt: now, updatedAt: now, description: "Escena real de Ciudad Central (Fase 14, detrás de NEXT_PUBLIC_LEVELS_V2)." },
+    depth: CIUDAD_CENTRAL_DEPTH,
   };
 }
