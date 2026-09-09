@@ -11,6 +11,19 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = Number(process.env.E2E_PORT ?? 3210);
 const baseURL = `http://127.0.0.1:${PORT}`;
 
+/**
+ * Fase 14 (docs/level-editor-plan.md §12.4): `NEXT_PUBLIC_LEVELS_V2` es una
+ * variable de entorno leída una sola vez al arrancar `next dev` — no se
+ * puede alternar por prueba dentro del mismo proceso de servidor. Un
+ * segundo `next dev` en otro puerto, con el flag encendido, es la única
+ * forma de correr `e2e/aventura-ciudad-central-v2.spec.ts` (la Ciudad
+ * Central nueva) sin tocar el puerto/entorno por defecto — así el resto de
+ * la suite (incluida `aventura.spec.ts`, que sigue probando `QuestScene.tsx`
+ * con el flag apagado) no cambia una línea de comportamiento.
+ */
+const PORT_V2 = Number(process.env.E2E_PORT_V2 ?? 3211);
+const baseURLV2 = `http://127.0.0.1:${PORT_V2}`;
+
 /** En entornos con un Chromium ya instalado fuera de Playwright. */
 const chromiumPath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
 
@@ -45,12 +58,31 @@ export default defineConfig({
     ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}),
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      // `aventura-ciudad-central-v2.spec.ts` solo corre en el project de
+      // abajo, contra el `next dev` con NEXT_PUBLIC_LEVELS_V2=1 — acá se
+      // conectaría al puerto por defecto, con el flag apagado, y fallaría.
+      testIgnore: /aventura-ciudad-central-v2\.spec\.ts/,
+    },
     {
       // Un móvil pequeño: la app se usa sobre todo en tablet o teléfono.
+      // `editor.spec.ts` queda fuera: el Level Editor (herramienta del
+      // padre-autor, no el juego) todavía no tiene drawers para Toolbox/
+      // PropertyPanel por debajo de `lg` (quedan `hidden` sin más, Fase 13),
+      // así que sus pruebas asumen viewport de escritorio a propósito.
       name: "móvil",
       use: { ...devices["Pixel 7"] },
-      testIgnore: /accesibilidad\.spec\.ts/,
+      testIgnore: /(accesibilidad|editor|aventura-ciudad-central-v2)\.spec\.ts/,
+    },
+    {
+      // Ciudad Central sobre el motor nuevo (Fase 14) — único project que
+      // habla con el segundo `next dev` (NEXT_PUBLIC_LEVELS_V2=1). Todo lo
+      // demás sigue en los projects de arriba, sin este flag.
+      name: "ciudad-central-v2",
+      testMatch: /aventura-ciudad-central-v2\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], baseURL: baseURLV2 },
     },
   ],
   webServer: [
@@ -68,6 +100,15 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: emulatorEnv,
+    },
+    {
+      // `NEXT_DIST_DIR` propio (next.config.ts): evita el lockfile de
+      // "Another next dev server is already running" contra el de arriba.
+      command: `npx next dev --port ${PORT_V2}`,
+      url: baseURLV2,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      env: { ...emulatorEnv, NEXT_PUBLIC_LEVELS_V2: "1", NEXT_DIST_DIR: ".next-levels-v2" },
     },
   ],
 });

@@ -185,4 +185,54 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
     await expect(page.getByRole("heading", { name: "Boss Challenge" })).toBeVisible();
     expect(await revisar(page)).toEqual([]);
   });
+
+  // Level Editor (Fase 13, criterio A11) — herramienta del padre-autor, no
+  // del juego. Solo la lista de niveles y el propio editor: no repite el
+  // flujo de autoría completo, ya cubierto (sin axe) por `editor.spec.ts`.
+  test("Level Editor: lista de niveles, con y sin formulario de creación abierto", async ({ page }) => {
+    await registrarPadre(page);
+    await page.goto("/panel/editor");
+    await expect(page.getByRole("heading", { name: "Editor de niveles" })).toBeVisible();
+    expect(await revisar(page)).toEqual([]);
+
+    await page.getByRole("button", { name: "Nuevo nivel" }).click();
+    await expect(page.getByLabel("Nombre del nivel")).toBeVisible();
+    expect(await revisar(page), "formulario de nuevo nivel").toEqual([]);
+  });
+
+  test("Level Editor: lienzo, panel de propiedades y Play Test de un nivel", async ({ page }) => {
+    await registrarPadre(page);
+    await crearHijo(page, { nombre: "Ana" });
+    await page.goto("/panel/editor");
+    await page.getByRole("button", { name: "Nuevo nivel" }).click();
+    await page.getByLabel("Nombre del nivel").fill("Nivel de accesibilidad");
+    await page.getByRole("button", { name: "Crear nivel" }).click();
+    await expect(page.getByText("Nivel de accesibilidad", { exact: true }).first()).toBeVisible();
+    await page.getByRole("link", { name: "Abrir" }).click();
+    await expect(page.getByLabel("Nombre del nivel")).toHaveValue("Nivel de accesibilidad");
+    expect(await revisar(page), "editor vacío").toEqual([]);
+
+    const box = await page.locator(".editor-canvas > div").first().boundingBox();
+    if (!box) throw new Error("No encontré el lienzo del editor");
+    const clic = (xPct: number, yPct: number) => page.mouse.click(box.x + (xPct / 100) * box.width, box.y + (yPct / 100) * box.height);
+
+    // Punto de inicio, lejos de donde se coloca la terminal.
+    await page.getByRole("button", { name: "Punto de inicio" }).click();
+    await clic(20, 80);
+
+    // Una entidad seleccionada abre el panel de propiedades — otra región con
+    // sus propios controles (combos, checkboxes) a revisar. Se le fija un
+    // punto de espera para no dejar un error de validación pendiente (ver
+    // validateEntityInteractions en validate.ts) que bloquearía "Probar".
+    await page.locator("aside").filter({ hasText: "Objetos" }).getByRole("button", { name: "Terminal" }).click();
+    await clic(70, 70);
+    await expect(page.getByRole("heading", { name: "Terminal", level: 2 })).toBeVisible();
+    await page.getByRole("button", { name: "Fijar punto de espera" }).click();
+    await clic(65, 75);
+    expect(await revisar(page), "panel de propiedades").toEqual([]);
+
+    await page.getByRole("button", { name: "Probar", exact: true }).click();
+    await expect(page.getByText("Modo prueba")).toBeVisible();
+    expect(await revisar(page), "Play Test").toEqual([]);
+  });
 });

@@ -9,7 +9,7 @@ import { useLevelEditor } from "./LevelEditorProvider";
  *  esquema de validación es agnóstico de la UI del editor, ver schema.ts) —
  *  acá sí importa para armar la `Selection` real, así que se busca en las
  *  dos listas. */
-function targetToSelection(target: LevelIssueTarget | undefined, level: import("@/lib/level/schema").LevelDefinition): Selection {
+export function targetToSelection(target: LevelIssueTarget | undefined, level: import("@/lib/level/schema").LevelDefinition): Selection {
   if (!target) return { kind: "none" };
   switch (target.kind) {
     case "polygon": {

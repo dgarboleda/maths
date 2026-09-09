@@ -49,6 +49,7 @@ export function PuzzleOverlay({
   onResolved,
   recordAttempt,
   onStars,
+  awardBadges,
 }: {
   parentId: string;
   childId: string;
@@ -67,6 +68,10 @@ export function PuzzleOverlay({
   /** Notifica las estrellas ganadas tras guardar — no-op por defecto; el
    *  runtime del nivel lo usa para GENERATE_AXIA (Fase 12). */
   onStars?: (stars: number) => void;
+  /** Sustituye a `awardMasteryBadges` — usado por el Play Test (Fase 11)
+   *  para que dominar un módulo durante una sesión de prueba no otorgue una
+   *  insignia real. Ninguna llamada existente pasa esta prop. */
+  awardBadges?: typeof awardMasteryBadges;
 }) {
   const titleId = useId();
   const promptId = useId();
@@ -103,7 +108,7 @@ export function PuzzleOverlay({
       );
       const mastered = !outcome.wasMastered && outcome.updatedProgress.masteredAt !== null;
       if (mastered) {
-        await awardMasteryBadges(firestore, db, parentId, childId, mod, {
+        await (awardBadges ?? awardMasteryBadges)(firestore, db, parentId, childId, mod, {
           ...progressBySkill,
           [mod.id]: outcome.updatedProgress,
         });

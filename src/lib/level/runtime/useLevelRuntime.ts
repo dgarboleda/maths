@@ -7,7 +7,7 @@ import type { SkillProgress } from "@/lib/types";
 import { createEventBus, emit } from "@/lib/level/events/bus";
 import { applyRuntimePatch, deriveInitialState, type LevelRuntimeState } from "./state";
 import { buildRuntimeMesh, runtimeMeshKey } from "./navigation";
-import { useAlexMovement, bboxOf, type RuntimeZone } from "./useAlexMovement";
+import { useAlexMovement, bboxOf, prefersReducedMotion, type RuntimeZone } from "./useAlexMovement";
 import { applySideEffect, type RuntimeServices } from "./services";
 
 /**
@@ -50,14 +50,22 @@ export function useLevelRuntime(
 
   /** Emite un evento contra el bus, y programa (por su `atMs`) que cada
    *  efecto resultante aplique su `patch` al estado y/o su `side` a
-   *  `services` — el mismo reparto patch/side de §8.1. */
+   *  `services` — el mismo reparto patch/side de §8.1. Con
+   *  `prefers-reduced-motion` los `delayMs` de la cadena colapsan a 0
+   *  (Fase 13, criterio A12) — mismo criterio que ya usa `segmentMs` para el
+   *  caminar (`useAlexMovement.ts`): la cadena entera se ve de una, no en
+   *  cámara lenta. */
   function applyEvent(type: LevelEventType, targetId: string | null, data: Record<string, PropertyValue> = {}) {
     const effects = emit(bus, { type, targetId, data }, { flags: state.flags, entityStates: state.entityStates });
+    const reduceMotion = prefersReducedMotion();
     for (const effect of effects) {
-      const timer = window.setTimeout(() => {
-        if (effect.patch) setState((s) => applyRuntimePatch(s, effect.patch!));
-        if (effect.side) applySideEffect(effect.side, services);
-      }, effect.atMs);
+      const timer = window.setTimeout(
+        () => {
+          if (effect.patch) setState((s) => applyRuntimePatch(s, effect.patch!));
+          if (effect.side) applySideEffect(effect.side, services);
+        },
+        reduceMotion ? 0 : effect.atMs,
+      );
       timersRef.current.push(timer);
     }
   }
@@ -73,6 +81,11 @@ export function useLevelRuntime(
         if (exit) onExitEnter?.(exit.targetHref);
         return;
       }
+      // Marcar la zona como pisada es automático (nunca depende de que el
+      // autor haya cableado una regla de evento) — es lo que consume
+      // `ObjectiveSource: "zone"` (Fase 12, §9.5). El evento se emite igual,
+      // para cualquier otra consecuencia que sí quiera autorarse.
+      if (crossing === "enter") setState((s) => applyRuntimePatch(s, { visitedZones: { [id]: true } }));
       applyEvent(crossing === "enter" ? "ON_ENTER_ZONE" : "ON_EXIT_ZONE", id);
     },
     onUnreachable: () => setUnreachableAnnouncement("Ese lugar no se puede alcanzar desde acá."),

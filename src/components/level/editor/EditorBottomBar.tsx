@@ -1,17 +1,31 @@
 "use client";
 
-import { Bug, Grid3x3, Magnet, Minus, Plus, Play } from "lucide-react";
+import { Bug, Grid3x3, Magnet, Minus, Plus, Play, Sparkles } from "lucide-react";
+import { simplifyPolygon } from "@/lib/world/navmesh";
 import { findSelectedPolygon } from "./editorReducer";
 import { useLevelEditor } from "./LevelEditorProvider";
+import { useStartPlaytest } from "./usePlaytestGate";
 
 /** Barra inferior — docs/level-editor-plan.md §5.1. */
 export function EditorBottomBar() {
   const { state, dispatch } = useLevelEditor();
   const selectedPolygon = findSelectedPolygon(state.level, state.selection);
+  const playtest = useStartPlaytest();
 
   function zoomStep(factor: number) {
     dispatch({ type: "SET_VIEWPORT", viewport: { zoom: state.viewport.zoom * factor } });
   }
+
+  function simplifySelected() {
+    if (!selectedPolygon) return;
+    const points = simplifyPolygon(selectedPolygon.polygon.points);
+    if (points.length === selectedPolygon.polygon.points.length) return; // nada que quitar
+    dispatch({ type: "UPDATE_POLYGON", role: selectedPolygon.role, id: selectedPolygon.polygon.id, patch: { points } });
+  }
+
+  const simplifiable = selectedPolygon
+    ? simplifyPolygon(selectedPolygon.polygon.points).length < selectedPolygon.polygon.points.length
+    : false;
 
   return (
     <footer className="flex min-h-11 flex-wrap items-center gap-3 border-t border-indigo-500/20 bg-slate-900/60 px-3 text-xs text-slate-300 sm:px-4">
@@ -56,16 +70,30 @@ export function EditorBottomBar() {
       </button>
 
       {selectedPolygon && (
-        <span className="rounded-md bg-slate-800/60 px-2 py-1 font-bold tabular-nums text-slate-300">
-          {selectedPolygon.polygon.points.length} vértices
-        </span>
+        <>
+          <span className="rounded-md bg-slate-800/60 px-2 py-1 font-bold tabular-nums text-slate-300">
+            {selectedPolygon.polygon.points.length} vértices
+          </span>
+          {simplifiable && (
+            <button
+              type="button"
+              onClick={simplifySelected}
+              title="Quita vértices colineales o duplicados sin cambiar la forma"
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 font-bold text-slate-300 hover:bg-slate-800"
+            >
+              <Sparkles className="size-3.5" aria-hidden="true" />
+              Simplificar
+            </button>
+          )}
+        </>
       )}
 
       <button
         type="button"
-        disabled
-        title="Disponible cuando el Play Test esté implementado"
-        className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 font-bold opacity-40"
+        onClick={playtest.start}
+        disabled={playtest.disabled}
+        title={playtest.reason ?? undefined}
+        className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 font-bold hover:bg-slate-800 disabled:opacity-40"
       >
         <Play className="size-3.5" aria-hidden="true" />
         Probar nivel

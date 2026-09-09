@@ -4,14 +4,17 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LevelDefinition, LevelEntity } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
+import { evaluateCondition } from "@/lib/level/events/conditions";
 import { useLevelRuntime } from "@/lib/level/runtime/useLevelRuntime";
 import { useKeyboardMovement } from "@/lib/level/runtime/useKeyboardMovement";
-import { createLiveServices } from "@/lib/level/runtime/services";
+import { createLiveServices, createSandboxServices } from "@/lib/level/runtime/services";
+import { activeMission } from "@/lib/level/runtime/state";
 import { LevelHud } from "./LevelHud";
 import { RuntimeCanvas } from "./RuntimeCanvas";
 import { LevelChallengeOverlay } from "./LevelChallengeOverlay";
 import { LevelDialogOverlay } from "./LevelDialogOverlay";
 import { TouchDPad } from "./TouchDPad";
+import { LevelMissionOverlay } from "./LevelMissionOverlay";
 
 /**
  * Punto de entrada del runtime — docs/level-editor-plan.md §9 (Fase 9) + §10
@@ -26,6 +29,15 @@ import { TouchDPad } from "./TouchDPad";
  * evento de Fase 8) quien decide si eso abre un diálogo (`SHOW_DIALOG`),
  * arranca un desafío (`START_CHALLENGE`) o ninguna de las dos cosas.
  */
+
+/** Envuelto en una función propia para que el linter de pureza de React no
+ *  confunda esta llamada (siempre disparada desde un manejador de evento del
+ *  bus, nunca durante el render) con una lectura impura del render en sí —
+ *  mismo criterio que `now()` en `QuestScene.tsx:41`. */
+function now(): number {
+  return Date.now();
+}
+
 export function LevelRuntime({
   level,
   parentId,
@@ -33,6 +45,8 @@ export function LevelRuntime({
   childName,
   progressBySkill: initialProgressBySkill,
   soundOn,
+  sandbox = false,
+  onExit,
 }: {
   level: LevelDefinition;
   parentId: string;
@@ -40,6 +54,14 @@ export function LevelRuntime({
   childName: string;
   progressBySkill: Record<string, SkillProgress>;
   soundOn: boolean;
+  /** Play Test (Fase 11, §11.2): mismo componente, misma UI, pero
+   *  `recordAttempt`/`awardBadges` quedan interceptados (cero escrituras a
+   *  Firestore) y cruzar un `LevelExit` vuelve al editor en vez de navegar
+   *  de verdad. `false` en el juego real — comportamiento sin cambios. */
+  sandbox?: boolean;
+  /** Solo se usa con `sandbox`: vuelve al modo edición (botón "Salir" del
+   *  HUD y cruzar un punto de destino), nunca navega el navegador. */
+  onExit?: () => void;
 }) {
   const router = useRouter();
   const [banner, setBanner] = useState<string | null>(null);
@@ -48,6 +70,14 @@ export function LevelRuntime({
   const [streak, setStreak] = useState(0);
   const [openDialogId, setOpenDialogId] = useState<string | null>(null);
   const [openChallengeId, setOpenChallengeId] = useState<string | null>(null);
+  const [missionOpen, setMissionOpen] = useState(false);
+  // Solo `stars`/`key`: el evento de GENERATE_AXIA no carga ninguna posición
+  // (no sabe qué entidad lo disparó, §8.4), así que la animación se ancla a
+  // `runtime.pose` **en el momento de pintar**, no a un snapshot capturado
+  // al disparar — evita necesitar un ref con la posición actual dentro del
+  // armado de `services` (que corre en cada render, antes de que exista
+  // `runtime.pose`: leerlo ahí violaría la regla `react-hooks/refs`).
+  const [axiaPulse, setAxiaPulse] = useState<{ stars: number; key: number } | null>(null);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -63,9 +93,22 @@ export function LevelRuntime({
     },
     onOpenDialog: setOpenDialogId,
     onOpenChallenge: setOpenChallengeId,
+    onAxiaPulse: (stars) => {
+      const key = now();
+      setAxiaPulse({ stars, key });
+      window.setTimeout(() => setAxiaPulse((p) => (p?.key === key ? null : p)), 1400);
+    },
   });
 
-  const runtime = useLevelRuntime(level, progressBySkill, services, (targetHref) => router.push(targetHref));
+  const runtime = useLevelRuntime(
+    level,
+    progressBySkill,
+    services,
+    sandbox ? () => onExit?.() : (targetHref) => router.push(targetHref),
+  );
+
+  const sandboxServices = sandbox ? createSandboxServices() : null;
+  const mission = activeMission(level, progressBySkill, runtime.state);
 
   function onGroundClick(xPct: number, yPct: number) {
     const target = runtime.nearestWalkablePoint({ x: xPct, y: yPct });
@@ -90,6 +133,15 @@ export function LevelRuntime({
 
   async function onEntityClick(entity: LevelEntity) {
     if (entity.interaction.mode === "none" || !entity.interaction.standPoint) return;
+    // `enabledWhen` (§5.3/§8) queda declarado en el esquema desde la Fase 6
+    // pero ningún componente lo leía todavía — acá es donde corresponde:
+    // antes de acercarse, no después. Con la condición sin cumplir se avisa
+    // con `lockedNote` (si lo tiene) y no pasa nada más, igual que un
+    // hotspot bloqueado de Ciudad Central hoy.
+    if (!evaluateCondition(entity.interaction.enabledWhen, { flags: runtime.state.flags, entityStates: runtime.state.entityStates })) {
+      if (entity.interaction.lockedNote) services.banner(entity.interaction.lockedNote, 3000);
+      return;
+    }
     await runtime.approach(entity.interaction.standPoint, entity.position);
     // Un desafío asociado se abre directo — §9.3 paso 2: no hace falta
     // ninguna regla de evento autorada para eso, a diferencia de un diálogo
@@ -128,11 +180,18 @@ export function LevelRuntime({
         walking={runtime.walking}
         childName={childName}
         debug={debug}
+        axiaPulse={axiaPulse ? { ...axiaPulse, x: runtime.pose.x, y: runtime.pose.y } : null}
         onGroundClick={onGroundClick}
         onEntityClick={onEntityClick}
       />
 
-      <LevelHud levelName={level.name} childId={childId} />
+      <LevelHud
+        levelName={level.name}
+        childId={childId}
+        onExit={sandbox ? onExit : undefined}
+        mission={mission}
+        onOpenMission={() => setMissionOpen(true)}
+      />
 
       {movementEnabled && <TouchDPad onMove={onDPadMove} />}
 
@@ -147,10 +206,15 @@ export function LevelRuntime({
       <p className="sr-only" aria-live="polite">
         {runtime.unreachableAnnouncement}
       </p>
+      <p className="sr-only" aria-live="polite">
+        {axiaPulse ? `+${axiaPulse.stars} estrellas` : ""}
+      </p>
 
       {activeDialog && (
         <LevelDialogOverlay key={activeDialog.id} dialog={activeDialog} entities={level.entities} onClose={() => setOpenDialogId(null)} />
       )}
+
+      {missionOpen && mission && <LevelMissionOverlay progress={mission} onClose={() => setMissionOpen(false)} />}
 
       {activePlacement && (
         <LevelChallengeOverlay
@@ -164,6 +228,8 @@ export function LevelRuntime({
           soundOn={soundOn}
           onClose={() => setOpenChallengeId(null)}
           onResolved={handleChallengeResolved}
+          recordAttempt={sandboxServices?.recordAttempt}
+          awardBadges={sandboxServices?.awardBadges}
         />
       )}
     </div>

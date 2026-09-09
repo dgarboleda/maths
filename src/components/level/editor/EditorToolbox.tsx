@@ -1,9 +1,9 @@
 "use client";
 
 import type { ComponentType } from "react";
-import { MapPin, Hexagon, Octagon, LogOut, Shapes, Circle, MessageSquarePlus, Zap } from "lucide-react";
+import { MapPin, Hexagon, Octagon, LogOut, Shapes, Circle, MessageSquarePlus, Target, Zap } from "lucide-react";
 import { listEntityTypes } from "@/lib/level/entities";
-import { newDialogId, newEventId } from "@/lib/level/ids";
+import { newDialogId, newEventId, newMissionId } from "@/lib/level/ids";
 import { useLevelEditor } from "./LevelEditorProvider";
 import type { EditorTool } from "./editorReducer";
 
@@ -56,6 +56,10 @@ export function EditorToolbox() {
     dispatch({ type: "ADD_DIALOG", dialog: { id: newDialogId(), name: "Diálogo nuevo", lines: [] } });
   }
 
+  function newMission() {
+    dispatch({ type: "ADD_MISSION", mission: { id: newMissionId(), title: "Misión nueva", premise: "", objectives: [] } });
+  }
+
   function newRule() {
     dispatch({
       type: "ADD_EVENT",
@@ -68,7 +72,7 @@ export function EditorToolbox() {
       <ToolSection title="Navegación" items={navItems} isActive={isActive} onSelect={selectTool} />
       <ToolSection title="Objetos" items={objectItems} isActive={isActive} onSelect={selectTool} />
       <section>
-        <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Gameplay</h2>
+        <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Gameplay</h2>
         <ul className="space-y-1">
           {gameplayItems.map(({ tool, label, icon: Icon, hint }) => (
             <li key={label}>
@@ -106,12 +110,23 @@ export function EditorToolbox() {
               <span className="min-w-0 flex-1 truncate">Regla nueva</span>
             </button>
           </li>
+          <li>
+            <button
+              type="button"
+              onClick={newMission}
+              className="flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left font-bold text-slate-300 transition-colors hover:bg-slate-800"
+            >
+              <Target className="size-4 shrink-0" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">Misión nueva</span>
+            </button>
+          </li>
         </ul>
 
-        {/* Ni un diálogo ni una regla de evento tienen representación
-            espacial en el canvas (a diferencia de zonas/entidades/polígonos,
-            que se re-seleccionan haciendo clic en el mapa) — sin esta lista,
-            solo se podrían editar justo después de crearlos. */}
+        {/* Ni un diálogo, ni una regla de evento, ni una misión tienen
+            representación espacial en el canvas (a diferencia de
+            zonas/entidades/polígonos, que se re-seleccionan haciendo clic en
+            el mapa) — sin esta lista, solo se podrían editar justo después
+            de crearlos. */}
         {state.level.dialogs.length > 0 && (
           <ul className="mt-2 space-y-0.5 border-t border-indigo-500/10 pt-2">
             {state.level.dialogs.map((d) => (
@@ -141,6 +156,23 @@ export function EditorToolbox() {
                   }`}
                 >
                   {r.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {state.level.missions.length > 0 && (
+          <ul className="mt-2 space-y-0.5 border-t border-indigo-500/10 pt-2">
+            {state.level.missions.map((m) => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "SELECT", selection: { kind: "mission", id: m.id } })}
+                  className={`block w-full truncate rounded-md px-2 py-1 text-left ${
+                    state.selection.kind === "mission" && state.selection.id === m.id ? "bg-cyan-500/15 text-cyan-300" : "text-slate-400 hover:bg-slate-800"
+                  }`}
+                >
+                  {m.title}
                 </button>
               </li>
             ))}
@@ -177,7 +209,7 @@ function ToolSection({
   if (items.length === 0) return null;
   return (
     <section>
-      <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">{title}</h2>
+      <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{title}</h2>
       <ul className="space-y-1">
         {items.map(({ tool, label, icon: Icon, hint }) => (
           <li key={label}>

@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Play, Sparkles } from "lucide-react";
 import { useLevelEditor } from "./LevelEditorProvider";
+import { useStartPlaytest } from "./usePlaytestGate";
 
 const SAVE_LABEL: Record<string, string> = {
   idle: "",
@@ -19,6 +20,7 @@ const SAVE_LABEL: Record<string, string> = {
 export function EditorTopBar() {
   const { state, dispatch, saveNow } = useLevelEditor();
   const inputRef = useRef<HTMLInputElement>(null);
+  const playtest = useStartPlaytest();
 
   function commitName() {
     const el = inputRef.current;
@@ -86,9 +88,10 @@ export function EditorTopBar() {
 
       <button
         type="button"
-        disabled
-        title="Disponible cuando el Play Test esté implementado"
-        className="flex min-h-9 items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 text-xs font-bold text-white opacity-40"
+        onClick={playtest.start}
+        disabled={playtest.disabled}
+        title={playtest.reason ?? undefined}
+        className="flex min-h-9 items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 text-xs font-bold text-white disabled:opacity-40"
       >
         <Play className="size-3.5" aria-hidden="true" />
         Probar

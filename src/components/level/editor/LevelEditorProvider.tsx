@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useReducer, type Dispatch, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useReducer, useState, type Dispatch, type ReactNode } from "react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { useLevelDoc } from "@/lib/level/persistence/useLevelDoc";
+import { StaleLevelError } from "@/lib/level/persistence/levelRepository";
 import { clearDraft, loadDraft } from "@/lib/level/persistence/draftCache";
 import { createEmptyLevel } from "@/lib/level/defaults";
 import { validateLevel } from "@/lib/level/validate";
@@ -28,6 +29,12 @@ interface LevelEditorContextValue {
   draftRecovery: DraftRecovery | null;
   applyDraftRecovery: () => void;
   dismissDraftRecovery: () => void;
+  /** `StaleLevelError` de un guardado reciente (Fase 13, §10.4/T6): otra
+   *  sesión guardó una versión más nueva mientras se editaba acá. `null` sin
+   *  conflicto pendiente. */
+  conflict: StaleLevelError | null;
+  reloadFromConflict: () => Promise<void>;
+  dismissConflict: () => void;
 }
 
 const Ctx = createContext<LevelEditorContextValue | null>(null);
@@ -61,9 +68,10 @@ function bootReducer(state: BootState, action: BootAction): BootState {
  */
 export function LevelEditorProvider({ levelId, children }: { levelId: string; children: ReactNode }) {
   const { parentId } = useFamily();
-  const { level: loadedLevel, loading, save } = useLevelDoc(parentId, levelId);
+  const { level: loadedLevel, loading, save, reload } = useLevelDoc(parentId, levelId);
   const [state, dispatch] = useReducer(editorReducer, PLACEHOLDER_LEVEL, createInitialEditorState);
   const [boot, bootDispatch] = useReducer(bootReducer, { hydrated: false, draftRecovery: null });
+  const [conflict, setConflict] = useState<StaleLevelError | null>(null);
 
   useEffect(() => {
     if (!loadedLevel || boot.hydrated) return;
@@ -91,6 +99,15 @@ export function LevelEditorProvider({ levelId, children }: { levelId: string; ch
       dispatch({ type: "SET_SAVE_STATE", state: "saved" });
       clearDraft(levelId);
     } catch (err) {
+      if (err instanceof StaleLevelError) {
+        // No es un error de guardado cualquiera: alguien más ya guardó una
+        // versión más nueva. `saveState` vuelve a "idle" (no "error") porque
+        // el diálogo de conflicto, no el indicador chico de la barra
+        // superior, es quien tiene que llevar esta noticia.
+        dispatch({ type: "SET_SAVE_STATE", state: "idle" });
+        setConflict(err);
+        return;
+      }
       dispatch({ type: "SET_SAVE_STATE", state: "error", error: err instanceof Error ? err.message : String(err) });
     }
     // `state.level` cambia en cada mutación — `saveNow` se recrea cada vez para
@@ -101,9 +118,33 @@ export function LevelEditorProvider({ levelId, children }: { levelId: string; ch
     levelId,
     level: state.level,
     dirty: state.dirty,
-    paused: state.playtestSessionId !== null || !boot.hydrated,
+    // Con un conflicto pendiente, el autosave no debe reintentar solo: cada
+    // intento repetiría el mismo StaleLevelError y reabriría el diálogo.
+    paused: state.playtestSessionId !== null || !boot.hydrated || conflict !== null,
     onAutosave: saveNow,
   });
+
+  const reloadFromConflict = useCallback(async () => {
+    const fresh = await reload();
+    if (fresh) dispatch({ type: "HYDRATE_LEVEL", level: fresh });
+    clearDraft(levelId);
+    setConflict(null);
+  }, [reload, levelId]);
+
+  const dismissConflict = useCallback(() => setConflict(null), []);
+
+  // `beforeunload` (Fase 13, §10.5): solo avisa con cambios sin guardar de
+  // verdad (`dirty`) — el borrador local ya los protege de una pestaña
+  // cerrada de golpe, esto es la señal nativa del navegador para que el
+  // padre no la cierre sin querer a mitad de una edición.
+  useEffect(() => {
+    if (!state.dirty) return;
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [state.dirty]);
 
   const applyDraftRecovery = useCallback(() => {
     if (!boot.draftRecovery) return;
@@ -127,6 +168,9 @@ export function LevelEditorProvider({ levelId, children }: { levelId: string; ch
         draftRecovery: boot.draftRecovery,
         applyDraftRecovery,
         dismissDraftRecovery,
+        conflict,
+        reloadFromConflict,
+        dismissConflict,
       }}
     >
       {children}

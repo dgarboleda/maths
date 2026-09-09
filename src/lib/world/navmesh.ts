@@ -141,6 +141,60 @@ export function polygonIsSimple(poly: Polygon): boolean {
   return true;
 }
 
+/**
+ * Quita vértices colineales o duplicados sin cambiar la forma del polígono
+ * — docs/level-editor-plan.md §14 P2, disponible desde el editor (Fase 13)
+ * para achicar un polígono dibujado a mano con vértices redundantes antes de
+ * que el nivel crezca hacia el presupuesto blando de tamaño (`validate.ts`).
+ * Es una reducción, nunca un suavizado: ningún vértice que sobrevive cambia
+ * de posición. `epsDeg` es la tolerancia angular (grados) respecto a una
+ * línea recta — `0` exige colinealidad perfecta. Nunca deja menos de 3
+ * vértices: si la reducción llegara a eso, devuelve el polígono intacto.
+ */
+export function simplifyPolygon(poly: Polygon, epsDeg = 0.5): Polygon {
+  if (poly.length <= 3) return poly;
+
+  // Paso 1: colapsa duplicados consecutivos (arista de longitud 0) a un solo
+  // vértice — hecho ANTES de mirar colinealidad, para no confundir "vértice
+  // repetido" con "vértice sin esquina real": si se hiciera en el mismo
+  // paso, tanto la copia entrante como la saliente de un duplicado quedan
+  // con una arista de longitud 0 y ambas se descartarían, perdiendo la
+  // esquina de verdad que el duplicado estaba marcando.
+  const deduped: Point[] = [];
+  for (const p of poly) {
+    const prev = deduped[deduped.length - 1];
+    if (!prev || Math.hypot(p.x - prev.x, p.y - prev.y) > 0) deduped.push(p);
+  }
+  if (deduped.length > 1) {
+    const first = deduped[0];
+    const last = deduped[deduped.length - 1];
+    if (Math.hypot(first.x - last.x, first.y - last.y) === 0) deduped.pop(); // anillo cerrado a mano: primer y último punto iguales
+  }
+  if (deduped.length <= 3) return deduped.length >= 3 ? deduped : poly;
+
+  // Paso 2: sobre el anillo ya sin duplicados, quita vértices colineales.
+  const eps = Math.sin((epsDeg * Math.PI) / 180);
+  const kept: Point[] = [];
+  for (let i = 0; i < deduped.length; i++) {
+    const prev = deduped[(i - 1 + deduped.length) % deduped.length];
+    const curr = deduped[i];
+    const next = deduped[(i + 1) % deduped.length];
+    const v1x = curr.x - prev.x;
+    const v1y = curr.y - prev.y;
+    const v2x = next.x - curr.x;
+    const v2y = next.y - curr.y;
+    const len1 = Math.hypot(v1x, v1y);
+    const len2 = Math.hypot(v2x, v2y);
+    if (len1 === 0 || len2 === 0) {
+      kept.push(curr); // ya no debería pasar tras el paso 1, pero nunca perder un vértice por esto
+      continue;
+    }
+    const cross = (v1x * v2y - v1y * v2x) / (len1 * len2);
+    if (Math.abs(cross) > eps) kept.push(curr);
+  }
+  return kept.length >= 3 ? kept : deduped;
+}
+
 /** Ray casting par/impar. Los bordes cuentan como "dentro" (uso interno: la mayoría de las consultas parten de puntos ya proyectados sobre un borde). */
 export function pointInPolygon(p: Point, poly: Polygon): boolean {
   let inside = false;

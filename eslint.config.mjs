@@ -9,6 +9,9 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // `NEXT_DIST_DIR` del segundo `next dev` de Fase 14 (playwright.config.ts,
+    // NEXT_PUBLIC_LEVELS_V2) — mismo tipo de artefacto generado que ".next/**".
+    ".next-levels-v2/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
@@ -17,6 +20,27 @@ const eslintConfig = defineConfig([
     ".wrangler/**",
     "cloudflare-env.d.ts",
   ]),
+  // Aislamiento EDITOR ↔ RUNTIME del Level Editor (docs/level-editor-plan.md
+  // §11.2/§18.2): el editor modifica datos, el runtime los interpreta, y el
+  // Play Test (Fase 11) depende de que sean dos árboles de componentes
+  // realmente separados — el runtime nunca sabe si corre dentro de una
+  // sesión de prueba o del juego real. Estructural, no solo de convención.
+  {
+    files: ["src/components/level/runtime/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/components/level/editor/*", "@/components/level/editor/**", "../editor/*", "../editor/**", "../../editor/*", "../../editor/**"],
+              message: "src/components/level/runtime/** no puede importar de src/components/level/editor/** (ver docs/level-editor-plan.md §11.2).",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

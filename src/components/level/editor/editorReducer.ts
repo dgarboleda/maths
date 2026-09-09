@@ -191,6 +191,13 @@ const MUTATING = new Set<EditorAction["type"]>([
 ]);
 
 const HISTORY_LIMIT = 50;
+/** Por encima de este tamaño serializado, el historial de undo/redo baja a
+ *  `HISTORY_LIMIT_LARGE` — docs/level-editor-plan.md §14 P7: un nivel grande
+ *  hace que cada entrada del historial (una copia completa del nivel) pese
+ *  bastante; 50 copias de un nivel de 200KB+ es memoria de sobra para una
+ *  sesión de edición larga. */
+const HISTORY_SIZE_THRESHOLD_BYTES = 200 * 1024;
+const HISTORY_LIMIT_LARGE = 20;
 
 /** El polígono al que apunta `selection`, o `null` si la selección no es un
  *  polígono (o apunta a uno que ya no existe). Lo usan `PolygonEditor` y
@@ -403,7 +410,9 @@ function selectionAfterAdd(state: EditorState, action: EditorAction, level: Leve
 
 function pushHistory(history: EditorState["history"], previousLevel: LevelDefinition): EditorState["history"] {
   const past = [...history.past, previousLevel];
-  return { past: past.length > HISTORY_LIMIT ? past.slice(past.length - HISTORY_LIMIT) : past, future: [] };
+  const serializedSize = new TextEncoder().encode(JSON.stringify(previousLevel)).length;
+  const limit = serializedSize > HISTORY_SIZE_THRESHOLD_BYTES ? HISTORY_LIMIT_LARGE : HISTORY_LIMIT;
+  return { past: past.length > limit ? past.slice(past.length - limit) : past, future: [] };
 }
 
 /**

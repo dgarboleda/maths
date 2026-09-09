@@ -2,7 +2,7 @@ import type { Firestore } from "firebase/firestore";
 import { createEmptyLevel } from "../defaults";
 import { newLevelId } from "../ids";
 import { migrateLevel } from "../migrate";
-import { prepareForFirestore } from "../serialize";
+import { assertSize, prepareForFirestore } from "../serialize";
 import type { LevelBackground, LevelDefinition } from "../schema";
 
 /**
@@ -130,6 +130,11 @@ export async function saveLevel(
     const nextVersion = level.version + 1;
     const updated: LevelDefinition = { ...level, version: nextVersion, metadata: { ...level.metadata, updatedAt: Date.now() } };
     const clean = prepareForFirestore(updated);
+    // Cinturón de seguridad duro (T5/§14 P2, Fase 13): `validateLevel` ya
+    // avisa con margen mucho antes de esto (`validateBudgets`); acá se corta
+    // de verdad si igual se llega — mejor un error claro (`LevelTooLargeError`)
+    // que el rechazo críptico de Firestore al tocar el límite real de 1MiB.
+    assertSize(clean);
     tx.set(levelRef, clean);
     tx.set(versionDocRef(firestoreFns, db, parentId, levelId, nextVersion), clean);
     return updated;
@@ -161,6 +166,7 @@ export async function duplicateLevel(
     metadata: { ...existing.metadata, createdAt: now, updatedAt: now },
   };
   const clean = prepareForFirestore(copy);
+  assertSize(clean);
   const batch = firestoreFns.writeBatch(db);
   batch.set(levelDocRef(firestoreFns, db, parentId, copy.id), clean);
   batch.set(versionDocRef(firestoreFns, db, parentId, copy.id, copy.version), clean);
