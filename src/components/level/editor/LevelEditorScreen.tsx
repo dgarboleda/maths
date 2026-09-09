@@ -17,6 +17,7 @@ import { EditorToolbox } from "./EditorToolbox";
 import { EditorPropertyPanel } from "./EditorPropertyPanel";
 import { ZoneEditor } from "./ZoneEditor";
 import { DialogEditor } from "./DialogEditor";
+import { MissionEditor } from "./MissionEditor";
 import { EventChainEditor } from "./EventChainEditor";
 import { IssuesPanel } from "./IssuesPanel";
 
@@ -155,6 +156,11 @@ export function LevelEditorScreen() {
               {state.selection.kind === "dialog" && (
                 <div className="mt-4 border-t border-indigo-500/10 pt-4">
                   <DialogEditor />
+                </div>
+              )}
+              {state.selection.kind === "mission" && (
+                <div className="mt-4 border-t border-indigo-500/10 pt-4">
+                  <MissionEditor />
                 </div>
               )}
               {state.selection.kind === "event" && (

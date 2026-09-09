@@ -51,6 +51,11 @@ export interface RuntimeStatePatch {
   entityStates?: Record<string, string>;
   enabledPolygons?: Record<string, boolean>;
   spawned?: Record<string, boolean>;
+  /** Zonas (`LevelZone`, nunca `LevelExit`) que el jugador ya pisó en esta
+   *  sesión — de dónde sale `ObjectiveSource: "zone"` (§9.5, Fase 12). Nunca
+   *  la fija una acción de evento: `useLevelRuntime` la marca directo al
+   *  cruzar la zona, aparte de emitir `ON_ENTER_ZONE`. */
+  visitedZones?: Record<string, boolean>;
 }
 
 export type SideEffect =
