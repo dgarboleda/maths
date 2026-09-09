@@ -41,6 +41,30 @@ export interface LevelDefinition {
   missions: LevelMission[];
   events: LevelEventRule[];
   metadata: LevelMetadata;
+  /**
+   * Configuración de profundidad 2.5D (docs/scene-25d-plan.md §E.2) — opcional
+   * y retrocompatible: un nivel sin este campo (o con `enabled: false`) se ve
+   * y se comporta exactamente igual que antes de esta fase. Cuando está
+   * activo, `src/lib/level/depth.ts` lo usa para calcular la escala/sombra de
+   * cada entidad y del jugador según su posición Y — nunca cambia qué es
+   * transitable ni el orden de pintado (y-sort), que siguen siendo
+   * responsabilidad exclusiva de `layer`/`position.y`.
+   */
+  depth?: LevelDepthConfig;
+}
+
+/**
+ * Curva profundidad→escala/sombra de todo el nivel — docs/scene-25d-plan.md
+ * §E.2/§H. `range` son posiciones Y (% de imagen, mismo sistema que todo lo
+ * demás); `scale`/`shadow` son los valores en los extremos de ese rango,
+ * interpolados linealmente para cualquier Y intermedio y clampados fuera de
+ * rango (ver `depthScaleFor` en `depth.ts`).
+ */
+export interface LevelDepthConfig {
+  enabled: boolean;
+  range: { nearY: number; farY: number };
+  scale: { near: number; far: number };
+  shadow: { enabled: boolean; opacityNear: number; opacityFar: number };
 }
 
 export interface LevelMetadata {
@@ -71,6 +95,16 @@ export interface LevelBackground {
    *  `if (flags.cityRestored)` hardcodeado de QuestScene.tsx:413-415 por una
    *  regla configurable. */
   filters?: LevelBackgroundFilter[];
+  /**
+   * Capas decorativas de parallax, detrás o delante del fondo principal
+   * (`src`) — docs/scene-25d-plan.md §E.1. Opcional, vacía por defecto: sin
+   * ninguna capa, el resultado visual es idéntico al de antes de esta fase
+   * (una sola imagen fija a la cámara, `src`). El propio `src` se comporta
+   * como si fuera una capa implícita de `depth: 1` (se mueve exactamente
+   * como la cámara, igual que siempre) — las capas de este array son
+   * ADICIONALES a esa, nunca la reemplazan.
+   */
+  layers?: LevelBackgroundLayer[];
 }
 
 export interface LevelBackgroundFilter {
@@ -78,6 +112,32 @@ export interface LevelBackgroundFilter {
   when: ConditionExpr;
   /** p. ej. "brightness(1.1) saturate(1.25)". */
   css: string;
+}
+
+/**
+ * Una capa decorativa de fondo — docs/scene-25d-plan.md §E.1/§H.3.
+ */
+export interface LevelBackgroundLayer {
+  id: string;
+  /** Ruta bajo /illustrations/, mismo criterio que el fondo principal. */
+  src: string;
+  /**
+   * Qué tan cerca de la cámara se mueve esta capa: `0` = fija (cielo/
+   * horizonte, no se desplaza), `1` = se mueve exactamente como el fondo
+   * principal, `>1` = capa cercana que se desplaza más rápido que la cámara
+   * (efecto de proximidad). Ver `parallaxOffset` en `depth.ts`.
+   */
+  depth: number;
+  /** Desplazamiento vertical en % de la imagen, para capas que no cubren la
+   *  escena completa (p. ej. una silueta de horizonte). */
+  offsetY: number;
+  /** 0-1. */
+  opacity: number;
+  /** Si la imagen se repite horizontalmente al desplazarse. */
+  loop: boolean;
+  /** Efecto ambiental CSS asociado — docs/scene-25d-plan.md §C.4. `"none"` =
+   *  capa de imagen estática simple, igual que cualquier otra. */
+  effect: "particles" | "glow" | "fog" | "none";
 }
 
 /* ════════════════════════════════════════════════════════════════════════

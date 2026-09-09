@@ -47,7 +47,14 @@ export function EntityButton({
       style={{
         left: `${entity.position.x}%`,
         top: `${entity.position.y}%`,
-        transform: `translate(-50%,-50%) rotate(${entity.rotation}deg) scale(${entity.scale})`,
+        // `--depth-scale` la fija un wrapper externo (`EntityLayer`/
+        // `RuntimeEntity`, docs/scene-25d-plan.md §D.4) según la posición Y
+        // de la entidad — sin esa variable (nivel sin profundidad activada),
+        // `var(--depth-scale, 1)` cae en 1 y el resultado es idéntico al de
+        // antes de esta fase. Ninguna entidad-tipo (npc.tsx, door.tsx…)
+        // necesita saber nada de esto: cero `switch` por tipo, igual que
+        // siempre.
+        transform: `translate(-50%,-50%) rotate(${entity.rotation}deg) scale(calc(${entity.scale} * var(--depth-scale, 1)))`,
       }}
     >
       <span

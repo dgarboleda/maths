@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft, Play, Sparkles } from "lucide-react";
 import { useLevelEditor } from "./LevelEditorProvider";
 
 const SAVE_LABEL: Record<string, string> = {
@@ -55,6 +55,21 @@ export function EditorTopBar() {
         }}
         className="min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-bold text-white hover:border-indigo-500/25 hover:bg-slate-800/60 focus:border-cyan-400/50 focus:bg-slate-800/60 focus:outline-none sm:max-w-xs"
       />
+
+      <button
+        type="button"
+        onClick={() => dispatch({ type: "SELECT", selection: { kind: "level" } })}
+        aria-pressed={state.selection.kind === "level"}
+        title="Fondo y profundidad de la escena"
+        className={`flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold ${
+          state.selection.kind === "level"
+            ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-200"
+            : "border-indigo-500/25 bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+        }`}
+      >
+        <Sparkles className="size-3.5" aria-hidden="true" />
+        <span className="hidden sm:inline">Escena</span>
+      </button>
 
       <span role="status" className="hidden text-xs font-semibold text-slate-400 sm:inline">
         {SAVE_LABEL[state.saveState]}

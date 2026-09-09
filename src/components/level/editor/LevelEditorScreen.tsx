@@ -11,6 +11,7 @@ import { ZoneEditor } from "./ZoneEditor";
 import { DialogEditor } from "./DialogEditor";
 import { EventChainEditor } from "./EventChainEditor";
 import { IssuesPanel } from "./IssuesPanel";
+import { DepthPanel } from "./DepthPanel";
 
 /**
  * Shell de 5 zonas del editor — docs/level-editor-plan.md §5.1. El panel de
@@ -78,6 +79,11 @@ export function LevelEditorScreen() {
           {state.selection.kind === "event" && (
             <div className="mt-4 border-t border-indigo-500/10 pt-4">
               <EventChainEditor />
+            </div>
+          )}
+          {state.selection.kind === "level" && (
+            <div className="mt-4 border-t border-indigo-500/10 pt-4">
+              <DepthPanel />
             </div>
           )}
         </aside>

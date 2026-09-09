@@ -114,7 +114,7 @@ export type EditorAction =
   | { type: "SYNC_SAVED_LEVEL"; level: LevelDefinition }
   // ─── mutan el nivel (empujan historial, salvo que haya un gesto abierto) ───
   | { type: "BEGIN_GESTURE" }
-  | { type: "SET_LEVEL_FIELD"; patch: Partial<Pick<LevelDefinition, "name" | "metadata">> }
+  | { type: "SET_LEVEL_FIELD"; patch: Partial<Pick<LevelDefinition, "name" | "metadata" | "depth">> }
   | { type: "SET_BACKGROUND"; background: LevelBackground }
   | { type: "ADD_POLYGON"; role: "walkable" | "blocked"; polygon: NavPolygon }
   | { type: "UPDATE_POLYGON"; role: "walkable" | "blocked"; id: string; patch: Partial<NavPolygon> }

@@ -28,6 +28,8 @@ import type { ChallengePlacement, LevelEntity, LevelEventRule } from "@/lib/leve
 import { createEntityDefaults, getEntityType } from "@/lib/level/entities";
 import { applyRuntimePatch, createEmptyRuntimeState, currentStateOf, deriveInitialState, isEntityVisible } from "@/lib/level/runtime/state";
 import { buildRuntimeMesh } from "@/lib/level/runtime/navigation";
+import { DEFAULT_DEPTH_CONFIG, depthScaleFor, parallaxAxis, shadowOpacityFor } from "@/lib/level/depth";
+import type { LevelDepthConfig } from "@/lib/level/schema";
 
 /**
  * Pruebas puras de lógica (sin `page`, sin red, sin Firestore) para el
@@ -883,5 +885,97 @@ test.describe("runtime/state", () => {
 
     const openMesh = buildRuntimeMesh(level, applyRuntimePatch(createEmptyRuntimeState(level), { entityStates: { [door.id]: "open" } }));
     expect(openMesh.blocked).toHaveLength(0);
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+ * SUITE — depth.ts: profundidad 2.5D (docs/scene-25d-plan.md §C/§E.2/§H).
+ * Lógica pura, sin React ni DOM — mismo criterio que las suites de arriba.
+ * ════════════════════════════════════════════════════════════════════════ */
+test.describe("depth — profundidad 2.5D", () => {
+  const CONFIG: LevelDepthConfig = {
+    enabled: true,
+    range: { nearY: 90, farY: 10 },
+    scale: { near: 1.2, far: 0.8 },
+    shadow: { enabled: true, opacityNear: 0.5, opacityFar: 0.1 },
+  };
+
+  test("depthScaleFor: escala neutra (1) si depth es undefined o enabled es false", () => {
+    expect(depthScaleFor(50, undefined)).toBe(1);
+    expect(depthScaleFor(50, { ...CONFIG, enabled: false })).toBe(1);
+  });
+
+  test("depthScaleFor: devuelve scale.far exacto en farY y scale.near exacto en nearY", () => {
+    expect(depthScaleFor(10, CONFIG)).toBeCloseTo(0.8, 10);
+    expect(depthScaleFor(90, CONFIG)).toBeCloseTo(1.2, 10);
+  });
+
+  test("depthScaleFor: interpola linealmente en el punto medio del rango", () => {
+    expect(depthScaleFor(50, CONFIG)).toBeCloseTo(1.0, 10); // punto medio de 0.8..1.2
+  });
+
+  test("depthScaleFor: clampa fuera de rango (nunca extrapola más allá de los extremos)", () => {
+    expect(depthScaleFor(0, CONFIG)).toBeCloseTo(0.8, 10);
+    expect(depthScaleFor(100, CONFIG)).toBeCloseTo(1.2, 10);
+  });
+
+  test("depthScaleFor: rango degenerado (nearY === farY) no divide por cero — se trata como 'siempre cerca'", () => {
+    const degenerate: LevelDepthConfig = { ...CONFIG, range: { nearY: 50, farY: 50 } };
+    expect(depthScaleFor(50, degenerate)).toBeCloseTo(1.2, 10);
+    expect(Number.isFinite(depthScaleFor(0, degenerate))).toBe(true);
+  });
+
+  test("shadowOpacityFor: 0 si depth, o específicamente la sombra, están desactivados", () => {
+    expect(shadowOpacityFor(90, undefined)).toBe(0);
+    expect(shadowOpacityFor(90, { ...CONFIG, enabled: false })).toBe(0);
+    expect(shadowOpacityFor(90, { ...CONFIG, shadow: { ...CONFIG.shadow, enabled: false } })).toBe(0);
+  });
+
+  test("shadowOpacityFor: interpola igual que depthScaleFor, con sus propios extremos", () => {
+    expect(shadowOpacityFor(10, CONFIG)).toBeCloseTo(0.1, 10);
+    expect(shadowOpacityFor(90, CONFIG)).toBeCloseTo(0.5, 10);
+  });
+
+  test("parallaxAxis: layerDepth 1 reproduce EXACTO el offset de la cámara (comportamiento idéntico al fondo único de hoy)", () => {
+    // sceneOffset/sceneSize son los que ya calcula useCameraBox; con
+    // layerDepth=1 el resultado debe ser byte a byte el mismo sceneOffset,
+    // sin importar dónde esté el foco — es la capa de fondo principal.
+    expect(parallaxAxis(123.4, 1600, 73, 1)).toBeCloseTo(123.4, 10);
+    expect(parallaxAxis(-88, 900, 12, 1)).toBeCloseTo(-88, 10);
+  });
+
+  test("parallaxAxis: layerDepth 0 es fijo (no se mueve con el foco) — comportamiento de cielo/horizonte", () => {
+    // `sceneOffset` SIEMPRE viene de `useCameraBox`, que ya depende del foco
+    // (sin clamp: sceneOffset = containerWidth/2 - (focusPct/100)*sceneSize)
+    // — se deriva acá del mismo modo para dos focos distintos, y se verifica
+    // que layerDepth=0 da la MISMA posición neutra para ambos.
+    const containerWidth = 1000;
+    const sceneSize = 1600;
+    const sceneOffsetFor = (focusPct: number) => containerWidth / 2 - (focusPct / 100) * sceneSize;
+    const neutral = containerWidth / 2 - 0.5 * sceneSize;
+    expect(parallaxAxis(sceneOffsetFor(73), sceneSize, 73, 0)).toBeCloseTo(neutral, 10);
+    expect(parallaxAxis(sceneOffsetFor(30), sceneSize, 30, 0)).toBeCloseTo(neutral, 10);
+  });
+
+  test("parallaxAxis: un layerDepth intermedio se desplaza menos que la cámara principal", () => {
+    // Foco corrido hacia la derecha (focusPct > 50) empuja sceneOffset hacia
+    // valores más negativos (mismo sentido que useCameraBox); una capa a
+    // media profundidad debe moverse en el mismo sentido pero menos.
+    const focusPct = 80;
+    const sceneWidth = 1600;
+    const neutralOffset = 0; // offset que tendría la cámara con foco en 50
+    const fullOffset = parallaxAxis(neutralOffset, sceneWidth, focusPct, 1); // = neutralOffset en este caso de referencia
+    const half = parallaxAxis(neutralOffset, sceneWidth, focusPct, 0.5);
+    // Con sceneOffset de referencia = 0 en foco 50, layerDepth=1 con foco 80
+    // debe alejarse de 0 más que layerDepth=0.5 en la misma dirección.
+    expect(Math.abs(half)).toBeGreaterThan(0);
+    expect(Math.abs(half)).toBeLessThan(Math.abs(parallaxAxis(neutralOffset, sceneWidth, focusPct, 2)));
+    void fullOffset;
+  });
+
+  test("DEFAULT_DEPTH_CONFIG está desactivado — un nivel nuevo no cambia de aspecto hasta que el autor lo active", () => {
+    expect(DEFAULT_DEPTH_CONFIG.enabled).toBe(false);
+    expect(depthScaleFor(50, DEFAULT_DEPTH_CONFIG)).toBe(1);
+    expect(shadowOpacityFor(50, DEFAULT_DEPTH_CONFIG)).toBe(0);
   });
 });

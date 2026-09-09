@@ -39,3 +39,6 @@ export function newEventId(): string {
 export function newExitId(): string {
   return generateId("exit");
 }
+export function newBackgroundLayerId(): string {
+  return generateId("bglayer");
+}

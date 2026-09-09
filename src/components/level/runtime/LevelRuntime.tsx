@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import type { LevelDefinition, LevelEntity } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
 import { useLevelRuntime } from "@/lib/level/runtime/useLevelRuntime";
+import { useKeyboardMovement } from "@/lib/level/runtime/useKeyboardMovement";
 import { createLiveServices } from "@/lib/level/runtime/services";
 import { LevelHud } from "./LevelHud";
 import { RuntimeCanvas } from "./RuntimeCanvas";
 import { LevelChallengeOverlay } from "./LevelChallengeOverlay";
 import { LevelDialogOverlay } from "./LevelDialogOverlay";
+import { TouchDPad } from "./TouchDPad";
 
 /**
  * Punto de entrada del runtime — docs/level-editor-plan.md §9 (Fase 9) + §10
@@ -70,6 +72,22 @@ export function LevelRuntime({
     runtime.walkTo(target);
   }
 
+  // Movimiento por teclado (docs/scene-25d-plan.md §G.2/§N Paso 6) — se
+  // desactiva mientras hay un diálogo o un desafío abierto, mismo criterio
+  // que el resto de la interacción de la escena en esos overlays.
+  const movementEnabled = !openDialogId && !openChallengeId;
+  useKeyboardMovement({
+    enabled: movementEnabled,
+    pose: runtime.pose,
+    nearestWalkablePoint: runtime.nearestWalkablePoint,
+    walkTo: runtime.walkTo,
+  });
+
+  function onDPadMove(dx: number, dy: number) {
+    const target = runtime.nearestWalkablePoint({ x: runtime.pose.x + dx, y: runtime.pose.y + dy });
+    runtime.walkTo(target);
+  }
+
   async function onEntityClick(entity: LevelEntity) {
     if (entity.interaction.mode === "none" || !entity.interaction.standPoint) return;
     await runtime.approach(entity.interaction.standPoint, entity.position);
@@ -115,6 +133,8 @@ export function LevelRuntime({
       />
 
       <LevelHud levelName={level.name} childId={childId} />
+
+      {movementEnabled && <TouchDPad onMove={onDPadMove} />}
 
       {banner && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center px-4">
