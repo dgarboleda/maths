@@ -118,7 +118,14 @@ export default function JugarNivelPage() {
     // la escena es una cámara que sigue al personaje, nunca scroll de página.
     <main id="contenido" tabIndex={-1} className="h-dvh overflow-hidden bg-slate-950 px-3 py-3 sm:px-4 sm:py-4">
       <div className="mx-auto h-full w-full max-w-3xl lg:max-w-none">
-        <LevelRuntime level={level} childId={params.childId} childName={child.name} progressBySkill={progressBySkill} soundOn={soundOn} />
+        <LevelRuntime
+          level={level}
+          parentId={user.uid}
+          childId={params.childId}
+          childName={child.name}
+          progressBySkill={progressBySkill}
+          soundOn={soundOn}
+        />
       </div>
     </main>
   );
