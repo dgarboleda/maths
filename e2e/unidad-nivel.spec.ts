@@ -18,6 +18,7 @@ import {
   type Polygon,
 } from "@/lib/world/navmesh";
 import { CIUDAD_CENTRAL_HOTSPOTS, CIUDAD_CENTRAL_WALKABLE } from "@/lib/world/questScene";
+import { QUESTS } from "@/lib/world/quests";
 import { createEmptyLevel } from "@/lib/level/defaults";
 import { ciudadCentralAsLevel } from "@/lib/level/legacy/ciudadCentral";
 import { UnknownSchemaVersionError, migrateLevel } from "@/lib/level/migrate";
@@ -750,10 +751,55 @@ test.describe("legacy — ciudadCentralAsLevel", () => {
     expect(level.entities.map((e) => e.name)).toEqual(CIUDAD_CENTRAL_HOTSPOTS.map((h) => h.label));
   });
 
-  test("no referencia ningún desafío, diálogo ni evento propio (es solo geometría + entidades)", () => {
-    expect(level.challenges).toEqual([]);
-    expect(level.dialogs).toEqual([]);
-    expect(level.events).toEqual([]);
+  // Fase 14 (docs/level-editor-plan.md §12.4): el adaptador dejó de ser solo
+  // geometría — ahora también expresa la progresión jugable real de "El
+  // apagón" (mismos 3 objetivos que QUESTS[0]), fuente real de
+  // `/jugar/[childId]` cuando NEXT_PUBLIC_LEVELS_V2 está activo.
+  test("tiene un desafío real por cada objetivo de QUESTS[0], apuntando al moduleId real (nunca contenido propio)", () => {
+    expect(level.challenges).toHaveLength(3);
+    expect(level.challenges.map((c) => c.moduleId)).toEqual(
+      QUESTS[0].objectives.map((o) => o.moduleId),
+    );
+    for (const challenge of level.challenges) {
+      expect(challenge.activityId).toBe("puzzle");
+      expect(level.entities.some((e) => e.id === challenge.sourceEntityId)).toBe(true);
+    }
+  });
+
+  test("la misión 'El apagón' tiene los mismos 3 objetivos que QUESTS[0], cada uno atado a su desafío", () => {
+    expect(level.missions).toHaveLength(1);
+    const mission = level.missions[0];
+    expect(mission.title).toBe(QUESTS[0].title);
+    expect(mission.objectives).toHaveLength(3);
+    for (const [i, objective] of mission.objectives.entries()) {
+      expect(objective.label).toBe(QUESTS[0].objectives[i].label);
+      expect(objective.source).toEqual({ kind: "challenge", challengeId: level.challenges[i].id });
+    }
+  });
+
+  test("un único diálogo, el de la Dra. Nia, con el mismo guion que CIUDAD_CENTRAL_HOTSPOTS", () => {
+    expect(level.dialogs).toHaveLength(1);
+    const nia = level.entities.find((e) => e.name === "Dra. Nia")!;
+    expect(level.dialogs[0].lines.map((l) => l.text)).toEqual(
+      CIUDAD_CENTRAL_HOTSPOTS.find((h) => h.id === "nia")!.intro,
+    );
+    expect(level.dialogs[0].lines.every((l) => l.speakerEntityId === nia.id)).toBe(true);
+  });
+
+  test("la progresión (terminal -> medidor -> compuerta) queda cerrada con enabledWhen + banderas de evento", () => {
+    const byName = (name: string) => level.entities.find((e) => e.name === name)!;
+    expect(byName("Terminal de acceso").interaction.enabledWhen).toEqual({ kind: "flag", flag: "niaGreeted", value: true });
+    expect(byName("Medidor de la central").interaction.enabledWhen).toEqual({ kind: "flag", flag: "terminalDone", value: true });
+    expect(byName("Compuerta del generador").interaction.enabledWhen).toEqual({ kind: "flag", flag: "medidorDone", value: true });
+    // Cada bandera la fija la regla de éxito del desafío anterior — nunca al revés.
+    const flagsSet = level.events.flatMap((r) => r.actions.filter((a) => a.type === "SET_FLAG").map((a) => a.params.flag));
+    expect(flagsSet).toEqual(expect.arrayContaining(["niaGreeted", "terminalDone", "medidorDone", "cityRestored"]));
+  });
+
+  test("el fondo se ilumina (mismo filtro que QuestScene.tsx) cuando cityRestored es true", () => {
+    expect(level.background.filters).toEqual([
+      { id: "restaurada", when: { kind: "flag", flag: "cityRestored", value: true }, css: "brightness(1.1) saturate(1.25)" },
+    ]);
   });
 });
 
