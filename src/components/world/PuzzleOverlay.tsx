@@ -47,6 +47,8 @@ export function PuzzleOverlay({
   soundOn,
   onClose,
   onResolved,
+  recordAttempt,
+  onStars,
 }: {
   parentId: string;
   childId: string;
@@ -57,6 +59,14 @@ export function PuzzleOverlay({
   soundOn: boolean;
   onClose: () => void;
   onResolved: (moduleId: string, updated: SkillProgress, correct: boolean) => void;
+  /** Sustituye a `recordModuleAttempt` — usado por el runtime del Level
+   *  Editor (Fase 10) para reutilizar este componente byte a byte sin
+   *  bifurcarlo. Ninguna llamada existente pasa esta prop, así que el
+   *  comportamiento por defecto no cambia. */
+  recordAttempt?: typeof recordModuleAttempt;
+  /** Notifica las estrellas ganadas tras guardar — no-op por defecto; el
+   *  runtime del nivel lo usa para GENERATE_AXIA (Fase 12). */
+  onStars?: (stars: number) => void;
 }) {
   const titleId = useId();
   const promptId = useId();
@@ -80,7 +90,7 @@ export function PuzzleOverlay({
     const correct = isCorrectAnswer(problem, given);
     try {
       const { db, firestore } = await getFirebase();
-      const outcome = await recordModuleAttempt(
+      const outcome = await (recordAttempt ?? recordModuleAttempt)(
         firestore,
         db,
         parentId,
@@ -99,6 +109,7 @@ export function PuzzleOverlay({
         });
       }
       onResolved(mod.id, outcome.updatedProgress, correct);
+      onStars?.(outcome.stars);
       setResult({ correct, stars: outcome.stars, mastered });
     } catch (err) {
       console.error("No se pudo guardar el intento", err);
