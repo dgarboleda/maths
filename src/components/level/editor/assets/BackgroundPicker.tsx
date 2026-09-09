@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { BACKGROUND_CATALOG, loadImageSize } from "@/lib/level/backgroundCatalog";
+import { loadImageSize } from "@/lib/level/backgroundCatalog";
 import { mergeBackgroundOptions, type MergedBackgroundOption } from "@/lib/level/assets/backgroundOptions";
 import type { AssetKind } from "@/lib/level/assets/imageRules";
 import { useLevelAssets } from "./useLevelAssets";
@@ -27,6 +27,15 @@ export interface ResolvedBackgroundSelection {
  * cambio de comportamiento); para un asset subido usa las dimensiones ya
  * medidas en `imageProcessing.prepareUpload`, sin ninguna llamada de red
  * adicional.
+ *
+ * La sección «De fábrica» está deliberadamente desactivada (se pasa `[]` a
+ * `mergeBackgroundOptions` en vez de `BACKGROUND_CATALOG`) — decisión
+ * explícita del usuario, no un olvido: quiere elegir siempre entre sus
+ * propias imágenes, nunca entre las 8 de fábrica. `backgroundCatalog.ts` y
+ * los archivos de `public/illustrations/` NO se tocan (los sigue usando
+ * `/login`, `ciudadCentralAsLevel()` y el mapa del mundo por su cuenta, sin
+ * pasar por este selector) — solo se dejó de ofrecer acá. Revertible en una
+ * línea si algún día hace falta volver a mostrarlas.
  */
 export function BackgroundPicker({
   parentId,
@@ -57,7 +66,7 @@ export function BackgroundPicker({
   const [showAll, setShowAll] = useState(false);
   const [resolving, setResolving] = useState<string | null>(null);
 
-  const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, assets ?? [], { for: forKind, selectedSrc: value || undefined });
+  const merged = mergeBackgroundOptions([], assets ?? [], { for: forKind, selectedSrc: value || undefined });
 
   async function select(option: MergedBackgroundOption) {
     if (!option.available) return;
@@ -84,15 +93,20 @@ export function BackgroundPicker({
   const primaryParent = parentOptions.filter((o) => o.matchesKind);
   const visibleParent = showAll ? parentOptions : primaryParent;
 
-  const firstFactoryDefault = factoryPrimary[0];
+  // Con «De fábrica» desactivado, el único default posible es la primera
+  // imagen propia del padre que coincida con `for` — si todavía no subió
+  // ninguna, no hay nada que auto-seleccionar y "Crear nivel" queda
+  // deshabilitado hasta que suba o elija una a mano (comportamiento
+  // correcto: no hay ningún fondo neutral de reserva que ofrecer).
+  const firstDefault = primaryParent[0];
   useEffect(() => {
-    if (!autoSelectDefault || value !== "" || !firstFactoryDefault) return;
+    if (!autoSelectDefault || value !== "" || !firstDefault) return;
     // `select()` empieza con un `setState` síncrono (`setResolving`) — igual
     // que `setWalkDebug` en QuestScene.tsx, se difiere con `queueMicrotask`
     // para que el efecto en sí nunca actualice estado de forma síncrona.
-    queueMicrotask(() => void select(firstFactoryDefault));
+    queueMicrotask(() => void select(firstDefault));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- solo debe correr cuando aparece la opción por defecto, no en cada cambio de `select`/`value`
-  }, [autoSelectDefault, firstFactoryDefault]);
+  }, [autoSelectDefault, firstDefault]);
 
   const thumbSize = compact ? "h-12" : "h-16";
 
@@ -162,29 +176,33 @@ export function BackgroundPicker({
         />
       )}
 
-      <fieldset>
-        <legend className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-400">De fábrica</legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {factoryPrimary.map((o) => (
-            <Tile key={o.src} option={o} />
-          ))}
-        </div>
-        {factoryLowRes.length > 0 && (
-          <details className="mt-2">
-            <summary className="cursor-pointer text-[11px] font-bold text-slate-400 hover:text-slate-300">
-              Regiones (arte de tarjeta, baja resolución) · {factoryLowRes.length}
-            </summary>
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {factoryLowRes.map((o) => (
-                <div key={o.src} className="relative">
-                  <Tile option={o} />
-                  <span className="absolute right-1 top-1 rounded bg-amber-950/80 px-1 py-0.5 text-[9px] font-bold text-amber-300">baja res.</span>
-                </div>
+      {(factoryPrimary.length > 0 || factoryLowRes.length > 0) && (
+        <fieldset>
+          <legend className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-400">De fábrica</legend>
+          {factoryPrimary.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {factoryPrimary.map((o) => (
+                <Tile key={o.src} option={o} />
               ))}
             </div>
-          </details>
-        )}
-      </fieldset>
+          )}
+          {factoryLowRes.length > 0 && (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-[11px] font-bold text-slate-400 hover:text-slate-300">
+                Regiones (arte de tarjeta, baja resolución) · {factoryLowRes.length}
+              </summary>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {factoryLowRes.map((o) => (
+                  <div key={o.src} className="relative">
+                    <Tile option={o} />
+                    <span className="absolute right-1 top-1 rounded bg-amber-950/80 px-1 py-0.5 text-[9px] font-bold text-amber-300">baja res.</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </fieldset>
+      )}
     </div>
   );
 }

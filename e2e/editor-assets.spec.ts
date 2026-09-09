@@ -189,6 +189,21 @@ test.describe("UI — subir una imagen real y usarla como fondo", () => {
     await page.goto("/panel/editor");
     await page.getByRole("button", { name: "Nuevo nivel" }).click();
     await page.getByLabel("Nombre del nivel").fill("Nivel con imagen subida");
+
+    // Sin ningún fondo de fábrica (sección desactivada, ver
+    // BackgroundPicker.tsx), un padre nuevo sin imágenes propias tiene que
+    // subir una para poder crear el nivel — reutiliza la misma imagen; el
+    // punto de esta prueba es reemplazarla después desde "Escena", no la
+    // subida en sí (ver más abajo).
+    const cityCentral = path.resolve(__dirname, "..", "public", "illustrations", "city-central.webp");
+    await page.getByRole("button", { name: "+ Subir imagen" }).click();
+    await page.getByLabel(/Archivo \(WebP, PNG o JPEG\)/).setInputFiles(cityCentral);
+    const altInputInicial = page.getByLabel("Descripción (para lectores de pantalla)");
+    await expect(altInputInicial).toBeVisible({ timeout: 15_000 });
+    await altInputInicial.fill("Fondo inicial");
+    await page.getByRole("button", { name: "Subir", exact: true }).click();
+    await expect(altInputInicial).toHaveCount(0, { timeout: 15_000 });
+
     await page.getByRole("button", { name: "Crear nivel" }).click();
     await expect(page.getByText("Nivel con imagen subida", { exact: true }).first()).toBeVisible();
     await page.getByRole("link", { name: "Abrir" }).click();
@@ -216,7 +231,8 @@ test.describe("UI — subir una imagen real y usarla como fondo", () => {
     await page.getByRole("button", { name: "Subir", exact: true }).click();
 
     // Tras subir: el uploader se cierra, la nueva imagen queda seleccionada
-    // en "Mis imágenes" (única entrada — recién subida) y `background.src`
+    // en "Mis imágenes" (hay 2 entradas — el fondo inicial de la creación y
+    // esta — pero solo la recién subida queda marcada) y `background.src`
     // pasa a ser una URL del emulador de Storage, no /illustrations/*.
     await expect(page.getByText("Mis imágenes").first()).toBeVisible();
     const tileSeleccionado = page.locator("label").filter({ has: page.locator('input[type="radio"]:checked') }).first();

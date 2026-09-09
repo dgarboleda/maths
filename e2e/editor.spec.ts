@@ -1,3 +1,4 @@
+import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { createEmptyLevel } from "@/lib/level/defaults";
 import { crearHijo, registrarPadre } from "./utilidades";
@@ -17,10 +18,33 @@ import { crearHijo, registrarPadre } from "./utilidades";
  * de borrador local y la prueba de extensibilidad (tipo `palanca`, A10).
  */
 
+/**
+ * Sube un fondo real antes de crear el nivel — desde que se ocultó la
+ * sección «De fábrica» de `BackgroundPicker` (decisión explícita del
+ * usuario, docs/asset-management-plan.md), un padre sin ninguna imagen
+ * propia ya no tiene ningún default que auto-seleccionar y "Crear nivel"
+ * queda deshabilitado hasta elegir algo — exactamente el comportamiento
+ * correcto ahora que no hay ningún fondo "de reserva". Cada prueba de este
+ * archivo usa un padre nuevo (`registrarPadre`), así que siempre hace falta
+ * este paso.
+ */
 async function crearYAbrirNivel(page: Page, nombre: string): Promise<void> {
   await page.goto("/panel/editor");
   await page.getByRole("button", { name: "Nuevo nivel" }).click();
   await page.getByLabel("Nombre del nivel").fill(nombre);
+
+  await page.getByRole("button", { name: "+ Subir imagen" }).click();
+  await page.getByLabel(/Archivo \(WebP, PNG o JPEG\)/).setInputFiles(path.resolve(__dirname, "..", "public", "illustrations", "city-central.webp"));
+  const altInput = page.getByLabel("Descripción (para lectores de pantalla)");
+  await expect(altInput).toBeVisible({ timeout: 15_000 });
+  await altInput.fill("Fondo de prueba");
+  await page.getByRole("button", { name: "Subir", exact: true }).click();
+  // El formulario de subida se desmonta al terminar (vuelve a mostrar
+  // "+ Subir imagen", ahora con la imagen recién subida ya seleccionada
+  // arriba en "Mis imágenes") — se espera a que el input de alt desaparezca
+  // en vez de a un estado intermedio de la barra de progreso.
+  await expect(altInput).toHaveCount(0, { timeout: 15_000 });
+
   await page.getByRole("button", { name: "Crear nivel" }).click();
   await expect(page.getByText(nombre, { exact: true }).first()).toBeVisible();
   await page.getByRole("link", { name: "Abrir" }).click();
