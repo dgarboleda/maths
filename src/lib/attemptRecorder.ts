@@ -1,7 +1,7 @@
 import type { Firestore } from "firebase/firestore";
 import type { ModuleDef } from "./curriculum";
 import type { SkillProgress } from "./types";
-import { recordAttempt, todayKey } from "./mastery";
+import { recordAttempt, recordReview, todayKey } from "./mastery";
 import { starsForAnswer } from "./economy";
 
 export interface AttemptOutcome {
@@ -34,7 +34,13 @@ export async function recordModuleAttempt(
   const { addDoc, collection, doc, serverTimestamp, setDoc } = firestoreFns;
 
   const wasMastered = Boolean(prevProgress?.masteredAt);
-  const updatedProgress = recordAttempt(prevProgress, correct, todayKey());
+  // `wasMastered` (antes de ESTE intento) es la señal de que se trata de un
+  // repaso, no de la práctica que lleva a dominarlo por primera vez (Fase
+  // 27, docs/plan-salto-producto.md §5.4) — ese único momento de "recién
+  // dominado" no necesita ningún `recordReview`: `reviewDueAt` ya cuenta
+  // desde `masteredAt` cuando `reviewBox`/`lastReviewAt` están ausentes.
+  const attemptProgress = recordAttempt(prevProgress, correct, todayKey());
+  const updatedProgress = wasMastered ? recordReview(attemptProgress, correct) : attemptProgress;
 
   await addDoc(collection(db, "parents", parentId, "children", childId, "attempts"), {
     skillId: `${mod.strandSlug}-topico-${mod.id}`,

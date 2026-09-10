@@ -1,6 +1,6 @@
 import { playSound, type SoundType } from "@/lib/gameSound";
 import type { SideEffect } from "@/lib/level/events/bus";
-import { recordAttempt as computeUpdatedProgress, todayKey } from "@/lib/mastery";
+import { recordAttempt as computeUpdatedProgress, recordReview, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
 import { recordModuleAttempt } from "@/lib/attemptRecorder";
 import { awardMasteryBadges } from "@/lib/masteryRewards";
@@ -104,7 +104,10 @@ const sandboxRecordAttempt: typeof recordModuleAttempt = async (
   hintsUsed = 0,
 ) => {
   const wasMastered = Boolean(prevProgress?.masteredAt);
-  const updatedProgress = computeUpdatedProgress(prevProgress, correct, todayKey());
+  // Mismo criterio que recordModuleAttempt real (Fase 27, §5.4): el Play
+  // Test tiene que calcular exactamente lo mismo, repaso incluido.
+  const attemptProgress = computeUpdatedProgress(prevProgress, correct, todayKey());
+  const updatedProgress = wasMastered ? recordReview(attemptProgress, correct) : attemptProgress;
   const stars = correct ? starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday: 0, hintsUsed }) : 0;
   return { updatedProgress, wasMastered, stars };
 };

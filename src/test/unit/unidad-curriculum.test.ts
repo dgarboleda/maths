@@ -5,9 +5,10 @@ import { compileModule } from "@/lib/curriculum/compileModule";
 import { createEmptyCustomModule, slugForLabel } from "@/lib/curriculum/defaults";
 import { validateCustomModule } from "@/lib/curriculum/validateCustomModule";
 import { allModules, clearCustomModules, registerCustomModules } from "@/lib/curriculum/customRegistry";
-import { getModule, isUnlocked, modulesForStrand } from "@/lib/curriculum";
+import { getModule, isUnlocked, modulesForStrand, nextReview } from "@/lib/curriculum";
 import type { ArithmeticGeneratorSpec, CustomModuleDoc } from "@/lib/curriculum/customSchema";
 import { problemSignature } from "@/lib/problem";
+import type { SkillProgress } from "@/lib/types";
 
 /**
  * Pruebas puras de lógica (sin DOM real, sin red, sin Firestore) para el
@@ -194,6 +195,39 @@ describe("Currícula personalizada — registro e integración con curriculum.ts
     const mod = getModule("aritmetica-d1");
     expect(mod).toBeDefined();
     expect(mod!.id).toBe("aritmetica-d1");
+  });
+});
+
+describe("nextReview — Fase 27, repaso espaciado (docs/plan-salto-producto.md §5.5)", () => {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const now = 100_000_000;
+
+  test("sin ningún progreso: null", () => {
+    expect(nextReview({})).toBeNull();
+  });
+
+  test("devuelve UNO solo — el módulo dominado con el repaso más vencido, nunca una lista", () => {
+    const progressBySkill: Record<string, SkillProgress> = {
+      "aritmetica-d1": { recentResults: [], recentAccuracy: 1, masteredAt: now - 10 * DAY_MS }, // repaso vencido hace más tiempo
+      "aritmetica-d2": { recentResults: [], recentAccuracy: 1, masteredAt: now - 5 * DAY_MS },
+    };
+    const result = nextReview(progressBySkill, now);
+    expect(result?.id).toBe("aritmetica-d1");
+  });
+
+  test("un módulo que no resuelve (personalizado borrado, o id inválido) se ignora sin lanzar", () => {
+    const progressBySkill: Record<string, SkillProgress> = {
+      "no-existe-ni-de-codigo-ni-personalizado": { recentResults: [], recentAccuracy: 1, masteredAt: now - 10 * DAY_MS },
+    };
+    expect(nextReview(progressBySkill, now)).toBeNull();
+  });
+
+  test("un repaso vencido nunca re-bloquea: isUnlocked da el mismo resultado con o sin repaso pendiente (P1)", () => {
+    const progressBySkill: Record<string, SkillProgress> = {
+      "aritmetica-d1": { recentResults: [], recentAccuracy: 1, masteredAt: now - 100 * DAY_MS },
+    };
+    expect(nextReview(progressBySkill, now)).not.toBeNull(); // el repaso de d1 está bien vencido
+    expect(isUnlocked(progressBySkill, "aritmetica-d2")).toBe(true); // pero sigue desbloqueado igual
   });
 });
 
