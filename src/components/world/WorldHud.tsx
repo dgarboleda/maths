@@ -31,6 +31,7 @@ export function WorldTopBar({
   soundOn,
   onToggleSound,
   nextChallengeModule,
+  nextReviewModule,
 }: {
   childId: string;
   childName: string;
@@ -39,6 +40,10 @@ export function WorldTopBar({
   soundOn: boolean;
   onToggleSound: () => void;
   nextChallengeModule: ModuleDef | null;
+  /** Módulo dominado con el repaso más vencido (Fase 27, docs/plan-salto-
+   *  producto.md §5.5) — opcional: las pantallas que todavía no calculan
+   *  `nextReview()` simplemente no muestran este chip, sin romper nada. */
+  nextReviewModule?: ModuleDef | null;
 }) {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-center px-3 pt-3 sm:px-4 sm:pt-4">
@@ -92,6 +97,15 @@ export function WorldTopBar({
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          {nextReviewModule && (
+            <Link
+              href={moduleHref(childId, nextReviewModule)}
+              className="flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-slate-900/70 px-3 py-1.5 text-xs font-bold text-cyan-200 transition-colors hover:border-cyan-300"
+            >
+              <span aria-hidden="true">🔁</span>
+              Repaso · {nextReviewModule.label}
+            </Link>
+          )}
           {nextChallengeModule && (
             <Link
               href={moduleHref(childId, nextChallengeModule)}

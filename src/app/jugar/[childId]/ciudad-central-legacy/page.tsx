@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
-import { nextChallenge } from "@/lib/curriculum";
+import { nextChallenge, nextReview } from "@/lib/curriculum";
 import { WorldTopBar } from "@/components/world/WorldHud";
 import { QuestScene } from "@/components/world/QuestScene";
 import { ShopPanel, type RequestDoc } from "@/components/world/ShopPanel";
@@ -182,6 +182,7 @@ export default function CiudadCentralLegacyPage() {
           soundOn={soundOn}
           onToggleSound={toggleSound}
           nextChallengeModule={nextChallenge(progressBySkill)}
+          nextReviewModule={nextReview(progressBySkill)}
         />
 
         <QuestScene

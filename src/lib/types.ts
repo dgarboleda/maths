@@ -46,6 +46,12 @@ export interface SkillProgress {
    * evaluación diagnóstica inicial. Ausente en progreso previo a esta
    * distinción — se trata como "practice". */
   masteredVia?: "practice" | "placement";
+  /** Caja de Leitner del repaso espaciado (Fase 27, docs/plan-salto-
+   *  producto.md §5.2), 0-3. Ausente = caja 0 — nunca toca el desbloqueo:
+   *  ver mastery.ts (reviewDueAt/recordReview). */
+  reviewBox?: number;
+  /** Último repaso resuelto, ms. Ausente ⇒ se cuenta desde `masteredAt`. */
+  lastReviewAt?: number;
 }
 
 /** /parents/{parentId}/children/{childId}/placements/{placementId} — cada

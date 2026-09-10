@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { Problem } from "./problem";
 import type { SkillProgress } from "./types";
+import { isReviewDue, reviewDueAt } from "./mastery";
 import { generateProblem as generateAritmetica } from "./arithmetic";
 import { generateProblem as generateAlgebra } from "./algebra";
 import { generateProblem as generateGeometria } from "./geometria";
@@ -752,4 +753,25 @@ export function nextChallenge(
     }
   }
   return best;
+}
+
+/**
+ * El módulo dominado con el repaso más vencido, o `null` si ninguno tiene
+ * uno pendiente — Fase 27 (docs/plan-salto-producto.md §5.5/§5.6). A
+ * propósito devuelve UNO, nunca una lista: un niño que dominó 20 módulos y
+ * dejó la app dos semanas no debe volver a una cola de repasos pendientes,
+ * eso desmotiva más de lo que ayuda. `nextChallenge` no se toca — este es
+ * un hermano, no un reemplazo, para no arrastrar su semántica a `WorldHud`/
+ * `boss/page.tsx`/`evaluacion/page.tsx`.
+ */
+export function nextReview(progressBySkill: Record<string, SkillProgress>, now: number = Date.now()): ModuleDef | null {
+  let best: { mod: ModuleDef; dueAt: number } | null = null;
+  for (const [moduleId, progress] of Object.entries(progressBySkill)) {
+    if (!isReviewDue(progress, now)) continue;
+    const dueAt = reviewDueAt(progress);
+    const mod = getModule(moduleId);
+    if (dueAt === null || !mod) continue;
+    if (!best || dueAt < best.dueAt) best = { mod, dueAt };
+  }
+  return best?.mod ?? null;
 }
