@@ -19,6 +19,7 @@ import { WordProblemConcept } from "@/components/topic/concepts/WordProblemConce
 import { McdMcmConcept } from "@/components/topic/concepts/McdMcmConcept";
 import { FraccionesDistintoDenomConcept } from "@/components/topic/concepts/FraccionesDistintoDenomConcept";
 import { STRANDS } from "./strands";
+import { allModules, getCustomModule } from "./curriculum/customRegistry";
 
 /**
  * Currícula: un solo grafo de módulos con prerrequisitos explícitos, que
@@ -643,8 +644,16 @@ export const MODULES: ModuleDef[] = [
 
 const MODULES_BY_ID = new Map(MODULES.map((m) => [m.id, m]));
 
+/** Reexportado para que los consumidores del catálogo completo (Level
+ *  Editor, panel familiar) no necesiten conocer `curriculum/customRegistry`. */
+export { allModules } from "./curriculum/customRegistry";
+
+/** Cae al registro de módulos personalizados (Fase 20,
+ *  docs/level-editor-plan-v2.md §7.1) cuando `id` no es uno de los ~52
+ *  módulos de código — nunca al revés, así un `cst-*` nunca puede pisar un
+ *  módulo de código con el mismo id. */
 export function getModule(id: string): ModuleDef | undefined {
-  return MODULES_BY_ID.get(id);
+  return MODULES_BY_ID.get(id) ?? getCustomModule(id);
 }
 
 /** Ruta de un módulo: la propia si la tiene (p. ej. la tabla de multiplicar), si no la genérica. */
@@ -654,9 +663,9 @@ export function moduleHref(childId: string, mod: ModuleDef): string {
 
 /** Módulos de un hilo, en orden de franja (y de dificultad dentro de la franja). */
 export function modulesForStrand(strandSlug: string): ModuleDef[] {
-  return MODULES.filter((m) => m.strandSlug === strandSlug).sort(
-    (a, b) => a.tier - b.tier || a.difficulty - b.difficulty,
-  );
+  return allModules()
+    .filter((m) => m.strandSlug === strandSlug)
+    .sort((a, b) => a.tier - b.tier || a.difficulty - b.difficulty);
 }
 
 export function isMastered(

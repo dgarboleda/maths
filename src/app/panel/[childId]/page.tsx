@@ -11,7 +11,7 @@ import { useChildDashboard } from "@/lib/family/useChildDashboard";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, Placement, SkillProgress } from "@/lib/types";
 import { getStrand, STRANDS } from "@/lib/strands";
-import { MODULES, isMastered, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
+import { allModules, isMastered, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { moduleForTier } from "@/lib/placement";
 import { ageFromBirthDate } from "@/lib/family/age";
 import { Avatar } from "@/components/world/Avatar";
@@ -95,7 +95,7 @@ export default function ChildDetailPage() {
     );
   }
 
-  const tiers = [...new Set(MODULES.map((m) => m.tier))].sort((a, b) => a - b);
+  const tiers = [...new Set(allModules().map((m) => m.tier))].sort((a, b) => a - b);
   const age = ageFromBirthDate(child.birthDate);
 
   return (
@@ -312,7 +312,9 @@ export default function ChildDetailPage() {
           <section key={tier} aria-label={`Franja ${tier + 1}`} className="flex flex-col gap-2">
             <h2 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Franja {tier + 1}</h2>
             <ul className="flex flex-col gap-1">
-              {MODULES.filter((m) => m.tier === tier).map((mod) => {
+              {allModules()
+                .filter((m) => m.tier === tier)
+                .map((mod) => {
                 const mastered = isMastered(progressBySkill, mod.id);
                 const viaPlacement = progressBySkill[mod.id]?.masteredVia === "placement";
                 const unlocked = isUnlocked(progressBySkill, mod.id);

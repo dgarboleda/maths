@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link2, Unlink } from "lucide-react";
-import { MODULES } from "@/lib/curriculum";
+import { allModules } from "@/lib/curriculum";
 import { STRANDS } from "@/lib/strands";
 import { newChallengeId } from "@/lib/level/ids";
 import type { Problem } from "@/lib/problem";
@@ -15,10 +15,16 @@ import { help } from "./helpText";
 /**
  * Vincula un `ChallengePlacement` a la entidad seleccionada — docs/level-
  * editor-plan.md §9.2. El editor NUNCA define contenido académico: solo
- * elige un `ModuleDef` real de `MODULES` y previsualiza `mod.generateProblem()`
- * con el mismo `QuestionWidget` que usa el juego, en modo solo lectura
- * (`disabled`, sin `onSubmit` funcional) — lo que se ve acá es exactamente
- * lo que le va a tocar resolver al jugador, con datos reales.
+ * elige un `ModuleDef` real (de `MODULES`, o uno personalizado publicado —
+ * política P1, docs/level-editor-plan-v2.md §0) y previsualiza
+ * `mod.generateProblem()` con el mismo `QuestionWidget` que usa el juego,
+ * en modo solo lectura (`disabled`, sin `onSubmit` funcional) — lo que se
+ * ve acá es exactamente lo que le va a tocar resolver al jugador, con datos
+ * reales.
+ *
+ * `allModules()` solo hidrata módulos personalizados **publicados**
+ * (`useCustomCurriculum`, Fase 20 §7.1) — un borrador nunca aparece acá,
+ * así que no hace falta filtrar `published` de nuevo en este componente.
  *
  * Tras confirmar, vuelve a seleccionar la entidad (no el `challenge` recién
  * creado) para no sacar al usuario del panel desde el que abrió el picker.
@@ -36,11 +42,14 @@ export function ChallengePicker({ entityId }: { entityId: string }) {
   const existing = state.level.challenges.find((c) => c.sourceEntityId === entityId);
 
   if (existing && !picking) {
-    const existingMod = MODULES.find((m) => m.id === existing.moduleId);
+    const existingMod = allModules().find((m) => m.id === existing.moduleId);
     return (
       <div className="space-y-2 rounded-lg border border-indigo-500/15 bg-slate-900/40 p-2">
         <p className="text-[11px] text-slate-300">
           <span className="font-bold text-slate-100">{existingMod ? `${existingMod.emoji} ${existingMod.label}` : existing.moduleId}</span>
+          {existing.moduleId.startsWith("cst-") && (
+            <span className="ml-1.5 rounded bg-cyan-500/15 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-cyan-300">Tuyo</span>
+          )}
         </p>
         <div className="flex gap-1.5">
           <Tooltip content={help("challenge.change").text} side="top">
@@ -78,8 +87,8 @@ export function ChallengePicker({ entityId }: { entityId: string }) {
   }
 
   const q = query.trim().toLowerCase();
-  const filtered = MODULES.filter((m) => !q || m.label.toLowerCase().includes(q) || m.id.includes(q));
-  const previewMod = MODULES.find((m) => m.id === previewModuleId);
+  const filtered = allModules().filter((m) => !q || m.label.toLowerCase().includes(q) || m.id.includes(q));
+  const previewMod = allModules().find((m) => m.id === previewModuleId);
 
   function confirm(moduleId: string) {
     dispatch({ type: "ADD_CHALLENGE", challenge: { id: newChallengeId(), moduleId, activityId: "puzzle", sourceEntityId: entityId } });
@@ -116,9 +125,14 @@ export function ChallengePicker({ entityId }: { entityId: string }) {
                     setPreviewModuleId(m.id);
                     setPreviewProblem(m.generateProblem());
                   }}
-                  className={`block w-full rounded-md px-2 py-1 text-left ${previewModuleId === m.id ? "bg-cyan-500/15 text-cyan-300" : "text-slate-300 hover:bg-slate-800"}`}
+                  className={`flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left ${previewModuleId === m.id ? "bg-cyan-500/15 text-cyan-300" : "text-slate-300 hover:bg-slate-800"}`}
                 >
-                  {m.emoji} {m.label}
+                  <span className="flex-1">
+                    {m.emoji} {m.label}
+                  </span>
+                  {m.id.startsWith("cst-") && (
+                    <span className="rounded bg-cyan-500/15 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-cyan-300">Tuyo</span>
+                  )}
                 </button>
               ))}
             </li>

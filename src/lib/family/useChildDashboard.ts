@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getFirebase } from "@/lib/firebase";
 import type { Attempt, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { STRANDS } from "@/lib/strands";
-import { MODULES, isMastered, masteredCountForStrand, modulesForStrand } from "@/lib/curriculum";
+import { allModules, isMastered, masteredCountForStrand, modulesForStrand } from "@/lib/curriculum";
 import { todayKey } from "@/lib/mastery";
 import { QUESTS, activeQuest, questProgress } from "@/lib/world/quests";
 import { getStrandNarrative } from "@/lib/narrative";
@@ -206,8 +206,9 @@ export function useChildDashboard(
   }, [parentId, childId]);
 
   return useMemo(() => {
-    const masteredModules = MODULES.filter((m) => isMastered(progressBySkill, m.id)).length;
-    const masteryGlobal = MODULES.length ? Math.round((masteredModules / MODULES.length) * 100) : 0;
+    const modules = allModules();
+    const masteredModules = modules.filter((m) => isMastered(progressBySkill, m.id)).length;
+    const masteryGlobal = modules.length ? Math.round((masteredModules / modules.length) * 100) : 0;
 
     const week = lastSevenDays();
     const attemptsByDay = new Map<string, Attempt[]>();
