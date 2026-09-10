@@ -17,23 +17,36 @@ export interface ResolvedAvatar {
   scale: number;
 }
 
+export interface ResolvedAvatarResult {
+  avatar: ResolvedAvatar | null;
+  /** `true` mientras todavía no se sabe si el hijo tiene un avatar elegido
+   *  del catálogo del Mundo (Fase 19) — Firestore no respondió ni una vez.
+   *  El llamador debe esperar a que sea `false` antes de pintar cualquier
+   *  sprite: pintar el de fábrica mientras tanto y después cambiarlo por el
+   *  elegido produce el "primero se ve uno, después otro" de un avatar
+   *  personalizado apareciendo tarde. */
+  loading: boolean;
+}
+
 /**
  * Cascada elegido → desbloqueado → predeterminado → sprites de fábrica —
  * Fase 19 (docs/level-editor-plan-v2.md §6.3). Un solo lugar donde se
  * resuelve qué avatar ve de verdad un hijo, para que `LevelRuntime` no
- * repita la lógica de desbloqueo por su cuenta. `null` = no hay ningún
- * catálogo o nada elegible todavía — el llamador sigue usando los sprites
- * de fábrica de `Avatar.tsx` sin pasarle `bodySrc`/`headshotSrc`.
+ * repita la lógica de desbloqueo por su cuenta. `avatar: null` = no hay
+ * ningún catálogo o nada elegible todavía — el llamador sigue usando los
+ * sprites de fábrica de `Avatar.tsx` sin pasarle `bodySrc`/`headshotSrc`.
  */
 export function useResolvedAvatar(
   parentId: string | undefined,
   childId: string | undefined,
   progressBySkill: Record<string, SkillProgress>,
-): ResolvedAvatar | null {
+): ResolvedAvatarResult {
   const totalStars = useTotalStars(parentId, childId);
   const [world, setWorld] = useState<GameWorld | null>(null);
   const [levels, setLevels] = useState<LevelDefinition[]>([]);
+  const [worldLoaded, setWorldLoaded] = useState(false);
   const [avatarId, setAvatarId] = useState<string | undefined>(undefined);
+  const [avatarIdLoaded, setAvatarIdLoaded] = useState(false);
 
   useEffect(() => {
     if (!parentId) return;
@@ -49,7 +62,10 @@ export function useResolvedAvatar(
         setWorld(w);
         setLevels(full);
       })
-      .catch((err) => console.error("No se pudo cargar el catálogo de avatares", err));
+      .catch((err) => console.error("No se pudo cargar el catálogo de avatares", err))
+      .finally(() => {
+        if (!cancelled) setWorldLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -63,13 +79,23 @@ export function useResolvedAvatar(
       .then((snap) => {
         if (!cancelled && snap.exists()) setAvatarId((snap.data() as ChildProfile).avatarId);
       })
-      .catch((err) => console.error("No se pudo cargar el perfil del hijo", err));
+      .catch((err) => console.error("No se pudo cargar el perfil del hijo", err))
+      .finally(() => {
+        if (!cancelled) setAvatarIdLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
   }, [parentId, childId]);
 
-  if (!world || world.avatars.avatars.length === 0) return null;
+  // Sin `parentId`/`childId` no hay ningún fetch en marcha (los efectos de
+  // arriba ni arrancan) — `worldLoaded`/`avatarIdLoaded` se quedarían en
+  // `false` para siempre si se los tratara como la única fuente de verdad,
+  // así que acá se los da por resueltos en vez de forzar un `setState`
+  // síncrono dentro del efecto solo para marcarlos.
+  const loading = (Boolean(parentId) && !worldLoaded) || (Boolean(parentId) && Boolean(childId) && !avatarIdLoaded);
+
+  if (!world || world.avatars.avatars.length === 0) return { avatar: null, loading };
 
   function toResolved(a: AvatarDef): ResolvedAvatar {
     return { id: a.id, bodySrc: a.bodySrc, headshotSrc: a.headshotSrc, scale: a.scale };
@@ -79,8 +105,8 @@ export function useResolvedAvatar(
   const stars = totalStars ?? 0;
 
   const chosen = world.avatars.avatars.find((a) => a.id === avatarId);
-  if (chosen && avatarUnlocked(chosen, world, levelsById, progressBySkill, stars)) return toResolved(chosen);
+  if (chosen && avatarUnlocked(chosen, world, levelsById, progressBySkill, stars)) return { avatar: toResolved(chosen), loading };
 
   const fallback = world.avatars.avatars.find((a) => a.id === world.avatars.defaultAvatarId);
-  return fallback ? toResolved(fallback) : null;
+  return { avatar: fallback ? toResolved(fallback) : null, loading };
 }

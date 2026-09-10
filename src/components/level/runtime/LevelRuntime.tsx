@@ -113,7 +113,7 @@ export function LevelRuntime({
   const runtime = useLevelRuntime(level, progressBySkill, services, sandbox ? () => onExit?.() : resolveExitTarget);
 
   const sandboxServices = sandbox ? createSandboxServices() : null;
-  const resolvedAvatar = useResolvedAvatar(parentId, childId, progressBySkill);
+  const { avatar: resolvedAvatar, loading: avatarLoading } = useResolvedAvatar(parentId, childId, progressBySkill);
   const mission = activeMission(level, progressBySkill, runtime.state);
 
   function onGroundClick(xPct: number, yPct: number) {
@@ -188,6 +188,7 @@ export function LevelRuntime({
         debug={debug}
         axiaPulse={axiaPulse ? { ...axiaPulse, x: runtime.pose.x, y: runtime.pose.y } : null}
         avatar={resolvedAvatar ? { bodySrc: resolvedAvatar.bodySrc, scale: resolvedAvatar.scale } : undefined}
+        playerVisible={!avatarLoading}
         onGroundClick={onGroundClick}
         onEntityClick={onEntityClick}
       />
