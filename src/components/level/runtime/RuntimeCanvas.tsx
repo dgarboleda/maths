@@ -26,6 +26,7 @@ export function RuntimeCanvas({
   debug,
   axiaPulse,
   avatar,
+  playerVisible,
   onGroundClick,
   onEntityClick,
 }: {
@@ -44,6 +45,13 @@ export function RuntimeCanvas({
    *  sabe qué entidad lo disparó). `null` mientras no hay ninguna animación
    *  en curso. */
   axiaPulse: { x: number; y: number; stars: number; key: number } | null;
+  /** `false` mientras `useResolvedAvatar` todavía no sabe si el hijo tiene un
+   *  avatar personalizado elegido (Fase 19) — pintar al jugador con el
+   *  sprite de fábrica y después reemplazarlo por el elegido se ve como un
+   *  parpadeo ("primero un avatar, después otro"); mientras tanto se omite
+   *  del `painted` (nunca se pinta a medias, sin sprite equivocado que
+   *  corregir después). */
+  playerVisible: boolean;
   onGroundClick: (xPct: number, yPct: number) => void;
   onEntityClick: (entity: LevelEntity) => void;
 }) {
@@ -82,7 +90,7 @@ export function RuntimeCanvas({
     layer: 0,
     render: () => <RuntimePlayer pose={pose} walking={walking} childName={childName} depth={level.depth} avatar={avatar} />,
   };
-  const painted = [...paintedEntities, paintedPlayer].sort((a, b) => a.layer - b.layer || a.y - b.y);
+  const painted = [...paintedEntities, ...(playerVisible ? [paintedPlayer] : [])].sort((a, b) => a.layer - b.layer || a.y - b.y);
 
   // Capas de fondo (docs/scene-25d-plan.md §H.3): las de `depth < 1` van
   // DETRÁS del fondo principal (cielo/horizonte lejano), las de `depth > 1`

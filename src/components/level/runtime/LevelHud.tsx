@@ -41,7 +41,12 @@ export function LevelHud({
             {levelName}
           </button>
         ) : (
-          <Link href={`/jugar/${childId}`} className={badgeClassName}>
+          // `/jugar/{childId}` es el despachador (Fase 18): si este nivel es
+          // el `isStart` del mundo (o el único nivel), te manda derechito de
+          // vuelta a él — el botón "atrás" parecería no hacer nada. El mapa
+          // del jugador sí es una pantalla real y estable, nunca rebota de
+          // vuelta al nivel del que se sale.
+          <Link href={`/jugar/${childId}/mapa`} className={badgeClassName}>
             <ArrowLeft className="size-4 shrink-0" aria-hidden="true" />
             {levelName}
           </Link>
