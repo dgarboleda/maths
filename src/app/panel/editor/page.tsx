@@ -96,10 +96,14 @@ export default function EditorPage() {
     setError(null);
     try {
       const { db, firestore } = await getFirebase();
-      await deleteLevel(firestore, db, parentId, levelId);
-      // Sincronización nodo↔nivel (Fase 17, §4.3): borrar un nivel borra su
-      // nodo del mapa y los enlaces que lo tocan — nunca queda un nodo
-      // "fantasma" apuntando a un nivel que ya no existe.
+      // Sincronización nodo↔nivel (Fase 17, §4.3): el mundo se limpia ANTES
+      // de borrar el nivel. Son dos escrituras independientes (no hay
+      // transacción posible entre `levels/{id}` y `world/main` con
+      // versionado optimista propio); si se borrara el nivel primero y este
+      // segundo paso fallara (p. ej. `StaleWorldError` por otra sesión
+      // editando el mundo a la vez), quedaría un nodo "fantasma" apuntando a
+      // un nivel que ya no existe. En este orden, un fallo acá deja el nivel
+      // intacto — nunca un nodo fantasma.
       const world = await ensureWorld(firestore, db, parentId, parentId);
       if (world.nodes.some((n) => n.levelId === levelId)) {
         await saveWorld(firestore, db, parentId, {
@@ -108,6 +112,7 @@ export default function EditorPage() {
           links: world.links.filter((l) => l.fromLevelId !== levelId && l.toLevelId !== levelId),
         });
       }
+      await deleteLevel(firestore, db, parentId, levelId);
       await reload();
     } catch (err) {
       console.error("No se pudo borrar el nivel", err);
