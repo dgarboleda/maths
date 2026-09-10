@@ -63,6 +63,12 @@ async function confirmarPin(page: Page, nombre: string, pin: string): Promise<vo
  * módulo otorgado) antes de seguir: el resto de las pruebas no evalúan la
  * evaluación en sí misma y no pueden pagar sus ~45 preguntas adaptativas en
  * cada setup.
+ *
+ * Va directo a `/jugar/{childId}/ciudad-central-legacy` (no a
+ * `/jugar/{childId}`): desde la Fase 18 esa es solo un despachador que manda
+ * al Mundo real del padre (o a "Crear el primer nivel" si no tiene
+ * ninguno) — Ciudad Central ya no es lo que ve un hijo por defecto, sigue
+ * viva nada más en esta ruta de regresión (ver su comentario de cabecera).
  */
 export async function entrarAlPerfil(page: Page, nombre: string, pin: string, correo: string): Promise<void> {
   await confirmarPin(page, nombre, pin);
@@ -81,7 +87,7 @@ export async function entrarAlPerfil(page: Page, nombre: string, pin: string, co
     grantedModuleIds: [],
   });
 
-  await page.goto(`/jugar/${childId}`);
+  await page.goto(`/jugar/${childId}/ciudad-central-legacy`);
   // La Ciudad Central es la ruta más pesada de la app y `next dev` la compila
   // la primera vez que un worker la visita, así que aquí el margen es mayor
   // que el `expect.timeout` global (ver el comentario de playwright.config.ts).

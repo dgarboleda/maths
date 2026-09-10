@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { ChartLine, Gift, LayoutDashboard, LogOut, Map, Settings, Sparkles, Users, Wand2 } from "lucide-react";
+import { BookOpen, ChartLine, Gift, LayoutDashboard, LogOut, Map, Settings, Sparkles, Users, Wand2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { FamilyProvider } from "./FamilyProvider";
@@ -16,6 +16,7 @@ const NAV = [
   { href: "/panel/recompensas", label: "Recompensas", icon: Gift, exact: false },
   { href: "/panel/editor", label: "Editor", icon: Wand2, exact: false },
   { href: "/panel/editor/mundo", label: "Mundo", icon: Map, exact: false },
+  { href: "/panel/curriculum", label: "Currícula", icon: BookOpen, exact: false },
   { href: "/panel/ajustes", label: "Ajustes", icon: Settings, exact: false },
 ] as const;
 
@@ -54,7 +55,11 @@ export function PanelShell({ children }: { children: ReactNode }) {
   // sidebar que no necesita. Sigue viviendo bajo /panel/editor (mismo dueño,
   // misma sesión) pero sin el chrome del panel — la lista en /panel/editor sí
   // lo conserva, como cualquier otra pantalla de /panel/*.
-  if (/^\/panel\/editor\/[^/]+$/.test(pathname)) {
+  // El editor de un nivel concreto y el editor de un módulo de currícula
+  // concreto son herramientas a pantalla completa con su propio header de
+  // pestañas — mismo criterio para ambos (docs/level-editor-plan-v2.md §8.3
+  // reusa explícitamente el patrón del Editor de Mundo/Nivel).
+  if (/^\/panel\/editor\/[^/]+$/.test(pathname) || /^\/panel\/curriculum\/[^/]+$/.test(pathname)) {
     return <FamilyProvider>{children}</FamilyProvider>;
   }
 

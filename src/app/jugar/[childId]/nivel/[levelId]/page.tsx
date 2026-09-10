@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
@@ -8,6 +9,7 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { useSoundPreference } from "@/lib/useSoundPreference";
 import { useRequirePlacement } from "@/lib/useRequirePlacement";
+import { useTotalStars } from "@/lib/useTotalStars";
 import { useLevelDoc } from "@/lib/level/persistence/useLevelDoc";
 import { LevelRuntime } from "@/components/level/runtime/LevelRuntime";
 
@@ -30,6 +32,15 @@ export default function JugarNivelPage() {
   const [soundOn] = useSoundPreference();
   const placementPending = useRequirePlacement(params.childId, child, router);
   const { level, loading: levelLoading } = useLevelDoc(user?.uid, params.levelId);
+  // Fase 18 movió Ciudad Central (y cualquier otro nivel real) a esta misma
+  // ruta genérica, pero el AXIA de `WorldTopBar` (world/WorldHud.tsx) se
+  // quedó atado a `QuestScene`/`ciudad-central-legacy` — sin esto, jugar
+  // cualquier nivel del Level Editor nunca mostraba el saldo real. No se
+  // reutiliza `WorldTopBar` tal cual porque asume "Ciudad Central" como
+  // título fijo (no sirve para un nivel cualquiera); acá solo el AXIA, que sí
+  // es genérico. Play Test (LevelEditorScreen.tsx) no pasa por esta página —
+  // vive fuera de `nivel/[levelId]`, así que no le agrega este HUD.
+  const totalStars = useTotalStars(user?.uid, params.childId);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -117,6 +128,17 @@ export default function JugarNivelPage() {
     // `h-dvh overflow-hidden`: mismo criterio que jugar/[childId]/page.tsx —
     // la escena es una cámara que sigue al personaje, nunca scroll de página.
     <main id="contenido" tabIndex={-1} className="h-dvh overflow-hidden bg-slate-950 px-3 py-3 sm:px-4 sm:py-4">
+      {/* Arriba a la derecha: `LevelHud` (dentro de `LevelRuntime`) ya ocupa
+          la esquina superior izquierda con el nombre del nivel/misión. */}
+      <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-end p-2 sm:p-3">
+        <span className="world-hud-panel pointer-events-auto flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-slate-900/80 px-3 py-1.5">
+          <Image src="/illustrations/icon-axia.webp" alt="" aria-hidden="true" width={16} height={16} className="size-4" />
+          <span className="text-sm font-bold text-amber-300">
+            <span className="sr-only">AXIA: </span>
+            {totalStars ?? "…"}
+          </span>
+        </span>
+      </header>
       <div className="mx-auto h-full w-full max-w-3xl lg:max-w-none">
         <LevelRuntime
           level={level}

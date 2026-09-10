@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { describe, expect, test } from "vitest";
 import type { FirestoreError } from "firebase/firestore";
 import { deleteApp, initializeApp } from "firebase/app";
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from "firebase/auth";
@@ -16,10 +16,14 @@ import type { LevelBackground, LevelEntity } from "@/lib/level/schema";
 
 /**
  * Persistencia del Level Editor contra el emulador de Firestore real — Fase
- * 3 (docs/level-editor-plan.md §10, §16.2, §17 Fase 3). Sin `page`: llama a
- * `levelRepository` directo, igual que `e2e/unidad-nivel.spec.ts` prueba
- * `navmesh`/`validate` directo — todavía no hay editor visual que manejar
- * con clics (eso es Fase 4).
+ * 3 (docs/level-editor-plan.md §10, §16.2, §17 Fase 3). Corre bajo
+ * `npm run test:integration` (Vitest + `vitest.integration.config.mts`, ver
+ * `globalSetupEmulators.ts`): sin navegador, llama a `levelRepository`
+ * directo — todavía no hay editor visual que manejar con clics (eso es Fase
+ * 4). Vivía en `e2e/editor-persistencia.spec.ts` sobre Playwright sin usar
+ * `page`, porque no había otro runner disponible con acceso a los
+ * emuladores; el motivo de fondo (ejercitar `firestore.rules` de verdad, no
+ * solo la forma de los datos) sigue intacto.
  *
  * Cada prueba crea su propia cuenta de padre (vía Auth emulator, sin pasar
  * por la UI de login) para poder correr en paralelo — mismo criterio que
@@ -50,7 +54,7 @@ async function nuevoPadre() {
   return { app, db, parentId: user.uid };
 }
 
-test.describe("persistencia — levelRepository", () => {
+describe("persistencia — levelRepository", () => {
   test("crear, leer, guardar dos veces: quedan versions/000001 y versions/000002 inmutables", async () => {
     const { app, db, parentId } = await nuevoPadre();
     try {

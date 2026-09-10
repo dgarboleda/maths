@@ -9,9 +9,6 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
-    // `NEXT_DIST_DIR` del segundo `next dev` de Fase 14 (playwright.config.ts,
-    // NEXT_PUBLIC_LEVELS_V2) — mismo tipo de artefacto generado que ".next/**".
-    ".next-levels-v2/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

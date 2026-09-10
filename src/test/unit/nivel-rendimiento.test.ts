@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { describe, expect, test } from "vitest";
 import { buildVisibilityGraph, findPathInMesh, type NavigationMesh, type Point } from "@/lib/world/navmesh";
 import { createEmptyLevel } from "@/lib/level/defaults";
 import { newEntityId } from "@/lib/level/ids";
@@ -14,8 +14,8 @@ import type { LevelDefinition, LevelEntity } from "@/lib/level/schema";
  * reloj de Playwright" para no meter ruido de red/IPC en el tiempo medido.
  * Acá no hace falta abrir un navegador para lograr eso: `buildVisibilityGraph`/
  * `findPathInMesh` son funciones puras sin DOM (`src/lib/world/navmesh.ts`),
- * así que llamarlas directo desde este proceso — igual que ya hace
- * `unidad-nivel.spec.ts` con el resto de `navmesh` — mide con el
+ * así que llamarlas directo desde este proceso — igual que
+ * `unidad-nivel.test.ts` con el resto de `navmesh` — mide con el
  * `performance.now()` de Node sin ningún viaje de ida y vuelta por CDP; es
  * estrictamente MENOS ruido que evaluarlas dentro de una página (que
  * necesita al menos un round-trip para mandar el script y traer el
@@ -95,7 +95,7 @@ function buildSyntheticLevel(mesh: NavigationMesh): LevelDefinition {
   };
 }
 
-test.describe("Presupuesto de rendimiento — navmesh multi-polígono", () => {
+describe("Presupuesto de rendimiento — navmesh multi-polígono", () => {
   test("nivel sintético de 300 vértices / 8 bloqueados / 40 entidades: buildVisibilityGraph y findPathInMesh dentro de presupuesto", () => {
     const mesh = buildSyntheticMesh();
     const level = buildSyntheticLevel(mesh);

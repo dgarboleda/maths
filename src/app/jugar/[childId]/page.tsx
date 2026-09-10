@@ -9,6 +9,7 @@ import type { ChildProfile } from "@/lib/types";
 import { listLevels } from "@/lib/level/persistence/levelRepository";
 import { getWorld } from "@/lib/gameworld/persistence/worldRepository";
 import { NoLevelsYet } from "@/components/jugar/NoLevelsYet";
+import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 /**
  * Despachador de `/jugar/{childId}` — Fase 18 (docs/level-editor-plan-v2.md
@@ -20,9 +21,16 @@ import { NoLevelsYet } from "@/components/jugar/NoLevelsYet";
  * mostraba incondicionalmente (`NEXT_PUBLIC_LEVELS_V2`) se retira; sigue
  * existiendo como semilla opcional del "mundo de ejemplo"
  * (`seedExampleWorld`, ver `NoLevelsYet`) y como nivel real una vez creado.
- * `QuestScene.tsx`/`src/lib/world/**` no se tocan (coexistencia): quedan
- * accesibles solo para desarrollo, sin ruta de producción que los muestre
- * por defecto.
+ * `QuestScene.tsx`/`src/lib/world/**` no se tocan (coexistencia): siguen
+ * accesibles en `/jugar/{childId}/ciudad-central-legacy`, una ruta de
+ * regresión estable para comparar comportamiento — no hay ningún enlace de
+ * producción hacia ahí, así que un niño nunca la encuentra jugando normal.
+ *
+ * `useRequirePlacement` faltaba acá (bug real, no solo de las pruebas): sin
+ * él, un hijo recién creado sin niveles ni evaluación completa caía en
+ * `NoLevelsYet` en vez de que lo mandaran a completar la evaluación inicial
+ * primero — exactamente el mismo criterio que ya aplican todas las
+ * pantallas de juego (`[strand]/page.tsx`, `nivel/[levelId]/page.tsx`, …).
  */
 export default function JugarDespachadorPage() {
   const { user, loading } = useAuth();
@@ -31,6 +39,7 @@ export default function JugarDespachadorPage() {
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [destination, setDestination] = useState<"loading" | "none" | { href: string }>("loading");
+  const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -53,7 +62,9 @@ export default function JugarDespachadorPage() {
   }, [user, params.childId]);
 
   useEffect(() => {
-    if (!user) return;
+    // Con la evaluación pendiente, `useRequirePlacement` ya va a redirigir a
+    // /evaluacion — ni conviene ni hace falta decidir a qué nivel mandarlo.
+    if (!user || placementPending) return;
     let cancelled = false;
     getFirebase()
       .then(async ({ db, firestore }) => {
@@ -78,7 +89,7 @@ export default function JugarDespachadorPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [user, params.childId, placementPending]);
 
   useEffect(() => {
     if (typeof destination === "object") router.replace(destination.href);
@@ -105,7 +116,7 @@ export default function JugarDespachadorPage() {
     );
   }
 
-  if (!child || destination === "loading") {
+  if (!child || placementPending || destination === "loading") {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">

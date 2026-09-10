@@ -2,6 +2,9 @@
   "name": "maths",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "predev": "node scripts/liberar-puerto-dev.mjs && node -e \"require('fs').rmSync('.next/dev/cache/turbopack', { recursive: true, force: true })\"",
     "dev": "next dev",
@@ -11,6 +14,9 @@
     "typecheck": "next typegen && tsc --noEmit",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
     "emuladores": "node scripts/emuladores.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
@@ -30,14 +36,23 @@
     "@opennextjs/cloudflare": "^1.20.4",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/jest-axe": "^3.5.9",
+    "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
     "firebase-tools": "^15.28.2",
+    "jest-axe": "^11.0.0",
+    "jsdom": "^30.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0",
     "wrangler": "^4.127.1"
   }
 }

@@ -82,6 +82,15 @@ service cloud.firestore {
           allow update, delete: if false;
         }
       }
+
+      // Currícula personalizada del padre-autor (docs/level-editor-plan-v2.md
+      // §7.3): módulos con el mismo contrato que los de código (id, hilo,
+      // dificultad, prerrequisitos, generador, concepto, ejemplos). Sin
+      // subcolección de versiones — un módulo es mucho más chico que un
+      // nivel y no justifica ese costo.
+      match /curriculumModules/{moduleId} {
+        allow read, write: if isParent(parentId);
+      }
     }
 
     // Contenido curricular: catálogo compartido de hilos/unidades, de solo

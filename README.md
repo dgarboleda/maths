@@ -53,31 +53,24 @@ npx wrangler r2 bucket create maths-opennext-cache
 
 y sigue las notas dentro de `wrangler.jsonc`/`open-next.config.ts`. Más detalles en la [guía de Cloudflare para Next.js](https://developers.cloudflare.com/workers/frameworks/framework-guides/nextjs).
 
-### `NEXT_PUBLIC_LEVELS_V2`: Ciudad Central sobre el motor del Level Editor
+### `/jugar/[childId]`: despachador, no Ciudad Central
 
-Con esta variable en `"1"`, `/jugar/[childId]` (Ciudad Central) se sirve con
-`LevelRuntime` sobre `ciudadCentralAsLevel()` (`src/lib/level/legacy/
-ciudadCentral.ts`) en vez del `QuestScene.tsx` hardcodeado de siempre —
-docs/level-editor-plan.md §12.4 (Fase 14), migración completa: mismos 3
-desafíos reales (terminal/medidor/compuerta), la misma misión "El apagón" y
-la misma restauración final, con algunas piezas muy puntuales de
-`QuestScene.tsx` simplificadas (documentado en el comentario de cabecera de
-`ciudadCentral.ts`: sin la presentación especial de Khaos la primera vez,
-sin flecha guía sobre el hotspot activo).
+Desde la Fase 18 (docs/level-editor-plan-v2.md §5.1), `/jugar/[childId]` ya
+no muestra ningún juego por defecto: decide a qué nivel real del Mundo del
+padre mandar al niño (o a "Crear el primer nivel"/"Cargar el mundo de
+ejemplo" si todavía no tiene ninguno). `NEXT_PUBLIC_LEVELS_V2` **ya no
+afecta a esta ruta** — el motor nuevo (`LevelRuntime`) se usa siempre que
+hay un nivel real, sembrado a mano o vía "Cargar el mundo de ejemplo"
+(`seedExampleWorld`, que persiste `ciudadCentralAsLevel()` como nivel
+editable).
 
-**Apagada por default** — nadie la ve sin que alguien la prenda a propósito.
-`QuestScene.tsx` no se toca ni se borra: sigue siendo la escena real para
-cualquier despliegue que no fije esta variable (§12.1, "coexistencia, no
-reemplazo"). Para activarla en un despliegue real, agregar
-`NEXT_PUBLIC_LEVELS_V2=1` junto a las `NEXT_PUBLIC_FIREBASE_*` de arriba (se
-incrusta al compilar, igual que ellas — build nuevo para que se refleje). En
-local, `NEXT_PUBLIC_LEVELS_V2=1 npm run dev`.
-
-`e2e/aventura-ciudad-central-v2.spec.ts` prueba este camino contra un
-segundo `next dev` con el flag activo (project `ciudad-central-v2` de
-`playwright.config.ts`, puerto 3211) — `e2e/aventura.spec.ts` sigue
-probando `QuestScene.tsx` sin cambios, porque sigue siendo lo que corre de
-verdad mientras el flag esté apagado.
+`QuestScene.tsx` (la escena "Ciudad Central" original) no se toca ni se
+borra (§12.1, "coexistencia, no reemplazo"), pero ya no es lo primero que
+ve un niño: sigue viva en su propia ruta de regresión,
+**`/jugar/[childId]/ciudad-central-legacy`**, siempre accesible (sin flag),
+sin ningún enlace de producción hacia ahí — sirve para comparar
+comportamiento contra el motor nuevo, y es lo que ejercitan
+`e2e/aventura.spec.ts`/`juego.spec.ts` (ver §Pruebas).
 
 ### Reglas de Firestore: hay que desplegarlas aparte
 
@@ -138,3 +131,48 @@ cuenta.
 Si el plan gratuito de Cloudflare Workers se queda corto, [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) sigue siendo la opción sin fricción para Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Pruebas
+
+Tres capas, cada una con el runner que le corresponde — ninguna es un
+sustituto de las otras:
+
+- **`npm run test`** (Vitest + jsdom) — lógica pura (`src/test/unit/`:
+  navmesh, geometría, `validateLevel`, el motor de evaluación de ubicación,
+  la currícula personalizada…) y tests de componente/accesibilidad
+  (`*.test.tsx`, colocados junto al componente que prueban — React Testing
+  Library + [`jest-axe`](https://github.com/nickcolley/jest-axe) para los
+  escaneos WCAG 2.1 A/AA). Nada de esto abre un navegador ni habla con
+  Firebase — corre en segundos.
+- **`npm run test:integration`** (Vitest + emulador real) — Firestore/
+  Storage de verdad (`src/test/integration/`), reglas de seguridad
+  incluidas: `firestore.rules`/`storage.rules` solo se ejercitan de verdad
+  contra el emulador, nunca con un doble en memoria. Arranca los emuladores
+  sola (`globalSetupEmulators.ts`) si no están ya arriba.
+- **`npm run e2e`** (Playwright + navegador real + emuladores) — reducida a
+  los recorridos núcleo de la app: **acceso** (`acceso.spec.ts`), **jugar**
+  (`aventura.spec.ts`/`juego.spec.ts`) y **evaluación**
+  (`evaluacion.spec.ts`). "Crear hijo" no tiene su propio archivo — lo
+  ejercita `crearHijo()` como paso previo en todos los anteriores. Todo lo
+  demás que antes vivía acá (accesibilidad, detalles de UI del Level
+  Editor, narrativa secundaria) se repartió entre las dos capas de arriba;
+  ver el propio `e2e/*.spec.ts` y `src/test/unit|integration/*.test.ts`
+  para el detalle de qué se movió a dónde.
+
+Antes, la lógica pura y la persistencia contra el emulador vivían también
+en `e2e/` como specs de Playwright sin usar `page` — el único runner
+disponible en ese momento. Con Vitest ya como dependencia, correrlas ahí
+solo pagaba el costo de arrancar navegador + `next dev` sin necesitarlo.
+
+### CI: la suite de e2e se reparte en shards
+
+`.github/workflows/ci.yml` corre `npx playwright test --shard=N/M` en una
+matriz de jobs en paralelo (`e2e`), y un job aparte (`e2e-informe`) combina
+los reportes "blob" de cada shard en un único HTML al final
+(`npx playwright merge-reports`). Agregar más archivos o recorridos a
+`e2e/` no exige tocar nada de esto: `--shard` reparte **tests**, no
+archivos, así que el reparto entre shards se mantiene parejo sea cual sea
+la cantidad de archivos que haya el día de mañana — solo hace falta subir
+el número de shards en la matriz (`shard: [1, 2, ...]`, y el denominador a
+juego en el paso `--shard=${{ matrix.shard }}/N` y en el nombre del job) si
+la suite crece lo suficiente como para que valga la pena más paralelismo.

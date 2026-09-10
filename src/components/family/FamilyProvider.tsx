@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
+import { useCustomCurriculum } from "@/lib/curriculum/useCustomCurriculum";
 import type { ChildProfile } from "@/lib/types";
 
 export interface ChildDoc extends ChildProfile {
@@ -33,6 +34,12 @@ export function FamilyProvider({ children: content }: { children: ReactNode }) {
   const [children, setChildren] = useState<ChildDoc[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
   const [explicitSelectedId, setExplicitSelectedId] = useState<string | undefined>(undefined);
+  // Fase 20 (docs/level-editor-plan-v2.md §7.1): `getModule("cst-x")` es
+  // síncrono, así que el registro de módulos personalizados tiene que estar
+  // hidratado ANTES de renderizar nada de /panel/** que pueda llamarlo
+  // (ChallengePicker, /panel/curriculum, HUD de progreso…) — se gatea acá,
+  // en el único lugar por el que pasa toda la sección.
+  const { ready: curriculumReady } = useCustomCurriculum(parentId);
 
   useEffect(() => {
     if (!parentId) return;
@@ -75,6 +82,16 @@ export function FamilyProvider({ children: content }: { children: ReactNode }) {
     }),
     [parentId, children, loadingChildren, selectedChildId],
   );
+
+  if (parentId && !curriculumReady) {
+    return (
+      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+        <p role="status" className="text-indigo-200">
+          Cargando…
+        </p>
+      </main>
+    );
+  }
 
   return <Ctx.Provider value={value}>{content}</Ctx.Provider>;
 }

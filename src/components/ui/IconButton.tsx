@@ -36,7 +36,12 @@ export interface IconButtonProps {
    *  como `<kbd>` visible junto al texto cuando `fullWidth`. */
   shortcut?: string;
   side?: TooltipSide;
-  /** Toggle activo (`aria-pressed` + resalte cyan), independiente de `tone`. */
+  /** Toggle activo (`aria-pressed` + resalte cyan), independiente de `tone`.
+   *  Solo pasar esta prop en botones que son un toggle real (herramienta
+   *  seleccionada, Grid/Snap/Debug) — `aria-pressed` se omite del todo
+   *  cuando no se pasa, en vez de quedar en `"false"`, porque un botón de
+   *  acción simple (p. ej. "Eliminar") no es un toggle y no debe llevar ese
+   *  atributo ARIA. */
   active?: boolean;
   tone?: IconButtonTone;
   size?: "sm" | "md";
@@ -62,7 +67,7 @@ export function IconButton({
   tooltip,
   shortcut,
   side = "top",
-  active = false,
+  active,
   tone = "neutral",
   size = "sm",
   showLabel = false,
@@ -76,7 +81,7 @@ export function IconButton({
 
   return (
     <Tooltip content={tooltip ?? label} shortcut={shortcut} side={side}>
-      <button type="button" aria-label={label} aria-pressed={active || undefined} title={tooltip ?? label} disabled={disabled} onClick={onClick} className={classes}>
+      <button type="button" aria-label={label} aria-pressed={active} title={tooltip ?? label} disabled={disabled} onClick={onClick} className={classes}>
         <Icon className={`shrink-0 ${fullWidth ? "size-4" : ICON_SIZE[size]}`} aria-hidden="true" />
         {(showLabel || fullWidth) && <span className={fullWidth ? "min-w-0 flex-1 truncate" : "truncate"}>{label}</span>}
         {fullWidth && shortcut && <kbd className="rounded bg-slate-800 px-1 text-[10px] text-slate-400">{shortcut}</kbd>}

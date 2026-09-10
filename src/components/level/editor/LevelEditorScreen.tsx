@@ -146,7 +146,7 @@ export function LevelEditorScreen() {
           </main>
         ) : (
           <>
-            <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-indigo-500/20 bg-slate-900/40 p-3 lg:block">
+            <aside aria-label="Caja de herramientas" className="hidden w-56 shrink-0 overflow-y-auto border-r border-indigo-500/20 bg-slate-900/40 p-3 lg:block">
               <EditorToolbox />
             </aside>
 
@@ -154,7 +154,7 @@ export function LevelEditorScreen() {
               <EditorCanvas />
             </main>
 
-            <aside className="hidden w-64 shrink-0 overflow-y-auto border-l border-indigo-500/20 bg-slate-900/40 p-3 lg:block">
+            <aside aria-label="Panel de propiedades" className="hidden w-64 shrink-0 overflow-y-auto border-l border-indigo-500/20 bg-slate-900/40 p-3 lg:block">
               <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Problemas</h2>
               <IssuesPanel />
               {state.selection.kind === "entity" && (

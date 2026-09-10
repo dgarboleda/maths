@@ -44,12 +44,60 @@ jobs:
       - run: npm run build
       - run: npx wrangler deploy --dry-run
 
-  e2e:
-    name: Pruebas de extremo a extremo
+  test-unit:
+    name: Tests unitarios y de componente
     runs-on: ubuntu-latest
-    # Red de seguridad: la suite tarda unos dos minutos; si algo se cuelga,
-    # que falle en vez de ocupar un runner durante horas.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Lógica pura (navmesh, validate, currícula personalizada...) y tests
+      # de componente/accesibilidad (React Testing Library + jest-axe) — sin
+      # navegador, sin emuladores: son los que antes vivían en e2e/ sin usar
+      # `page` porque no había otro runner (ver README §Pruebas).
+      - run: npm run test
+
+  test-integration:
+    name: Tests de integración (Firestore/Storage)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # El emulador de Firestore es un .jar.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      # `globalSetupEmulators.ts` arranca los emuladores (auth/firestore/
+      # storage) solo si no están ya arriba, y los apaga al terminar.
+      - run: npm run test:integration
+
+  e2e:
+    name: Pruebas de extremo a extremo (shard ${{ matrix.shard }}/2)
+    runs-on: ubuntu-latest
+    # Red de seguridad: si algo se cuelga, que falle en vez de ocupar un
+    # runner durante horas.
     timeout-minutes: 25
+    strategy:
+      # Un shard colgado no debe tumbar a los demás — cada uno reporta su
+      # propio resultado.
+      fail-fast: false
+      matrix:
+        # Cuántos shards: subir este número (y el "/2" del paso de abajo, y
+        # del nombre del job, al mismo valor) reparte el mismo trabajo entre
+        # más runners en paralelo — nunca hace falta tocar
+        # `playwright.config.ts` ni reorganizar archivos, sea cual sea la
+        # cantidad que haya en e2e/ el día de mañana. `--shard` reparte
+        # TESTS, no archivos, así que el reparto queda parejo aunque un
+        # archivo tenga mucho más peso que otro.
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,9 +111,33 @@ jobs:
           java-version: 21
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run e2e
+      - run: npx playwright test --shard=${{ matrix.shard }}/2
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 1
+
+  e2e-informe:
+    name: Combina el informe de e2e
+    if: ${{ !cancelled() }}
+    needs: [e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+      - run: npx playwright merge-reports --reporter html ./all-blob-reports
+      - uses: actions/upload-artifact@v4
         with:
           name: informe-playwright
           path: playwright-report/

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { describe, expect, test } from "vitest";
 import {
   buildVisibilityGraph,
   closestPointOnSegment,
@@ -59,15 +59,14 @@ import { mergeBackgroundOptions } from "@/lib/level/assets/backgroundOptions";
 import { BACKGROUND_CATALOG } from "@/lib/level/backgroundCatalog";
 
 /**
- * Pruebas puras de lógica (sin `page`, sin red, sin Firestore) para el
+ * Pruebas puras de lógica (sin DOM real, sin red, sin Firestore) para el
  * núcleo del Level Editor — Fases 1 y 2 (docs/level-editor-plan.md §6, §4,
- * §16.1, §17). Corren con `npx playwright test e2e/unidad-nivel.spec.ts`
- * igual que cualquier otro spec (el arnés de Playwright no exige usar
- * `page`).
- *
- * No se añade ningún runner de pruebas nuevo (Vitest/Jest): el proyecto ya
- * usa Playwright para todo, y el criterio de aceptación A3 del plan prohíbe
- * dependencias nuevas.
+ * §16.1, §17). Corren con `npm run test` (Vitest) — vivían en
+ * `e2e/unidad-nivel.spec.ts` sobre Playwright, sin usar `page`, porque no
+ * había otro runner disponible; con Vitest ya como dependencia (para los
+ * tests de componente/accesibilidad, ver `README.md`), no tiene sentido
+ * pagar el arranque de navegador + emuladores solo para ejercitar funciones
+ * puras de TypeScript.
  */
 
 function emptyLevel(): LevelDefinition {
@@ -93,7 +92,7 @@ const GAME_WALKABLE = dedupeArea(CIUDAD_CENTRAL_WALKABLE);
  * realmente transitables — igual que en el juego real, donde `from` es
  * siempre la posición actual de Alex, nunca un punto sin corregir.
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("navmesh — regresión sobre Ciudad Central", () => {
+describe("navmesh — regresión sobre Ciudad Central", () => {
   const START = { x: 57, y: 71 };
   const MEDIDOR_STAND = { x: 36.5, y: 42 };
 
@@ -188,7 +187,7 @@ test.describe("navmesh — regresión sobre Ciudad Central", () => {
  * bloqueado; dentro de un bloqueado ⇒ bloqueado incluso si también cae
  * dentro de un transitable; en cualquier otro caso, transitable.
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("navmesh — isWalkableInMesh", () => {
+describe("navmesh — isWalkableInMesh", () => {
   const mesh: NavigationMesh = {
     walkable: [
       [{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: 20, y: 20 }, { x: 0, y: 20 }],
@@ -216,7 +215,7 @@ test.describe("navmesh — isWalkableInMesh", () => {
  * rodea un bloqueo, y el caso "inalcanzable" (regiones desconectadas) que
  * NUNCA debe degradar a una línea recta que atraviese geometría.
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("navmesh — buildVisibilityGraph / findPathInMesh", () => {
+describe("navmesh — buildVisibilityGraph / findPathInMesh", () => {
   test("ruta directa cuando no hay ningún obstáculo en el camino", () => {
     const mesh: NavigationMesh = { walkable: [[{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: 20, y: 20 }, { x: 0, y: 20 }]], blocked: [] };
     const graph = buildVisibilityGraph(mesh);
@@ -274,7 +273,7 @@ test.describe("navmesh — buildVisibilityGraph / findPathInMesh", () => {
  * conectadas — la ruta pasa por el vértice compartido, no queda como si
  * fueran dos regiones desconectadas.
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("navmesh — costura entre polígonos adyacentes (normalizeMesh)", () => {
+describe("navmesh — costura entre polígonos adyacentes (normalizeMesh)", () => {
   test("dos salas contiguas con vértices exactamente coincidentes quedan conectadas", () => {
     const mesh = normalizeMesh({
       walkable: [
@@ -340,7 +339,7 @@ test.describe("navmesh — costura entre polígonos adyacentes (normalizeMesh)",
  * consultado atraviesa varias celdas y el obstáculo está lejos de los
  * extremos.
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("navmesh — índice espacial de aristas (edgeGrid)", () => {
+describe("navmesh — índice espacial de aristas (edgeGrid)", () => {
   test("un obstáculo en una celda intermedia de un segmento largo se detecta igual", () => {
     // Segmento de (3,2) a (96,97): atraviesa prácticamente todas las celdas
     // de la rejilla 10×10, sin pasar exactamente por ninguna esquina del
@@ -377,7 +376,7 @@ test.describe("navmesh — índice espacial de aristas (edgeGrid)", () => {
  * nodo utilizable del grafo (si apareciera, Dijkstra podría trazar una ruta
  * que pasa por un punto ilegal).
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("navmesh — filtrado de nodos no transitables", () => {
+describe("navmesh — filtrado de nodos no transitables", () => {
   test("un vértice del transitable tapado por un bloqueado no es nodo del grafo", () => {
     // El bloqueado cubre por completo la esquina (10,10) del rectángulo
     // transitable (incluido un margen alrededor del vértice).
@@ -407,7 +406,7 @@ test.describe("navmesh — filtrado de nodos no transitables", () => {
 /* ════════════════════════════════════════════════════════════════════════
  * SUITE 7 — geometry: segmentsIntersect
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("geometry — segmentsIntersect", () => {
+describe("geometry — segmentsIntersect", () => {
   test("cruce franco en el interior de ambos segmentos: proper", () => {
     expect(segmentsIntersect({ x: 0, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }, { x: 10, y: 0 })).toBe("proper");
   });
@@ -428,7 +427,7 @@ test.describe("geometry — segmentsIntersect", () => {
 /* ════════════════════════════════════════════════════════════════════════
  * SUITE 8 — geometry: pointInPolygon / closestPointOnSegment
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("geometry — pointInPolygon / closestPointOnSegment", () => {
+describe("geometry — pointInPolygon / closestPointOnSegment", () => {
   const square: Polygon = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }];
 
   test("punto claramente dentro del polígono", () => {
@@ -453,7 +452,7 @@ test.describe("geometry — pointInPolygon / closestPointOnSegment", () => {
 /* ════════════════════════════════════════════════════════════════════════
  * SUITE 9 — geometry: polygonIsSimple
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("geometry — polygonIsSimple", () => {
+describe("geometry — polygonIsSimple", () => {
   test("un cuadrado simple es simple", () => {
     expect(polygonIsSimple([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }])).toBe(true);
   });
@@ -480,7 +479,7 @@ test.describe("geometry — polygonIsSimple", () => {
   });
 });
 
-test.describe("geometry — simplifyPolygon", () => {
+describe("geometry — simplifyPolygon", () => {
   test("quita un vértice colineal en medio de un lado recto, sin cambiar la forma", () => {
     // Cuadrado con un vértice extra a mitad del lado inferior.
     const square = [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }];
@@ -519,7 +518,7 @@ test.describe("geometry — simplifyPolygon", () => {
  * SUITE 10 — validate: las 8 comprobaciones de validateLevel
  * (docs/level-editor-plan.md §4/§16.1/§17 Fase 2).
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("validate — validateLevel", () => {
+describe("validate — validateLevel", () => {
   test("un nivel recién creado (createEmptyLevel) no tiene ningún error", () => {
     const issues = validateLevel(emptyLevel());
     expect(issues.filter((i) => i.severity === "error")).toEqual([]);
@@ -656,7 +655,7 @@ test.describe("validate — validateLevel", () => {
   });
 });
 
-test.describe("validate — presupuestos blandos de tamaño (Fase 13, §14 P2)", () => {
+describe("validate — presupuestos blandos de tamaño (Fase 13, §14 P2)", () => {
   test("un nivel recién creado no dispara ningún presupuesto", () => {
     const issues = validateLevel(emptyLevel());
     expect(issues.some((i) => /vértices de navegación|entidades|serializado/.test(i.message))).toBe(false);
@@ -713,7 +712,7 @@ test.describe("validate — presupuestos blandos de tamaño (Fase 13, §14 P2)",
  * SUITE 11 — serialize: stripUndefined / assertNoNestedArrays / assertSize
  * (docs/level-editor-plan.md §10.4).
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("serialize", () => {
+describe("serialize", () => {
   test("stripUndefined elimina undefined recursivamente, sin tocar null", () => {
     const input = { a: 1, b: undefined, c: { d: undefined, e: null, f: 2 }, g: [1, undefined, { h: undefined }] };
     expect(stripUndefined(input)).toEqual({ a: 1, c: { e: null, f: 2 }, g: [1, undefined, {}] });
@@ -745,7 +744,7 @@ test.describe("serialize", () => {
  * SUITE 12 — migrate: cadena de migraciones de esquema
  * (docs/level-editor-plan.md §17 Fase 2).
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("migrate", () => {
+describe("migrate", () => {
   test("un nivel ya en la versión actual se devuelve sin cambios de forma", () => {
     const level = emptyLevel();
     const migrated = migrateLevel(level as unknown as Record<string, unknown>);
@@ -762,7 +761,7 @@ test.describe("migrate", () => {
  * SUITE 13 — legacy/ciudadCentral: paridad del adaptador con el nivel real
  * (docs/level-editor-plan.md §12.3, §17 Fase 2).
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("legacy — ciudadCentralAsLevel", () => {
+describe("legacy — ciudadCentralAsLevel", () => {
   const level = ciudadCentralAsLevel("padre-de-prueba");
 
   test("no tiene ningún error de validación", () => {
@@ -854,7 +853,7 @@ function rule(overrides: Partial<LevelEventRule> & Pick<LevelEventRule, "id" | "
   return { name: overrides.id, when: { kind: "always" }, once: false, actions: [], ...overrides };
 }
 
-test.describe("events/bus", () => {
+describe("events/bus", () => {
   test("emit dispara la regla cuyo trigger coincide en tipo y objetivo exacto", () => {
     const r = rule({ id: "r1", trigger: { type: "ON_INTERACT", entityId: "ent_1" }, actions: [{ type: "SET_FLAG", params: { flag: "f", value: true }, delayMs: 0 }] });
     const other = rule({ id: "r2", trigger: { type: "ON_INTERACT", entityId: "ent_2" }, actions: [{ type: "SET_FLAG", params: { flag: "g", value: true }, delayMs: 0 }] });
@@ -1013,7 +1012,7 @@ function solved(moduleId: string): Record<string, { recentResults: { correct: bo
   return { [moduleId]: { recentResults: [{ correct: true, day: "2026-01-01" }], recentAccuracy: 1, masteredAt: null } };
 }
 
-test.describe("runtime/state", () => {
+describe("runtime/state", () => {
   test("applyRuntimePatch mezcla campo a campo, nunca reemplaza el estado completo", () => {
     const { level } = doorLevel();
     const state0 = createEmptyRuntimeState(level);
@@ -1077,7 +1076,7 @@ test.describe("runtime/state", () => {
  * SUITE — depth.ts: profundidad 2.5D (docs/scene-25d-plan.md §C/§E.2/§H).
  * Lógica pura, sin React ni DOM — mismo criterio que las suites de arriba.
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("depth — profundidad 2.5D", () => {
+describe("depth — profundidad 2.5D", () => {
   const CONFIG: LevelDepthConfig = {
     enabled: true,
     range: { nearY: 90, farY: 10 },
@@ -1196,7 +1195,7 @@ function missionLevel(): { level: LevelDefinition; challenge: ChallengePlacement
   return { level, challenge, zone, gem, mission };
 }
 
-test.describe("runtime/state — misiones (Fase 12)", () => {
+describe("runtime/state — misiones (Fase 12)", () => {
   test("deriveObjectiveDone: challenge — sigue hasCorrectAttempt sobre skillsProgress, nunca un booleano propio", () => {
     const { level, challenge } = missionLevel();
     const state = createEmptyRuntimeState(level);
@@ -1273,7 +1272,7 @@ test.describe("runtime/state — misiones (Fase 12)", () => {
  * SUITE — imageRules: reglas puras de la biblioteca de imágenes
  * (docs/asset-management-plan.md §C.4/§C.5/§C.6/§H.1). Sin DOM, sin red.
  * ════════════════════════════════════════════════════════════════════════ */
-test.describe("imageRules — biblioteca de imágenes", () => {
+describe("imageRules — biblioteca de imágenes", () => {
   test("validateFileMeta: acepta webp/png/jpeg", () => {
     expect(validateFileMeta({ name: "a.webp", type: "image/webp", size: 1000 })).toEqual([]);
     expect(validateFileMeta({ name: "a.png", type: "image/png", size: 1000 })).toEqual([]);

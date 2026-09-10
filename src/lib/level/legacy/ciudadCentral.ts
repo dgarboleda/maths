@@ -31,7 +31,7 @@ import { newChallengeId, newDialogId, newEntityId, newEventId, newLevelId, newMi
  * La malla de navegación y las 5 entidades siguen siendo un calco exacto
  * (mismo `boundary`/`holes`/posiciones que `CIUDAD_CENTRAL_WALKABLE`/
  * `CIUDAD_CENTRAL_HOTSPOTS` — ver la prueba de paridad en
- * `unidad-nivel.spec.ts`). Lo que agrega esta fase respecto al adaptador de
+ * `src/test/unit/unidad-nivel.test.ts`). Lo que agrega esta fase respecto al adaptador de
  * la Fase 2 son los 3 desafíos reales (terminal/medidor/compuerta), la
  * misión "El apagón" (mismos objetivos que `QUESTS[0]`) y la cadena de
  * eventos que reproduce la progresión de `hotspotState`/`worldFlags`
