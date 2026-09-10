@@ -1,18 +1,15 @@
 import { expect, test } from "@playwright/test";
-import {
-  crearHijo,
-  entrarAPerfilSinEvaluar,
-  idDeHijo,
-  registrarPadre,
-  resolverEnunciado,
-  sembrarEvaluacion,
-  sesionDeHijo,
-} from "./utilidades";
+import { crearHijo, entrarAPerfilSinEvaluar, idDeHijo, registrarPadre, sembrarEvaluacion, sesionDeHijo } from "./utilidades";
 
 /**
- * Evaluación de ubicación en el navegador de verdad — la lógica pura del
- * motor (franjas, otorgamientos, plan personalizado) y la del generador de
- * medición viven en `src/test/unit/evaluacion.test.ts` (Vitest).
+ * Evaluación de ubicación — uno de los recorridos núcleo de la app (ver
+ * README §Pruebas): es obligatoria, redirige a ella hasta completarla, y su
+ * resultado real decide qué currícula ve el niño. La lógica pura del motor
+ * (franjas, otorgamientos, plan personalizado) y la del generador de
+ * medición viven en `src/test/unit/evaluacion.test.ts` (Vitest); los
+ * detalles de UI de una sola pregunta o del panel de "puntos de mejora" ya
+ * no tienen su propio test — quedan cubiertos de paso por el recorrido
+ * completo de acá.
  */
 test.describe("Evaluación de ubicación en el navegador", () => {
   test("sin evaluación completa, el niño no puede entrar al mundo: todo redirige a la evaluación", async ({
@@ -32,36 +29,6 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     await expect(page).toHaveURL(/\/evaluacion$/);
   });
 
-  test("empezar la evaluación arranca en Aritmética y avanza de pregunta al acertar", async ({ page }) => {
-    await registrarPadre(page);
-    const { nombre, pin } = await crearHijo(page);
-    await entrarAPerfilSinEvaluar(page, nombre, pin);
-    await expect(page.getByRole("heading", { name: "Evaluación inicial" })).toBeVisible();
-
-    await page.getByRole("button", { name: "Activar la terminal ▸" }).click();
-    await expect(page.getByText(/Hilo 1 de 5.*Aritmética/)).toBeVisible();
-    await expect(page.getByText("Pregunta 1")).toBeVisible();
-
-    // La primera pregunta de Aritmética es siempre una suma con recta
-    // numérica (arithmetic.ts, case 1) — mismo patrón ya probado en
-    // juego.spec.ts para aritmetica-d1.
-    const enunciado = await page.getByText(/¿Cuánto es \d+ \+ \d+\?/).innerText();
-    const objetivo = resolverEnunciado(enunciado)!;
-    const recta = page.getByRole("slider");
-    await recta.focus();
-    let actual = Number(await recta.getAttribute("aria-valuenow"));
-    while (actual !== objetivo) {
-      await page.keyboard.press(actual < objetivo ? "ArrowRight" : "ArrowLeft");
-      actual = Number(await recta.getAttribute("aria-valuenow"));
-    }
-    await page.getByRole("button", { name: "Responder" }).click();
-    await expect(page.getByRole("status")).toContainText("¡Correcto!");
-
-    await page.getByRole("button", { name: "Siguiente" }).click();
-    await expect(page.getByText(/Hilo 1 de 5.*Aritmética/)).toBeVisible();
-    await expect(page.getByText("Pregunta 2")).toBeVisible();
-  });
-
   test("completar la evaluación real (sin atajos de Firestore) deja jugar sin volver a pedirla", async ({
     page,
   }) => {
@@ -71,9 +38,9 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     // Reproduce el bug real: `finishPlacement` podía tragarse un error de
     // guardado y mostrar igual "evaluación completada" — placementStatus
     // nunca quedaba en "completo" y el niño caía en un bucle silencioso de
-    // vuelta a /evaluacion. El resto de las pruebas siembra el resultado
-    // directo en Firestore (`sembrarEvaluacion`), así que ninguna ejercitaba
-    // el guardado real de `finishPlacement` de punta a punta.
+    // vuelta a /evaluacion. Es también la única prueba que ejercita el
+    // guardado real de `finishPlacement` de punta a punta (el resto de la
+    // suite siembra el resultado directo en Firestore).
     await registrarPadre(page);
     const { nombre, pin } = await crearHijo(page);
     await entrarAPerfilSinEvaluar(page, nombre, pin);
@@ -174,35 +141,5 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     // Ada ya no interrumpe sola: la evaluación está completa.
     await page.goto(`/jugar/${childId}`);
     await expect(page.getByText("¿Volvemos a medir tu nivel?")).toBeHidden();
-  });
-
-  test("el panel del padre muestra los puntos de mejora de una evaluación con fallos aislados", async ({ page }) => {
-    const { correo } = await sesionDeHijo(page);
-    const childId = idDeHijo(page);
-
-    await sembrarEvaluacion(correo, childId, {
-      perStrand: {
-        aritmetica: {
-          itemsAsked: 4,
-          itemsCorrect: 3,
-          highestTierPassed: 3,
-          gradeBand: "2.º–3.º",
-          weakTiers: [1],
-        },
-        algebra: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: "por reforzar las bases" },
-        geometria: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: "por reforzar las bases" },
-        medicion: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: "por reforzar las bases" },
-        logica: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: "por reforzar las bases" },
-      },
-      overallScore: 40,
-      overallGradeBand: "1.º–2.º",
-      grantedModuleIds: ["aritmetica-d1", "aritmetica-d2", "aritmetica-d3", "aritmetica-d4"],
-    });
-
-    await page.goto(`/panel/${childId}`);
-    const puntosDeMejora = page.getByText(/Puntos de mejora:/);
-    await expect(puntosDeMejora).toBeVisible();
-    // La franja 1 de aritmética es "aritmetica-d2" (Sumas y restas hasta 10).
-    await expect(puntosDeMejora).toContainText("Sumas y restas hasta 10");
   });
 });

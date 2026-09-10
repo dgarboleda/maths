@@ -2,6 +2,9 @@
   "name": "maths",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "predev": "node scripts/liberar-puerto-dev.mjs && node -e \"require('fs').rmSync('.next/dev/cache/turbopack', { recursive: true, force: true })\"",
     "dev": "next dev",

@@ -2,9 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import { deleteApp, initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { collection, connectFirestoreEmulator, doc, getDocs, getFirestore, setDoc, writeBatch } from "firebase/firestore";
-import * as firestoreFns from "firebase/firestore";
 import { STRANDS } from "../src/lib/strands";
-import { seedExampleWorld } from "../src/lib/level/seedExampleWorld";
 
 export const CLAVE_PADRE = "secreto123";
 
@@ -244,35 +242,6 @@ export async function sembrarEvaluacion(
     }
     batch.update(doc(db, "parents", user.uid, "children", childId), { placementStatus: "completo" });
     await batch.commit();
-  } finally {
-    await deleteApp(app);
-  }
-}
-
-/**
- * Siembra el "mundo de ejemplo" (Ciudad Central como nivel real del Level
- * Editor, con un `GameWorld` que lo marca como punto de entrada) — el mismo
- * `seedExampleWorld` que usa `NoLevelsYet`/`/panel/editor` en la app real.
- * Un mundo/nivel es del padre-autor, no de un hijo en particular (cualquier
- * hijo de la familia lo juega), así que no recibe `childId`. Necesario para
- * las pruebas que ejercitan el despachador de `/jugar/{childId}` (Fase 18)
- * contra un nivel de verdad, en vez de la ruta de regresión
- * `ciudad-central-legacy` (ver `entrarAlPerfil`).
- */
-export async function sembrarMundoDeEjemplo(correo: string): Promise<void> {
-  const app = initializeApp(
-    { apiKey: "demo-api-key", projectId: "demo-numerario" },
-    `sembrar-mundo-${crypto.randomUUID()}`,
-  );
-  try {
-    const auth = getAuth(app);
-    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
-
-    const db = getFirestore(app);
-    connectFirestoreEmulator(db, "127.0.0.1", 8080);
-
-    await seedExampleWorld(firestoreFns, db, user.uid, user.uid);
   } finally {
     await deleteApp(app);
   }

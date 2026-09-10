@@ -69,13 +69,8 @@ borra (§12.1, "coexistencia, no reemplazo"), pero ya no es lo primero que
 ve un niño: sigue viva en su propia ruta de regresión,
 **`/jugar/[childId]/ciudad-central-legacy`**, siempre accesible (sin flag),
 sin ningún enlace de producción hacia ahí — sirve para comparar
-comportamiento contra el motor nuevo, y es lo que ejercita
-`e2e/aventura.spec.ts`/`juego.spec.ts` y compañía.
-
-`e2e/aventura-ciudad-central-v2.spec.ts` prueba el mismo contenido
-(`ciudadCentralAsLevel()`) pero sobre `LevelRuntime`, llegando por el
-camino real: siembra el mundo de ejemplo y navega a `/jugar/[childId]`
-como cualquier hijo con un nivel de verdad.
+comportamiento contra el motor nuevo, y es lo que ejercitan
+`e2e/aventura.spec.ts`/`juego.spec.ts` (ver §Pruebas).
 
 ### Reglas de Firestore: hay que desplegarlas aparte
 
@@ -136,3 +131,48 @@ cuenta.
 Si el plan gratuito de Cloudflare Workers se queda corto, [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) sigue siendo la opción sin fricción para Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Pruebas
+
+Tres capas, cada una con el runner que le corresponde — ninguna es un
+sustituto de las otras:
+
+- **`npm run test`** (Vitest + jsdom) — lógica pura (`src/test/unit/`:
+  navmesh, geometría, `validateLevel`, el motor de evaluación de ubicación,
+  la currícula personalizada…) y tests de componente/accesibilidad
+  (`*.test.tsx`, colocados junto al componente que prueban — React Testing
+  Library + [`jest-axe`](https://github.com/nickcolley/jest-axe) para los
+  escaneos WCAG 2.1 A/AA). Nada de esto abre un navegador ni habla con
+  Firebase — corre en segundos.
+- **`npm run test:integration`** (Vitest + emulador real) — Firestore/
+  Storage de verdad (`src/test/integration/`), reglas de seguridad
+  incluidas: `firestore.rules`/`storage.rules` solo se ejercitan de verdad
+  contra el emulador, nunca con un doble en memoria. Arranca los emuladores
+  sola (`globalSetupEmulators.ts`) si no están ya arriba.
+- **`npm run e2e`** (Playwright + navegador real + emuladores) — reducida a
+  los recorridos núcleo de la app: **acceso** (`acceso.spec.ts`), **jugar**
+  (`aventura.spec.ts`/`juego.spec.ts`) y **evaluación**
+  (`evaluacion.spec.ts`). "Crear hijo" no tiene su propio archivo — lo
+  ejercita `crearHijo()` como paso previo en todos los anteriores. Todo lo
+  demás que antes vivía acá (accesibilidad, detalles de UI del Level
+  Editor, narrativa secundaria) se repartió entre las dos capas de arriba;
+  ver el propio `e2e/*.spec.ts` y `src/test/unit|integration/*.test.ts`
+  para el detalle de qué se movió a dónde.
+
+Antes, la lógica pura y la persistencia contra el emulador vivían también
+en `e2e/` como specs de Playwright sin usar `page` — el único runner
+disponible en ese momento. Con Vitest ya como dependencia, correrlas ahí
+solo pagaba el costo de arrancar navegador + `next dev` sin necesitarlo.
+
+### CI: la suite de e2e se reparte en shards
+
+`.github/workflows/ci.yml` corre `npx playwright test --shard=N/M` en una
+matriz de jobs en paralelo (`e2e`), y un job aparte (`e2e-informe`) combina
+los reportes "blob" de cada shard en un único HTML al final
+(`npx playwright merge-reports`). Agregar más archivos o recorridos a
+`e2e/` no exige tocar nada de esto: `--shard` reparte **tests**, no
+archivos, así que el reparto entre shards se mantiene parejo sea cual sea
+la cantidad de archivos que haya el día de mañana — solo hace falta subir
+el número de shards en la matriz (`shard: [1, 2, ...]`, y el denominador a
+juego en el paso `--shard=${{ matrix.shard }}/N` y en el nombre del job) si
+la suite crece lo suficiente como para que valga la pena más paralelismo.
