@@ -56,7 +56,14 @@ export function RuntimeCanvas({
   onEntityClick: (entity: LevelEntity) => void;
 }) {
   const sceneRef = useRef<HTMLDivElement>(null);
-  const sceneBox = useCameraBox(sceneRef, { width: level.background.width, height: level.background.height }, pose);
+  // `0` = sin tope de zoom (ver useCameraBox.ts): a pedido explícito, el
+  // fondo de un nivel del Editor siempre cubre el 100% del visor, sin la
+  // garantía de alcanzabilidad que sí necesita Ciudad Central legacy (cuyos
+  // hotspots están fijos en `src/lib/world/**` y no se pueden reposicionar).
+  // Acá el autor del nivel controla el fondo y la posición de cada entidad
+  // desde el Editor, así que puede ajustar ambos si algo queda fuera de
+  // rango — no hay contenido "de fábrica" que proteger.
+  const sceneBox = useCameraBox(sceneRef, { width: level.background.width, height: level.background.height }, pose, 0);
 
   const activeFilter = (level.background.filters ?? []).find((f) => evaluateCondition(f.when, { flags: runtimeState.flags, entityStates: runtimeState.entityStates }));
 
