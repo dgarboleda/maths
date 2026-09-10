@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import { signOut } from "firebase/auth";
-import { ImageIcon, KeyRound, Trash2, UserRound, Users } from "lucide-react";
+import { DatabaseBackup, ImageIcon, KeyRound, Trash2, UserRound, Users } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { useFamily, type ChildDoc } from "@/components/family/FamilyProvider";
 import { getFirebase } from "@/lib/firebase";
@@ -13,6 +13,7 @@ import { Avatar } from "@/components/world/Avatar";
 import { SectionCard } from "@/components/family/ui";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
 import { AvatarPickerDialog } from "@/components/family/AvatarPickerDialog";
+import { BackupPanel } from "@/components/family/BackupPanel";
 
 export default function AjustesPage() {
   const { user } = useAuth();
@@ -96,6 +97,12 @@ export default function AjustesPage() {
         )}
         <p className="mt-3 text-xs text-slate-400">El PIN es la llave de cada explorador para entrar a su aventura.</p>
       </SectionCard>
+
+      {parentId && (
+        <SectionCard title="Respaldo" icon={<DatabaseBackup className="size-4" aria-hidden="true" />}>
+          <BackupPanel parentId={parentId} />
+        </SectionCard>
+      )}
 
       {resettingChild && parentId && (
         <ResetPinDialog parentId={parentId} child={resettingChild} onClose={() => setResettingChild(null)} />
