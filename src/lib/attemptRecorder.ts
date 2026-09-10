@@ -41,6 +41,7 @@ export async function recordModuleAttempt(
     itemId: crypto.randomUUID(),
     correct,
     createdAt: serverTimestamp(),
+    hintsUsed,
   });
   await setDoc(
     doc(db, "parents", parentId, "children", childId, "skillsProgress", mod.id),
