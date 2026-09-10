@@ -53,31 +53,29 @@ npx wrangler r2 bucket create maths-opennext-cache
 
 y sigue las notas dentro de `wrangler.jsonc`/`open-next.config.ts`. Más detalles en la [guía de Cloudflare para Next.js](https://developers.cloudflare.com/workers/frameworks/framework-guides/nextjs).
 
-### `NEXT_PUBLIC_LEVELS_V2`: Ciudad Central sobre el motor del Level Editor
+### `/jugar/[childId]`: despachador, no Ciudad Central
 
-Con esta variable en `"1"`, `/jugar/[childId]` (Ciudad Central) se sirve con
-`LevelRuntime` sobre `ciudadCentralAsLevel()` (`src/lib/level/legacy/
-ciudadCentral.ts`) en vez del `QuestScene.tsx` hardcodeado de siempre —
-docs/level-editor-plan.md §12.4 (Fase 14), migración completa: mismos 3
-desafíos reales (terminal/medidor/compuerta), la misma misión "El apagón" y
-la misma restauración final, con algunas piezas muy puntuales de
-`QuestScene.tsx` simplificadas (documentado en el comentario de cabecera de
-`ciudadCentral.ts`: sin la presentación especial de Khaos la primera vez,
-sin flecha guía sobre el hotspot activo).
+Desde la Fase 18 (docs/level-editor-plan-v2.md §5.1), `/jugar/[childId]` ya
+no muestra ningún juego por defecto: decide a qué nivel real del Mundo del
+padre mandar al niño (o a "Crear el primer nivel"/"Cargar el mundo de
+ejemplo" si todavía no tiene ninguno). `NEXT_PUBLIC_LEVELS_V2` **ya no
+afecta a esta ruta** — el motor nuevo (`LevelRuntime`) se usa siempre que
+hay un nivel real, sembrado a mano o vía "Cargar el mundo de ejemplo"
+(`seedExampleWorld`, que persiste `ciudadCentralAsLevel()` como nivel
+editable).
 
-**Apagada por default** — nadie la ve sin que alguien la prenda a propósito.
-`QuestScene.tsx` no se toca ni se borra: sigue siendo la escena real para
-cualquier despliegue que no fije esta variable (§12.1, "coexistencia, no
-reemplazo"). Para activarla en un despliegue real, agregar
-`NEXT_PUBLIC_LEVELS_V2=1` junto a las `NEXT_PUBLIC_FIREBASE_*` de arriba (se
-incrusta al compilar, igual que ellas — build nuevo para que se refleje). En
-local, `NEXT_PUBLIC_LEVELS_V2=1 npm run dev`.
+`QuestScene.tsx` (la escena "Ciudad Central" original) no se toca ni se
+borra (§12.1, "coexistencia, no reemplazo"), pero ya no es lo primero que
+ve un niño: sigue viva en su propia ruta de regresión,
+**`/jugar/[childId]/ciudad-central-legacy`**, siempre accesible (sin flag),
+sin ningún enlace de producción hacia ahí — sirve para comparar
+comportamiento contra el motor nuevo, y es lo que ejercita
+`e2e/aventura.spec.ts`/`juego.spec.ts` y compañía.
 
-`e2e/aventura-ciudad-central-v2.spec.ts` prueba este camino contra un
-segundo `next dev` con el flag activo (project `ciudad-central-v2` de
-`playwright.config.ts`, puerto 3211) — `e2e/aventura.spec.ts` sigue
-probando `QuestScene.tsx` sin cambios, porque sigue siendo lo que corre de
-verdad mientras el flag esté apagado.
+`e2e/aventura-ciudad-central-v2.spec.ts` prueba el mismo contenido
+(`ciudadCentralAsLevel()`) pero sobre `LevelRuntime`, llegando por el
+camino real: siembra el mundo de ejemplo y navega a `/jugar/[childId]`
+como cualquier hijo con un nivel de verdad.
 
 ### Reglas de Firestore: hay que desplegarlas aparte
 

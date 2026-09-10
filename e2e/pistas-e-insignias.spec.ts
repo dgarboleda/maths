@@ -48,7 +48,7 @@ test.describe("Insignias", () => {
 
     await otorgarInsignia(correo, childId, "resolutor");
 
-    await page.goto(`/jugar/${childId}`);
+    await page.goto(`/jugar/${childId}/ciudad-central-legacy`);
     const insigniaHub = page.getByRole("listitem").filter({ hasText: "Resolutor" });
     await expect(insigniaHub).toBeVisible();
     await expect(insigniaHub).toContainText("🧠");

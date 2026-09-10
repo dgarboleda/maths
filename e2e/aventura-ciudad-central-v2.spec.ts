@@ -8,30 +8,38 @@ import {
   registrarPadre,
   resolverEnunciado,
   sembrarEvaluacion,
+  sembrarMundoDeEjemplo,
 } from "./utilidades";
 
 /**
- * Ciudad Central sobre el motor nuevo (Fase 14, docs/level-editor-plan.md
- * §12.4) — `NEXT_PUBLIC_LEVELS_V2` activo, servido por el segundo `next dev`
- * de `playwright.config.ts` (project "ciudad-central-v2"). Adapta las
- * pruebas de `e2e/aventura.spec.ts` ("Mundo: Ciudad Central") a la UI real
- * de `LevelRuntime`/`ciudadCentralAsLevel()` en vez de `QuestScene.tsx`.
+ * Ciudad Central sobre el motor nuevo (`LevelRuntime`/`ciudadCentralAsLevel()`),
+ * alcanzada por el camino real de producción: el "mundo de ejemplo"
+ * sembrado (`seedExampleWorld`, igual que ofrece `NoLevelsYet`/`/panel/
+ * editor`) + el despachador de `/jugar/{childId}` (Fase 18), que redirige al
+ * nivel marcado como punto de entrada. Ya no depende de
+ * `NEXT_PUBLIC_LEVELS_V2`: ese flag dejó de decidir qué se ve en
+ * `/jugar/{childId}` en la Fase 18, así que la única forma real de llegar a
+ * esta escena hoy es igual que cualquier otro nivel del Level Editor.
+ * Sigue corriendo contra el project "ciudad-central-v2" de
+ * `playwright.config.ts` (no hace falta el segundo `next dev` para esto en
+ * particular, pero tampoco molesta compartirlo).
  *
- * `aventura.spec.ts` queda intacto: sigue probando `QuestScene.tsx` con el
- * flag apagado, que es lo que corre hoy en producción por defecto (§12.1,
- * "coexistencia, no reemplazo") — no hay ninguna razón para dejar de
- * probarlo mientras siga siendo real para cualquiera que no active el flag.
+ * `aventura.spec.ts` prueba la Ciudad Central *original* (`QuestScene.tsx`)
+ * en su ruta de regresión `/jugar/{childId}/ciudad-central-legacy` — esta
+ * suite es la del motor nuevo, no un duplicado.
  *
- * No usa `entrarAlPerfil`/`sesionDeHijo` de utilidades.ts: esos esperan el
- * diálogo de misión "El apagón" que `QuestScene` abre solo al entrar —
- * `LevelRuntime` no tiene ese auto-abrir (el registro de misión genérico se
- * abre a pedido, vía el botón del HUD), así que el helper de acá es propio.
+ * No usa `entrarAlPerfil`/`sesionDeHijo` de utilidades.ts: esos van a
+ * `ciudad-central-legacy` y esperan el briefing de `QuestScene` — acá se
+ * entra por el camino del nivel real, y `LevelRuntime` no tiene ningún
+ * auto-abrir (el registro de misión genérico se abre a pedido, vía el botón
+ * del HUD), así que el helper de acá es propio.
  */
 
 /** Mismo criterio que `entrarAlPerfil` (evaluación "en blanco" sembrada
- *  directo en Firestore, sin pagar ~45 preguntas adaptativas) pero sin
- *  esperar el briefing de `QuestScene` — entra y espera a que la escena
- *  nueva esté lista (la Dra. Nia visible en el lienzo). */
+ *  directo en Firestore, sin pagar ~45 preguntas adaptativas), más el
+ *  "mundo de ejemplo" sembrado para que el despachador tenga a dónde
+ *  mandar — entra y espera a que la escena nueva esté lista (la Dra. Nia
+ *  visible en el lienzo). */
 async function entrarAlPerfilV2(page: Page, nombre: string, pin: string, correo: string): Promise<string> {
   await page.getByRole("button", { name: `Entrar al perfil de ${nombre}` }).click();
   const campoPin = page.getByLabel(`PIN de ${nombre}`);
@@ -48,6 +56,7 @@ async function entrarAlPerfilV2(page: Page, nombre: string, pin: string, correo:
     overallGradeBand: "por reforzar las bases",
     grantedModuleIds: [],
   });
+  await sembrarMundoDeEjemplo(correo);
 
   await page.goto(`/jugar/${childId}`);
   await expect(page.getByRole("heading", { name: "Ciudad Central" })).toBeVisible({ timeout: 45_000 });

@@ -384,8 +384,11 @@ test.describe("Evaluación de ubicación en el navegador", () => {
 
     await page.getByRole("link", { name: "Empezar a practicar" }).click();
     // La prueba del bug: si `placementStatus` no quedó en "completo", esto
-    // redirige de vuelta a /evaluacion en bucle en vez de mostrar la ciudad.
-    await expect(page.getByRole("heading", { name: "Ciudad Central" })).toBeVisible({ timeout: 45_000 });
+    // redirige de vuelta a /evaluacion en bucle en vez de dejarlo pasar. Este
+    // hijo no tiene ningún nivel/mundo sembrado, así que el despachador de
+    // /jugar/{childId} (Fase 18) cae en "Todavía no hay ninguna aventura" —
+    // es justamente lo que confirma que NO volvió a /evaluacion.
+    await expect(page.getByRole("heading", { name: "Todavía no hay ninguna aventura" })).toBeVisible({ timeout: 45_000 });
     await expect(page).not.toHaveURL(/\/evaluacion$/);
   });
 

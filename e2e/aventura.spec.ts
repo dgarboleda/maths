@@ -203,7 +203,7 @@ test.describe("Mundo: Ciudad Central (misión «El apagón»)", () => {
     await page.reload();
     await expect(objetivo).toContainText("Completado:");
 
-    await page.goto(`/jugar/${childId}`);
+    await page.goto(`/jugar/${childId}/ciudad-central-legacy`);
     await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();
     await page.getByRole("button", { name: "Abrir registro de misión" }).click();
     const registro = page.getByRole("dialog", { name: "El apagón" });
