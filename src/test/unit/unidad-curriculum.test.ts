@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { afterEach, describe, expect, test } from "vitest";
 import { evalExpr, fillTemplate, parseExpr, ExprEvalError } from "@/lib/curriculum/expr";
 import { compileGenerator } from "@/lib/curriculum/generatorTemplates";
 import { compileModule } from "@/lib/curriculum/compileModule";
@@ -10,14 +10,14 @@ import type { ArithmeticGeneratorSpec, CustomModuleDoc } from "@/lib/curriculum/
 import { problemSignature } from "@/lib/problem";
 
 /**
- * Pruebas puras de lógica (sin `page`, sin red, sin Firestore) para el
+ * Pruebas puras de lógica (sin DOM real, sin red, sin Firestore) para el
  * núcleo de la Currícula personalizada — Fase 20
- * (docs/level-editor-plan-v2.md §7.8, entregable verificable). Mismo
- * criterio que `e2e/unidad-nivel.spec.ts`: sin runner nuevo, Playwright
- * corre estas pruebas igual que cualquier otro spec.
+ * (docs/level-editor-plan-v2.md §7.8, entregable verificable). Corren con
+ * `npm run test` (Vitest) — ver `src/test/unit/unidad-nivel.test.ts` para el
+ * mismo criterio aplicado al resto del Level Editor.
  */
 
-test.describe("expr.ts — parser y evaluador", () => {
+describe("expr.ts — parser y evaluador", () => {
   function evalSrc(src: string, vars: Record<string, number> = {}): number {
     const result = parseExpr(src);
     if ("error" in result) throw new Error(`No parseó "${src}": ${result.error}`);
@@ -94,7 +94,7 @@ test.describe("expr.ts — parser y evaluador", () => {
   });
 });
 
-test.describe("generatorTemplates.ts — compileGenerator", () => {
+describe("generatorTemplates.ts — compileGenerator", () => {
   const spec: ArithmeticGeneratorSpec = {
     kind: "arithmetic",
     variables: [
@@ -145,8 +145,8 @@ test.describe("generatorTemplates.ts — compileGenerator", () => {
   });
 });
 
-test.describe("Currícula personalizada — registro e integración con curriculum.ts", () => {
-  test.afterEach(() => {
+describe("Currícula personalizada — registro e integración con curriculum.ts", () => {
+  afterEach(() => {
     clearCustomModules();
   });
 
@@ -197,7 +197,7 @@ test.describe("Currícula personalizada — registro e integración con curricul
   });
 });
 
-test.describe("validateCustomModule / slugForLabel", () => {
+describe("validateCustomModule / slugForLabel", () => {
   test("slugForLabel genera un id estable con prefijo cst-", () => {
     expect(slugForLabel("Restas hasta 20")).toBe("cst-restas-hasta-20");
     expect(slugForLabel("¡Fracciones!")).toMatch(/^cst-/);

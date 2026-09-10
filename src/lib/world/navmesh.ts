@@ -686,7 +686,7 @@ export function findPathInMesh(from: Point, to: Point, graph: VisibilityGraph): 
 /* ════════════════════════════════════════════════════════════════════════
  * ADAPTADORES: la API que ya usa QuestScene, reescrita en términos de la
  * malla multi-polígono de arriba. Firma y comportamiento observable
- * intactos — ver la prueba de regresión en e2e/unidad-nivel.spec.ts.
+ * intactos — ver la prueba de regresión en src/test/unit/unidad-nivel.test.ts.
  * ════════════════════════════════════════════════════════════════════════ */
 
 const graphCache = new WeakMap<WalkableArea, VisibilityGraph>();
