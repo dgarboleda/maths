@@ -19,7 +19,21 @@ import type { Pose } from "@/lib/level/runtime/useAlexMovement";
  * valor neutro (escala 1, opacidad igual a la sombra fija de siempre) y el
  * resultado es idéntico al de antes de esta fase.
  */
-export function RuntimePlayer({ pose, walking, childName, depth }: { pose: Pose; walking: boolean; childName: string; depth?: LevelDepthConfig }) {
+export function RuntimePlayer({
+  pose,
+  walking,
+  childName,
+  depth,
+  avatar,
+}: {
+  pose: Pose;
+  walking: boolean;
+  childName: string;
+  depth?: LevelDepthConfig;
+  /** Avatar elegido por el padre del catálogo del Mundo (Fase 19,
+   *  `useResolvedAvatar`) — `undefined` = sprite de fábrica de siempre. */
+  avatar?: { bodySrc: string; scale: number };
+}) {
   const depthScale = depthScaleFor(pose.y, depth);
   const shadowOpacity = depth?.enabled ? shadowOpacityFor(pose.y, depth) : 0.5;
   return (
@@ -27,7 +41,14 @@ export function RuntimePlayer({ pose, walking, childName, depth }: { pose: Pose;
       <div style={{ transform: `translate(-50%, -97%) scale(${depthScale})`, transformOrigin: "50% 100%" }}>
         <span className="absolute bottom-0 left-1/2 h-3 w-16 -translate-x-1/2 rounded-full bg-black blur-md" style={{ opacity: shadowOpacity }} />
         <div style={{ transform: pose.facing === "left" ? "scaleX(-1)" : undefined }}>
-          <Avatar variant="explorer" walking={walking} className="h-16 drop-shadow-[0_0_12px_rgba(34,211,238,0.5)]" title={`${childName}, jugando`} />
+          <Avatar
+            variant="explorer"
+            walking={walking}
+            className="h-16 drop-shadow-[0_0_12px_rgba(34,211,238,0.5)]"
+            title={`${childName}, jugando`}
+            bodySrc={avatar?.bodySrc}
+            scale={avatar?.scale}
+          />
         </div>
       </div>
     </div>

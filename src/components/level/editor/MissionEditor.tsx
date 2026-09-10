@@ -3,7 +3,10 @@
 import { Plus, Trash2 } from "lucide-react";
 import type { LevelDefinition, LevelMissionObjective, ObjectiveSource } from "@/lib/level/schema";
 import { newObjectiveId } from "@/lib/level/ids";
+import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useLevelEditor } from "./LevelEditorProvider";
+import { help } from "./helpText";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-amber-400/50";
@@ -64,14 +67,14 @@ export function MissionEditor() {
     <div className="space-y-3 text-xs">
       <div className="flex items-center gap-2">
         <h2 className="min-w-0 flex-1 truncate text-[13px] font-bold text-slate-100">Misión</h2>
-        <button
-          type="button"
-          aria-label="Eliminar misión"
+        <IconButton
+          icon={Trash2}
+          label="Eliminar misión"
+          tooltip={help("mission.delete").text}
+          side="left"
+          tone="danger"
           onClick={() => dispatch({ type: "DELETE_MISSION", id: mission.id })}
-          className="rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10"
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-        </button>
+        />
       </div>
 
       <label className="block">
@@ -108,17 +111,21 @@ export function MissionEditor() {
                 value={objective.label}
                 onChange={(e) => updateObjective(i, { label: e.target.value })}
               />
-              <button type="button" aria-label="Quitar objetivo" onClick={() => removeObjective(i)} className="shrink-0 rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10">
-                <Trash2 className="size-3.5" aria-hidden="true" />
-              </button>
+              <IconButton icon={Trash2} label="Quitar objetivo" tooltip={help("mission.removeObjective").text} side="left" tone="danger" onClick={() => removeObjective(i)} />
             </div>
             <ObjectiveSourceEditor source={objective.source} onChange={(source) => updateObjective(i, { source })} />
           </div>
         ))}
-        <button type="button" onClick={addObjective} className="flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700">
-          <Plus className="size-3.5" aria-hidden="true" />
-          Añadir objetivo
-        </button>
+        <Tooltip content={help("mission.addObjective").text} side="top">
+          <button
+            type="button"
+            onClick={addObjective}
+            className="flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700"
+          >
+            <Plus className="size-3.5" aria-hidden="true" />
+            Añadir objetivo
+          </button>
+        </Tooltip>
       </div>
     </div>
   );

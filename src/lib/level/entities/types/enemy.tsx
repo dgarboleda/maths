@@ -35,9 +35,22 @@ export const ENEMY_TYPE: EntityTypeDef = {
     enabledWhen: { kind: "always" },
   },
   properties: [
-    { kind: "image", key: "art", label: "Arte", default: "" },
-    { kind: "points", key: "patrol", label: "Ruta de patrulla", default: [] },
-    { kind: "polygonRef", key: "blockerPolygonId", label: "Bloqueador", default: "", role: "blocked" },
+    { kind: "image", key: "art", label: "Arte", default: "", hint: "Ruta de una imagen que reemplaza el sprite por defecto del enemigo." },
+    {
+      kind: "points",
+      key: "patrol",
+      label: "Ruta de patrulla",
+      default: [],
+      hint: "Puntos por los que se mueve — todavía sin efecto en el juego, reservado para una fase futura.",
+    },
+    {
+      kind: "polygonRef",
+      key: "blockerPolygonId",
+      label: "Bloqueador",
+      default: "",
+      role: "blocked",
+      hint: "La zona bloqueada que este enemigo activa/desactiva según su estado.",
+    },
   ],
   Render: EnemyRender,
   resolveBlockerIds: (entity, activeState) => {

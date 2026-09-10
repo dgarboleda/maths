@@ -15,23 +15,45 @@ import type { EntityInteraction, EntityStateDef, EntityStateMachineDef, EntityTy
 export type EntitySection = "objects";
 
 /**
+ * Base común de todo descriptor de campo — Fase 15 (docs/level-editor-plan-v2.md
+ * §2.3): `hint` es el único campo nuevo. Con él, `PropertyField` pinta un
+ * tooltip de ayuda junto a la etiqueta sin que ningún panel que lo consume
+ * (`EditorPropertyPanel`, `ActionFields`/`EventChainEditor`, y los futuros
+ * editores de Mundo/Currícula) tenga que tocarse.
+ */
+interface BaseFieldDef {
+  key: string;
+  label: string;
+  /** Texto corto de ayuda, mostrado en un tooltip junto a `label`. Opcional
+   *  a propósito: no todos los campos lo necesitan (p. ej. "Nombre"). */
+  hint?: string;
+}
+
+/**
  * Descriptor de un campo del panel de propiedades — dirige `PropertyField`
  * (§5.3) sin que el panel necesite saber nada del tipo. Toda referencia
  * (`entityRef`/`zoneRef`/`dialogRef`/`polygonRef`) se elige de un
  * desplegable poblado desde el propio `level`, nunca se escribe a mano.
  */
-export type PropertyFieldDef =
-  | { kind: "text"; key: string; label: string; default: string }
-  | { kind: "number"; key: string; label: string; default: number; min?: number; max?: number; step?: number }
-  | { kind: "boolean"; key: string; label: string; default: boolean }
-  | { kind: "image"; key: string; label: string; default: string }
-  | { kind: "entityRef"; key: string; label: string; default: string; ofType?: EntityTypeId[] }
-  | { kind: "zoneRef"; key: string; label: string; default: string }
-  | { kind: "dialogRef"; key: string; label: string; default: string }
-  | { kind: "polygonRef"; key: string; label: string; default: string; role?: "walkable" | "blocked" }
-  /** Lista de puntos en % de imagen — hoy solo `enemy.patrol` (§7.3), sin
-   *  ningún efecto en el runtime todavía (`useEntityMovement` es Fase 9+). */
-  | { kind: "points"; key: string; label: string; default: PropertyValue };
+export type PropertyFieldDef = BaseFieldDef &
+  (
+    | { kind: "text"; default: string }
+    | { kind: "number"; default: number; min?: number; max?: number; step?: number }
+    | { kind: "boolean"; default: boolean }
+    | { kind: "image"; default: string }
+    /** Enum cerrado con etiquetas — Fase 16 (docs/level-editor-plan-v2.md
+     *  §3.3): las reglas generales del Mundo (`WorldRules`) son el primer
+     *  consumidor, reutilizando este mismo `PropertyField` para no crear un
+     *  componente de campo nuevo. */
+    | { kind: "select"; default: string; options: { value: string; label: string }[] }
+    | { kind: "entityRef"; default: string; ofType?: EntityTypeId[] }
+    | { kind: "zoneRef"; default: string }
+    | { kind: "dialogRef"; default: string }
+    | { kind: "polygonRef"; default: string; role?: "walkable" | "blocked" }
+    /** Lista de puntos en % de imagen — hoy solo `enemy.patrol` (§7.3), sin
+     *  ningún efecto en el runtime todavía (`useEntityMovement` es Fase 9+). */
+    | { kind: "points"; default: PropertyValue }
+  );
 
 export interface EntityRenderProps {
   entity: LevelEntity;

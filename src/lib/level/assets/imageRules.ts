@@ -6,7 +6,11 @@
  * unitariamente sin abrir ninguna página (mismo criterio que `depth.ts`).
  */
 
-export type AssetKind = "scene" | "layer";
+/** `"avatar"` — Fase 19 (docs/level-editor-plan-v2.md §6.1): sprite de
+ *  personaje jugable (cuerpo entero o retrato). Mismo pipeline de subida que
+ *  `scene`/`layer` (Storage, miniatura, cuota); solo cambian los umbrales de
+ *  resolución y el aviso de canal alfa (ver `AssetUploader.tsx`). */
+export type AssetKind = "scene" | "layer" | "avatar";
 
 export type ResolutionGrade = "error" | "warning" | "ok";
 
@@ -18,10 +22,13 @@ export interface ResolutionThresholds {
 
 /** docs/asset-management-plan.md §C.5. Una franja de horizonte (`layer`) es
  *  legítimamente baja de alto — nunca se le exige lo mismo que a una escena
- *  completa (`scene`), que llena la pantalla entera. */
+ *  completa (`scene`), que llena la pantalla entera. Un `avatar` es un
+ *  sprite recortado (cuerpo o retrato), casi cuadrado, mucho más chico que
+ *  cualquiera de los dos. */
 export const RESOLUTION_THRESHOLDS: Record<AssetKind, ResolutionThresholds> = {
   scene: { minWidth: 800, minHeight: 450, recommendedWidth: 1600 },
   layer: { minWidth: 480, minHeight: 120, recommendedWidth: 1200 },
+  avatar: { minWidth: 128, minHeight: 128, recommendedWidth: 512 },
 };
 
 /** Ancho máximo al que se redimensiona en cliente antes de subir — igual

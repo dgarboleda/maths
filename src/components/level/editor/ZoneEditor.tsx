@@ -1,7 +1,9 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import { IconButton } from "@/components/ui/IconButton";
 import { useLevelEditor } from "./LevelEditorProvider";
+import { help } from "./helpText";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-violet-400/50";
@@ -26,14 +28,7 @@ export function ZoneEditor() {
       <div className="flex items-center gap-2">
         <span className="size-3 shrink-0 rounded-full bg-violet-400" aria-hidden="true" />
         <h2 className="min-w-0 flex-1 truncate text-[13px] font-bold text-slate-100">Zona</h2>
-        <button
-          type="button"
-          aria-label="Eliminar"
-          onClick={() => dispatch({ type: "DELETE_ZONE", id: zone.id })}
-          className="rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10"
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-        </button>
+        <IconButton icon={Trash2} label="Eliminar" tooltip={help("zone.delete").text} side="left" tone="danger" onClick={() => dispatch({ type: "DELETE_ZONE", id: zone.id })} />
       </div>
 
       <label className="block">

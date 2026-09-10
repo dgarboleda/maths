@@ -2,7 +2,10 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import type { LevelDialogLine } from "@/lib/level/schema";
+import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useLevelEditor } from "./LevelEditorProvider";
+import { help } from "./helpText";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50";
@@ -39,14 +42,7 @@ export function DialogEditor() {
     <div className="space-y-3 text-xs">
       <div className="flex items-center gap-2">
         <h2 className="min-w-0 flex-1 truncate text-[13px] font-bold text-slate-100">Diálogo</h2>
-        <button
-          type="button"
-          aria-label="Eliminar diálogo"
-          onClick={() => dispatch({ type: "DELETE_DIALOG", id: dialog.id })}
-          className="rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10"
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-        </button>
+        <IconButton icon={Trash2} label="Eliminar diálogo" tooltip={help("dialog.delete").text} side="left" tone="danger" onClick={() => dispatch({ type: "DELETE_DIALOG", id: dialog.id })} />
       </div>
 
       <label className="block">
@@ -76,9 +72,7 @@ export function DialogEditor() {
                   </option>
                 ))}
               </select>
-              <button type="button" aria-label="Quitar línea" onClick={() => removeLine(i)} className="shrink-0 rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10">
-                <Trash2 className="size-3.5" aria-hidden="true" />
-              </button>
+              <IconButton icon={Trash2} label="Quitar línea" tooltip={help("dialog.removeLine").text} side="left" tone="danger" onClick={() => removeLine(i)} />
             </div>
             <textarea
               rows={2}
@@ -91,10 +85,12 @@ export function DialogEditor() {
         ))}
       </div>
 
-      <button type="button" onClick={addLine} className="flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700">
-        <Plus className="size-3.5" aria-hidden="true" />
-        Añadir línea
-      </button>
+      <Tooltip content={help("dialog.addLine").text} side="top">
+        <button type="button" onClick={addLine} className="flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700">
+          <Plus className="size-3.5" aria-hidden="true" />
+          Añadir línea
+        </button>
+      </Tooltip>
     </div>
   );
 }

@@ -28,10 +28,10 @@ export const TERMINAL_TYPE: EntityTypeDef = {
     enabledWhen: { kind: "always" },
   },
   properties: [
-    { kind: "text", key: "headline", label: "Rótulo", default: "TERMINAL BLOQUEADA" },
-    { kind: "text", key: "action", label: "Acción", default: "Introduce el código" },
-    { kind: "image", key: "sprite", label: "Arte", default: "" },
-    { kind: "boolean", key: "isCore", label: "Panel de núcleo (ámbar)", default: false },
+    { kind: "text", key: "headline", label: "Rótulo", default: "TERMINAL BLOQUEADA", hint: "Título que se muestra sobre la terminal." },
+    { kind: "text", key: "action", label: "Acción", default: "Introduce el código", hint: "Texto del botón/indicación para interactuar." },
+    { kind: "image", key: "sprite", label: "Arte", default: "", hint: "Ruta de una imagen que reemplaza el sprite por defecto de la terminal." },
+    { kind: "boolean", key: "isCore", label: "Panel de núcleo (ámbar)", default: false, hint: "Le da el estilo visual especial de \"panel de núcleo\" en vez de una terminal normal." },
   ],
   Render: TerminalRender,
 };

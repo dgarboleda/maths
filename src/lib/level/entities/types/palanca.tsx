@@ -35,6 +35,6 @@ export const PALANCA_TYPE: EntityTypeDef = {
     lockedNote: "",
     enabledWhen: { kind: "always" },
   },
-  properties: [{ kind: "text", key: "label", label: "Etiqueta", default: "Palanca" }],
+  properties: [{ kind: "text", key: "label", label: "Etiqueta", default: "Palanca", hint: "Texto corto que se muestra sobre la palanca." }],
   Render: PalancaRender,
 };

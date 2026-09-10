@@ -147,6 +147,20 @@ export async function deleteLevel(firestoreFns: FirestoreFns, db: Firestore, par
   await firestoreFns.deleteDoc(levelDocRef(firestoreFns, db, parentId, levelId));
 }
 
+/** Inserta un `LevelDefinition` ya armado tal cual (mismo id, misma versión)
+ *  — a diferencia de `createLevel`, que arma uno vacío. Usado por
+ *  `seedExampleWorld` (Fase 18) para persistir `ciudadCentralAsLevel()` como
+ *  un nivel real y editable, no como contenido mágico en memoria. */
+export async function insertLevel(firestoreFns: FirestoreFns, db: Firestore, parentId: string, level: LevelDefinition): Promise<LevelDefinition> {
+  const clean = prepareForFirestore(level);
+  assertSize(clean);
+  const batch = firestoreFns.writeBatch(db);
+  batch.set(levelDocRef(firestoreFns, db, parentId, level.id), clean);
+  batch.set(versionDocRef(firestoreFns, db, parentId, level.id, level.version), clean);
+  await batch.commit();
+  return level;
+}
+
 /** Copia completa (navegación, entidades, todo) bajo un id nuevo, versión 1. */
 export async function duplicateLevel(
   firestoreFns: FirestoreFns,

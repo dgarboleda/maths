@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { LevelDefinition, LevelEntity } from "@/lib/level/schema";
+import type { LevelDefinition, LevelEntity, LevelExitTarget } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
 import { evaluateCondition } from "@/lib/level/events/conditions";
 import { useLevelRuntime } from "@/lib/level/runtime/useLevelRuntime";
 import { useKeyboardMovement } from "@/lib/level/runtime/useKeyboardMovement";
 import { createLiveServices, createSandboxServices } from "@/lib/level/runtime/services";
 import { activeMission } from "@/lib/level/runtime/state";
+import { useResolvedAvatar } from "@/lib/useResolvedAvatar";
 import { LevelHud } from "./LevelHud";
 import { RuntimeCanvas } from "./RuntimeCanvas";
 import { LevelChallengeOverlay } from "./LevelChallengeOverlay";
@@ -100,14 +101,19 @@ export function LevelRuntime({
     },
   });
 
-  const runtime = useLevelRuntime(
-    level,
-    progressBySkill,
-    services,
-    sandbox ? () => onExit?.() : (targetHref) => router.push(targetHref),
-  );
+  // Resuelve un `LevelExitTarget` (Fase 16, docs/level-editor-plan-v2.md
+  // §3.4) a una ruta real de `/jugar/**` — la única función del runtime que
+  // conoce esa convención de URL, así el resto del motor nunca arma rutas.
+  function resolveExitTarget(target: LevelExitTarget) {
+    if (target.kind === "level") router.push(`/jugar/${childId}/nivel/${target.levelId}`);
+    else if (target.kind === "worldMap") router.push(`/jugar/${childId}/mapa`);
+    else router.push(target.href);
+  }
+
+  const runtime = useLevelRuntime(level, progressBySkill, services, sandbox ? () => onExit?.() : resolveExitTarget);
 
   const sandboxServices = sandbox ? createSandboxServices() : null;
+  const resolvedAvatar = useResolvedAvatar(parentId, childId, progressBySkill);
   const mission = activeMission(level, progressBySkill, runtime.state);
 
   function onGroundClick(xPct: number, yPct: number) {
@@ -181,6 +187,7 @@ export function LevelRuntime({
         childName={childName}
         debug={debug}
         axiaPulse={axiaPulse ? { ...axiaPulse, x: runtime.pose.x, y: runtime.pose.y } : null}
+        avatar={resolvedAvatar ? { bodySrc: resolvedAvatar.bodySrc, scale: resolvedAvatar.scale } : undefined}
         onGroundClick={onGroundClick}
         onEntityClick={onEntityClick}
       />

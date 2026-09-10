@@ -21,6 +21,8 @@ import { MissionEditor } from "./MissionEditor";
 import { EventChainEditor } from "./EventChainEditor";
 import { IssuesPanel } from "./IssuesPanel";
 import { ScenePanel } from "./ScenePanel";
+import { ExitEditor } from "./ExitEditor";
+import { HelpOverlay } from "./HelpOverlay";
 
 /**
  * Play Test (Fase 11, §11.2 del plan): monta el mismo `LevelRuntime` que el
@@ -180,6 +182,11 @@ export function LevelEditorScreen() {
                   <EventChainEditor />
                 </div>
               )}
+              {state.selection.kind === "exit" && (
+                <div className="mt-4 border-t border-indigo-500/10 pt-4">
+                  <ExitEditor />
+                </div>
+              )}
               {state.selection.kind === "level" && (
                 <div className="mt-4 border-t border-indigo-500/10 pt-4">
                   <ScenePanel />
@@ -221,6 +228,8 @@ export function LevelEditorScreen() {
           </div>
         </div>
       )}
+
+      {!inPlaytest && <HelpOverlay />}
     </div>
   );
 }

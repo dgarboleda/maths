@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import { signOut } from "firebase/auth";
-import { KeyRound, Trash2, UserRound, Users } from "lucide-react";
+import { ImageIcon, KeyRound, Trash2, UserRound, Users } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { useFamily, type ChildDoc } from "@/components/family/FamilyProvider";
 import { getFirebase } from "@/lib/firebase";
@@ -12,12 +12,14 @@ import { ageFromBirthDate } from "@/lib/family/age";
 import { Avatar } from "@/components/world/Avatar";
 import { SectionCard } from "@/components/family/ui";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
+import { AvatarPickerDialog } from "@/components/family/AvatarPickerDialog";
 
 export default function AjustesPage() {
   const { user } = useAuth();
   const { parentId, children, loadingChildren } = useFamily();
   const [resettingChild, setResettingChild] = useState<ChildDoc | null>(null);
   const [deletingChild, setDeletingChild] = useState<ChildDoc | null>(null);
+  const [pickingAvatarChild, setPickingAvatarChild] = useState<ChildDoc | null>(null);
 
   return (
     <div className="space-y-5">
@@ -65,6 +67,14 @@ export default function AjustesPage() {
                   </div>
                   <button
                     type="button"
+                    onClick={() => setPickingAvatarChild(c)}
+                    className="flex min-h-11 items-center gap-1.5 rounded-full border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
+                  >
+                    <ImageIcon className="size-4" aria-hidden="true" />
+                    Avatar
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setResettingChild(c)}
                     className="flex min-h-11 items-center gap-1.5 rounded-full border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
                   >
@@ -92,6 +102,9 @@ export default function AjustesPage() {
       )}
       {deletingChild && parentId && (
         <DeleteChildDialog parentId={parentId} child={deletingChild} onClose={() => setDeletingChild(null)} />
+      )}
+      {pickingAvatarChild && parentId && (
+        <AvatarPickerDialog parentId={parentId} child={pickingAvatarChild} onClose={() => setPickingAvatarChild(null)} onSaved={() => setPickingAvatarChild(null)} />
       )}
     </div>
   );

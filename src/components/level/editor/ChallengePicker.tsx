@@ -7,7 +7,10 @@ import { STRANDS } from "@/lib/strands";
 import { newChallengeId } from "@/lib/level/ids";
 import type { Problem } from "@/lib/problem";
 import { QuestionWidget } from "@/components/topic/QuestionWidget";
+import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useLevelEditor } from "./LevelEditorProvider";
+import { help } from "./helpText";
 
 /**
  * Vincula un `ChallengePlacement` a la entidad seleccionada — docs/level-
@@ -40,25 +43,20 @@ export function ChallengePicker({ entityId }: { entityId: string }) {
           <span className="font-bold text-slate-100">{existingMod ? `${existingMod.emoji} ${existingMod.label}` : existing.moduleId}</span>
         </p>
         <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              setPreviewModuleId(existing.moduleId);
-              setPreviewProblem(existingMod ? existingMod.generateProblem() : null);
-              setPicking(true);
-            }}
-            className="flex-1 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700"
-          >
-            Cambiar
-          </button>
-          <button
-            type="button"
-            aria-label="Desvincular"
-            onClick={() => dispatch({ type: "DELETE_CHALLENGE", id: existing.id })}
-            className="rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10"
-          >
-            <Unlink className="size-3.5" aria-hidden="true" />
-          </button>
+          <Tooltip content={help("challenge.change").text} side="top">
+            <button
+              type="button"
+              onClick={() => {
+                setPreviewModuleId(existing.moduleId);
+                setPreviewProblem(existingMod ? existingMod.generateProblem() : null);
+                setPicking(true);
+              }}
+              className="flex-1 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700"
+            >
+              Cambiar
+            </button>
+          </Tooltip>
+          <IconButton icon={Unlink} label="Desvincular" tooltip={help("challenge.unlink").text} side="left" tone="danger" onClick={() => dispatch({ type: "DELETE_CHALLENGE", id: existing.id })} />
         </div>
       </div>
     );
@@ -66,14 +64,16 @@ export function ChallengePicker({ entityId }: { entityId: string }) {
 
   if (!picking) {
     return (
-      <button
-        type="button"
-        onClick={() => setPicking(true)}
-        className="flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700"
-      >
-        <Link2 className="size-3.5" aria-hidden="true" />
-        Vincular desafío
-      </button>
+      <Tooltip content={help("challenge.link").text} side="top">
+        <button
+          type="button"
+          onClick={() => setPicking(true)}
+          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700"
+        >
+          <Link2 className="size-3.5" aria-hidden="true" />
+          Vincular desafío
+        </button>
+      </Tooltip>
     );
   }
 

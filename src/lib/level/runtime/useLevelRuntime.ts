@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildVisibilityGraph } from "@/lib/world/navmesh";
-import type { LevelDefinition, LevelEventType, PropertyValue } from "@/lib/level/schema";
+import type { LevelDefinition, LevelEventType, LevelExitTarget, PropertyValue } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
 import { createEventBus, emit } from "@/lib/level/events/bus";
 import { applyRuntimePatch, deriveInitialState, type LevelRuntimeState } from "./state";
@@ -21,7 +21,7 @@ export function useLevelRuntime(
   level: LevelDefinition,
   progressBySkill: Record<string, SkillProgress>,
   services: RuntimeServices,
-  onExitEnter?: (targetHref: string) => void,
+  onExitEnter?: (target: LevelExitTarget) => void,
 ) {
   // `EventBus.fired` se muta en el lugar (`emit`, ver events/bus.ts) — no
   // hace falta un `useRef` para eso, alcanza con que `bus` no se reemplace
@@ -78,7 +78,7 @@ export function useLevelRuntime(
       if (kind === "exit") {
         if (crossing !== "enter") return;
         const exit = level.navigation.exits.find((e) => e.id === id);
-        if (exit) onExitEnter?.(exit.targetHref);
+        if (exit) onExitEnter?.(exit.target);
         return;
       }
       // Marcar la zona como pisada es automático (nunca depende de que el

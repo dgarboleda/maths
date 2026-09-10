@@ -148,7 +148,7 @@ export function BackgroundPicker({
           )}
           {secondaryParent.length > 0 && !showAll && (
             <button type="button" onClick={() => setShowAll(true)} className="mt-2 text-[11px] font-bold text-cyan-300 hover:underline">
-              Ver también mis {forKind === "scene" ? "capas" : "fondos de escena"} ({secondaryParent.length})
+              Ver también el resto de mis imágenes ({secondaryParent.length})
             </button>
           )}
         </fieldset>

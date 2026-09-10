@@ -70,6 +70,18 @@ service cloud.firestore {
       match /levelAssets/{assetId} {
         allow read, write: if isParent(parentId);
       }
+
+      // Mundo del juego: historia, capítulos, grafo de niveles, reglas
+      // generales y catálogo de avatares (docs/level-editor-plan-v2.md §3).
+      // Mismo dueño y mismo versionado inmutable que /levels.
+      match /world/{worldId} {
+        allow read, write: if isParent(parentId);
+        match /versions/{versionId} {
+          allow read: if isParent(parentId);
+          allow create: if isParent(parentId);
+          allow update, delete: if false;
+        }
+      }
     }
 
     // Contenido curricular: catálogo compartido de hilos/unidades, de solo

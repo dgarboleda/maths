@@ -1,17 +1,38 @@
 import { LEVEL_SCHEMA_VERSION, type LevelDefinition } from "./schema";
 
+/** `targetHref` (schemaVersion 1) → `target` tipado (schemaVersion 2) —
+ *  docs/level-editor-plan-v2.md §3.4. Mismas 3 reglas con las que el editor
+ *  ya interpreta un `targetHref` viejo. */
+function migrateExitTarget(targetHref: unknown): { kind: "level"; levelId: string } | { kind: "worldMap" } | { kind: "href"; href: string } {
+  if (typeof targetHref !== "string" || targetHref === "" || targetHref === "/panel") return { kind: "worldMap" };
+  const match = /^\/jugar\/[^/]+\/nivel\/(.+)$/.exec(targetHref);
+  if (match) return { kind: "level", levelId: match[1] };
+  return { kind: "href", href: targetHref };
+}
+
 /**
  * Cadena de migraciones de esquema, aplicada al leer un nivel desde
  * Firestore (`levelRepository.getLevel`, Fase 3) — nunca al guardar. Cada
  * entrada transforma la forma cruda de la versión `N` a la forma cruda de
  * `N+1`; `migrateLevel` las encadena hasta `LEVEL_SCHEMA_VERSION`.
  *
- * Hoy solo existe la versión 1, así que la cadena está vacía — pero la
- * estructura queda montada desde esta fase para que el día que el esquema
- * cambie, la migración sea añadir una entrada acá, no diseñar el mecanismo
- * (docs/level-editor-plan.md §17 Fase 2, §13 T7).
+ * docs/level-editor-plan.md §17 Fase 2, §13 T7: la estructura quedó montada
+ * desde la Fase 3 vacía, a propósito, para que el día que el esquema
+ * cambiara la migración fuera añadir una entrada acá — la 1→2 (Fase 16) es
+ * la primera vez que se usa de verdad.
  */
-export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {};
+export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  // v1 -> v2: cada LevelExit gana `target` tipado; `targetHref` se conserva
+  // (deprecado) para no perder el dato crudo, pero nada vuelve a leerlo.
+  1: (raw) => {
+    const navigation = raw.navigation as Record<string, unknown> | undefined;
+    if (!navigation || !Array.isArray(navigation.exits)) return raw;
+    const exits = (navigation.exits as Record<string, unknown>[]).map((exit) =>
+      exit.target ? exit : { ...exit, target: migrateExitTarget(exit.targetHref) },
+    );
+    return { ...raw, navigation: { ...navigation, exits } };
+  },
+};
 
 export class UnknownSchemaVersionError extends Error {
   version: unknown;

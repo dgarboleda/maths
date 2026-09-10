@@ -3,12 +3,15 @@
 import { useId, useRef, useState } from "react";
 import { UploadCloud } from "lucide-react";
 import { prepareUpload } from "@/lib/level/assets/imageProcessing";
-import { checkQuota, gradeResolution, sanitizeLabel, validateFileMeta, type AssetKind, type PreparedAssetUpload } from "@/lib/level/assets/imageRules";
+import { checkQuota, gradeResolution, RESOLUTION_THRESHOLDS, sanitizeLabel, validateFileMeta, type AssetKind, type PreparedAssetUpload } from "@/lib/level/assets/imageRules";
 import { uploadAsset, type LevelAsset } from "@/lib/level/assets/assetRepository";
 import { getAssetServices } from "./useLevelAssets";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50";
+
+const KIND_LABEL: Record<AssetKind, string> = { scene: "fondo de escena", layer: "capa", avatar: "avatar" };
+const KIND_RADIO_LABEL: Record<AssetKind, string> = { scene: "Fondo de escena completa", layer: "Capa de parallax", avatar: "Avatar de personaje" };
 
 /**
  * Subir una imagen a la biblioteca del padre — docs/asset-management-plan.md
@@ -70,11 +73,7 @@ export function AssetUploader({
       const grade = gradeResolution(result.originalWidth, result.originalHeight, kind);
       if (grade === "error") {
         setStatus("error");
-        setError(
-          `Esta imagen es ${result.originalWidth}×${result.originalHeight}px — muy chica para usarse como ${
-            kind === "scene" ? "fondo de escena" : "capa"
-          }. Probá con una más grande.`,
-        );
+        setError(`Esta imagen es ${result.originalWidth}×${result.originalHeight}px — muy chica para usarse como ${KIND_LABEL[kind]}. Probá con una más grande.`);
         return;
       }
       setOriginalDims({ width: result.originalWidth, height: result.originalHeight });
@@ -132,16 +131,14 @@ export function AssetUploader({
             </p>
           )}
 
-          <fieldset className="flex gap-4">
+          <fieldset className="flex flex-wrap gap-4">
             <legend className="sr-only">Tipo de imagen</legend>
-            <label className="flex items-center gap-1.5 text-slate-200">
-              <input type="radio" name="asset-kind" checked={kind === "scene"} onChange={() => setKind("scene")} disabled={status === "uploading"} />
-              Fondo de escena completa
-            </label>
-            <label className="flex items-center gap-1.5 text-slate-200">
-              <input type="radio" name="asset-kind" checked={kind === "layer"} onChange={() => setKind("layer")} disabled={status === "uploading"} />
-              Capa de parallax
-            </label>
+            {(Object.keys(KIND_RADIO_LABEL) as AssetKind[]).map((k) => (
+              <label key={k} className="flex items-center gap-1.5 text-slate-200">
+                <input type="radio" name="asset-kind" checked={kind === k} onChange={() => setKind(k)} disabled={status === "uploading"} />
+                {KIND_RADIO_LABEL[k]}
+              </label>
+            ))}
           </fieldset>
 
           <label className="block">
@@ -182,12 +179,17 @@ export function AssetUploader({
 
               {grade === "warning" && (
                 <p role="status" className="flex items-center gap-1 text-amber-300">
-                  ⚠ {originalDims!.width}×{originalDims!.height}px — se ve mejor con al menos {kind === "scene" ? "1600" : "1200"}px de ancho, pero se puede usar igual.
+                  ⚠ {originalDims!.width}×{originalDims!.height}px — se ve mejor con al menos {RESOLUTION_THRESHOLDS[kind].recommendedWidth}px de ancho, pero se puede usar igual.
                 </p>
               )}
               {kind === "layer" && !prepared.hasAlpha && (
                 <p role="status" className="flex items-center gap-1 text-slate-400">
                   ℹ Esta imagen es opaca: tapará lo que haya detrás. Para un efecto de parallax suele convenir un PNG/WebP con fondo transparente.
+                </p>
+              )}
+              {kind === "avatar" && !prepared.hasAlpha && (
+                <p role="status" className="flex items-center gap-1 text-amber-300">
+                  ⚠ Esta imagen es opaca: se va a ver con un fondo rectangular en vez de recortada. Para un avatar conviene un PNG/WebP con transparencia.
                 </p>
               )}
 

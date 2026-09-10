@@ -5,9 +5,11 @@ import { closestPointOnSegment, pointInPolygon } from "@/lib/world/navmesh";
 import { newEntityId, newExitId, newPolygonId, newZoneId } from "@/lib/level/ids";
 import { createEntityDefaults, getEntityType } from "@/lib/level/entities";
 import type { LevelZone, NavPolygon, Vec2 } from "@/lib/level/schema";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { findSelectedPolygon } from "./editorReducer";
 import { useLevelEditor } from "./LevelEditorProvider";
 import { snapToGrid } from "./useEditorViewport";
+import { help } from "./helpText";
 
 /**
  * Edición interactiva de polígonos de navegación — docs/level-editor-plan.md
@@ -165,7 +167,7 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
         exit: {
           id,
           label: "Salida",
-          targetHref: "/panel",
+          target: { kind: "worldMap" },
           polygon: [
             { x: point.x - half, y: point.y - half },
             { x: point.x + half, y: point.y - half },
@@ -313,17 +315,21 @@ export function PolygonEditor({ screenToImagePercent }: { screenToImagePercent: 
           onDoubleClick={(e) => e.stopPropagation()}
         >
           <span className="font-bold text-lime-200">dibujando: {state.drafting.points.length} pts</span>
-          <button
-            type="button"
-            disabled={state.drafting.points.length < 3}
-            className="rounded bg-emerald-600 px-1.5 py-0.5 text-white disabled:opacity-40"
-            onClick={closeDraft}
-          >
-            Cerrar
-          </button>
-          <button type="button" className="rounded bg-slate-600 px-1.5 py-0.5 text-white" onClick={() => dispatch({ type: "DRAFT_CANCEL" })}>
-            Cancelar
-          </button>
+          <Tooltip content={help("polygon.close").text} side="bottom">
+            <button
+              type="button"
+              disabled={state.drafting.points.length < 3}
+              className="rounded bg-emerald-600 px-1.5 py-0.5 text-white disabled:opacity-40"
+              onClick={closeDraft}
+            >
+              Cerrar
+            </button>
+          </Tooltip>
+          <Tooltip content={help("polygon.cancel").text} shortcut={help("polygon.cancel").shortcut} side="bottom">
+            <button type="button" className="rounded bg-slate-600 px-1.5 py-0.5 text-white" onClick={() => dispatch({ type: "DRAFT_CANCEL" })}>
+              Cancelar
+            </button>
+          </Tooltip>
         </div>
       )}
     </>

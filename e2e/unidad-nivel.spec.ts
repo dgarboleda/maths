@@ -575,7 +575,7 @@ test.describe("validate — validateLevel", () => {
 
   test("punto de destino que no toca ningún área transitable: error", () => {
     const level = emptyLevel();
-    level.navigation.exits.push({ id: "exit_1", polygon: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }], targetHref: "/jugar", label: "Salida" });
+    level.navigation.exits.push({ id: "exit_1", polygon: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }], target: { kind: "worldMap" }, label: "Salida" });
     expect(validateLevel(level).some((i) => i.target?.kind === "exit")).toBe(true);
   });
 

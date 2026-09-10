@@ -4,8 +4,11 @@ import { useRef, useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { RECOMMENDED_TOTAL_BYTES_PER_PARENT } from "@/lib/level/assets/imageRules";
 import { deleteAsset, findLevelsUsingAsset, renameAsset, type LevelAsset } from "@/lib/level/assets/assetRepository";
+import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useLevelAssets, getAssetServices } from "./useLevelAssets";
 import { AssetUploader } from "./AssetUploader";
+import { help } from "../helpText";
 
 /**
  * Biblioteca de imágenes del padre — listar, renombrar, borrar
@@ -81,13 +84,15 @@ export function AssetLibrary({ parentId }: { parentId: string }) {
     <div className="space-y-3 text-xs">
       <div className="flex items-center justify-between">
         <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Mis imágenes</h3>
-        <button
-          type="button"
-          onClick={() => setShowUploader((v) => !v)}
-          className="rounded-md border border-indigo-500/25 bg-slate-800/60 px-2 py-1 font-bold text-slate-100 hover:bg-slate-800"
-        >
-          {showUploader ? "Cerrar" : "Subir imagen"}
-        </button>
+        <Tooltip content={showUploader ? "Cierra el formulario de subida." : help("asset.upload").text} side="left">
+          <button
+            type="button"
+            onClick={() => setShowUploader((v) => !v)}
+            className="rounded-md border border-indigo-500/25 bg-slate-800/60 px-2 py-1 font-bold text-slate-100 hover:bg-slate-800"
+          >
+            {showUploader ? "Cerrar" : "Subir imagen"}
+          </button>
+        </Tooltip>
       </div>
 
       {assets && assets.length > 0 && (
@@ -142,12 +147,16 @@ export function AssetLibrary({ parentId }: { parentId: string }) {
                   className="flex items-center gap-1"
                 >
                   <input name="label" defaultValue={asset.label} autoFocus className="min-w-0 flex-1 rounded border border-cyan-400/40 bg-slate-950/60 px-1 py-0.5 text-[11px] text-slate-100" />
-                  <button type="submit" aria-label="Guardar nombre" className="rounded p-1 text-emerald-300 hover:bg-emerald-500/10">
-                    <Check className="size-3.5" aria-hidden="true" />
-                  </button>
-                  <button type="button" aria-label="Cancelar" onClick={() => setRenamingId(null)} className="rounded p-1 text-slate-400 hover:bg-slate-800">
-                    <X className="size-3.5" aria-hidden="true" />
-                  </button>
+                  <Tooltip content="Guardar el nombre nuevo." side="top">
+                    <button type="submit" aria-label="Guardar nombre" className="rounded p-1 text-emerald-300 hover:bg-emerald-500/10">
+                      <Check className="size-3.5" aria-hidden="true" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="Cancelar el cambio de nombre." side="top">
+                    <button type="button" aria-label="Cancelar" onClick={() => setRenamingId(null)} className="rounded p-1 text-slate-400 hover:bg-slate-800">
+                      <X className="size-3.5" aria-hidden="true" />
+                    </button>
+                  </Tooltip>
                 </form>
               ) : (
                 <div className="flex items-center justify-between gap-1">
@@ -155,21 +164,28 @@ export function AssetLibrary({ parentId }: { parentId: string }) {
                     {asset.label}
                   </span>
                   <div className="flex shrink-0 gap-0.5">
-                    <button type="button" aria-label={`Renombrar ${asset.label}`} onClick={() => setRenamingId(asset.id)} disabled={busyId === asset.id} className="rounded p-1 text-slate-400 hover:bg-slate-800">
-                      <Pencil className="size-3.5" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      ref={(el) => {
-                        deleteButtonRefs.current[asset.id] = el;
-                      }}
-                      aria-label={`Borrar ${asset.label}`}
-                      onClick={() => void handleRequestDelete(asset)}
+                    <IconButton
+                      icon={Pencil}
+                      label={`Renombrar ${asset.label}`}
+                      tooltip={help("asset.rename").text}
+                      side="top"
                       disabled={busyId === asset.id}
-                      className="rounded p-1 text-rose-400 hover:bg-rose-500/10"
-                    >
-                      <Trash2 className="size-3.5" aria-hidden="true" />
-                    </button>
+                      onClick={() => setRenamingId(asset.id)}
+                    />
+                    <Tooltip content={help("asset.delete").text} side="top">
+                      <button
+                        type="button"
+                        ref={(el) => {
+                          deleteButtonRefs.current[asset.id] = el;
+                        }}
+                        aria-label={`Borrar ${asset.label}`}
+                        onClick={() => void handleRequestDelete(asset)}
+                        disabled={busyId === asset.id}
+                        className="rounded p-1 text-rose-400 hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="size-3.5" aria-hidden="true" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               )}

@@ -8,7 +8,7 @@
  * interpreta (§4, §5.2, §9 del plan).
  */
 
-export const LEVEL_SCHEMA_VERSION = 1;
+export const LEVEL_SCHEMA_VERSION = 2;
 
 /** Siempre % de la imagen de fondo, 0-100 — el mismo sistema de coordenadas
  *  que ya usan los hotspots de `questScene.ts` (`x`/`y`/`standX`/`standY`). */
@@ -153,12 +153,25 @@ export interface NavPolygon {
   initiallyEnabled: boolean;
 }
 
+/**
+ * A dónde lleva un `LevelExit` — docs/level-editor-plan-v2.md §3.4 (Fase 16,
+ * schemaVersion 2). `"href"` es la escotilla: sigue permitiendo cualquier
+ * ruta para casos no cubiertos, pero el editor nunca la genera por defecto —
+ * siempre elige un nivel real (`"level"`) o "volver al mapa" (`"worldMap"`)
+ * de un desplegable, nunca escribiendo una ruta a mano.
+ */
+export type LevelExitTarget = { kind: "level"; levelId: string } | { kind: "worldMap" } | { kind: "href"; href: string };
+
 export interface LevelExit {
   id: string;
   /** Zona de salida del nivel (vuelve al mapa/zona anterior). */
   polygon: Vec2[];
-  targetHref: string;
   label: string;
+  target: LevelExitTarget;
+  /** @deprecated Solo `schemaVersion` 1. `migrate.ts` lo traduce a `target`
+   *  al leer y lo conserva sin usar — nada en el runtime ni en el editor
+   *  vuelve a leer este campo. */
+  targetHref?: string;
 }
 
 export interface LevelNavigation {

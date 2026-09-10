@@ -25,6 +25,7 @@ export function RuntimeCanvas({
   childName,
   debug,
   axiaPulse,
+  avatar,
   onGroundClick,
   onEntityClick,
 }: {
@@ -34,6 +35,9 @@ export function RuntimeCanvas({
   walking: boolean;
   childName: string;
   debug: boolean;
+  /** Avatar elegido del catálogo del Mundo (Fase 19) — `undefined` = sprite
+   *  de fábrica. */
+  avatar?: { bodySrc: string; scale: number };
   /** Animación "+★" de `GENERATE_AXIA` (Fase 12, §8.4) — mismo patrón que
    *  `starFly` de `QuestScene.tsx:467-476`, anclada a la posición de Alex en
    *  el momento del pulso (el evento en sí no carga ninguna posición: no
@@ -76,7 +80,7 @@ export function RuntimeCanvas({
     key: "__player__",
     y: pose.y,
     layer: 0,
-    render: () => <RuntimePlayer pose={pose} walking={walking} childName={childName} depth={level.depth} />,
+    render: () => <RuntimePlayer pose={pose} walking={walking} childName={childName} depth={level.depth} avatar={avatar} />,
   };
   const painted = [...paintedEntities, paintedPlayer].sort((a, b) => a.layer - b.layer || a.y - b.y);
 
