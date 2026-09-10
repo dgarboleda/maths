@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Image from "next/image";
 import { Check, Gift, Medal, Star, X } from "lucide-react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { useChildDashboard, type RequestDoc } from "@/lib/family/useChildDashboard";
@@ -140,7 +141,7 @@ export default function RecompensasPage() {
                   }`}
                 >
                   {b.image ? (
-                    <img src={b.image} alt="" aria-hidden="true" className="size-6" />
+                    <Image src={b.image} alt="" aria-hidden="true" width={24} height={24} className="size-6" />
                   ) : (
                     <span aria-hidden="true" className="text-xl">
                       {b.emoji}

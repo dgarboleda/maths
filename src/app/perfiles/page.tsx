@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
@@ -135,9 +136,11 @@ export default function PerfilesPage() {
 
         {children.length === 0 && !showForm && (
           <div className="family-panel flex flex-col items-center gap-3 rounded-2xl px-6 py-8 text-center sm:flex-row sm:text-left">
-            <img
+            <Image
               src="/illustrations/explorer.webp"
               alt=""
+              width={520}
+              height={780}
               className="h-28 w-auto shrink-0 drop-shadow-[0_0_18px_rgba(167,139,250,0.35)]"
             />
             <div>

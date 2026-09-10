@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
@@ -53,11 +54,7 @@ export default function LoginPage() {
 
       {/* Panel de mundo (desktop): la aventura asoma desde el login. */}
       <aside className="family-hero-vignette relative hidden overflow-hidden lg:block" aria-hidden="true">
-        <img
-          src="/illustrations/city-central.webp"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <Image src="/illustrations/city-central.webp" alt="" fill priority sizes="45vw" className="object-cover" />
         <div className="relative flex h-full flex-col justify-between p-10">
           <Brand />
           <div className="max-w-md space-y-4 pb-8">

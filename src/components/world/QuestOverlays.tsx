@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { DoorClosed, MessageCircle, Settings, Sparkles, Star, Terminal as TerminalIcon, X } from "lucide-react";
 import { masteredCountForStrand } from "@/lib/curriculum";
@@ -53,12 +54,11 @@ export function DialogOverlay({
       >
         <div className="flex items-start gap-3 sm:gap-4">
           {isNpc ? (
-            <img
+            <Image
               src="/illustrations/nia-portrait.webp"
               alt=""
               width={816}
               height={816}
-              loading="lazy"
               className="world-ring-glow -mt-12 size-24 shrink-0 rounded-2xl border border-cyan-400/40 bg-slate-900/80 object-contain object-top p-1 sm:-mt-14 sm:size-28"
             />
           ) : (

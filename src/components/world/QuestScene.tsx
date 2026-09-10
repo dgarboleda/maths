@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Zap } from "lucide-react";
 import { getModule } from "@/lib/curriculum";
@@ -407,10 +408,13 @@ export function QuestScene({
         }}
       >
         <div className="world-scene-vignette absolute inset-0">
-          <img
+          <Image
             src="/illustrations/city-central.webp"
             alt="Ciudad Central de noche: plaza con fuente, central eléctrica apagada, tienda, taller, laboratorio y un túnel bloqueado."
-            className={`block size-full transition-[filter] duration-1000 ${
+            fill
+            sizes="100vw"
+            priority
+            className={`object-cover transition-[filter] duration-1000 ${
               flags.cityRestored ? "brightness-110 saturate-125" : "brightness-90"
             }`}
           />

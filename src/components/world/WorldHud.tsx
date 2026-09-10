@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { getBadge } from "@/lib/badges";
 import { moduleHref, type ModuleDef } from "@/lib/curriculum";
@@ -57,7 +58,7 @@ export function WorldTopBar({
         </div>
 
         <span className="flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-slate-900/70 px-3 py-1.5">
-          <img src="/illustrations/icon-axia.webp" alt="" aria-hidden="true" className="size-4" />
+          <Image src="/illustrations/icon-axia.webp" alt="" aria-hidden="true" width={16} height={16} className="size-4" />
           <span className="font-bold text-amber-300">
             <span className="sr-only">AXIA: </span>
             {stars ?? "…"}
@@ -66,7 +67,7 @@ export function WorldTopBar({
 
         {earnedBadgeIds.length > 0 && (
           <div className="flex items-center gap-1.5">
-          <img src="/illustrations/icon-insignias.webp" alt="" aria-hidden="true" className="size-5" />
+          <Image src="/illustrations/icon-insignias.webp" alt="" aria-hidden="true" width={20} height={20} className="size-5" />
           <ul className="flex items-center gap-1.5" aria-label="Insignias ganadas">
             {earnedBadgeIds.map((id) => {
               const badge = getBadge(id);
@@ -78,7 +79,7 @@ export function WorldTopBar({
                   className="flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-950/60 px-2 py-1 text-xs font-bold text-amber-200"
                 >
                   {badge.image ? (
-                    <img src={badge.image} alt="" aria-hidden="true" className="size-4" />
+                    <Image src={badge.image} alt="" aria-hidden="true" width={16} height={16} className="size-4" />
                   ) : (
                     <span aria-hidden="true">{badge.emoji}</span>
                   )}
