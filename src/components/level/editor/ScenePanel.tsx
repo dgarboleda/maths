@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { useLevelEditor } from "./LevelEditorProvider";
 import { BackgroundPicker, type ResolvedBackgroundSelection } from "./assets/BackgroundPicker";
 import { AssetLibrary } from "./assets/AssetLibrary";
 import { DepthPanel } from "./DepthPanel";
+import { StatsPanel } from "./StatsPanel";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50";
@@ -22,6 +24,7 @@ export function ScenePanel() {
   const { parentId } = useFamily();
   const { state, dispatch } = useLevelEditor();
   const { background } = state.level;
+  const [statsEverOpened, setStatsEverOpened] = useState(false);
 
   function applyBackground(selection: ResolvedBackgroundSelection) {
     dispatch({
@@ -58,6 +61,11 @@ export function ScenePanel() {
           </div>
         </details>
       )}
+
+      <details className="border-t border-indigo-500/10 pt-3" onToggle={(e) => e.currentTarget.open && setStatsEverOpened(true)}>
+        <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-300">Cómo les va</summary>
+        <div className="mt-3">{statsEverOpened && <StatsPanel />}</div>
+      </details>
     </div>
   );
 }

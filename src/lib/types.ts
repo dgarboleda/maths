@@ -84,6 +84,10 @@ export interface Attempt {
   itemId: string;
   correct: boolean;
   createdAt: number;
+  /** Pistas pedidas en este intento (Fase 26, docs/plan-salto-producto.md
+   *  §4.2) — aditivo: los intentos guardados antes de este campo no lo
+   *  tienen. `undefined` significa "sin dato", nunca "cero pistas". */
+  hintsUsed?: number;
 }
 
 export type StarReason =

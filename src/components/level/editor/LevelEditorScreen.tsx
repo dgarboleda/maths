@@ -35,8 +35,8 @@ import { HelpOverlay } from "./HelpOverlay";
  * pasa a `LevelRuntime`/`PlayTestBar` ya resueltos.
  */
 function PlaytestStage({ level, sessionId, onReset, onExit }: { level: LevelDefinition; sessionId: number; onReset: () => void; onExit: () => void }) {
-  const { parentId, selectedChildId, selectedChild } = useFamily();
-  const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress> | null>(null);
+  const { parentId, children, selectedChildId, setSelectedChildId, selectedChild } = useFamily();
+  const [loadedProgress, setLoadedProgress] = useState<{ childId: string; data: Record<string, SkillProgress> } | null>(null);
   const [soundOn] = useSoundPreference();
 
   useEffect(() => {
@@ -50,13 +50,19 @@ function PlaytestStage({ level, sessionId, onReset, onExit }: { level: LevelDefi
         if (cancelled) return;
         const map: Record<string, SkillProgress> = {};
         snap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
-        setProgressBySkill(map);
+        setLoadedProgress({ childId: selectedChildId, data: map });
       })
       .catch((err) => console.error("No se pudo cargar el progreso para el Play Test", err));
     return () => {
       cancelled = true;
     };
   }, [parentId, selectedChildId]);
+
+  // Cambiar de hijo (§4.1) vuelve a mostrar "Preparando…" mientras se
+  // resuelve el progreso del nuevo: lo cargado solo cuenta si es DEL hijo
+  // actual — sin esto, un instante del LevelRuntime recién remontado se
+  // vería con el progreso del hijo anterior hasta que resuelva el fetch.
+  const progressBySkill = loadedProgress && loadedProgress.childId === selectedChildId ? loadedProgress.data : null;
 
   if (!parentId || !selectedChild || !progressBySkill) {
     return (
@@ -81,7 +87,21 @@ function PlaytestStage({ level, sessionId, onReset, onExit }: { level: LevelDefi
         sandbox
         onExit={onExit}
       />
-      <PlayTestBar onReset={onReset} onExit={onExit} />
+      <PlayTestBar
+        childId={selectedChild.id}
+        childName={selectedChild.name}
+        otherChildren={children.filter((c) => c.id !== selectedChild.id).map((c) => ({ id: c.id, name: c.name }))}
+        onSelectChild={(id) => {
+          // Cambiar de hijo a mitad de partida con el progreso de otro no
+          // tiene sentido — mismo mecanismo que "Reset" (docs/plan-salto-
+          // producto.md §4.1): remonta el runtime entero con el progreso
+          // del hijo nuevo.
+          setSelectedChildId(id);
+          onReset();
+        }}
+        onReset={onReset}
+        onExit={onExit}
+      />
     </div>
   );
 }
