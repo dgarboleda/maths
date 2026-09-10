@@ -6,8 +6,9 @@ import { Copy, Map, Pencil, Play, Plus, Sparkles, Trash2, Wand2 } from "lucide-r
 import { useFamily } from "@/components/family/FamilyProvider";
 import { SectionCard, EmptyState, SkeletonRows } from "@/components/family/ui";
 import { getFirebase } from "@/lib/firebase";
-import { createLevel, deleteLevel, duplicateLevel, listLevels, type LevelSummary } from "@/lib/level/persistence/levelRepository";
+import { createLevel, deleteLevel, duplicateLevel, insertLevel, listLevels, type LevelSummary } from "@/lib/level/persistence/levelRepository";
 import { seedExampleWorld } from "@/lib/level/seedExampleWorld";
+import { LEVEL_TEMPLATES } from "@/lib/level/templates";
 import { ensureWorld, saveWorld } from "@/lib/gameworld/persistence/worldRepository";
 import type { WorldNode } from "@/lib/gameworld/schema";
 import { BackgroundPicker, type ResolvedBackgroundSelection } from "@/components/level/editor/assets/BackgroundPicker";
@@ -275,6 +276,7 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
   const { parentId } = useFamily();
   const [name, setName] = useState("");
   const [background, setBackground] = useState<ResolvedBackgroundSelection | null>(null);
+  const [templateId, setTemplateId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -285,13 +287,21 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
     setError(null);
     try {
       const { db, firestore } = await getFirebase();
-      const level = await createLevel(firestore, db, parentId, name.trim(), {
+      const backgroundValue = {
         src: background.src,
         width: background.width,
         height: background.height,
         alt: background.alt,
-        projection: "flat",
-      });
+        projection: "flat" as const,
+      };
+      // Plantillas (Fase 25, docs/plan-salto-producto.md §3): un
+      // `LevelDefinition` ya armado (dato, no lienzo vacío) se persiste con
+      // `insertLevel` en vez de `createLevel` — mismo criterio que
+      // `seedExampleWorld`.
+      const template = LEVEL_TEMPLATES.find((t) => t.id === templateId);
+      const level = template
+        ? await insertLevel(firestore, db, parentId, template.build(parentId, name.trim(), backgroundValue))
+        : await createLevel(firestore, db, parentId, name.trim(), backgroundValue);
       // Sincronización nodo↔nivel (Fase 17, §4.3): todo nivel nuevo aparece
       // solo en el mapa del mundo, en la primera celda libre; el primero que
       // crea el padre queda marcado como punto de entrada.
@@ -333,6 +343,28 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
       </div>
 
       {parentId && <BackgroundPicker parentId={parentId} for="scene" value={background?.src ?? ""} onChange={setBackground} autoSelectDefault />}
+
+      <div>
+        <label htmlFor="plantilla-nivel" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">
+          Punto de partida
+        </label>
+        <select
+          id="plantilla-nivel"
+          value={templateId}
+          onChange={(e) => setTemplateId(e.target.value)}
+          className="w-full rounded-xl border border-indigo-500/25 bg-slate-900/60 px-3 py-2 text-sm text-white focus:border-cyan-400/60 focus:outline-none"
+        >
+          <option value="">Lienzo vacío</option>
+          {LEVEL_TEMPLATES.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-slate-400">
+          {templateId ? LEVEL_TEMPLATES.find((t) => t.id === templateId)?.description : "Empezá desde cero y armá el nivel a tu gusto."}
+        </p>
+      </div>
 
       {error && <p role="alert" className="text-sm text-rose-300">{error}</p>}
 

@@ -12,7 +12,9 @@ import type { LevelDefinition, LevelEventRule, LevelIssue, NavPolygon } from "./
  * 1. Todo polígono (transitable, bloqueado, zona poligonal) es simple.
  * 2. Existe al menos un polígono transitable, y `spawn` cae dentro de la
  *    malla de navegación.
- * 3. Cada `LevelExit` cae dentro de la malla de navegación.
+ * 3. Cada `LevelExit` cae dentro de la malla de navegación, y si su destino
+ *    es `{kind:"level"}` tiene un `levelId` elegido (no el estado "todavía
+ *    sin elegir" del desplegable de `ExitEditor.tsx`).
  * 4. Toda entidad con `interaction.mode !== "none"` tiene un `standPoint`
  *    definido (error si falta — no hay adónde caminar). Si el punto no cae
  *    exacto sobre el área transitable es solo `warning`: el runtime lo
@@ -26,6 +28,8 @@ import type { LevelDefinition, LevelEventRule, LevelIssue, NavPolygon } from "./
  * 6. `background.alt` no está vacío (accesibilidad).
  * 7. `name` del nivel y `background.src` no están vacíos.
  * 8. Ningún id se repite dentro de su propia colección.
+ * 8b. (Fase 25) Todo `ChallengePlacement.moduleId` está asignado — nunca
+ *     vacío (ver `validateChallengeModules`).
  *
  * 9. (Fase 8) Detección ESTÁTICA de ciclos en la cadena de eventos — T4
  *    (§13): una regla que dispara un `START_CHALLENGE`/`UPDATE_MISSION`
@@ -53,6 +57,7 @@ export function validateLevel(level: LevelDefinition): LevelIssue[] {
   validateSpawnAndExits(level, mesh, issues);
   validateEntityInteractions(level, mesh, issues);
   validateReferences(level, issues);
+  validateChallengeModules(level, issues);
   validateUniqueIds(level, issues);
   validateEventCycles(level, issues);
   validateBudgets(level, issues);
@@ -136,6 +141,18 @@ function validateSpawnAndExits(level: LevelDefinition, mesh: NavigationMesh, iss
       issues.push({
         severity: "error",
         message: `El punto de destino "${exit.label}" no toca ningún área transitable.`,
+        target: { kind: "exit", id: exit.id },
+      });
+    }
+    // `ExitEditor.tsx` usa `levelId: ""` como el estado "todavía no elegí
+    // nivel" de su desplegable (ver `<option value="">— elegí un nivel
+    // —</option>`) — un nivel guardado en ese estado quedaba sin ningún
+    // aviso hasta ahora, y en el runtime intentaría navegar a
+    // `/jugar/{childId}/nivel/` sin id.
+    if (exit.target.kind === "level" && exit.target.levelId.trim() === "") {
+      issues.push({
+        severity: "error",
+        message: `El punto de destino "${exit.label}" todavía no eligió a qué nivel lleva.`,
         target: { kind: "exit", id: exit.id },
       });
     }
@@ -242,6 +259,26 @@ function validateReferences(level: LevelDefinition, issues: LevelIssue[]): void 
           target,
         });
       }
+    }
+  }
+}
+
+/**
+ * Un `ChallengePlacement` con `moduleId` vacío es estructuralmente imposible
+ * a través de `ChallengePicker.tsx` (`confirm(moduleId)` exige elegir un
+ * módulo real antes de crear el desafío) — pero las plantillas de nivel
+ * (Fase 25, docs/plan-salto-producto.md §3.2) sí dejan uno así a propósito,
+ * como una de las dos decisiones que solo el padre puede tomar. Sin esta
+ * comprobación, ese desafío quedaba sin ningún aviso.
+ */
+function validateChallengeModules(level: LevelDefinition, issues: LevelIssue[]): void {
+  for (const challenge of level.challenges) {
+    if (challenge.moduleId.trim() === "") {
+      issues.push({
+        severity: "error",
+        message: "Hay un desafío sin ningún módulo de práctica asignado todavía.",
+        target: { kind: "challenge", id: challenge.id },
+      });
     }
   }
 }

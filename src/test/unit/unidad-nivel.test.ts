@@ -578,6 +578,28 @@ describe("validate — validateLevel", () => {
     expect(validateLevel(level).some((i) => i.target?.kind === "exit")).toBe(true);
   });
 
+  test("salida a otro nivel sin nivel elegido todavía (Fase 25, §3.2): error", () => {
+    const level = emptyLevel();
+    level.navigation.exits.push({
+      id: "exit_1",
+      polygon: [{ x: 40, y: 40 }, { x: 50, y: 40 }, { x: 50, y: 50 }],
+      target: { kind: "level", levelId: "" },
+      label: "Salida",
+    });
+    expect(validateLevel(level).some((i) => i.target?.kind === "exit")).toBe(true);
+  });
+
+  test("salida a otro nivel con un nivel ya elegido: sin error de destino", () => {
+    const level = emptyLevel();
+    level.navigation.exits.push({
+      id: "exit_1",
+      polygon: [{ x: 40, y: 40 }, { x: 50, y: 40 }, { x: 50, y: 50 }],
+      target: { kind: "level", levelId: "otro-nivel" },
+      label: "Salida",
+    });
+    expect(validateLevel(level).some((i) => i.target?.kind === "exit")).toBe(false);
+  });
+
   test("entidad interactuable sin standPoint: error", () => {
     const level = emptyLevel();
     level.entities.push({
@@ -620,6 +642,44 @@ describe("validate — validateLevel", () => {
     const level = emptyLevel();
     level.challenges.push({ id: "challenge_1", moduleId: "aritmetica-d1", activityId: "puzzle", sourceEntityId: "no-existe" });
     expect(validateLevel(level).some((i) => i.target?.kind === "challenge")).toBe(true);
+  });
+
+  test("desafío sin módulo asignado todavía (Fase 25, §3.2): error", () => {
+    const level = emptyLevel();
+    level.entities.push({
+      id: "entity_1",
+      type: "terminal",
+      name: "Terminal",
+      position: { x: 50, y: 50 },
+      rotation: 0,
+      scale: 1,
+      layer: 0,
+      visible: true,
+      interaction: { mode: "click", standPoint: { x: 50, y: 50 }, radius: 4, prompt: "", lockedNote: "", enabledWhen: { kind: "always" } },
+      state: { initial: "default" },
+      properties: {},
+    });
+    level.challenges.push({ id: "challenge_1", moduleId: "", activityId: "puzzle", sourceEntityId: "entity_1" });
+    expect(validateLevel(level).some((i) => i.target?.kind === "challenge")).toBe(true);
+  });
+
+  test("desafío con módulo ya asignado: sin error de módulo", () => {
+    const level = emptyLevel();
+    level.entities.push({
+      id: "entity_1",
+      type: "terminal",
+      name: "Terminal",
+      position: { x: 50, y: 50 },
+      rotation: 0,
+      scale: 1,
+      layer: 0,
+      visible: true,
+      interaction: { mode: "click", standPoint: { x: 50, y: 50 }, radius: 4, prompt: "", lockedNote: "", enabledWhen: { kind: "always" } },
+      state: { initial: "default" },
+      properties: {},
+    });
+    level.challenges.push({ id: "challenge_1", moduleId: "aritmetica-d1", activityId: "puzzle", sourceEntityId: "entity_1" });
+    expect(validateLevel(level).some((i) => i.target?.kind === "challenge")).toBe(false);
   });
 
   test("referencia rota: una regla de evento dispara sobre una entidad que no existe: error", () => {
