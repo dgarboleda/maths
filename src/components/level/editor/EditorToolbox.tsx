@@ -4,8 +4,10 @@ import type { ComponentType } from "react";
 import { MapPin, Hexagon, Octagon, LogOut, Shapes, Circle, MessageSquarePlus, Target, Zap } from "lucide-react";
 import { listEntityTypes } from "@/lib/level/entities";
 import { newDialogId, newEventId, newMissionId } from "@/lib/level/ids";
+import { IconButton } from "@/components/ui/IconButton";
 import { useLevelEditor } from "./LevelEditorProvider";
 import type { EditorTool } from "./editorReducer";
+import { help } from "./helpText";
 
 type ToolIcon = ComponentType<{ className?: string }>;
 
@@ -33,23 +35,23 @@ export function EditorToolbox() {
     dispatch({ type: "SET_TOOL", tool });
   }
 
-  const navItems: { tool: EditorTool; label: string; icon: ToolIcon; hint: string }[] = [
-    { tool: { kind: "drawPolygon", role: "walkable" }, label: "Área transitable", icon: Hexagon, hint: "W" },
-    { tool: { kind: "drawPolygon", role: "blocked" }, label: "Zona prohibida", icon: Octagon, hint: "B" },
-    { tool: { kind: "setSpawn" }, label: "Punto de inicio", icon: MapPin, hint: "" },
-    { tool: { kind: "setExit" }, label: "Punto de destino", icon: LogOut, hint: "" },
+  const navItems: { tool: EditorTool; label: string; icon: ToolIcon; tooltip: string; shortcut?: string }[] = [
+    { tool: { kind: "drawPolygon", role: "walkable" }, label: "Área transitable", icon: Hexagon, tooltip: help("toolbox.walkable").text, shortcut: help("toolbox.walkable").shortcut },
+    { tool: { kind: "drawPolygon", role: "blocked" }, label: "Zona prohibida", icon: Octagon, tooltip: help("toolbox.blocked").text, shortcut: help("toolbox.blocked").shortcut },
+    { tool: { kind: "setSpawn" }, label: "Punto de inicio", icon: MapPin, tooltip: help("toolbox.spawn").text },
+    { tool: { kind: "setExit" }, label: "Punto de destino", icon: LogOut, tooltip: help("toolbox.exit").text },
   ];
 
-  const objectItems: { tool: EditorTool; label: string; icon: ToolIcon; hint: string }[] = listEntityTypes().map((typeDef) => ({
+  const objectItems: { tool: EditorTool; label: string; icon: ToolIcon; tooltip: string; shortcut?: string }[] = listEntityTypes().map((typeDef) => ({
     tool: { kind: "placeEntity", entityType: typeDef.id },
     label: typeDef.label,
     icon: typeDef.Icon,
-    hint: "",
+    tooltip: `Colocar "${typeDef.label}" en el lienzo.`,
   }));
 
-  const gameplayItems: { tool: EditorTool; label: string; icon: ToolIcon; hint: string }[] = [
-    { tool: { kind: "drawPolygon", role: "zone" }, label: "Zona (polígono)", icon: Shapes, hint: "" },
-    { tool: { kind: "drawCircleZone", center: null }, label: "Zona (círculo)", icon: Circle, hint: "" },
+  const gameplayItems: { tool: EditorTool; label: string; icon: ToolIcon; tooltip: string; shortcut?: string }[] = [
+    { tool: { kind: "drawPolygon", role: "zone" }, label: "Zona (polígono)", icon: Shapes, tooltip: help("toolbox.zonePolygon").text },
+    { tool: { kind: "drawCircleZone", center: null }, label: "Zona (círculo)", icon: Circle, tooltip: help("toolbox.zoneCircle").text },
   ];
 
   function newDialog() {
@@ -74,51 +76,19 @@ export function EditorToolbox() {
       <section>
         <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Gameplay</h2>
         <ul className="space-y-1">
-          {gameplayItems.map(({ tool, label, icon: Icon, hint }) => (
+          {gameplayItems.map(({ tool, label, icon, tooltip, shortcut }) => (
             <li key={label}>
-              <button
-                type="button"
-                aria-pressed={isActive(tool)}
-                onClick={() => selectTool(tool)}
-                className={`flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left font-bold transition-colors ${
-                  isActive(tool) ? "bg-cyan-500/15 text-cyan-300" : "text-slate-300 hover:bg-slate-800"
-                }`}
-              >
-                <Icon className="size-4 shrink-0" aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate">{label}</span>
-                {hint && <kbd className="rounded bg-slate-800 px-1 text-[10px] text-slate-400">{hint}</kbd>}
-              </button>
+              <IconButton icon={icon} label={label} tooltip={tooltip} shortcut={shortcut} side="right" fullWidth active={isActive(tool)} onClick={() => selectTool(tool)} />
             </li>
           ))}
           <li>
-            <button
-              type="button"
-              onClick={newDialog}
-              className="flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left font-bold text-slate-300 transition-colors hover:bg-slate-800"
-            >
-              <MessageSquarePlus className="size-4 shrink-0" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">Diálogo nuevo</span>
-            </button>
+            <IconButton icon={MessageSquarePlus} label="Diálogo nuevo" tooltip={help("toolbox.dialogNew").text} side="right" fullWidth onClick={newDialog} />
           </li>
           <li>
-            <button
-              type="button"
-              onClick={newRule}
-              className="flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left font-bold text-slate-300 transition-colors hover:bg-slate-800"
-            >
-              <Zap className="size-4 shrink-0" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">Regla nueva</span>
-            </button>
+            <IconButton icon={Zap} label="Regla nueva" tooltip={help("toolbox.eventNew").text} side="right" fullWidth onClick={newRule} />
           </li>
           <li>
-            <button
-              type="button"
-              onClick={newMission}
-              className="flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left font-bold text-slate-300 transition-colors hover:bg-slate-800"
-            >
-              <Target className="size-4 shrink-0" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">Misión nueva</span>
-            </button>
+            <IconButton icon={Target} label="Misión nueva" tooltip={help("toolbox.missionNew").text} side="right" fullWidth onClick={newMission} />
           </li>
         </ul>
 
@@ -202,7 +172,7 @@ function ToolSection({
   onSelect,
 }: {
   title: string;
-  items: { tool: EditorTool; label: string; icon: ToolIcon; hint: string }[];
+  items: { tool: EditorTool; label: string; icon: ToolIcon; tooltip: string; shortcut?: string }[];
   isActive: (tool: EditorTool) => boolean;
   onSelect: (tool: EditorTool) => void;
 }) {
@@ -211,20 +181,9 @@ function ToolSection({
     <section>
       <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{title}</h2>
       <ul className="space-y-1">
-        {items.map(({ tool, label, icon: Icon, hint }) => (
+        {items.map(({ tool, label, icon, tooltip, shortcut }) => (
           <li key={label}>
-            <button
-              type="button"
-              aria-pressed={isActive(tool)}
-              onClick={() => onSelect(tool)}
-              className={`flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left font-bold transition-colors ${
-                isActive(tool) ? "bg-cyan-500/15 text-cyan-300" : "text-slate-300 hover:bg-slate-800"
-              }`}
-            >
-              <Icon className="size-4 shrink-0" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">{label}</span>
-              {hint && <kbd className="rounded bg-slate-800 px-1 text-[10px] text-slate-400">{hint}</kbd>}
-            </button>
+            <IconButton icon={icon} label={label} tooltip={tooltip} shortcut={shortcut} side="right" fullWidth active={isActive(tool)} onClick={() => onSelect(tool)} />
           </li>
         ))}
       </ul>

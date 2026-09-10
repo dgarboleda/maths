@@ -1,6 +1,7 @@
 import type { FirebaseApp } from "firebase/app";
 import type { Auth } from "firebase/auth";
 import type { Firestore } from "firebase/firestore";
+import type { FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -39,6 +40,7 @@ export function getFirebase(): Promise<Firebase> {
 
 declare global {
   var __numerarioEmulatorsConnected: boolean | undefined;
+  var __numerarioStorageEmulatorConnected: boolean | undefined;
 }
 
 async function initFirebase(): Promise<Firebase> {
@@ -69,6 +71,56 @@ async function initFirebase(): Promise<Firebase> {
   }
 
   return { app, auth, db, firestore };
+}
+
+export interface FirebaseStorageBundle {
+  storage: FirebaseStorage;
+  /** Funciones de "firebase/storage" (ref, uploadBytesResumable, getDownloadURL...). */
+  storageFns: typeof import("firebase/storage");
+}
+
+/*
+ * `firebase/storage` NO comparte el problema de `firebase/firestore` de
+ * arriba (docs/asset-management-plan.md §B.2): se verificó directamente
+ * sobre el paquete instalado que ninguno de sus builds usa `new Function`/
+ * `eval` ni depende de protobufjs/grpc — su build "node" (el que resolvería
+ * el SSR del Worker) usa la Fetch API estándar, disponible en Cloudflare
+ * Workers sin problema. No hace falta ningún alias en next.config.ts como
+ * los que sí necesitan Firestore/Auth.
+ *
+ * Aun así se carga por separado y perezosamente igual que el resto, por dos
+ * razones que no dependen de esa compatibilidad: (1) es la regla dura del
+ * proyecto (ningún `import` estático de "firebase/*" fuera de este archivo,
+ * verificado por ESLint); (2) solo `/panel/editor` sube imágenes — cargar
+ * Storage junto con Auth/Firestore penalizaría el arranque de `/login`,
+ * `/jugar` y `/perfiles`, que nunca lo usan. Por eso vive en su propia
+ * promesa memoizada, fuera del `Promise.all` de `initFirebase()`.
+ */
+let storagePromise: Promise<FirebaseStorageBundle> | undefined;
+
+export function getFirebaseStorage(): Promise<FirebaseStorageBundle> {
+  if (!storagePromise) storagePromise = initFirebaseStorage();
+  return storagePromise;
+}
+
+async function initFirebaseStorage(): Promise<FirebaseStorageBundle> {
+  const [{ initializeApp, getApps, getApp }, storageFns] = await Promise.all([
+    import("firebase/app"),
+    import("firebase/storage"),
+  ]);
+
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const storage = storageFns.getStorage(app);
+
+  if (
+    process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1" &&
+    !globalThis.__numerarioStorageEmulatorConnected
+  ) {
+    globalThis.__numerarioStorageEmulatorConnected = true;
+    storageFns.connectStorageEmulator(storage, "127.0.0.1", 9199);
+  }
+
+  return { storage, storageFns };
 }
 
 /*

@@ -3,9 +3,12 @@
 import { Copy, MapPin, Trash2 } from "lucide-react";
 import { getEntityType } from "@/lib/level/entities";
 import type { EntityInteraction, PropertyValue } from "@/lib/level/schema";
+import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useLevelEditor } from "./LevelEditorProvider";
 import { PropertyField } from "./fields/PropertyFields";
 import { ChallengePicker } from "./ChallengePicker";
+import { help } from "./helpText";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50";
@@ -35,22 +38,23 @@ export function EditorPropertyPanel() {
       <div className="flex items-center gap-2">
         <typeDef.Icon className="size-4 shrink-0 text-cyan-300" aria-hidden="true" />
         <h2 className="min-w-0 flex-1 truncate text-[13px] font-bold text-slate-100">{typeDef.label}</h2>
-        <button
-          type="button"
-          aria-label="Duplicar"
+        <IconButton
+          icon={Copy}
+          label="Duplicar"
+          tooltip={help("property.duplicate").text}
+          shortcut={help("property.duplicate").shortcut}
+          side="left"
           onClick={() => dispatch({ type: "DUPLICATE_ENTITY", id: entity.id })}
-          className="rounded-md p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-        >
-          <Copy className="size-4" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          aria-label="Eliminar"
+        />
+        <IconButton
+          icon={Trash2}
+          label="Eliminar"
+          tooltip={help("property.delete").text}
+          shortcut={help("property.delete").shortcut}
+          side="left"
+          tone="danger"
           onClick={() => dispatch({ type: "DELETE_ENTITY", id: entity.id })}
-          className="rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10"
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-        </button>
+        />
       </div>
 
       <section className="space-y-2">
@@ -165,16 +169,18 @@ export function EditorPropertyPanel() {
                 onChange={(e) => setInteraction({ lockedNote: e.target.value })}
               />
             </label>
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "SET_TOOL", tool: { kind: "pickStandPoint", entityId: entity.id } })}
-              className={`flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-bold ${
-                state.tool.kind === "pickStandPoint" ? "bg-amber-500/20 text-amber-300" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-              }`}
-            >
-              <MapPin className="size-3.5" aria-hidden="true" />
-              {entity.interaction.standPoint ? "Cambiar punto de espera" : "Fijar punto de espera"}
-            </button>
+            <Tooltip content={help("property.standPoint").text} side="left" wide>
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "SET_TOOL", tool: { kind: "pickStandPoint", entityId: entity.id } })}
+                className={`flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-bold ${
+                  state.tool.kind === "pickStandPoint" ? "bg-amber-500/20 text-amber-300" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                <MapPin className="size-3.5" aria-hidden="true" />
+                {entity.interaction.standPoint ? "Cambiar punto de espera" : "Fijar punto de espera"}
+              </button>
+            </Tooltip>
           </>
         )}
       </section>

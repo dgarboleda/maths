@@ -39,8 +39,15 @@ export const DOOR_TYPE: EntityTypeDef = {
     enabledWhen: { kind: "always" },
   },
   properties: [
-    { kind: "polygonRef", key: "blockerPolygonId", label: "Bloqueador", default: "", role: "blocked" },
-    { kind: "image", key: "sprite", label: "Arte", default: "" },
+    {
+      kind: "polygonRef",
+      key: "blockerPolygonId",
+      label: "Bloqueador",
+      default: "",
+      role: "blocked",
+      hint: "La zona bloqueada que esta puerta activa/desactiva según su estado — dibujala primero con \"Zona prohibida\".",
+    },
+    { kind: "image", key: "sprite", label: "Arte", default: "", hint: "Ruta de una imagen que reemplaza el sprite por defecto de la puerta." },
   ],
   Render: DoorRender,
   resolveBlockerIds: (entity, activeState) => {

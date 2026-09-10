@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { ChartLine, Gift, LayoutDashboard, LogOut, Settings, Sparkles, Users, Wand2 } from "lucide-react";
+import { ChartLine, Gift, LayoutDashboard, LogOut, Map, Settings, Sparkles, Users, Wand2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { FamilyProvider } from "./FamilyProvider";
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/panel/progreso", label: "Progreso", icon: ChartLine, exact: false },
   { href: "/panel/recompensas", label: "Recompensas", icon: Gift, exact: false },
   { href: "/panel/editor", label: "Editor", icon: Wand2, exact: false },
+  { href: "/panel/editor/mundo", label: "Mundo", icon: Map, exact: false },
   { href: "/panel/ajustes", label: "Ajustes", icon: Settings, exact: false },
 ] as const;
 

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { WorldFlags } from "@/lib/world/questScene";
 
 const LAMPS = [
@@ -93,12 +94,11 @@ export function SceneFx({ terminalOn, medidorListo, compuertaVisible, cityRestor
       {/* Dra. Nia junto a la fuente */}
       <div className="absolute -translate-x-1/2 -translate-y-full" style={{ left: "49%", top: "63.5%" }}>
         <span className="absolute bottom-0 left-1/2 h-2.5 w-12 -translate-x-1/2 rounded-full bg-black/40 blur-sm" />
-        <img
+        <Image
           src="/illustrations/nia-standing.webp"
           alt=""
           width={768}
           height={1280}
-          loading="lazy"
           className="anim-idle relative h-[11vh] max-h-28 min-h-14 w-auto select-none"
           style={{ animationDelay: "-1.2s" }}
         />

@@ -1,9 +1,11 @@
 "use client";
 
+import { CircleHelp } from "lucide-react";
 import type { LevelDefinition, PropertyValue } from "@/lib/level/schema";
 import type { ActionParamDef } from "@/lib/level/events/catalog";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { FieldLabel } from "./PropertyFields";
 
-const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-amber-400/50";
 
 /**
@@ -28,7 +30,7 @@ export function ActionField({
     case "text":
       return (
         <label className="block">
-          <span className={LABEL_CLASS}>{field.label}</span>
+          <FieldLabel label={field.label} hint={field.hint} />
           <input type="text" className={INPUT_CLASS} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.target.value)} />
         </label>
       );
@@ -36,23 +38,32 @@ export function ActionField({
     case "number":
       return (
         <label className="block">
-          <span className={LABEL_CLASS}>{field.label}</span>
+          <FieldLabel label={field.label} hint={field.hint} />
           <input type="number" className={INPUT_CLASS} value={typeof value === "number" ? value : 0} onChange={(e) => onChange(Number(e.target.value))} />
         </label>
       );
 
     case "boolean":
       return (
-        <label className="flex items-center gap-2 py-1">
-          <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} className="size-4 rounded border-indigo-500/40" />
-          <span className="text-[11px] font-bold text-slate-300">{field.label}</span>
-        </label>
+        <div className="flex items-center gap-1 py-1">
+          <label className="flex flex-1 items-center gap-2">
+            <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} className="size-4 rounded border-indigo-500/40" />
+            <span className="text-[11px] font-bold text-slate-300">{field.label}</span>
+          </label>
+          {field.hint && (
+            <Tooltip content={field.hint} side="left" wide>
+              <button type="button" aria-label={`Ayuda sobre ${field.label}`} className="text-slate-500 hover:text-slate-300">
+                <CircleHelp className="size-3" aria-hidden="true" />
+              </button>
+            </Tooltip>
+          )}
+        </div>
       );
 
     case "select":
       return (
         <label className="block">
-          <span className={LABEL_CLASS}>{field.label}</span>
+          <FieldLabel label={field.label} hint={field.hint} />
           <select className={INPUT_CLASS} value={typeof value === "string" ? value : field.default} onChange={(e) => onChange(e.target.value)}>
             {field.options.map((o) => (
               <option key={o.value} value={o.value}>
@@ -65,7 +76,9 @@ export function ActionField({
 
     case "entityRef": {
       const options = level.entities.filter((e) => !field.ofType || field.ofType.includes(e.type));
-      return <RefSelect label={field.label} value={typeof value === "string" ? value : ""} onChange={onChange} options={options.map((e) => ({ id: e.id, label: e.name }))} />;
+      return (
+        <RefSelect label={field.label} hint={field.hint} value={typeof value === "string" ? value : ""} onChange={onChange} options={options.map((e) => ({ id: e.id, label: e.name }))} />
+      );
     }
 
     case "polygonRef": {
@@ -73,6 +86,7 @@ export function ActionField({
       return (
         <RefSelect
           label={field.label}
+          hint={field.hint}
           value={typeof value === "string" ? value : ""}
           onChange={onChange}
           options={options.map((p, i) => ({ id: p.id, label: `Polígono ${i + 1}` }))}
@@ -81,15 +95,20 @@ export function ActionField({
     }
 
     case "zoneRef":
-      return <RefSelect label={field.label} value={typeof value === "string" ? value : ""} onChange={onChange} options={level.zones.map((z) => ({ id: z.id, label: z.name }))} />;
+      return (
+        <RefSelect label={field.label} hint={field.hint} value={typeof value === "string" ? value : ""} onChange={onChange} options={level.zones.map((z) => ({ id: z.id, label: z.name }))} />
+      );
 
     case "dialogRef":
-      return <RefSelect label={field.label} value={typeof value === "string" ? value : ""} onChange={onChange} options={level.dialogs.map((d) => ({ id: d.id, label: d.name }))} />;
+      return (
+        <RefSelect label={field.label} hint={field.hint} value={typeof value === "string" ? value : ""} onChange={onChange} options={level.dialogs.map((d) => ({ id: d.id, label: d.name }))} />
+      );
 
     case "challengeRef":
       return (
         <RefSelect
           label={field.label}
+          hint={field.hint}
           value={typeof value === "string" ? value : ""}
           onChange={onChange}
           options={level.challenges.map((c) => ({ id: c.id, label: c.moduleId }))}
@@ -97,14 +116,28 @@ export function ActionField({
       );
 
     case "missionRef":
-      return <RefSelect label={field.label} value={typeof value === "string" ? value : ""} onChange={onChange} options={level.missions.map((m) => ({ id: m.id, label: m.title }))} />;
+      return (
+        <RefSelect label={field.label} hint={field.hint} value={typeof value === "string" ? value : ""} onChange={onChange} options={level.missions.map((m) => ({ id: m.id, label: m.title }))} />
+      );
   }
 }
 
-function RefSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: { id: string; label: string }[] }) {
+function RefSelect({
+  label,
+  hint,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  hint?: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { id: string; label: string }[];
+}) {
   return (
     <label className="block">
-      <span className={LABEL_CLASS}>{label}</span>
+      <FieldLabel label={label} hint={hint} />
       <select className={INPUT_CLASS} value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">— ninguno —</option>
         {options.map((o) => (

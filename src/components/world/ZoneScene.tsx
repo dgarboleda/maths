@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { getModule, masteredCountForStrand, moduleHref } from "@/lib/curriculum";
 import type { SkillProgress } from "@/lib/types";
@@ -54,13 +55,15 @@ export function ZoneScene({
         la imagen.
       */}
       <div aria-hidden="true" className="absolute inset-x-0 top-0 aspect-video overflow-hidden">
-        {/* aspect-video (los assets ya son ~16:9) en vez de h-auto: sin
-            dimensiones conocidas de antemano, un <img> sin cargar todavía
-            colapsa a alto 0 y el fondo desaparece hasta que termina de bajar. */}
-        <img
+        {/* aspect-video (los assets ya son ~16:9) en vez de h-auto: fija la
+            caja de antemano por CSS, así que `fill` siempre tiene un alto
+            real donde ocupar — nunca colapsa a 0 mientras la imagen carga. */}
+        <Image
           src={scene.background}
           alt=""
-          className="size-full object-cover brightness-[0.55] saturate-125"
+          fill
+          sizes="100vw"
+          className="object-cover brightness-[0.55] saturate-125"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/10 via-transparent to-slate-950" />
       </div>
@@ -103,10 +106,12 @@ export function ZoneScene({
               : "border-rose-400/30 bg-rose-950/60"
           }`}
         >
-          <img
+          <Image
             src={guardian.art}
             alt=""
             aria-hidden="true"
+            width={32}
+            height={32}
             className={`size-8 shrink-0 rounded-full border border-white/20 object-cover ${
               guardianDefeated ? "opacity-50 grayscale" : ""
             }`}

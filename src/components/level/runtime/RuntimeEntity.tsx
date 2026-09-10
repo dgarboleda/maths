@@ -1,5 +1,7 @@
+import type { CSSProperties } from "react";
 import { getEntityType } from "@/lib/level/entities";
-import type { LevelEntity } from "@/lib/level/schema";
+import { depthScaleFor } from "@/lib/level/depth";
+import type { LevelDepthConfig, LevelEntity } from "@/lib/level/schema";
 import { currentStateOf, isEntityVisible, type LevelRuntimeState } from "@/lib/level/runtime/state";
 
 /**
@@ -9,11 +11,30 @@ import { currentStateOf, isEntityVisible, type LevelRuntimeState } from "@/lib/l
  * el resalte de selección) y de dónde sale el estado activo: acá de
  * `LevelRuntimeState` (vivo, puede haber cambiado por un evento), no de
  * `entity.state.initial`.
+ *
+ * El wrapper que fija `--depth-scale` (docs/scene-25d-plan.md §D.4) es el
+ * mismo mecanismo que usa el editor (`EntityLayer.tsx`) — un solo cálculo
+ * compartido (`depthScaleFor`), cero lógica de profundidad dentro de
+ * `Render`/`EntityButton` más allá de leer esa variable.
  */
-export function RuntimeEntity({ entity, runtimeState, onInteract }: { entity: LevelEntity; runtimeState: LevelRuntimeState; onInteract: (entity: LevelEntity) => void }) {
+export function RuntimeEntity({
+  entity,
+  runtimeState,
+  onInteract,
+  depth,
+}: {
+  entity: LevelEntity;
+  runtimeState: LevelRuntimeState;
+  onInteract: (entity: LevelEntity) => void;
+  depth?: LevelDepthConfig;
+}) {
   if (!isEntityVisible(entity, runtimeState)) return null;
   const typeDef = getEntityType(entity.type);
   const activeState = currentStateOf(entity, runtimeState);
   const Render = typeDef.Render;
-  return <Render entity={entity} activeState={activeState} mode="runtime" selected={false} onSelect={() => onInteract(entity)} />;
+  return (
+    <div style={{ "--depth-scale": depthScaleFor(entity.position.y, depth) } as CSSProperties}>
+      <Render entity={entity} activeState={activeState} mode="runtime" selected={false} onSelect={() => onInteract(entity)} />
+    </div>
+  );
 }

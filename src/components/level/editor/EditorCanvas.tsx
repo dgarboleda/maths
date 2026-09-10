@@ -109,7 +109,12 @@ export function EditorCanvas() {
             antes que el div de clic-catching de navegación (ambos son
             `position: absolute` sin z-index — el orden en el DOM decide). */}
         {state.layerVisibility.entities && (
-          <EntityLayer entities={state.level.entities} selection={state.selection} onSelect={(id) => dispatch({ type: "SELECT", selection: { kind: "entity", id } })} />
+          <EntityLayer
+            entities={state.level.entities}
+            selection={state.selection}
+            onSelect={(id) => dispatch({ type: "SELECT", selection: { kind: "entity", id } })}
+            depth={state.level.depth}
+          />
         )}
         <SelectionLayer screenToImagePercent={screenToImagePercent} />
       </div>

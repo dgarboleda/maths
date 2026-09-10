@@ -9,6 +9,36 @@ function clampPct(n: number): number {
   return Math.min(100, Math.max(0, Math.round(n * 10) / 10));
 }
 
+export interface ShortcutDef {
+  id: string;
+  keys: string;
+  label: string;
+  group: "herramientas" | "edición" | "vista" | "archivo";
+}
+
+/**
+ * Descriptor de los atajos que implementa el `switch` de abajo — Fase 15
+ * (docs/level-editor-plan-v2.md §2.4). Antes estaban solo como literales
+ * dentro del `switch`, así que ningún tooltip podía mostrarlos sin
+ * duplicarlos a mano; ahora `IconButton`/`Tooltip` y `HelpOverlay` leen de
+ * acá, y si un atajo cambia, su tooltip cambia con él.
+ */
+export const SHORTCUTS: ShortcutDef[] = [
+  { id: "select", keys: "V", label: "Seleccionar", group: "herramientas" },
+  { id: "walkable", keys: "W", label: "Área transitable", group: "herramientas" },
+  { id: "blocked", keys: "B", label: "Zona prohibida", group: "herramientas" },
+  { id: "play", keys: "P", label: "Probar nivel", group: "archivo" },
+  { id: "save", keys: "Ctrl+S", label: "Guardar", group: "archivo" },
+  { id: "undo", keys: "Ctrl+Z", label: "Deshacer", group: "edición" },
+  { id: "redo", keys: "Ctrl+Shift+Z", label: "Rehacer", group: "edición" },
+  { id: "duplicate", keys: "Ctrl+D", label: "Duplicar entidad", group: "edición" },
+  { id: "delete", keys: "Supr", label: "Eliminar selección", group: "edición" },
+  { id: "escape", keys: "Esc", label: "Cancelar herramienta / deseleccionar", group: "edición" },
+  { id: "tab", keys: "Tab", label: "Recorrer entidades", group: "vista" },
+  { id: "move", keys: "←↑→↓", label: "Mover entidad seleccionada (0.5%)", group: "edición" },
+  { id: "moveFine", keys: "Shift+←↑→↓", label: "Mover entidad seleccionada (0.1%)", group: "edición" },
+];
+
 /**
  * Atajos de teclado del editor — docs/level-editor-plan.md §5.6/§17 Fase 13
  * (K8, modo teclado del canvas).

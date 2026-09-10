@@ -31,8 +31,8 @@ export const INTERACTIVE_TYPE: EntityTypeDef = {
     enabledWhen: { kind: "always" },
   },
   properties: [
-    { kind: "text", key: "headline", label: "Rótulo", default: "" },
-    { kind: "image", key: "sprite", label: "Arte", default: "" },
+    { kind: "text", key: "headline", label: "Rótulo", default: "", hint: "Título corto que se muestra al interactuar." },
+    { kind: "image", key: "sprite", label: "Arte", default: "", hint: "Ruta de una imagen que reemplaza el sprite por defecto." },
   ],
   Render: InteractiveRender,
 };

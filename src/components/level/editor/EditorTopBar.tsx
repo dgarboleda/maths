@@ -2,9 +2,11 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft, Play, Sparkles } from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useLevelEditor } from "./LevelEditorProvider";
 import { useStartPlaytest } from "./usePlaytestGate";
+import { help } from "./helpText";
 
 const SAVE_LABEL: Record<string, string> = {
   idle: "",
@@ -58,29 +60,50 @@ export function EditorTopBar() {
         className="min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-bold text-white hover:border-indigo-500/25 hover:bg-slate-800/60 focus:border-cyan-400/50 focus:bg-slate-800/60 focus:outline-none sm:max-w-xs"
       />
 
+      <Tooltip content={help("topbar.scene").text} side="bottom">
+        <button
+          type="button"
+          onClick={() => dispatch({ type: "SELECT", selection: { kind: "level" } })}
+          aria-pressed={state.selection.kind === "level"}
+          aria-label="Escena"
+          className={`flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold ${
+            state.selection.kind === "level"
+              ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-200"
+              : "border-indigo-500/25 bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          <Sparkles className="size-3.5" aria-hidden="true" />
+          <span className="hidden sm:inline">Escena</span>
+        </button>
+      </Tooltip>
+
       <span role="status" className="hidden text-xs font-semibold text-slate-400 sm:inline">
         {SAVE_LABEL[state.saveState]}
       </span>
 
-      <button
-        type="button"
-        onClick={() => void saveNow()}
-        disabled={state.saveState === "saving"}
-        className="flex min-h-9 items-center rounded-lg border border-indigo-500/25 bg-slate-800/60 px-3 text-xs font-bold text-slate-100 hover:bg-slate-800 disabled:opacity-40"
-      >
-        Guardar
-      </button>
+      <Tooltip content={help("topbar.save").text} shortcut={help("topbar.save").shortcut} side="bottom">
+        <button
+          type="button"
+          onClick={() => void saveNow()}
+          disabled={state.saveState === "saving"}
+          className="flex min-h-9 items-center rounded-lg border border-indigo-500/25 bg-slate-800/60 px-3 text-xs font-bold text-slate-100 hover:bg-slate-800 disabled:opacity-40"
+        >
+          Guardar
+        </button>
+      </Tooltip>
 
-      <button
-        type="button"
-        onClick={playtest.start}
-        disabled={playtest.disabled}
-        title={playtest.reason ?? undefined}
-        className="flex min-h-9 items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 text-xs font-bold text-white disabled:opacity-40"
-      >
-        <Play className="size-3.5" aria-hidden="true" />
-        Probar
-      </button>
+      <Tooltip content={playtest.reason ?? help("topbar.play").text} shortcut={help("topbar.play").shortcut} side="bottom">
+        <button
+          type="button"
+          aria-label="Probar"
+          onClick={playtest.start}
+          disabled={playtest.disabled}
+          className="flex min-h-9 items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 text-xs font-bold text-white disabled:opacity-40"
+        >
+          <Play className="size-3.5" aria-hidden="true" />
+          Probar
+        </button>
+      </Tooltip>
     </header>
   );
 }

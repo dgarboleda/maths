@@ -1,3 +1,4 @@
+import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { crearHijo, idDeHijo, otorgarDominio, registrarPadre, sesionDeHijo } from "./utilidades";
@@ -11,6 +12,20 @@ async function revisar(page: Page) {
     impacto: v.impact,
     nodos: v.nodes.map((n) => n.target.join(" ")),
   }));
+}
+
+/** Sube un fondo real antes de "Crear nivel" — sin la sección «De fábrica»
+ *  (docs/asset-management-plan.md), un padre nuevo no tiene ningún default
+ *  que auto-seleccionar. Mismo patrón que `crearYAbrirNivel` en
+ *  `editor.spec.ts`. */
+async function subirFondoParaCrear(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "+ Subir imagen" }).click();
+  await page.getByLabel(/Archivo \(WebP, PNG o JPEG\)/).setInputFiles(path.resolve(__dirname, "..", "public", "illustrations", "city-central.webp"));
+  const alt = page.getByLabel("Descripción (para lectores de pantalla)");
+  await expect(alt).toBeVisible({ timeout: 15_000 });
+  await alt.fill("Fondo de prueba");
+  await page.getByRole("button", { name: "Subir", exact: true }).click();
+  await expect(alt).toHaveCount(0, { timeout: 15_000 });
 }
 
 test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
@@ -200,12 +215,39 @@ test.describe("Análisis automático con axe (WCAG 2.1 A y AA)", () => {
     expect(await revisar(page), "formulario de nuevo nivel").toEqual([]);
   });
 
+  // docs/asset-management-plan.md §H.5: biblioteca de imágenes y diálogo de
+  // subida abiertos, no solo el selector de la creación de nivel (ya cubierto
+  // arriba).
+  test("Level Editor: panel «Escena», biblioteca de imágenes y subida abiertos", async ({ page }) => {
+    await registrarPadre(page);
+    await page.goto("/panel/editor");
+    await page.getByRole("button", { name: "Nuevo nivel" }).click();
+    await page.getByLabel("Nombre del nivel").fill("Nivel de assets");
+    await subirFondoParaCrear(page);
+    await page.getByRole("button", { name: "Crear nivel" }).click();
+    await expect(page.getByText("Nivel de assets", { exact: true }).first()).toBeVisible();
+    await page.getByRole("link", { name: "Abrir" }).click();
+    await expect(page.getByLabel("Nombre del nivel")).toHaveValue("Nivel de assets");
+
+    await page.getByRole("button", { name: "Escena" }).click();
+    await expect(page.getByRole("heading", { name: "Fondo", exact: true })).toBeVisible();
+    expect(await revisar(page), "panel Escena abierto").toEqual([]);
+
+    await page.getByText("Gestionar mis imágenes", { exact: false }).click();
+    expect(await revisar(page), "biblioteca de imágenes expandida").toEqual([]);
+
+    await page.getByRole("button", { name: "Subir imagen" }).first().click();
+    await expect(page.getByLabel(/Archivo \(WebP, PNG o JPEG\)/)).toBeVisible();
+    expect(await revisar(page), "diálogo de subida abierto").toEqual([]);
+  });
+
   test("Level Editor: lienzo, panel de propiedades y Play Test de un nivel", async ({ page }) => {
     await registrarPadre(page);
     await crearHijo(page, { nombre: "Ana" });
     await page.goto("/panel/editor");
     await page.getByRole("button", { name: "Nuevo nivel" }).click();
     await page.getByLabel("Nombre del nivel").fill("Nivel de accesibilidad");
+    await subirFondoParaCrear(page);
     await page.getByRole("button", { name: "Crear nivel" }).click();
     await expect(page.getByText("Nivel de accesibilidad", { exact: true }).first()).toBeVisible();
     await page.getByRole("link", { name: "Abrir" }).click();

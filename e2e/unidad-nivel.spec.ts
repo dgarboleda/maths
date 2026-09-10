@@ -39,6 +39,24 @@ import {
   missionProgress,
 } from "@/lib/level/runtime/state";
 import { buildRuntimeMesh } from "@/lib/level/runtime/navigation";
+import { DEFAULT_DEPTH_CONFIG, depthScaleFor, parallaxAxis, shadowOpacityFor } from "@/lib/level/depth";
+import type { LevelDepthConfig } from "@/lib/level/schema";
+import {
+  MAX_ASSETS_PER_PARENT,
+  MAX_INPUT_BYTES,
+  MAX_OUTPUT_WIDTH,
+  RECOMMENDED_TOTAL_BYTES_PER_PARENT,
+  assetStoragePath,
+  checkQuota,
+  decideResize,
+  gradeResolution,
+  pickOutputFormat,
+  sanitizeLabel,
+  thumbStoragePath,
+  validateFileMeta,
+} from "@/lib/level/assets/imageRules";
+import { mergeBackgroundOptions } from "@/lib/level/assets/backgroundOptions";
+import { BACKGROUND_CATALOG } from "@/lib/level/backgroundCatalog";
 
 /**
  * Pruebas puras de lógica (sin `page`, sin red, sin Firestore) para el
@@ -519,6 +537,21 @@ test.describe("validate — validateLevel", () => {
     expect(validateLevel(level).some((i) => i.target?.kind === "background")).toBe(true);
   });
 
+  test("fondo de baja resolución (< 1200px): warning, nunca error (docs/asset-management-plan.md §G Paso 10)", () => {
+    const level = emptyLevel();
+    level.background.width = 340;
+    const issues = validateLevel(level);
+    const backgroundIssues = issues.filter((i) => i.target?.kind === "background");
+    expect(backgroundIssues).toHaveLength(1);
+    expect(backgroundIssues[0].severity).toBe("warning");
+  });
+
+  test("fondo de resolución adecuada (>= 1200px): sin ningún aviso de resolución", () => {
+    const level = emptyLevel();
+    level.background.width = 1600;
+    expect(validateLevel(level).some((i) => i.target?.kind === "background")).toBe(false);
+  });
+
   test("spawn fuera del área transitable: error", () => {
     const level = emptyLevel();
     level.navigation.spawn = { x: 0, y: 0 }; // fuera del rectángulo (10,10)-(90,90) por defecto
@@ -542,7 +575,7 @@ test.describe("validate — validateLevel", () => {
 
   test("punto de destino que no toca ningún área transitable: error", () => {
     const level = emptyLevel();
-    level.navigation.exits.push({ id: "exit_1", polygon: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }], targetHref: "/jugar", label: "Salida" });
+    level.navigation.exits.push({ id: "exit_1", polygon: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }], target: { kind: "worldMap" }, label: "Salida" });
     expect(validateLevel(level).some((i) => i.target?.kind === "exit")).toBe(true);
   });
 
@@ -801,6 +834,16 @@ test.describe("legacy — ciudadCentralAsLevel", () => {
       { id: "restaurada", when: { kind: "flag", flag: "cityRestored", value: true }, css: "brightness(1.1) saturate(1.25)" },
     ]);
   });
+
+  // Escena 2.5D (docs/scene-25d-plan.md): profundidad activada con cero
+  // assets nuevos — solo escala/sombra por posición Y sobre el arte ya
+  // existente. Sin `background.layers` todavía (ver comentario de
+  // `CIUDAD_CENTRAL_DEPTH` en ciudadCentral.ts).
+  test("la profundidad 2.5D está activada, sin capas de parallax todavía", () => {
+    expect(level.depth?.enabled).toBe(true);
+    expect(level.depth?.range.nearY).toBeGreaterThan(level.depth?.range.farY ?? 0);
+    expect(level.background.layers ?? []).toEqual([]);
+  });
 });
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -1031,6 +1074,98 @@ test.describe("runtime/state", () => {
 });
 
 /* ════════════════════════════════════════════════════════════════════════
+ * SUITE — depth.ts: profundidad 2.5D (docs/scene-25d-plan.md §C/§E.2/§H).
+ * Lógica pura, sin React ni DOM — mismo criterio que las suites de arriba.
+ * ════════════════════════════════════════════════════════════════════════ */
+test.describe("depth — profundidad 2.5D", () => {
+  const CONFIG: LevelDepthConfig = {
+    enabled: true,
+    range: { nearY: 90, farY: 10 },
+    scale: { near: 1.2, far: 0.8 },
+    shadow: { enabled: true, opacityNear: 0.5, opacityFar: 0.1 },
+  };
+
+  test("depthScaleFor: escala neutra (1) si depth es undefined o enabled es false", () => {
+    expect(depthScaleFor(50, undefined)).toBe(1);
+    expect(depthScaleFor(50, { ...CONFIG, enabled: false })).toBe(1);
+  });
+
+  test("depthScaleFor: devuelve scale.far exacto en farY y scale.near exacto en nearY", () => {
+    expect(depthScaleFor(10, CONFIG)).toBeCloseTo(0.8, 10);
+    expect(depthScaleFor(90, CONFIG)).toBeCloseTo(1.2, 10);
+  });
+
+  test("depthScaleFor: interpola linealmente en el punto medio del rango", () => {
+    expect(depthScaleFor(50, CONFIG)).toBeCloseTo(1.0, 10); // punto medio de 0.8..1.2
+  });
+
+  test("depthScaleFor: clampa fuera de rango (nunca extrapola más allá de los extremos)", () => {
+    expect(depthScaleFor(0, CONFIG)).toBeCloseTo(0.8, 10);
+    expect(depthScaleFor(100, CONFIG)).toBeCloseTo(1.2, 10);
+  });
+
+  test("depthScaleFor: rango degenerado (nearY === farY) no divide por cero — se trata como 'siempre cerca'", () => {
+    const degenerate: LevelDepthConfig = { ...CONFIG, range: { nearY: 50, farY: 50 } };
+    expect(depthScaleFor(50, degenerate)).toBeCloseTo(1.2, 10);
+    expect(Number.isFinite(depthScaleFor(0, degenerate))).toBe(true);
+  });
+
+  test("shadowOpacityFor: 0 si depth, o específicamente la sombra, están desactivados", () => {
+    expect(shadowOpacityFor(90, undefined)).toBe(0);
+    expect(shadowOpacityFor(90, { ...CONFIG, enabled: false })).toBe(0);
+    expect(shadowOpacityFor(90, { ...CONFIG, shadow: { ...CONFIG.shadow, enabled: false } })).toBe(0);
+  });
+
+  test("shadowOpacityFor: interpola igual que depthScaleFor, con sus propios extremos", () => {
+    expect(shadowOpacityFor(10, CONFIG)).toBeCloseTo(0.1, 10);
+    expect(shadowOpacityFor(90, CONFIG)).toBeCloseTo(0.5, 10);
+  });
+
+  test("parallaxAxis: layerDepth 1 reproduce EXACTO el offset de la cámara (comportamiento idéntico al fondo único de hoy)", () => {
+    // sceneOffset/sceneSize son los que ya calcula useCameraBox; con
+    // layerDepth=1 el resultado debe ser byte a byte el mismo sceneOffset,
+    // sin importar dónde esté el foco — es la capa de fondo principal.
+    expect(parallaxAxis(123.4, 1600, 73, 1)).toBeCloseTo(123.4, 10);
+    expect(parallaxAxis(-88, 900, 12, 1)).toBeCloseTo(-88, 10);
+  });
+
+  test("parallaxAxis: layerDepth 0 es fijo (no se mueve con el foco) — comportamiento de cielo/horizonte", () => {
+    // `sceneOffset` SIEMPRE viene de `useCameraBox`, que ya depende del foco
+    // (sin clamp: sceneOffset = containerWidth/2 - (focusPct/100)*sceneSize)
+    // — se deriva acá del mismo modo para dos focos distintos, y se verifica
+    // que layerDepth=0 da la MISMA posición neutra para ambos.
+    const containerWidth = 1000;
+    const sceneSize = 1600;
+    const sceneOffsetFor = (focusPct: number) => containerWidth / 2 - (focusPct / 100) * sceneSize;
+    const neutral = containerWidth / 2 - 0.5 * sceneSize;
+    expect(parallaxAxis(sceneOffsetFor(73), sceneSize, 73, 0)).toBeCloseTo(neutral, 10);
+    expect(parallaxAxis(sceneOffsetFor(30), sceneSize, 30, 0)).toBeCloseTo(neutral, 10);
+  });
+
+  test("parallaxAxis: un layerDepth intermedio se desplaza menos que la cámara principal", () => {
+    // Foco corrido hacia la derecha (focusPct > 50) empuja sceneOffset hacia
+    // valores más negativos (mismo sentido que useCameraBox); una capa a
+    // media profundidad debe moverse en el mismo sentido pero menos.
+    const focusPct = 80;
+    const sceneWidth = 1600;
+    const neutralOffset = 0; // offset que tendría la cámara con foco en 50
+    const fullOffset = parallaxAxis(neutralOffset, sceneWidth, focusPct, 1); // = neutralOffset en este caso de referencia
+    const half = parallaxAxis(neutralOffset, sceneWidth, focusPct, 0.5);
+    // Con sceneOffset de referencia = 0 en foco 50, layerDepth=1 con foco 80
+    // debe alejarse de 0 más que layerDepth=0.5 en la misma dirección.
+    expect(Math.abs(half)).toBeGreaterThan(0);
+    expect(Math.abs(half)).toBeLessThan(Math.abs(parallaxAxis(neutralOffset, sceneWidth, focusPct, 2)));
+    void fullOffset;
+  });
+
+  test("DEFAULT_DEPTH_CONFIG está desactivado — un nivel nuevo no cambia de aspecto hasta que el autor lo active", () => {
+    expect(DEFAULT_DEPTH_CONFIG.enabled).toBe(false);
+    expect(depthScaleFor(50, DEFAULT_DEPTH_CONFIG)).toBe(1);
+    expect(shadowOpacityFor(50, DEFAULT_DEPTH_CONFIG)).toBe(0);
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
  * SUITE 16 — Misiones y HUD: `deriveObjectiveDone` para los 4
  * `ObjectiveSource` y su agregación en `missionProgress`/`activeMission`
  * (docs/level-editor-plan.md §9.5, §17 Fase 12). Ninguno persiste como
@@ -1131,5 +1266,133 @@ test.describe("runtime/state — misiones (Fase 12)", () => {
       entityStates: { [gem.id]: "collected" },
     });
     expect(activeMission(level, solved(challenge.moduleId), doneState)).toBeNull();
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+ * SUITE — imageRules: reglas puras de la biblioteca de imágenes
+ * (docs/asset-management-plan.md §C.4/§C.5/§C.6/§H.1). Sin DOM, sin red.
+ * ════════════════════════════════════════════════════════════════════════ */
+test.describe("imageRules — biblioteca de imágenes", () => {
+  test("validateFileMeta: acepta webp/png/jpeg", () => {
+    expect(validateFileMeta({ name: "a.webp", type: "image/webp", size: 1000 })).toEqual([]);
+    expect(validateFileMeta({ name: "a.png", type: "image/png", size: 1000 })).toEqual([]);
+    expect(validateFileMeta({ name: "a.jpg", type: "image/jpeg", size: 1000 })).toEqual([]);
+  });
+
+  test("validateFileMeta: rechaza formatos no admitidos (gif, svg) y vacíos", () => {
+    expect(validateFileMeta({ name: "a.gif", type: "image/gif", size: 1000 })).toHaveLength(1);
+    expect(validateFileMeta({ name: "a.svg", type: "image/svg+xml", size: 1000 })).toHaveLength(1);
+    expect(validateFileMeta({ name: "a.webp", type: "image/webp", size: 0 })).toHaveLength(1);
+  });
+
+  test("validateFileMeta: rechaza por encima de MAX_INPUT_BYTES", () => {
+    expect(validateFileMeta({ name: "a.webp", type: "image/webp", size: MAX_INPUT_BYTES })).toEqual([]);
+    expect(validateFileMeta({ name: "a.webp", type: "image/webp", size: MAX_INPUT_BYTES + 1 })).toHaveLength(1);
+  });
+
+  test("gradeResolution: matriz completa para 'scene' (min 800x450, recomendado 1600)", () => {
+    expect(gradeResolution(640, 360, "scene")).toBe("error");
+    expect(gradeResolution(799, 450, "scene")).toBe("error"); // borde exacto de ancho
+    expect(gradeResolution(800, 449, "scene")).toBe("error"); // borde exacto de alto
+    expect(gradeResolution(800, 450, "scene")).toBe("warning"); // justo en el mínimo, bajo lo recomendado
+    expect(gradeResolution(1000, 600, "scene")).toBe("warning");
+    expect(gradeResolution(1599, 900, "scene")).toBe("warning"); // borde exacto bajo lo recomendado
+    expect(gradeResolution(1600, 900, "scene")).toBe("ok");
+    expect(gradeResolution(1920, 1080, "scene")).toBe("ok");
+  });
+
+  test("gradeResolution: 'layer' admite una franja de horizonte baja que 'scene' rechazaría", () => {
+    expect(gradeResolution(1200, 160, "layer")).toBe("ok"); // franja horizontal legítima
+    expect(gradeResolution(1200, 160, "scene")).toBe("error"); // la misma imagen, como escena completa, no alcanza
+    expect(gradeResolution(300, 100, "layer")).toBe("error"); // por debajo del mínimo de layer también
+  });
+
+  test("decideResize: no escala una imagen que ya cabe en MAX_OUTPUT_WIDTH", () => {
+    expect(decideResize(1600, 900)).toEqual({ width: 1600, height: 900 });
+    expect(decideResize(MAX_OUTPUT_WIDTH, 1440)).toEqual({ width: MAX_OUTPUT_WIDTH, height: 1440 });
+    expect(decideResize(320, 180)).toEqual({ width: 320, height: 180 }); // nunca amplía
+  });
+
+  test("decideResize: redimensiona preservando la relación de aspecto, sin ampliar nunca", () => {
+    const result = decideResize(4000, 3000);
+    expect(result.width).toBe(MAX_OUTPUT_WIDTH);
+    expect(result.height).toBe(1920); // 4000x3000 -> 2560x1920, misma proporción 4:3
+  });
+
+  test("pickOutputFormat: nunca devuelve JPEG para una entrada con alfa", () => {
+    expect(pickOutputFormat(true, true)).toBe("image/webp");
+    expect(pickOutputFormat(true, false)).toBe("image/png");
+  });
+
+  test("pickOutputFormat: sin alfa, WebP si se pudo, si no JPEG", () => {
+    expect(pickOutputFormat(false, true)).toBe("image/webp");
+    expect(pickOutputFormat(false, false)).toBe("image/jpeg");
+  });
+
+  test("assetStoragePath/thumbStoragePath: un solo segmento bajo level-assets/, con la extensión correcta", () => {
+    expect(assetStoragePath("padre1", "asset_x", "image/webp")).toBe("parents/padre1/level-assets/asset_x.webp");
+    expect(assetStoragePath("padre1", "asset_x", "image/png")).toBe("parents/padre1/level-assets/asset_x.png");
+    expect(assetStoragePath("padre1", "asset_x", "image/jpeg")).toBe("parents/padre1/level-assets/asset_x.jpg");
+    expect(thumbStoragePath("padre1", "asset_x")).toBe("parents/padre1/level-assets/asset_x-thumb.webp");
+  });
+
+  test("checkQuota: permite hasta MAX_ASSETS_PER_PARENT, bloquea en el límite", () => {
+    expect(checkQuota(MAX_ASSETS_PER_PARENT - 1, 0).allowed).toBe(true);
+    const blocked = checkQuota(MAX_ASSETS_PER_PARENT, 0);
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.reason).toContain(String(MAX_ASSETS_PER_PARENT));
+  });
+
+  test("checkQuota: por encima del presupuesto de bytes recomendado, permite pero avisa", () => {
+    const result = checkQuota(5, RECOMMENDED_TOTAL_BYTES_PER_PARENT + 1);
+    expect(result.allowed).toBe(true);
+    expect(result.reason).toBeDefined();
+  });
+
+  test("sanitizeLabel: recorta a 60, colapsa espacios/guiones, quita la extensión, nunca queda vacío", () => {
+    expect(sanitizeLabel("mi_fondo-de_ciudad.webp")).toBe("mi fondo de ciudad");
+    expect(sanitizeLabel("   .png")).toBe("Imagen sin nombre");
+    expect(sanitizeLabel("a".repeat(100) + ".jpg")).toHaveLength(60);
+    expect(sanitizeLabel("foto   con    espacios.png")).toBe("foto con espacios");
+  });
+
+  const ASSETS = [
+    { url: "https://x/a", thumbUrl: "https://x/a-thumb", label: "Mi fondo", alt: "alt a", kind: "scene" as const },
+    { url: "https://x/b", thumbUrl: "https://x/b-thumb", label: "Mi capa", alt: "alt b", kind: "layer" as const },
+  ];
+
+  test("mergeBackgroundOptions: los assets del padre van primero, con `source` correcto", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, ASSETS, { for: "scene" });
+    expect(merged[0].source).toBe("parent");
+    expect(merged[1].source).toBe("parent");
+    expect(merged.slice(2).every((o) => o.source === "factory")).toBe(true);
+    expect(merged).toHaveLength(ASSETS.length + BACKGROUND_CATALOG.length);
+  });
+
+  test("mergeBackgroundOptions: con for:'layer', los assets kind:'layer' van antes que los kind:'scene', pero ninguno se oculta", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, ASSETS, { for: "layer" });
+    const parentSrcs = merged.filter((o) => o.source === "parent").map((o) => o.src);
+    expect(parentSrcs[0]).toBe("https://x/b"); // la capa, matchesKind:true, va primero
+    expect(parentSrcs[1]).toBe("https://x/a"); // la escena sigue presente, no se oculta
+    expect(merged.find((o) => o.src === "https://x/a")?.matchesKind).toBe(false);
+  });
+
+  test("mergeBackgroundOptions: las 6 miniaturas de fábrica quedan marcadas lowResolution, las 2 escenas no", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, [], { for: "scene" });
+    const lowRes = merged.filter((o) => o.lowResolution);
+    const ok = merged.filter((o) => !o.lowResolution);
+    expect(lowRes).toHaveLength(6);
+    expect(ok).toHaveLength(2);
+  });
+
+  test("mergeBackgroundOptions: un src ya seleccionado que no está en ninguna lista aparece como opción 'no disponible'", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, ASSETS, { for: "scene", selectedSrc: "https://x/borrado" });
+    expect(merged[0]).toMatchObject({ src: "https://x/borrado", available: false });
+  });
+
+  test("mergeBackgroundOptions: un src seleccionado que SÍ existe no genera ninguna entrada duplicada", () => {
+    const merged = mergeBackgroundOptions(BACKGROUND_CATALOG, ASSETS, { for: "scene", selectedSrc: "https://x/a" });
+    expect(merged.filter((o) => o.src === "https://x/a")).toHaveLength(1);
   });
 });

@@ -28,8 +28,8 @@ export const COLLECTIBLE_TYPE: EntityTypeDef = {
     enabledWhen: { kind: "always" },
   },
   properties: [
-    { kind: "image", key: "art", label: "Arte", default: "" },
-    { kind: "text", key: "label", label: "Etiqueta", default: "" },
+    { kind: "image", key: "art", label: "Arte", default: "", hint: "Ruta de una imagen que reemplaza el sprite por defecto de este coleccionable." },
+    { kind: "text", key: "label", label: "Etiqueta", default: "", hint: "Texto corto que se muestra al recogerlo." },
   ],
   Render: CollectibleRender,
 };

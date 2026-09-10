@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Modelo idéntico al de firestore.rules: /parents/{parentId} es el padre
+// autenticado (parentId == auth.uid) y todo cuelga debajo. Un asset
+// pertenece al padre que lo subió; nadie más lo lista, lo sustituye ni lo
+// borra. Los niveles de ese padre son los únicos que lo referencian
+// (docs/asset-management-plan.md §F.1).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isParent(parentId) {
+      return request.auth != null && request.auth.uid == parentId;
+    }
+
+    match /parents/{parentId}/level-assets/{assetFile} {
+      allow read: if isParent(parentId);
+
+      // Frontera de seguridad REAL (no una guarda de UX): tamaño y tipo.
+      // El redimensionado en cliente apunta a ~400KB; estos 4MB son el
+      // techo duro que impide que un cliente modificado llene el bucket.
+      //
+      // `resource == null` es la parte que hace el path inmutable de
+      // verdad: en Storage Rules, subir bytes nuevos a un path que YA tiene
+      // un objeto pasa por esta misma regla `create` (no por `update` —
+      // `update` es solo para `updateMetadata()` sin tocar los bytes), así
+      // que sin esta condición cualquiera podría sobrescribir un asset ya
+      // guardado subiendo al mismo `storagePath`. Verificado con una
+      // prueba real contra el emulador (e2e/editor-assets.spec.ts) antes de
+      // dar esta regla por buena — la primera versión, sin `resource ==
+      // null`, dejaba pasar la sobrescritura silenciosamente.
+      allow create: if isParent(parentId)
+                    && resource == null
+                    && request.resource.size < 4 * 1024 * 1024
+                    && request.resource.contentType.matches('image/(webp|png|jpeg)');
+
+      // Metadata inmutable también, igual que /levels/{id}/versions/{n} en
+      // firestore.rules: sustituir una imagen se hace subiendo un asset
+      // nuevo, nunca pisando uno al que ya apunta un nivel guardado.
+      allow update: if false;
+
+      allow delete: if isParent(parentId);
+    }
+
+    // Catch-all, mismo criterio que firestore.rules.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { KIND_ICON, type InteractionKind } from "@/lib/world/scenes";
 import { STATE_LABEL, type WorldState } from "@/lib/world/state";
 
@@ -49,10 +50,12 @@ export function Hotspot({
       className="group relative block w-full focus:outline-none"
     >
       {showThreat && (
-        <img
+        <Image
           src={nullThreat.art}
           alt=""
           aria-hidden="true"
+          width={24}
+          height={24}
           className="absolute -right-1 -top-1 z-10 size-6 rounded-full border-2 border-slate-950 object-cover shadow-[0_0_8px_rgba(0,0,0,0.6)]"
         />
       )}

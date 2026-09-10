@@ -4,8 +4,11 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import type { ConditionExpr, LevelActionType, LevelEventType, PropertyValue } from "@/lib/level/schema";
 import { ACTION_TYPES, defaultActionParams } from "@/lib/level/events/catalog";
+import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useLevelEditor } from "./LevelEditorProvider";
 import { ActionField } from "./fields/ActionFields";
+import { help } from "./helpText";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-amber-400/50";
@@ -71,9 +74,7 @@ export function EventChainEditor() {
     <div className="space-y-3 text-xs">
       <div className="flex items-center gap-2">
         <h2 className="min-w-0 flex-1 truncate text-[13px] font-bold text-slate-100">Regla de evento</h2>
-        <button type="button" aria-label="Eliminar regla" onClick={() => dispatch({ type: "DELETE_EVENT", id: rule.id })} className="rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10">
-          <Trash2 className="size-4" aria-hidden="true" />
-        </button>
+        <IconButton icon={Trash2} label="Eliminar regla" tooltip={help("event.delete").text} side="left" tone="danger" onClick={() => dispatch({ type: "DELETE_EVENT", id: rule.id })} />
       </div>
 
       <label className="block">
@@ -144,21 +145,9 @@ export function EventChainEditor() {
                   </option>
                 ))}
               </select>
-              <button type="button" aria-label="Subir" onClick={() => moveAction(i, -1)} disabled={i === 0} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-800 disabled:opacity-30">
-                <ChevronUp className="size-3.5" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                aria-label="Bajar"
-                onClick={() => moveAction(i, 1)}
-                disabled={i === rule.actions.length - 1}
-                className="rounded-md p-1.5 text-slate-400 hover:bg-slate-800 disabled:opacity-30"
-              >
-                <ChevronDown className="size-3.5" aria-hidden="true" />
-              </button>
-              <button type="button" aria-label="Quitar acción" onClick={() => removeAction(i)} className="rounded-md p-1.5 text-rose-400 hover:bg-rose-500/10">
-                <Trash2 className="size-3.5" aria-hidden="true" />
-              </button>
+              <IconButton icon={ChevronUp} label="Subir" tooltip={help("event.moveActionUp").text} side="top" disabled={i === 0} onClick={() => moveAction(i, -1)} />
+              <IconButton icon={ChevronDown} label="Bajar" tooltip={help("event.moveActionDown").text} side="top" disabled={i === rule.actions.length - 1} onClick={() => moveAction(i, 1)} />
+              <IconButton icon={Trash2} label="Quitar acción" tooltip={help("event.removeAction").text} side="left" tone="danger" onClick={() => removeAction(i)} />
             </div>
 
             <label className="block">
@@ -177,10 +166,12 @@ export function EventChainEditor() {
             ))}
           </div>
         ))}
-        <button type="button" onClick={addAction} className="flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700">
-          <Plus className="size-3.5" aria-hidden="true" />
-          Añadir acción
-        </button>
+        <Tooltip content={help("event.addAction").text} side="top">
+          <button type="button" onClick={addAction} className="flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-800 px-2 py-1.5 font-bold text-slate-300 hover:bg-slate-700">
+            <Plus className="size-3.5" aria-hidden="true" />
+            Añadir acción
+          </button>
+        </Tooltip>
       </section>
     </div>
   );
@@ -289,24 +280,28 @@ function ConditionEditor({ expr, onChange, depth = 0 }: { expr: ConditionExpr; o
                   }}
                 />
               </div>
-              <button
-                type="button"
-                aria-label="Quitar condición"
-                onClick={() => onChange({ kind: expr.kind, of: expr.of.filter((_, j) => j !== i) })}
-                className="mt-1 shrink-0 rounded-md p-1 text-rose-400 hover:bg-rose-500/10"
-              >
-                <Trash2 className="size-3.5" aria-hidden="true" />
-              </button>
+              <div className="mt-1">
+                <IconButton
+                  icon={Trash2}
+                  label="Quitar condición"
+                  tooltip={help("event.removeCondition").text}
+                  side="left"
+                  tone="danger"
+                  onClick={() => onChange({ kind: expr.kind, of: expr.of.filter((_, j) => j !== i) })}
+                />
+              </div>
             </div>
           ))}
-          <button
-            type="button"
-            onClick={() => onChange({ kind: expr.kind, of: [...expr.of, { kind: "always" }] })}
-            className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold text-slate-400 hover:bg-slate-800"
-          >
-            <Plus className="size-3" aria-hidden="true" />
-            Añadir condición
-          </button>
+          <Tooltip content={help("event.addCondition").text} side="top">
+            <button
+              type="button"
+              onClick={() => onChange({ kind: expr.kind, of: [...expr.of, { kind: "always" }] })}
+              className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold text-slate-400 hover:bg-slate-800"
+            >
+              <Plus className="size-3" aria-hidden="true" />
+              Añadir condición
+            </button>
+          </Tooltip>
         </div>
       )}
 

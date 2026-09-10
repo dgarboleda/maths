@@ -63,6 +63,25 @@ service cloud.firestore {
           allow update, delete: if false;
         }
       }
+
+      // Metadata de las imágenes subidas por el padre-autor
+      // (docs/asset-management-plan.md §C.2). El archivo vive en Storage
+      // (storage.rules); acá solo su ficha: etiqueta, tipo, dimensiones.
+      match /levelAssets/{assetId} {
+        allow read, write: if isParent(parentId);
+      }
+
+      // Mundo del juego: historia, capítulos, grafo de niveles, reglas
+      // generales y catálogo de avatares (docs/level-editor-plan-v2.md §3).
+      // Mismo dueño y mismo versionado inmutable que /levels.
+      match /world/{worldId} {
+        allow read, write: if isParent(parentId);
+        match /versions/{versionId} {
+          allow read: if isParent(parentId);
+          allow create: if isParent(parentId);
+          allow update, delete: if false;
+        }
+      }
     }
 
     // Contenido curricular: catálogo compartido de hilos/unidades, de solo

@@ -1,5 +1,6 @@
 import { LEVEL_SCHEMA_VERSION, type LevelBackground, type LevelDefinition } from "./schema";
 import { newLevelId, newPolygonId } from "./ids";
+import { DEFAULT_DEPTH_CONFIG } from "./depth";
 
 /**
  * Nivel nuevo, jugable desde el minuto cero: un polígono transitable
@@ -39,5 +40,10 @@ export function createEmptyLevel(authorUid: string, name: string, background: Le
     missions: [],
     events: [],
     metadata: { authorUid, createdAt: now, updatedAt: now },
+    // Desactivada por defecto (docs/scene-25d-plan.md §E.4): el autor la
+    // activa explícitamente desde el panel de propiedades del nivel — un
+    // nivel nuevo se ve y se comporta igual que antes de esta fase hasta
+    // que alguien la enciende a propósito.
+    depth: { ...DEFAULT_DEPTH_CONFIG },
   };
 }

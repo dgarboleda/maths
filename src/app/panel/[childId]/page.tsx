@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Brain, ChartLine, Flame, History, Map as MapIcon, Medal, Play, Star, Target } from "lucide-react";
@@ -204,7 +205,7 @@ export default function ChildDetailPage() {
                 }`}
               >
                 {b.image ? (
-                  <img src={b.image} alt="" aria-hidden="true" className="size-6" />
+                  <Image src={b.image} alt="" aria-hidden="true" width={24} height={24} className="size-6" />
                 ) : (
                   <span aria-hidden="true" className="text-xl">
                     {b.emoji}
