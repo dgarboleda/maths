@@ -4,15 +4,37 @@ import { Plus, Trash2 } from "lucide-react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { DEFAULT_DEPTH_CONFIG } from "@/lib/level/depth";
 import { getEntityType } from "@/lib/level/entities";
-import { newBackgroundLayerId } from "@/lib/level/ids";
-import type { LevelBackgroundLayer, LevelDepthConfig } from "@/lib/level/schema";
+import { newBackgroundFilterId, newBackgroundLayerId } from "@/lib/level/ids";
+import type { LevelBackgroundFilter, LevelBackgroundLayer, LevelDepthConfig } from "@/lib/level/schema";
 import { IconButton } from "@/components/ui/IconButton";
 import { useLevelEditor } from "./LevelEditorProvider";
 import { BackgroundPicker } from "./assets/BackgroundPicker";
+import { ConditionEditor } from "./ConditionEditor";
+import { FieldLabel } from "./fields/PropertyFields";
 import { help } from "./helpText";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50";
+
+const EFFECT_OPTIONS: { value: LevelBackgroundLayer["effect"]; label: string }[] = [
+  { value: "none", label: "Ninguno" },
+  { value: "fog", label: "Niebla" },
+  { value: "rain", label: "Lluvia" },
+  { value: "snow", label: "Nieve" },
+  { value: "lightning", label: "Rayos" },
+  { value: "particles", label: "Partículas" },
+  { value: "glow", label: "Brillo ambiental" },
+];
+
+/**
+ * Puntos de partida razonables para "Añadir filtro de noche/día" — las dos
+ * caras de la MISMA bandera (`noche`, prendida/apagada desde una regla de
+ * evento con `SET_FLAG`), para que un nivel con ciclo día-noche real quede
+ * armado con un clic en cada botón; el autor solo ajusta el nombre de la
+ * bandera si ya usa otro en su nivel.
+ */
+const NIGHT_FILTER_PRESET = { flag: "noche", value: true, css: "brightness(0.55) saturate(0.8) hue-rotate(200deg)" };
+const DAY_FILTER_PRESET = { flag: "noche", value: false, css: "brightness(1.08) saturate(1.05)" };
 
 /**
  * Panel de propiedades del NIVEL (`selection.kind === "level"`,
@@ -28,6 +50,7 @@ export function DepthPanel() {
   const { state, dispatch } = useLevelEditor();
   const depth: LevelDepthConfig = state.level.depth ?? DEFAULT_DEPTH_CONFIG;
   const layers = state.level.background.layers ?? [];
+  const filters = state.level.background.filters ?? [];
 
   function setDepth(patch: Partial<LevelDepthConfig>) {
     dispatch({ type: "SET_LEVEL_FIELD", patch: { depth: { ...depth, ...patch } } });
@@ -35,6 +58,27 @@ export function DepthPanel() {
 
   function setLayers(next: LevelBackgroundLayer[]) {
     dispatch({ type: "SET_BACKGROUND", background: { ...state.level.background, layers: next } });
+  }
+
+  function setFilters(next: LevelBackgroundFilter[]) {
+    dispatch({ type: "SET_BACKGROUND", background: { ...state.level.background, filters: next } });
+  }
+
+  function addFilter(preset?: { flag: string; value: boolean; css: string }) {
+    const filter: LevelBackgroundFilter = {
+      id: newBackgroundFilterId(),
+      when: preset ? { kind: "flag", flag: preset.flag, value: preset.value } : { kind: "always" },
+      css: preset?.css ?? "",
+    };
+    setFilters([...filters, filter]);
+  }
+
+  function updateFilter(id: string, patch: Partial<LevelBackgroundFilter>) {
+    setFilters(filters.map((f) => (f.id === id ? { ...f, ...patch } : f)));
+  }
+
+  function deleteFilter(id: string) {
+    setFilters(filters.filter((f) => f.id !== id));
   }
 
   function addLayer() {
@@ -164,11 +208,64 @@ export function DepthPanel() {
         )}
       </section>
 
+      <section className="space-y-2 border-t border-indigo-500/10 pt-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Iluminación (día/noche)</h3>
+        </div>
+        <p className="text-[11px] leading-relaxed text-slate-400">
+          Un filtro se activa cuando su condición se cumple y cambia el color del fondo — el primero que matchee gana. Sin ninguno
+          activo, el fondo se ve tal cual la imagen.
+        </p>
+
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => addFilter(NIGHT_FILTER_PRESET)}
+            className="rounded-md bg-slate-800 px-2 py-1 text-[10px] font-bold text-slate-300 hover:bg-slate-700"
+          >
+            + Preestablecido noche
+          </button>
+          <button
+            type="button"
+            onClick={() => addFilter(DAY_FILTER_PRESET)}
+            className="rounded-md bg-slate-800 px-2 py-1 text-[10px] font-bold text-slate-300 hover:bg-slate-700"
+          >
+            + Preestablecido día
+          </button>
+          <IconButton icon={Plus} label="Añadir filtro en blanco" tooltip={help("depth.addFilter").text} side="left" onClick={() => addFilter()} />
+        </div>
+
+        {filters.length === 0 && <p className="text-[11px] text-slate-400">Sin filtros — no hay ciclo de día/noche en este nivel.</p>}
+
+        {filters.map((filter, i) => (
+          <div key={filter.id} className="space-y-2 rounded-md border border-indigo-500/15 bg-slate-900/40 p-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-300">Filtro {i + 1}</span>
+              <IconButton icon={Trash2} label={`Eliminar filtro ${i + 1}`} tooltip={help("depth.removeFilter").text} side="left" tone="danger" onClick={() => deleteFilter(filter.id)} />
+            </div>
+            <div>
+              <span className={LABEL_CLASS}>Se activa cuando…</span>
+              <ConditionEditor expr={filter.when} onChange={(when) => updateFilter(filter.id, { when })} />
+            </div>
+            <label className="block">
+              <span className={LABEL_CLASS}>Filtro CSS</span>
+              <input
+                type="text"
+                placeholder="brightness(0.55) saturate(0.8) hue-rotate(200deg)"
+                className={`${INPUT_CLASS} font-mono`}
+                value={filter.css}
+                onChange={(e) => updateFilter(filter.id, { css: e.target.value })}
+              />
+            </label>
+          </div>
+        ))}
+      </section>
+
       <EntityStackOrder />
 
       <section className="space-y-2 border-t border-indigo-500/10 pt-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Capas de fondo (parallax)</h3>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Capas de fondo (parallax + clima)</h3>
           <IconButton icon={Plus} label="Añadir capa" tooltip={help("depth.addLayer").text} side="left" tone="accent" onClick={addLayer} />
         </div>
 
@@ -180,12 +277,26 @@ export function DepthPanel() {
               <span className="text-[11px] font-bold text-slate-300">Capa {i + 1}</span>
               <IconButton icon={Trash2} label={`Eliminar capa ${i + 1}`} tooltip={help("depth.removeLayer").text} side="left" tone="danger" onClick={() => deleteLayer(layer.id)} />
             </div>
+            <label className="block">
+              <FieldLabel label="Efecto" hint={help("depth.effect").text} />
+              <select
+                className={INPUT_CLASS}
+                value={layer.effect}
+                onChange={(e) => updateLayer(layer.id, { effect: e.target.value as LevelBackgroundLayer["effect"] })}
+              >
+                {EFFECT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <div>
-              <span className={LABEL_CLASS}>Imagen</span>
+              <span className={LABEL_CLASS}>Imagen {layer.effect !== "none" && "(opcional con un efecto elegido)"}</span>
               {parentId ? (
                 <BackgroundPicker parentId={parentId} for="layer" compact value={layer.src} onChange={(selection) => updateLayer(layer.id, { src: selection.src })} />
               ) : (
-                !layer.src && <p className="text-[11px] text-amber-300">Elegí una imagen para esta capa.</p>
+                !layer.src && layer.effect === "none" && <p className="text-[11px] text-amber-300">Elegí una imagen o un efecto para esta capa.</p>
               )}
             </div>
             <label className="block">

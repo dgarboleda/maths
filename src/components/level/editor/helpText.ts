@@ -88,6 +88,11 @@ export const HELP: Record<string, HelpEntry> = {
   // ── Profundidad / parallax ──
   "depth.addLayer": { text: "Agrega una capa de fondo nueva para el efecto de parallax." },
   "depth.removeLayer": { text: "Elimina esta capa de parallax." },
+  "depth.effect": {
+    text: "Niebla, lluvia, nieve, rayos, partículas o un brillo ambiental — se pinta encima de esta capa, con o sin imagen propia. Para clima que cubra toda la pantalla sin desplazarse con el mundo, dejá la Profundidad en 0.",
+  },
+  "depth.addFilter": { text: "Agrega un filtro de iluminación en blanco — elegí cuándo se activa y qué CSS aplica." },
+  "depth.removeFilter": { text: "Elimina este filtro de iluminación." },
 
   // ── Biblioteca de imágenes ──
   "asset.upload": { text: "Sube una imagen nueva a tu biblioteca." },

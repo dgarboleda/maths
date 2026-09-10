@@ -135,9 +135,14 @@ export interface LevelBackgroundLayer {
   opacity: number;
   /** Si la imagen se repite horizontalmente al desplazarse. */
   loop: boolean;
-  /** Efecto ambiental CSS asociado — docs/scene-25d-plan.md §C.4. `"none"` =
-   *  capa de imagen estática simple, igual que cualquier otra. */
-  effect: "particles" | "glow" | "fog" | "none";
+  /**
+   * Efecto ambiental CSS asociado — docs/scene-25d-plan.md §C.4, ampliado
+   * con clima. `"none"` = capa de imagen estática simple, igual que
+   * cualquier otra; el resto se pinta como una superposición animada sobre
+   * esta capa (`BackgroundLayers.tsx`) — funcionan también sin `src` (una
+   * capa "solo lluvia", sin imagen propia, es válida).
+   */
+  effect: "particles" | "glow" | "fog" | "rain" | "snow" | "lightning" | "none";
 }
 
 /* ════════════════════════════════════════════════════════════════════════

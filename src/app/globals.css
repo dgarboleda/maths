@@ -327,6 +327,124 @@ body {
   animation: world-burst 0.55s ease-out both;
 }
 
+/*
+ * ---------- Clima del Level Editor (`LevelBackgroundLayer.effect`) ----------
+ * `BackgroundLayers.tsx` pinta estas clases como una superposición del
+ * tamaño de la capa — todas por CSS puro (sin `Math.random()` en el
+ * render, que rompería la hidratación SSR/cliente): la sensación de
+ * irregularidad de la lluvia/nieve/rayos sale de superponer varios
+ * `background-image` con distinto tamaño/desfase, no de posiciones al
+ * azar por elemento.
+ */
+@keyframes world-rain-fall {
+  from {
+    background-position:
+      0 0,
+      40px 0;
+  }
+  to {
+    background-position:
+      -60px 700px,
+      -20px 700px;
+  }
+}
+.anim-rain {
+  animation: world-rain-fall 0.45s linear infinite;
+  background-image:
+    repeating-linear-gradient(102deg, rgba(191, 219, 254, 0.4) 0px, rgba(191, 219, 254, 0.4) 1px, transparent 1px, transparent 14px),
+    repeating-linear-gradient(102deg, rgba(191, 219, 254, 0.22) 0px, rgba(191, 219, 254, 0.22) 1px, transparent 1px, transparent 22px);
+  background-size:
+    70px 700px,
+    110px 700px;
+}
+
+@keyframes world-snow-fall {
+  from {
+    background-position:
+      0 0,
+      40px 20px,
+      90px 60px;
+  }
+  to {
+    background-position:
+      24px 180px,
+      -16px 150px,
+      54px 230px;
+  }
+}
+.anim-snow {
+  animation: world-snow-fall 11s linear infinite;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 1.6px, transparent 1.8px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.75) 1.1px, transparent 1.3px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.55) 1.3px, transparent 1.5px);
+  background-size:
+    140px 180px,
+    90px 130px,
+    170px 220px;
+}
+
+@keyframes world-fog-layer-drift {
+  0%,
+  100% {
+    transform: translateX(-4%);
+  }
+  50% {
+    transform: translateX(4%);
+  }
+}
+.anim-fog-layer {
+  animation: world-fog-layer-drift 30s ease-in-out infinite;
+}
+
+@keyframes world-particles-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -32px -170px;
+  }
+}
+.anim-weather-particles {
+  animation: world-particles-drift 16s linear infinite;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1.3px);
+  background-size: 64px 64px;
+}
+
+/* Dos destellos por vuelta en puntos fijos del loop (≈1% y ≈46%): parece
+   irregular sin depender de un timer en JS. `opacity` topea en 0.75 (no
+   blanco puro) — un flash de pantalla completa a opacidad 1 es agresivo
+   para quien es fotosensible; igual queda cubierto por la regla global de
+   `prefers-reduced-motion` de arriba, que lo inmoviliza del todo. */
+@keyframes world-lightning-flash {
+  0%,
+  4%,
+  45%,
+  100% {
+    opacity: 0;
+  }
+  1% {
+    opacity: 0.75;
+  }
+  2% {
+    opacity: 0.12;
+  }
+  3% {
+    opacity: 0.45;
+  }
+  46% {
+    opacity: 0.65;
+  }
+  47% {
+    opacity: 0.08;
+  }
+}
+.anim-lightning {
+  animation: world-lightning-flash 9s ease-out infinite;
+  background: #f8fafc;
+  mix-blend-mode: screen;
+}
+
 /* Panel flotante del HUD (barra superior, insignia de misión discreta). */
 .world-hud-panel {
   background: rgba(15, 17, 41, 0.82);
