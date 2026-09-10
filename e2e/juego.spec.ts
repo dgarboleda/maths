@@ -198,7 +198,12 @@ test.describe("Recorrido de juego", () => {
     await expect(page.getByRole("button", { name: "Siguiente" })).toBeFocused();
 
     await page.getByRole("link", { name: /← Aritmética de Dani/ }).click();
-    await page.getByRole("link", { name: "← Dani" }).click();
+    // "← Dani" lleva al despachador real de /jugar/{childId} (Fase 18): sin
+    // ningún nivel/mundo sembrado para este hijo, ahí no hay Ciudad Central
+    // que mostrar. Se sigue el mismo camino que `entrarAlPerfil` para volver
+    // a la escena de verdad, en vez de asumir que el despachador la muestra.
+    const childId = idDeHijo(page);
+    await page.goto(`/jugar/${childId}/ciudad-central-legacy`);
 
     // Al volver al hub, la escena se remonta y abre otra vez el briefing.
     await page.getByRole("button", { name: "Comenzar a explorar ▸" }).click();

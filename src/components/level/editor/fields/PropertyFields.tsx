@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { CircleHelp } from "lucide-react";
 import type { LevelDefinition, PropertyValue, Vec2 } from "@/lib/level/schema";
 import type { PropertyFieldDef } from "@/lib/level/entities";
@@ -10,14 +11,29 @@ const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/
 
 /** Etiqueta de campo + tooltip de ayuda opcional (Fase 15, §2.3) — un solo
  *  lugar para pintar `field.hint` en cualquiera de las 9 variantes de
- *  `PropertyFieldDef`, incluidas las de `RefSelect`. */
-export function FieldLabel({ label, hint }: { label: string; hint?: string }) {
+ *  `PropertyFieldDef`, incluidas las de `RefSelect`. `htmlFor` asocia el
+ *  texto explícitamente con el control (vía `id`) en vez de envolverlo en un
+ *  `<label>`: con el botón de ayuda como hermano antes del control, un
+ *  `<label>` que envuelve todo tomaría el botón — no el input/select — como
+ *  su control implícito (el primer descendiente "labelable"), rompiendo
+ *  `getByLabel` en los tests y el foco real al hacer clic en el texto.
+ *
+ *  El botón de ayuda usa un `aria-label` genérico ("Ayuda"), no
+ *  `Ayuda sobre ${label}`: ese texto repetiría el nombre exacto del campo, y
+ *  cualquier búsqueda por ese nombre (`getByLabel`, que empareja por
+ *  substring) encontraría tanto el control real como este botón — la misma
+ *  ambigüedad que arregla `htmlFor` arriba, pero por el lado del nombre en
+ *  vez de la asociación. `Tooltip` ya conecta el botón al contenido de la
+ *  ayuda vía `aria-describedby`, así que el texto completo del hint sigue
+ *  disponible para lectores de pantalla — solo cambia el nombre corto del
+ *  botón en sí. */
+export function FieldLabel({ label, hint, htmlFor }: { label: string; hint?: string; htmlFor?: string }) {
   return (
     <span className={LABEL_CLASS}>
-      {label}
+      {htmlFor ? <label htmlFor={htmlFor}>{label}</label> : <span>{label}</span>}
       {hint && (
         <Tooltip content={hint} side="left" wide>
-          <button type="button" aria-label={`Ayuda sobre ${label}`} className="text-slate-500 hover:text-slate-300">
+          <button type="button" aria-label="Ayuda" className="text-slate-500 hover:text-slate-300">
             <CircleHelp className="size-3" aria-hidden="true" />
           </button>
         </Tooltip>
@@ -48,20 +64,22 @@ export function PropertyField({
   level?: LevelDefinition;
   onChange: (value: PropertyValue) => void;
 }) {
+  const id = useId();
   switch (field.kind) {
     case "text":
       return (
-        <label className="block">
-          <FieldLabel label={field.label} hint={field.hint} />
-          <input type="text" className={INPUT_CLASS} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.target.value)} />
-        </label>
+        <div className="block">
+          <FieldLabel label={field.label} hint={field.hint} htmlFor={id} />
+          <input id={id} type="text" className={INPUT_CLASS} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.target.value)} />
+        </div>
       );
 
     case "number":
       return (
-        <label className="block">
-          <FieldLabel label={field.label} hint={field.hint} />
+        <div className="block">
+          <FieldLabel label={field.label} hint={field.hint} htmlFor={id} />
           <input
+            id={id}
             type="number"
             className={INPUT_CLASS}
             min={field.min}
@@ -70,7 +88,7 @@ export function PropertyField({
             value={typeof value === "number" ? value : 0}
             onChange={(e) => onChange(Number(e.target.value))}
           />
-        </label>
+        </div>
       );
 
     case "boolean":
@@ -82,7 +100,7 @@ export function PropertyField({
           </label>
           {field.hint && (
             <Tooltip content={field.hint} side="right" wide>
-              <button type="button" aria-label={`Ayuda sobre ${field.label}`} className="text-slate-500 hover:text-slate-300">
+              <button type="button" aria-label="Ayuda" className="text-slate-500 hover:text-slate-300">
                 <CircleHelp className="size-3" aria-hidden="true" />
               </button>
             </Tooltip>
@@ -92,30 +110,31 @@ export function PropertyField({
 
     case "image":
       return (
-        <label className="block">
-          <FieldLabel label={field.label} hint={field.hint} />
+        <div className="block">
+          <FieldLabel label={field.label} hint={field.hint} htmlFor={id} />
           <input
+            id={id}
             type="text"
             placeholder="/illustrations/…"
             className={INPUT_CLASS}
             value={typeof value === "string" ? value : ""}
             onChange={(e) => onChange(e.target.value)}
           />
-        </label>
+        </div>
       );
 
     case "select":
       return (
-        <label className="block">
-          <FieldLabel label={field.label} hint={field.hint} />
-          <select className={INPUT_CLASS} value={typeof value === "string" ? value : field.default} onChange={(e) => onChange(e.target.value)}>
+        <div className="block">
+          <FieldLabel label={field.label} hint={field.hint} htmlFor={id} />
+          <select id={id} className={INPUT_CLASS} value={typeof value === "string" ? value : field.default} onChange={(e) => onChange(e.target.value)}>
             {field.options.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
             ))}
           </select>
-        </label>
+        </div>
       );
 
     case "entityRef": {
@@ -219,10 +238,11 @@ function RefSelect({
   onChange: (value: string) => void;
   options: { id: string; label: string }[];
 }) {
+  const id = useId();
   return (
-    <label className="block">
-      <FieldLabel label={label} hint={hint} />
-      <select className={INPUT_CLASS} value={value} onChange={(e) => onChange(e.target.value)}>
+    <div className="block">
+      <FieldLabel label={label} hint={hint} htmlFor={id} />
+      <select id={id} className={INPUT_CLASS} value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">— ninguno —</option>
         {options.map((o) => (
           <option key={o.id} value={o.id}>
@@ -230,6 +250,6 @@ function RefSelect({
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }

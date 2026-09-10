@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { CircleHelp } from "lucide-react";
 import type { LevelDefinition, PropertyValue } from "@/lib/level/schema";
 import type { ActionParamDef } from "@/lib/level/events/catalog";
@@ -26,21 +27,22 @@ export function ActionField({
   level: LevelDefinition;
   onChange: (value: PropertyValue) => void;
 }) {
+  const id = useId();
   switch (field.kind) {
     case "text":
       return (
-        <label className="block">
-          <FieldLabel label={field.label} hint={field.hint} />
-          <input type="text" className={INPUT_CLASS} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.target.value)} />
-        </label>
+        <div className="block">
+          <FieldLabel label={field.label} hint={field.hint} htmlFor={id} />
+          <input id={id} type="text" className={INPUT_CLASS} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.target.value)} />
+        </div>
       );
 
     case "number":
       return (
-        <label className="block">
-          <FieldLabel label={field.label} hint={field.hint} />
-          <input type="number" className={INPUT_CLASS} value={typeof value === "number" ? value : 0} onChange={(e) => onChange(Number(e.target.value))} />
-        </label>
+        <div className="block">
+          <FieldLabel label={field.label} hint={field.hint} htmlFor={id} />
+          <input id={id} type="number" className={INPUT_CLASS} value={typeof value === "number" ? value : 0} onChange={(e) => onChange(Number(e.target.value))} />
+        </div>
       );
 
     case "boolean":
@@ -52,7 +54,7 @@ export function ActionField({
           </label>
           {field.hint && (
             <Tooltip content={field.hint} side="left" wide>
-              <button type="button" aria-label={`Ayuda sobre ${field.label}`} className="text-slate-500 hover:text-slate-300">
+              <button type="button" aria-label="Ayuda" className="text-slate-500 hover:text-slate-300">
                 <CircleHelp className="size-3" aria-hidden="true" />
               </button>
             </Tooltip>
@@ -62,16 +64,16 @@ export function ActionField({
 
     case "select":
       return (
-        <label className="block">
-          <FieldLabel label={field.label} hint={field.hint} />
-          <select className={INPUT_CLASS} value={typeof value === "string" ? value : field.default} onChange={(e) => onChange(e.target.value)}>
+        <div className="block">
+          <FieldLabel label={field.label} hint={field.hint} htmlFor={id} />
+          <select id={id} className={INPUT_CLASS} value={typeof value === "string" ? value : field.default} onChange={(e) => onChange(e.target.value)}>
             {field.options.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
             ))}
           </select>
-        </label>
+        </div>
       );
 
     case "entityRef": {
@@ -135,10 +137,11 @@ function RefSelect({
   onChange: (value: string) => void;
   options: { id: string; label: string }[];
 }) {
+  const id = useId();
   return (
-    <label className="block">
-      <FieldLabel label={label} hint={hint} />
-      <select className={INPUT_CLASS} value={value} onChange={(e) => onChange(e.target.value)}>
+    <div className="block">
+      <FieldLabel label={label} hint={hint} htmlFor={id} />
+      <select id={id} className={INPUT_CLASS} value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">— ninguno —</option>
         {options.map((o) => (
           <option key={o.id} value={o.id}>
@@ -146,6 +149,6 @@ function RefSelect({
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }

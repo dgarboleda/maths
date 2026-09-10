@@ -59,7 +59,9 @@ async function entrarAlPerfilV2(page: Page, nombre: string, pin: string, correo:
   await sembrarMundoDeEjemplo(correo);
 
   await page.goto(`/jugar/${childId}`);
-  await expect(page.getByRole("heading", { name: "Ciudad Central" })).toBeVisible({ timeout: 45_000 });
+  // "Ciudad Central" es el badge de `LevelHud` (`<Link href="/jugar/{childId}">`,
+  // sin `onExit`: acá no hay Play Test) — role "link", no "heading".
+  await expect(page.getByRole("link", { name: "Ciudad Central" })).toBeVisible({ timeout: 45_000 });
   await expect(page.getByRole("button", { name: /^Dra\. Nia —/ })).toBeVisible();
   return childId;
 }
@@ -128,7 +130,7 @@ test.describe("Mundo: Ciudad Central v2 (NEXT_PUBLIC_LEVELS_V2)", () => {
     const escrituras = await contarDocumentos(correo, childId, "attempts");
     await page.reload();
 
-    await expect(page.getByRole("heading", { name: "Ciudad Central" })).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByRole("link", { name: "Ciudad Central" })).toBeVisible({ timeout: 45_000 });
     await expect(page.getByRole("button", { name: /^Terminal de acceso —/ })).toHaveAttribute("data-state", "on");
     await expect(page.getByRole("button", { name: /^Compuerta del generador —/ })).toHaveAttribute("data-state", "open");
     expect(await contarDocumentos(correo, childId, "attempts")).toBe(escrituras);

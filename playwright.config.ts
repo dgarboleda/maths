@@ -68,13 +68,15 @@ export default defineConfig({
     },
     {
       // Un móvil pequeño: la app se usa sobre todo en tablet o teléfono.
-      // `editor.spec.ts` queda fuera: el Level Editor (herramienta del
-      // padre-autor, no el juego) todavía no tiene drawers para Toolbox/
-      // PropertyPanel por debajo de `lg` (quedan `hidden` sin más, Fase 13),
-      // así que sus pruebas asumen viewport de escritorio a propósito.
+      // `editor.spec.ts` y `editor-assets.spec.ts` quedan fuera: el Level
+      // Editor (herramienta del padre-autor, no el juego) todavía no tiene
+      // drawers para Toolbox/PropertyPanel por debajo de `lg` (quedan
+      // `hidden` sin más, Fase 13, ver LevelEditorScreen.tsx) — sin esos
+      // paneles no hay dónde subir un fondo ni ver "Fondo"/"Escena", así que
+      // ambas suites asumen viewport de escritorio a propósito.
       name: "móvil",
       use: { ...devices["Pixel 7"] },
-      testIgnore: /(accesibilidad|editor|aventura-ciudad-central-v2)\.spec\.ts/,
+      testIgnore: /(accesibilidad|editor(-assets)?|aventura-ciudad-central-v2)\.spec\.ts/,
     },
     {
       // Ciudad Central sobre el motor nuevo (Fase 14) — único project que
