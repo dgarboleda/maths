@@ -3,6 +3,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { DEFAULT_DEPTH_CONFIG } from "@/lib/level/depth";
+import { getEntityType } from "@/lib/level/entities";
 import { newBackgroundLayerId } from "@/lib/level/ids";
 import type { LevelBackgroundLayer, LevelDepthConfig } from "@/lib/level/schema";
 import { IconButton } from "@/components/ui/IconButton";
@@ -163,6 +164,8 @@ export function DepthPanel() {
         )}
       </section>
 
+      <EntityStackOrder />
+
       <section className="space-y-2 border-t border-indigo-500/10 pt-3">
         <div className="flex items-center justify-between">
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Capas de fondo (parallax)</h3>
@@ -223,5 +226,63 @@ export function DepthPanel() {
         ))}
       </section>
     </div>
+  );
+}
+
+/**
+ * Lista de solo lectura con el orden REAL de dibujo de las entidades (mismo
+ * `sort` que `RuntimeCanvas.tsx`/`EntityLayer.tsx`: `layer` desempata,
+ * después `y`) — sin esto, saber qué tapa a qué exige leer dos números por
+ * entidad y hacer la cuenta a mano. Clic en una fila selecciona esa entidad
+ * (mismo `dispatch` que un clic en el lienzo), para ir directo a ajustar su
+ * `layer` si el orden no es el que se quería. El jugador (Alex) no aparece
+ * acá: no es una entidad del nivel, entra al mismo `sort` en tiempo de
+ * juego con `layer: 0` (ver `RuntimeCanvas.tsx`), pero no se edita desde
+ * este panel.
+ */
+function EntityStackOrder() {
+  const { state, dispatch } = useLevelEditor();
+  const entities = [...state.level.entities].sort((a, b) => a.layer - b.layer || a.position.y - b.position.y);
+
+  return (
+    <section className="space-y-2 border-t border-indigo-500/10 pt-3">
+      <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Orden de dibujo</h3>
+
+      {entities.length === 0 ? (
+        <p className="text-[11px] text-slate-400">Todavía no hay entidades en el nivel.</p>
+      ) : (
+        <>
+          <p className="text-[11px] leading-relaxed text-slate-400">
+            Arriba de la lista queda más atrás; abajo, más adelante (tapa a lo de arriba). Este es el resultado real de combinar Capa y
+            posición vertical — tocá una fila para seleccionar esa entidad.
+          </p>
+          <ol className="space-y-1">
+            {entities.map((entity, i) => {
+              const typeDef = getEntityType(entity.type);
+              return (
+                <li key={entity.id}>
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: "SELECT", selection: { kind: "entity", id: entity.id } })}
+                    className={`flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left ${
+                      state.selection.kind === "entity" && state.selection.id === entity.id
+                        ? "border-cyan-400/50 bg-cyan-950/30"
+                        : "border-indigo-500/15 bg-slate-900/40 hover:border-indigo-400/40"
+                    }`}
+                  >
+                    <span className="w-4 shrink-0 text-right text-[10px] font-bold text-slate-500">{i + 1}</span>
+                    <typeDef.Icon className="size-3.5 shrink-0 text-cyan-300" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-slate-200">{entity.name}</span>
+                    <span className="shrink-0 text-[10px] text-slate-500">
+                      capa {entity.layer} · y {Math.round(entity.position.y)}%
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </>
+      )}
+    </section>
   );
 }

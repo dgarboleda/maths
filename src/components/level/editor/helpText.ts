@@ -51,6 +51,9 @@ export const HELP: Record<string, HelpEntry> = {
   "property.duplicate": { text: "Duplica esta entidad con las mismas propiedades.", shortcut: "Ctrl+D" },
   "property.delete": { text: "Elimina esta entidad del nivel.", shortcut: "Supr" },
   "property.standPoint": { text: "Marca en el lienzo dónde se detiene Alex antes de interactuar con esta entidad." },
+  "property.layer": {
+    text: "Quién tapa a quién: primero se compara la Capa (número más alto = más adelante); si dos entidades tienen la misma Capa, gana la que esté más abajo en el lienzo (más cerca de la cámara). Subí este número solo cuando necesitás que algo se vea siempre delante o detrás de otra cosa, sin importar la posición — para el resto, mover la entidad hacia abajo o arriba ya alcanza.",
+  },
 
   // ── Misión ──
   "mission.delete": { text: "Elimina esta misión del nivel." },

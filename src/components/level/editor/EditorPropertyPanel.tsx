@@ -6,7 +6,7 @@ import type { EntityInteraction, PropertyValue } from "@/lib/level/schema";
 import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useLevelEditor } from "./LevelEditorProvider";
-import { PropertyField } from "./fields/PropertyFields";
+import { FieldLabel, PropertyField } from "./fields/PropertyFields";
 import { ChallengePicker } from "./ChallengePicker";
 import { help } from "./helpText";
 
@@ -108,8 +108,9 @@ export function EditorPropertyPanel() {
         </div>
 
         <label className="block">
-          <span className={LABEL_CLASS}>Capa (desempate y-sort)</span>
+          <FieldLabel label="Capa" hint={help("property.layer").text} htmlFor="entity-layer" />
           <input
+            id="entity-layer"
             type="number"
             className={INPUT_CLASS}
             value={entity.layer}
