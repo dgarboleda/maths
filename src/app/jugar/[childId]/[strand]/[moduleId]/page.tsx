@@ -13,6 +13,7 @@ import { getStrand } from "@/lib/strands";
 import { getModule, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { getStrandNarrative } from "@/lib/narrative";
 import { triggerConfetti } from "@/lib/confetti";
+import { playSound } from "@/lib/gameSound";
 import { awardBadge } from "@/lib/awardBadge";
 import { awardMasteryBadges } from "@/lib/masteryRewards";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
@@ -132,7 +133,11 @@ export default function TopicPage() {
       awardMasteryBadges(firestore, db, parentId, params.childId, mod, mergedProgress).catch((err) =>
         console.error("No se pudo otorgar la insignia", err),
       );
-      triggerConfetti();
+      // Fase 31 (docs/plan-jugabilidad.md §5): dominar un módulo es un
+      // "big" — mismo peso que cerrar una misión o vencer un boss (Fase
+      // 34) — antes idéntico a acertar cualquier respuesta suelta.
+      triggerConfetti("big");
+      playSound("mastery", soundOn);
       setCelebration({ label: mod.label, zoneName: getStrandNarrative(mod.strandSlug).zoneName });
     }
 

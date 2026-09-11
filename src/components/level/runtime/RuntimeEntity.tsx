@@ -22,18 +22,25 @@ export function RuntimeEntity({
   runtimeState,
   onInteract,
   depth,
+  interacting = false,
 }: {
   entity: LevelEntity;
   runtimeState: LevelRuntimeState;
   onInteract: (entity: LevelEntity) => void;
   depth?: LevelDepthConfig;
+  /** Fase 31 (docs/plan-jugabilidad.md §5): `true` justo después de que Alex
+   *  llega a interactuar con esta entidad — dispara `.anim-interact`
+   *  (globals.css) en el wrapper, sin tocar `EntityRenderProps` ni ningún
+   *  `Render` de tipo (npc.tsx, door.tsx…): el bounce es puramente visual,
+   *  ajeno a lo que cada tipo pinta adentro. */
+  interacting?: boolean;
 }) {
   if (!isEntityVisible(entity, runtimeState)) return null;
   const typeDef = getEntityType(entity.type);
   const activeState = currentStateOf(entity, runtimeState);
   const Render = typeDef.Render;
   return (
-    <div style={{ "--depth-scale": depthScaleFor(entity.position.y, depth) } as CSSProperties}>
+    <div className={interacting ? "anim-interact" : undefined} style={{ "--depth-scale": depthScaleFor(entity.position.y, depth) } as CSSProperties}>
       <Render entity={entity} activeState={activeState} mode="runtime" selected={false} onSelect={() => onInteract(entity)} />
     </div>
   );

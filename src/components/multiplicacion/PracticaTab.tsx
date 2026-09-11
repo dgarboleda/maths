@@ -125,7 +125,7 @@ export function PracticaTab({
           setKeypadInput("");
         } else {
           playSound("fanfare", soundOn);
-          triggerConfetti();
+          triggerConfetti("medium"); // Fase 31: ronda completa
           setFinished(true);
         }
       }, 900);

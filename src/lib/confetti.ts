@@ -1,7 +1,18 @@
 import { prefersReducedMotion } from "./motion";
 
 const COLORS = ["#8B5CF6", "#EC4899", "#F59E0B", "#10B981", "#3B82F6"];
-const PARTICLES = 60;
+
+export type ConfettiIntensity = "small" | "medium" | "big";
+
+/**
+ * Fase 31 (docs/plan-jugabilidad.md §5): antes 60 partículas iguales para
+ * cualquier acierto — acertar una suma fácil y dominar un módulo entero se
+ * veían igual. "small" (una respuesta correcta) es el default: ninguna
+ * llamada existente cambia de intensidad salvo donde se decide
+ * explícitamente subirla a "medium" (ronda/cohete ganado) o "big" (dominar
+ * un módulo, cerrar una misión, vencer un boss).
+ */
+const PARTICLES: Record<ConfettiIntensity, number> = { small: 20, medium: 60, big: 140 };
 
 let canvas: HTMLCanvasElement | null = null;
 let frame: number | null = null;
@@ -27,7 +38,7 @@ function ensureCanvas(): HTMLCanvasElement {
  *
  * No se dibuja nada si el sistema pide reducir movimiento (WCAG 2.3.3).
  */
-export function triggerConfetti() {
+export function triggerConfetti(intensity: ConfettiIntensity = "small") {
   if (typeof document === "undefined") return;
   if (prefersReducedMotion()) return;
 
@@ -47,7 +58,7 @@ export function triggerConfetti() {
   }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  const particles = Array.from({ length: PARTICLES }, () => ({
+  const particles = Array.from({ length: PARTICLES[intensity] }, () => ({
     x: width / 2,
     y: height / 2,
     vx: (Math.random() - 0.5) * 12,

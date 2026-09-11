@@ -88,7 +88,7 @@ export function CoheteTab({
       setWin(didWin);
       setPhase("over");
       playSound("fanfare", soundOn);
-      if (didWin) triggerConfetti();
+      if (didWin) triggerConfetti("medium"); // Fase 31: ronda/cohete ganado
     },
     [soundOn],
   );

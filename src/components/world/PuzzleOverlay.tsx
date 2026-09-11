@@ -146,6 +146,11 @@ export function PuzzleOverlay({
     }
 
     setSaving(true);
+    // Fase 31 (docs/plan-jugabilidad.md §5): declarado antes del try para
+    // seguir en alcance más abajo, donde se decide la intensidad del
+    // confeti (dominar el módulo es un "big", una respuesta correcta
+    // cualquiera sigue siendo un "small").
+    let mastered = false;
     try {
       const { db, firestore } = await getFirebase();
       const outcome = await (recordAttempt ?? recordModuleAttempt)(
@@ -159,7 +164,7 @@ export function PuzzleOverlay({
         streak,
         hintLevel,
       );
-      const mastered = !outcome.wasMastered && outcome.updatedProgress.masteredAt !== null;
+      mastered = !outcome.wasMastered && outcome.updatedProgress.masteredAt !== null;
       if (mastered) {
         await (awardBadges ?? awardMasteryBadges)(firestore, db, parentId, childId, mod, {
           ...progressBySkill,
@@ -175,8 +180,13 @@ export function PuzzleOverlay({
     } finally {
       setSaving(false);
     }
-    playSound(correct ? "correct" : "wrong", soundOn);
-    if (correct) triggerConfetti();
+    if (mastered) {
+      playSound("mastery", soundOn);
+      triggerConfetti("big");
+    } else {
+      playSound(correct ? "correct" : "wrong", soundOn);
+      if (correct) triggerConfetti();
+    }
   }
 
   /** "Salir" (Fase 29): con el desafío sin resolver y `challengesAreMandatory:

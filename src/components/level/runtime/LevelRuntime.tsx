@@ -14,6 +14,9 @@ import { activeMission } from "@/lib/level/runtime/state";
 import { levelCompleted } from "@/lib/gameworld/progress";
 import type { WorldRules } from "@/lib/gameworld/schema";
 import { useResolvedAvatar } from "@/lib/useResolvedAvatar";
+import { triggerConfetti } from "@/lib/confetti";
+import { playSound } from "@/lib/gameSound";
+import { MissionRewardOverlay } from "@/components/world/MissionRewardOverlay";
 import { LevelHud } from "./LevelHud";
 import { RuntimeCanvas } from "./RuntimeCanvas";
 import { LevelChallengeOverlay } from "./LevelChallengeOverlay";
@@ -81,6 +84,10 @@ export function LevelRuntime({
   const [openDialogId, setOpenDialogId] = useState<string | null>(null);
   const [openChallengeId, setOpenChallengeId] = useState<string | null>(null);
   const [missionOpen, setMissionOpen] = useState(false);
+  // Fase 31 (docs/plan-jugabilidad.md §5): id de la entidad que acaba de
+  // recibir un clic — dispara `.anim-interact` en `RuntimeCanvas` por
+  // 350ms (mismo largo que la animación en globals.css) y se limpia sola.
+  const [interactingEntityId, setInteractingEntityId] = useState<string | null>(null);
   // Solo `stars`/`key`: el evento de GENERATE_AXIA no carga ninguna posición
   // (no sabe qué entidad lo disparó, §8.4), así que la animación se ancla a
   // `runtime.pose` **en el momento de pintar**, no a un snapshot capturado
@@ -136,11 +143,22 @@ export function LevelRuntime({
   // encontrar la misión ya completada de una sesión anterior) nunca
   // dispara el evento, solo una transición real dentro de esta sesión.
   const previousMissionIdRef = useRef<string | null | undefined>(undefined);
+  // Fase 31 (docs/plan-jugabilidad.md §5): cerrar una misión es un "big" —
+  // mismo peso que dominar un módulo o vencer un boss (Fase 34) — y
+  // `RewardOverlay` (Ciudad Central legacy) tenía celebración propia; acá
+  // vivía huérfana desde la Fase 18, sin ningún consumidor.
+  const [missionReward, setMissionReward] = useState<{ title: string; nextTitle: string | null } | null>(null);
   useEffect(() => {
     const prev = previousMissionIdRef.current;
     const currentId = mission?.mission.id ?? null;
     if (prev !== undefined && prev !== null && prev !== currentId) {
       runtime.applyEvent("ON_MISSION_COMPLETE", prev);
+      const completed = level.missions.find((m) => m.id === prev);
+      if (completed) {
+        setMissionReward({ title: completed.title, nextTitle: mission?.mission.title ?? null });
+        triggerConfetti("big");
+        playSound("mastery", soundOn);
+      }
     }
     previousMissionIdRef.current = currentId;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -233,6 +251,13 @@ export function LevelRuntime({
     }
 
     await runtime.approach(entity.interaction.standPoint, entity.position);
+
+    // Fase 31: el bounce corto de "empezó a interactuar" — antes de abrir
+    // cualquier overlay, para que se vea incluso si el desafío/diálogo
+    // tapa la entidad de inmediato.
+    setInteractingEntityId(entity.id);
+    window.setTimeout(() => setInteractingEntityId((id) => (id === entity.id ? null : id)), 350);
+
     // Un desafío asociado se abre directo — §9.3 paso 2: no hace falta
     // ninguna regla de evento autorada para eso, a diferencia de un diálogo
     // (SHOW_DIALOG) u otra consecuencia, que sí dependen de una regla sobre
@@ -282,6 +307,7 @@ export function LevelRuntime({
         playerVisible={!avatarLoading}
         onGroundClick={onGroundClick}
         onEntityClick={onEntityClick}
+        interactingEntityId={interactingEntityId}
       />
 
       <LevelHud
@@ -357,6 +383,16 @@ export function LevelRuntime({
           recordAttempt={sandboxServices?.recordAttempt}
           awardBadges={sandboxServices?.awardBadges}
         />
+      )}
+
+      {/* `!openChallengeId`: la misión puede completarse con el desafío
+          TODAVÍA abierto (el mismo tick en que se guarda la respuesta
+          correcta) — sin esto, dos paneles `fixed inset-0 z-50` quedan
+          superpuestos y el de encima bloquea el botón "Seguir explorando"
+          del de abajo. `missionReward` queda pendiente y se muestra recién
+          al cerrar PuzzleOverlay. */}
+      {missionReward && !openChallengeId && (
+        <MissionRewardOverlay missionTitle={missionReward.title} nextMissionTitle={missionReward.nextTitle} onClose={() => setMissionReward(null)} />
       )}
     </div>
   );

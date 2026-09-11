@@ -56,7 +56,7 @@ export function CoheteGeneric({
       setPhase("over");
       playSound("fanfare", soundOn);
       if (didWin) {
-        triggerConfetti();
+        triggerConfetti("medium"); // Fase 31: cohete ganado
         onWin?.();
       }
     },
