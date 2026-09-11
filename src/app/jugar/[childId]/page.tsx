@@ -10,6 +10,7 @@ import { listLevels } from "@/lib/level/persistence/levelRepository";
 import { getWorld } from "@/lib/gameworld/persistence/worldRepository";
 import { NoLevelsYet } from "@/components/jugar/NoLevelsYet";
 import { useRequirePlacement } from "@/lib/useRequirePlacement";
+import { recordStreak } from "@/lib/streak";
 
 /**
  * Despachador de `/jugar/{childId}` — Fase 18 (docs/level-editor-plan-v2.md
@@ -49,12 +50,24 @@ export default function JugarDespachadorPage() {
     if (!parentId) return;
     let cancelled = false;
     getFirebase()
-      .then(({ db, firestore: { doc, getDoc } }) => getDoc(doc(db, "parents", parentId, "children", params.childId)))
-      .then((snap) => {
-        if (cancelled) return;
-        if (snap.exists()) setChild(snap.data() as ChildProfile);
-        else setNotFound(true);
-      })
+      .then(({ db, firestore }) =>
+        firestore.getDoc(firestore.doc(db, "parents", parentId, "children", params.childId)).then((snap) => {
+          if (cancelled) return;
+          if (snap.exists()) {
+            const data = snap.data() as ChildProfile;
+            setChild(data);
+            // Fase 35 (docs/plan-jugabilidad.md §9): una vez por sesión real
+            // — el despachador es la primera pantalla que ve cualquier
+            // sesión (`entrar/[parentId]/page.tsx` manda directo acá tras
+            // el PIN). No toca `starBalance` ni ningún otro dato.
+            recordStreak(firestore, db, parentId, params.childId, data).catch((err) =>
+              console.error("No se pudo actualizar la racha", err),
+            );
+          } else {
+            setNotFound(true);
+          }
+        }),
+      )
       .catch((err) => console.error("No se pudo cargar el perfil", err));
     return () => {
       cancelled = true;

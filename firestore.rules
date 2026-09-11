@@ -103,6 +103,14 @@ service cloud.firestore {
         match /badges/{badgeId} {
           allow read, write: if isParentOrChild(parentId, childId);
         }
+
+        // Marcas personales (Fase 35, docs/plan-jugabilidad.md §9,
+        // src/lib/records.ts): mismo dueño y mismo criterio que
+        // skillsProgress — el hijo las lee y las actualiza solo mientras
+        // juega, sin corrección manual.
+        match /records/{recordId} {
+          allow read, write: if isParentOrChild(parentId, childId);
+        }
       }
 
       // Niveles del Level Editor (docs/level-editor-plan.md §10.2): propiedad

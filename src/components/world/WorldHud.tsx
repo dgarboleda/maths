@@ -35,6 +35,7 @@ export function WorldTopBar({
   nextReviewModule,
   avatarHeadshotSrc,
   onAvatarClick,
+  streakDays,
 }: {
   childId: string;
   childName: string;
@@ -59,6 +60,10 @@ export function WorldTopBar({
    *  abrir `AvatarPickerDialog`) — `undefined` lo deja como el `<span>`
    *  decorativo de siempre; Ciudad Central legacy nunca lo pasa. */
   onAvatarClick?: () => void;
+  /** Fase 35 (docs/plan-jugabilidad.md §9) — días consecutivos jugados
+   *  (`lib/streak.ts`). `undefined`, o `< 2`, no muestra nada: una racha de
+   *  1 (recién empezada) no dice nada todavía. */
+  streakDays?: number;
 }) {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-center px-3 pt-3 sm:px-4 sm:pt-4">
@@ -99,6 +104,14 @@ export function WorldTopBar({
             {stars ?? "…"}
           </span>
         </span>
+
+        {streakDays !== undefined && streakDays >= 2 && (
+          <span className="flex items-center gap-1 rounded-full border border-orange-400/40 bg-slate-900/70 px-3 py-1.5 font-bold text-orange-300">
+            <span aria-hidden="true">🔥</span>
+            <span className="sr-only">Racha: </span>
+            {streakDays} días
+          </span>
+        )}
 
         {earnedBadgeIds.length > 0 && (
           <div className="flex items-center gap-1.5">

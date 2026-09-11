@@ -206,6 +206,7 @@ export default function JugarMapaPage() {
         nextReviewModule={nextReview(progressBySkill)}
         avatarHeadshotSrc={resolvedAvatar?.headshotSrc}
         onAvatarClick={() => setAvatarPickerOpen(true)}
+        streakDays={child.streakDays}
       />
 
       <div className="mx-auto max-w-3xl space-y-6">

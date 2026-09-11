@@ -25,17 +25,28 @@ export function CoheteGeneric({
   soundOn,
   onAnswer,
   onWin,
+  bestScore,
+  onGameOver,
 }: {
   moduleId: string;
   soundOn: boolean;
   onAnswer: (correct: boolean) => Promise<number>;
   onWin?: () => void;
+  /** Fase 35 (docs/plan-jugabilidad.md §9) — la mejor marca guardada
+   *  (respuestas acertadas en una carrera), para mostrar "Tu marca" y "¡Nueva
+   *  marca!". `undefined`/`null` = sin marca todavía (nunca se trata como
+   *  0: un 0 sería una marca real). El llamador decide si persistirla. */
+  bestScore?: number | null;
+  /** Se llama al terminar la carrera (ganada o no) con las respuestas
+   *  acertadas — el llamador decide si eso mejora la marca guardada. */
+  onGameOver?: (correctCount: number) => void;
 }) {
   const mod = getModule(moduleId)!;
   const [phase, setPhase] = useState<Phase>("start");
   const [timer, setTimer] = useState(START_TIME);
   const timerRef = useRef(START_TIME);
   const [correctCount, setCorrectCount] = useState(0);
+  const correctCountRef = useRef(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [bag, setBag] = useState<Problem[]>(() => drawBag(mod.generateProblem));
   const [win, setWin] = useState(false);
@@ -55,12 +66,13 @@ export function CoheteGeneric({
       setWin(didWin);
       setPhase("over");
       playSound("fanfare", soundOn);
+      onGameOver?.(correctCountRef.current);
       if (didWin) {
         triggerConfetti("medium"); // Fase 31: cohete ganado
         onWin?.();
       }
     },
-    [soundOn, onWin],
+    [soundOn, onWin, onGameOver],
   );
 
   function setTimeLeft(seconds: number) {
@@ -227,6 +239,18 @@ export function CoheteGeneric({
                 <span>Estrellas ganadas:</span>
                 <strong className="text-yellow-400">+{starsThisRound} ★</strong>
               </div>
+              {bestScore != null && (
+                <div className="flex justify-between border-t border-indigo-800 pt-2">
+                  <span>Tu marca:</span>
+                  <strong className="text-orange-300">
+                    {correctCount > bestScore ? (
+                      <>¡Nueva marca! 🏅 {correctCount}</>
+                    ) : (
+                      bestScore
+                    )}
+                  </strong>
+                </div>
+              )}
             </div>
             <button type="button" onClick={start} className="rounded-xl bg-purple-600 px-8 py-3 font-bold text-white hover:bg-purple-500">
               Jugar de nuevo 🔄
