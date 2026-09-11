@@ -1,0 +1,26 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "npm run start",
+      "startServerReadyPattern": "Ready in",
+      "startServerReadyTimeout": 30000,
+      "url": ["http://localhost:3000/login"],
+      "numberOfRuns": 3,
+      "settings": {
+        "chromeFlags": "--headless=new --no-sandbox --disable-gpu"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "resource-summary:script:size": ["error", { "maxNumericValue": 550000 }],
+        "resource-summary:total:size": ["error", { "maxNumericValue": 700000 }],
+        "categories:accessibility": ["error", { "minScore": 0.9 }],
+        "categories:performance": ["warn", { "minScore": 0.5 }]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": "./.lighthouseci"
+    }
+  }
+}

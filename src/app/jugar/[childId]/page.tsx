@@ -33,7 +33,7 @@ import { useRequirePlacement } from "@/lib/useRequirePlacement";
  * pantallas de juego (`[strand]/page.tsx`, `nivel/[levelId]/page.tsx`, …).
  */
 export default function JugarDespachadorPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
@@ -46,10 +46,10 @@ export default function JugarDespachadorPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
-      .then(({ db, firestore: { doc, getDoc } }) => getDoc(doc(db, "parents", user.uid, "children", params.childId)))
+      .then(({ db, firestore: { doc, getDoc } }) => getDoc(doc(db, "parents", parentId, "children", params.childId)))
       .then((snap) => {
         if (cancelled) return;
         if (snap.exists()) setChild(snap.data() as ChildProfile);
@@ -59,16 +59,16 @@ export default function JugarDespachadorPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   useEffect(() => {
     // Con la evaluación pendiente, `useRequirePlacement` ya va a redirigir a
     // /evaluacion — ni conviene ni hace falta decidir a qué nivel mandarlo.
-    if (!user || placementPending) return;
+    if (!parentId || placementPending) return;
     let cancelled = false;
     getFirebase()
       .then(async ({ db, firestore }) => {
-        const [world, levels] = await Promise.all([getWorld(firestore, db, user.uid), listLevels(firestore, db, user.uid)]);
+        const [world, levels] = await Promise.all([getWorld(firestore, db, parentId), listLevels(firestore, db, parentId)]);
         if (cancelled) return;
         const levelIds = new Set(levels.map((l) => l.id));
         const start = world?.nodes.find((n) => n.isStart && levelIds.has(n.levelId));
@@ -89,13 +89,13 @@ export default function JugarDespachadorPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId, placementPending]);
+  }, [parentId, params.childId, placementPending]);
 
   useEffect(() => {
     if (typeof destination === "object") router.replace(destination.href);
   }, [destination, router]);
 
-  if (loading || !user) {
+  if (loading || !user || !parentId) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
@@ -127,7 +127,7 @@ export default function JugarDespachadorPage() {
   }
 
   if (destination === "none") {
-    return <NoLevelsYet childId={params.childId} childName={child.name} parentId={user.uid} />;
+    return <NoLevelsYet childId={params.childId} childName={child.name} parentId={parentId} />;
   }
 
   // `destination` ya es un objeto `{ href }`: el efecto de arriba ya disparó

@@ -119,6 +119,26 @@ jobs:
           path: blob-report/
           retention-days: 1
 
+  presupuesto-rendimiento:
+    name: Presupuesto de rendimiento (Lighthouse)
+    runs-on: ubuntu-latest
+    # Red de seguridad: instalar/lanzar Chrome y 3 corridas de Lighthouse no
+    # deberían tardar tanto, pero que falle en vez de colgar el runner.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # `/login` es la única pantalla pública que no necesita sesión ni
+      # emuladores (docs/auditoria-rendimiento-accesibilidad.md §1.2): mide
+      # el costo real de la primera carga, que es donde más pesa una
+      # regresión de peso de JS. Los runners de GitHub Actions ya traen
+      # Chrome instalado — lhci lo detecta solo.
+      - run: npm run perf
+
   e2e-informe:
     name: Combina el informe de e2e
     if: ${{ !cancelled() }}

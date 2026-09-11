@@ -104,15 +104,7 @@ export async function importBundle(
   // Assets (§2.3): los bytes no viajan, solo se verifica qué referencias
   // quedaron rotas contra la biblioteca real de esta cuenta.
   const currentAssets = await listAssets(firestoreFns, db, parentId);
-  const currentUrls = new Set(currentAssets.map((a) => a.url));
-  const missingAssets: MissingAsset[] = bundle.assets
-    .filter((asset) => !currentUrls.has(asset.url))
-    .map((asset) => ({
-      asset,
-      usedByLevels: bundle.levels
-        .filter((l) => l.background.src === asset.url || (l.background.layers ?? []).some((layer) => layer.src === asset.url))
-        .map((l) => l.name),
-    }));
+  const missingAssets = computeMissingAssets(bundle.assets, currentAssets, bundle.levels);
 
   return {
     world: savedWorld,
@@ -120,6 +112,30 @@ export async function importBundle(
     customModulesRestored: bundle.customModules.length,
     missingAssets,
   };
+}
+
+/**
+ * Qué assets referenciados por el paquete no existen en `parentId` — los
+ * bytes nunca viajan (§2.3), así que esto es informativo, no un error.
+ * Compartida entre `importBundle` (misma cuenta, `parentId` == de origen la
+ * mayoría de las veces) y `cloneBundle.ts` (otra cuenta o un segundo import
+ * dentro de la misma: prácticamente SIEMPRE "faltantes" en ese caso, y es lo
+ * esperado — el padre decide si vuelve a subirlas).
+ */
+export function computeMissingAssets(
+  bundleAssets: LevelAsset[],
+  currentAssets: LevelAsset[],
+  levels: LevelDefinition[],
+): MissingAsset[] {
+  const currentUrls = new Set(currentAssets.map((a) => a.url));
+  return bundleAssets
+    .filter((asset) => !currentUrls.has(asset.url))
+    .map((asset) => ({
+      asset,
+      usedByLevels: levels
+        .filter((l) => l.background.src === asset.url || (l.background.layers ?? []).some((layer) => layer.src === asset.url))
+        .map((l) => l.name),
+    }));
 }
 
 function zeroPad(version: number): string {

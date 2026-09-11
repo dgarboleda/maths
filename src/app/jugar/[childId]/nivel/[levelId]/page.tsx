@@ -16,13 +16,15 @@ import { LevelRuntime } from "@/components/level/runtime/LevelRuntime";
 /**
  * Jugar un nivel del Level Editor — docs/level-editor-plan.md §9 (Fase 9).
  * Mismo patrón de autenticación/carga que `jugar/[childId]/page.tsx`
- * (Ciudad Central): el "padre" autenticado es `user.uid`, el niño es un
- * perfil bajo ese padre (nunca una cuenta de Firebase Auth propia), y el
- * progreso se lee de `skillsProgress` real — nada de eso cambia por venir
- * de un nivel creado con el editor en vez de estar hardcodeado.
+ * (Ciudad Central): el dueño de los datos es `parentId` (de `useAuth`, ver
+ * `AuthProvider.tsx`) — el `uid` real de la cuenta de padre, o el de la
+ * familia si esta es una sesión propia del hijo (custom token). El niño
+ * nunca tiene una cuenta de Firebase Auth "normal", y el progreso se lee de
+ * `skillsProgress` real — nada de eso cambia por venir de un nivel creado
+ * con el editor en vez de estar hardcodeado.
  */
 export default function JugarNivelPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string; levelId: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
@@ -31,7 +33,7 @@ export default function JugarNivelPage() {
   const [progressLoaded, setProgressLoaded] = useState(false);
   const [soundOn] = useSoundPreference();
   const placementPending = useRequirePlacement(params.childId, child, router);
-  const { level, loading: levelLoading } = useLevelDoc(user?.uid, params.levelId);
+  const { level, loading: levelLoading } = useLevelDoc(parentId, params.levelId);
   // Fase 18 movió Ciudad Central (y cualquier otro nivel real) a esta misma
   // ruta genérica, pero el AXIA de `WorldTopBar` (world/WorldHud.tsx) se
   // quedó atado a `QuestScene`/`ciudad-central-legacy` — sin esto, jugar
@@ -40,17 +42,17 @@ export default function JugarNivelPage() {
   // título fijo (no sirve para un nivel cualquiera); acá solo el AXIA, que sí
   // es genérico. Play Test (LevelEditorScreen.tsx) no pasa por esta página —
   // vive fuera de `nivel/[levelId]`, así que no le agrega este HUD.
-  const totalStars = useTotalStars(user?.uid, params.childId);
+  const totalStars = useTotalStars(parentId, params.childId);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
-      .then(({ db, firestore: { doc, getDoc } }) => getDoc(doc(db, "parents", user.uid, "children", params.childId)))
+      .then(({ db, firestore: { doc, getDoc } }) => getDoc(doc(db, "parents", parentId, "children", params.childId)))
       .then((snap) => {
         if (cancelled) return;
         if (snap.exists()) setChild(snap.data() as ChildProfile);
@@ -60,13 +62,13 @@ export default function JugarNivelPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
-      .then(({ db, firestore: { collection, getDocs } }) => getDocs(collection(db, "parents", user.uid, "children", params.childId, "skillsProgress")))
+      .then(({ db, firestore: { collection, getDocs } }) => getDocs(collection(db, "parents", parentId, "children", params.childId, "skillsProgress")))
       .then((snap) => {
         if (cancelled) return;
         const map: Record<string, SkillProgress> = {};
@@ -80,9 +82,9 @@ export default function JugarNivelPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
-  if (loading || !user) {
+  if (loading || !user || !parentId) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
@@ -142,7 +144,7 @@ export default function JugarNivelPage() {
       <div className="mx-auto h-full w-full max-w-3xl lg:max-w-none">
         <LevelRuntime
           level={level}
-          parentId={user.uid}
+          parentId={parentId}
           childId={params.childId}
           childName={child.name}
           progressBySkill={progressBySkill}

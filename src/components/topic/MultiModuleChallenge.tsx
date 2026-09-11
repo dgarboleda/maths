@@ -42,7 +42,7 @@ export function MultiModuleChallenge({
   soundOn?: boolean;
   onStepResolved?: (index: number, correct: boolean) => void;
 }) {
-  const { user } = useAuth();
+  const { user, parentId } = useAuth();
   const promptId = useId();
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [loaded, setLoaded] = useState(false);
@@ -52,7 +52,7 @@ export function MultiModuleChallenge({
   const [feedbackByIndex, setFeedbackByIndex] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     (async () => {
       const {
@@ -60,7 +60,7 @@ export function MultiModuleChallenge({
         firestore: { collection, getDocs },
       } = await getFirebase();
       if (cancelled) return;
-      const snap = await getDocs(collection(db, "parents", user.uid, "children", childId, "skillsProgress"));
+      const snap = await getDocs(collection(db, "parents", parentId, "children", childId, "skillsProgress"));
       if (cancelled) return;
       const map: Record<string, SkillProgress> = {};
       snap.forEach((d) => (map[d.id] = d.data() as SkillProgress));
@@ -70,7 +70,7 @@ export function MultiModuleChallenge({
     return () => {
       cancelled = true;
     };
-  }, [user, childId]);
+  }, [parentId, childId]);
 
   const mod = modules[index];
   // Un problema nuevo por módulo/índice, sin re-generar en cada render: solo
@@ -79,7 +79,7 @@ export function MultiModuleChallenge({
   const feedback = index in feedbackByIndex ? { correct: feedbackByIndex[index] } : null;
   const finished = index >= modules.length;
 
-  if (!user || !loaded) {
+  if (!user || !parentId || !loaded) {
     return (
       <p role="status" className="text-center text-slate-300">
         Cargando…
@@ -105,13 +105,13 @@ export function MultiModuleChallenge({
   }
 
   async function submit(given: number) {
-    if (!user || !problem) return;
+    if (!parentId || !problem) return;
     const correct = isCorrectAnswer(problem, given);
     const { db, firestore } = await getFirebase();
     const result = await recordModuleAttempt(
       firestore,
       db,
-      user.uid,
+      parentId,
       childId,
       mod,
       progressBySkill[mod.id],

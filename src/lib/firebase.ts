@@ -41,6 +41,7 @@ export function getFirebase(): Promise<Firebase> {
 declare global {
   var __numerarioEmulatorsConnected: boolean | undefined;
   var __numerarioStorageEmulatorConnected: boolean | undefined;
+  var __numerarioFunctionsEmulatorConnected: boolean | undefined;
 }
 
 async function initFirebase(): Promise<Firebase> {
@@ -121,6 +122,45 @@ async function initFirebaseStorage(): Promise<FirebaseStorageBundle> {
   }
 
   return { storage, storageFns };
+}
+
+export interface FirebaseFunctionsBundle {
+  functions: import("firebase/functions").Functions;
+  /** Funciones de "firebase/functions" (httpsCallable...). */
+  functionsFns: typeof import("firebase/functions");
+}
+
+/*
+ * Igual que Storage arriba: perezoso y en su propia promesa memoizada, para
+ * no penalizar el arranque de las páginas que no llaman ninguna Cloud
+ * Function (todas menos `/entrar/{parentId}`, la única que verifica el PIN
+ * de un hijo sin la sesión del padre — docs/plan-salto-producto.md §8).
+ */
+let functionsPromise: Promise<FirebaseFunctionsBundle> | undefined;
+
+export function getFirebaseFunctions(): Promise<FirebaseFunctionsBundle> {
+  if (!functionsPromise) functionsPromise = initFirebaseFunctions();
+  return functionsPromise;
+}
+
+async function initFirebaseFunctions(): Promise<FirebaseFunctionsBundle> {
+  const [{ initializeApp, getApps, getApp }, functionsFns] = await Promise.all([
+    import("firebase/app"),
+    import("firebase/functions"),
+  ]);
+
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const functions = functionsFns.getFunctions(app);
+
+  if (
+    process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1" &&
+    !globalThis.__numerarioFunctionsEmulatorConnected
+  ) {
+    globalThis.__numerarioFunctionsEmulatorConnected = true;
+    functionsFns.connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+  }
+
+  return { functions, functionsFns };
 }
 
 /*

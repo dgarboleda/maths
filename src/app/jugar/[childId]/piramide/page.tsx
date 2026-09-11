@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile } from "@/lib/types";
 import { starsForAnswer } from "@/lib/economy";
+import { awardStars } from "@/lib/starLedger";
 import { GameShell } from "@/components/GameShell";
 import { PyramidGame } from "@/components/pyramid/PyramidGame";
 import { useTotalStars } from "@/lib/useTotalStars";
@@ -14,12 +15,12 @@ import { useSoundPreference } from "@/lib/useSoundPreference";
 import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 export default function PiramidePage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string }>();
 
   const [child, setChild] = useState<ChildProfile | null>(null);
-  const totalStars = useTotalStars(user?.uid, params.childId);
+  const totalStars = useTotalStars(parentId, params.childId);
   const [streak, setStreak] = useState(0);
   const [repeatsToday, setRepeatsToday] = useState(0);
   const [soundOn, toggleSound] = useSoundPreference();
@@ -30,12 +31,12 @@ export default function PiramidePage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
       .then(({ db, firestore: { doc, getDoc } }) => {
         if (cancelled) return;
-        return getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
+        return getDoc(doc(db, "parents", parentId, "children", params.childId)).then((snap) => {
           if (cancelled) return;
           if (snap.exists()) setChild(snap.data() as ChildProfile);
         });
@@ -44,17 +45,15 @@ export default function PiramidePage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   async function submitAnswer(difficulty: number, correct: boolean): Promise<number> {
-    if (!user) return 0;
+    if (!parentId) return 0;
 
-    const {
-      db,
-      firestore: { addDoc, collection, serverTimestamp },
-    } = await getFirebase();
+    const { db, firestore } = await getFirebase();
+    const { addDoc, collection, serverTimestamp } = firestore;
 
-    await addDoc(collection(db, "parents", user.uid, "children", params.childId, "attempts"), {
+    await addDoc(collection(db, "parents", parentId, "children", params.childId, "attempts"), {
       skillId: "piramide",
       itemId: crypto.randomUUID(),
       correct,
@@ -67,18 +66,13 @@ export default function PiramidePage() {
     }
 
     const stars = starsForAnswer({ difficulty, streak, repeatsToday });
-    await addDoc(collection(db, "parents", user.uid, "children", params.childId, "starLedger"), {
-      delta: stars,
-      reason: "problem_solved",
-      attemptId: null,
-      createdAt: serverTimestamp(),
-    });
+    await awardStars(firestore, db, parentId, params.childId, stars, "problem_solved");
     setStreak((s) => s + 1);
     setRepeatsToday((n) => n + 1);
     return stars;
   }
 
-  if (loading || !user) {
+  if (loading || !user || !parentId) {
     return (
       <main id="contenido"
         tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">

@@ -522,16 +522,35 @@ está mejor cubierto por la prueba de integración de §2.6.
 
 ## 8. Lo que este plan deliberadamente NO hace
 
-- **Sesión propia del niño.** El PIN es un control blando (`pin.ts`,
-  SHA-256 sin sal comparado en cliente) dentro de la sesión del padre, tal
-  como documenta `firestore.rules:7-13`. Convertirlo en frontera real exige
-  una Cloud Function que emita un token personalizado: coste alto, y solo
-  vale la pena si el escenario "el niño en su propio dispositivo" es real.
-  Decisión de producto, no de ingeniería — no la tomes desde el código.
+- ~~**Sesión propia del niño.**~~ Implementada tras confirmar que el
+  escenario es real: `functions/src/index.ts` (`verifyChildPin`,
+  `listChildrenPublic`, Cloud Functions con Admin SDK), custom token con
+  claims `{ role: "child", parentId, childId }`, `firestore.rules`/
+  `storage.rules` extendidas (`isChild`/`isAnyChildOf`), `AuthProvider.tsx`
+  expone el `parentId` efectivo, y `/entrar/{parentId}` es la puerta de
+  entrada pública (enlace compartible desde Ajustes) para jugar sin la
+  sesión del padre en el dispositivo. Ver `src/test/integration/
+  child-session-rules.test.ts` para la cobertura de la frontera de
+  seguridad.
 - **Contador agregado de estrellas.** `useTotalStars` descarga el libro mayor
   entero en cada pantalla. Está bien identificado en
   `auditoria-rendimiento-accesibilidad.md` §1.2 y necesita migrar saldos
   existentes; es una fase propia, no un apéndice de estas.
-- **Presupuesto de rendimiento en CI** (Lighthouse / bundle-analyzer).
-  Merece existir, no bloquea nada de acá.
-- **Clonar/compartir mundos.** Ver §2.1.
+- ~~**Presupuesto de rendimiento en CI**~~ Implementado con Lighthouse CI
+  (no `@next/bundle-analyzer`: envuelve el `webpack()` de `next.config`, que
+  la build de producción — Turbopack desde Next 16 — ignora). Ver
+  `lighthouserc.json`, `.github/workflows/ci.yml` (job "Presupuesto de
+  rendimiento") y `npm run perf`.
+- ~~**Clonar/compartir mundos.**~~ Implementado en `src/lib/backup/
+  cloneBundle.ts`: a diferencia de `importBundle` (ids originales,
+  sobrescribe), genera ids nuevos para todo lo que trae el paquete y lo
+  fusiona con lo que ya haya en la cuenta destino — nunca pisa nada propio.
+  Reescribe las referencias cruzadas que §2.1 señalaba como el riesgo real
+  (`WorldNode.levelId`, `WorldLink.from/toLevelId`, `LevelExit.target.
+  levelId`, `ChallengePlacement.moduleId` de módulos personalizados,
+  `unlock.levelIds`/`moduleIds` de nodos y avatares), con `validateWorld`/
+  `validateLevel` corriendo sobre el resultado ya remapeado como red de
+  seguridad (nunca bloquea: se reporta, igual que `missingAssets`). "Sumar
+  como copia nueva" en `BackupPanel.tsx` (Ajustes) sirve tanto para recibir
+  el mundo de otra familia como para, en la misma cuenta, sumar un paquete
+  exportado antes sin pisar el actual.

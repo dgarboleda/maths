@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getFirebase } from "@/lib/firebase";
+import { ensureStarBalanceSeeded } from "@/lib/starLedger";
 
 interface Balance {
   key: string;
@@ -9,17 +10,12 @@ interface Balance {
 }
 
 /**
- * Saldo de estrellas del hijo, en vivo.
- *
- * El saldo es la suma del libro mayor (`starLedger`), que solo crece. En vez
- * de volver a sumar los N documentos en cada notificación, se mantiene un
- * acumulador y solo se aplican los cambios del snapshot (`docChanges()`), que
- * son unos pocos por respuesta contestada: el costo por actualización pasa a
- * ser O(cambios) en vez de O(entradas del libro mayor).
- *
- * Pendiente (ver docs/auditoria-rendimiento-accesibilidad.md): un contador
- * agregado por hijo evitaría además descargar el libro mayor entero al abrir
- * cada pantalla.
+ * Saldo de estrellas del hijo, en vivo — lee el contador agregado
+ * (`starBalance/total`, ver `starLedger.ts`), nunca el libro mayor completo
+ * (docs/auditoria-rendimiento-accesibilidad.md §1.2). Si ese documento
+ * todavía no existe (un perfil de antes de este cambio), dispara la
+ * migración perezosa una sola vez; el propio `onSnapshot` de acá recibe el
+ * valor sembrado sin que este hook tenga que hacer nada más.
  */
 export function useTotalStars(
   parentId: string | undefined,
@@ -32,30 +28,22 @@ export function useTotalStars(
     if (!parentId || !childId) return;
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
-    const deltas = new Map<string, number>();
-    let sum = 0;
+    let seeding = false;
 
     getFirebase()
-      .then(({ db, firestore: { collection, onSnapshot } }) => {
+      .then(({ db, firestore }) => {
         if (cancelled) return;
-        unsubscribe = onSnapshot(
-          collection(db, "parents", parentId, "children", childId, "starLedger"),
-          (snap) => {
-            for (const change of snap.docChanges()) {
-              const id = change.doc.id;
-              const previous = deltas.get(id) ?? 0;
-              if (change.type === "removed") {
-                sum -= previous;
-                deltas.delete(id);
-              } else {
-                const delta = (change.doc.data().delta as number) ?? 0;
-                sum += delta - previous;
-                deltas.set(id, delta);
-              }
-            }
-            setBalance({ key: `${parentId}/${childId}`, total: sum });
-          },
-        );
+        const ref = firestore.doc(db, "parents", parentId, "children", childId, "starBalance", "total");
+        unsubscribe = firestore.onSnapshot(ref, (snap) => {
+          if (snap.exists()) {
+            setBalance({ key: `${parentId}/${childId}`, total: (snap.data().total as number | undefined) ?? 0 });
+          } else if (!seeding) {
+            seeding = true;
+            ensureStarBalanceSeeded(firestore, db, parentId, childId).catch((err) =>
+              console.error("No se pudo migrar el saldo de estrellas", err),
+            );
+          }
+        });
       })
       .catch((err) => console.error("No se pudo cargar el saldo de estrellas", err));
 

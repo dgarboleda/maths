@@ -34,10 +34,10 @@ interface PlacementDoc extends Placement {
 }
 
 export default function EvaluacionPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string }>();
-  const totalStars = useTotalStars(user?.uid, params.childId);
+  const totalStars = useTotalStars(parentId, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
   const promptId = useId();
   const nextButtonRef = useRef<HTMLButtonElement>(null);
@@ -62,7 +62,7 @@ export default function EvaluacionPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     (async () => {
       const {
@@ -70,12 +70,12 @@ export default function EvaluacionPage() {
         firestore: { collection, doc, getDoc, getDocs, limit, orderBy, query },
       } = await getFirebase();
       if (cancelled) return;
-      const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
+      const childSnap = await getDoc(doc(db, "parents", parentId, "children", params.childId));
       if (cancelled || !childSnap.exists()) return;
       setChild(childSnap.data() as ChildProfile);
 
       const progressSnap = await getDocs(
-        collection(db, "parents", user.uid, "children", params.childId, "skillsProgress"),
+        collection(db, "parents", parentId, "children", params.childId, "skillsProgress"),
       );
       if (cancelled) return;
       const map: Record<string, SkillProgress> = {};
@@ -84,7 +84,7 @@ export default function EvaluacionPage() {
 
       const placementsSnap = await getDocs(
         query(
-          collection(db, "parents", user.uid, "children", params.childId, "placements"),
+          collection(db, "parents", parentId, "children", params.childId, "placements"),
           orderBy("completedAt", "desc"),
           limit(1),
         ),
@@ -96,7 +96,7 @@ export default function EvaluacionPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   /**
    * En una re-evaluación, arranca justo encima de la última franja aprobada
@@ -167,7 +167,7 @@ export default function EvaluacionPage() {
     setSaving(true);
     setSaveError(null);
     try {
-      if (!user) throw new Error("No hay sesión activa.");
+      if (!parentId) throw new Error("No hay sesión activa.");
       const summary = summarizePlacement(results);
       const grants = grantsFromPlacement(results, progressBySkill);
       const { db, firestore } = await getFirebase();
@@ -175,7 +175,7 @@ export default function EvaluacionPage() {
       const batch = writeBatch(db);
 
       const placementRef = doc(
-        collection(db, "parents", user.uid, "children", params.childId, "placements"),
+        collection(db, "parents", parentId, "children", params.childId, "placements"),
       );
       batch.set(placementRef, {
         startedAt: startedAtRef.current,
@@ -197,19 +197,19 @@ export default function EvaluacionPage() {
         };
         mergedProgress[moduleId] = granted;
         batch.set(
-          doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", moduleId),
+          doc(db, "parents", parentId, "children", params.childId, "skillsProgress", moduleId),
           granted,
         );
       }
 
-      batch.update(doc(db, "parents", user.uid, "children", params.childId), {
+      batch.update(doc(db, "parents", parentId, "children", params.childId), {
         placementStatus: "completo",
       });
 
       await batch.commit();
       // La insignia es un extra: si falla no debe impedir que el niño entre
       // a jugar con su evaluación ya guardada de verdad.
-      await awardBadge(firestore, db, user.uid, params.childId, "detective").catch((err) =>
+      await awardBadge(firestore, db, parentId, params.childId, "detective").catch((err) =>
         console.error("No se pudo otorgar la insignia de la evaluación", err),
       );
       // El plan de la pantalla de resultados (próximo módulo por hilo)
@@ -235,7 +235,7 @@ export default function EvaluacionPage() {
     if (feedback) nextButtonRef.current?.focus();
   }, [feedback]);
 
-  if (loading || !user || !child) {
+  if (loading || !user || !parentId || !child) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
