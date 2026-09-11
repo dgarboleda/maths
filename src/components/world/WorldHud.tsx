@@ -26,6 +26,7 @@ import { Avatar } from "./Avatar";
 export function WorldTopBar({
   childId,
   childName,
+  title = "Ciudad Central",
   stars,
   earnedBadgeIds,
   soundOn,
@@ -35,6 +36,10 @@ export function WorldTopBar({
 }: {
   childId: string;
   childName: string;
+  /** Fase 28 (docs/plan-jugabilidad.md §2): antes hardcodeado a "Ciudad
+   *  Central". El hub (`/mapa`) pasa `world.story.title`; la ruta legacy
+   *  no pasa nada y conserva el literal de siempre. */
+  title?: string;
   stars: number | null;
   earnedBadgeIds: string[];
   soundOn: boolean;
@@ -57,7 +62,7 @@ export function WorldTopBar({
 
         <div>
           <h1 className="world-text-glow bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text font-display text-base font-bold text-transparent sm:text-lg">
-            Ciudad Central
+            {title}
           </h1>
           <p className="text-[11px] font-semibold text-indigo-300">{childName}</p>
         </div>

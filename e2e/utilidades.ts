@@ -2,7 +2,12 @@ import { expect, type Page } from "@playwright/test";
 import { deleteApp, initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { collection, connectFirestoreEmulator, doc, getDocs, getFirestore, setDoc, writeBatch } from "firebase/firestore";
+import * as firestoreFns from "firebase/firestore";
 import { STRANDS } from "../src/lib/strands";
+import { ciudadCentralAsLevel } from "../src/lib/level/legacy/ciudadCentral";
+import { insertLevel } from "../src/lib/level/persistence/levelRepository";
+import { ensureWorld, saveWorld } from "../src/lib/gameworld/persistence/worldRepository";
+import type { WorldNode } from "../src/lib/gameworld/schema";
 
 export const CLAVE_PADRE = "secreto123";
 
@@ -154,6 +159,52 @@ export async function otorgarDominio(correo: string, childId: string, moduleIds:
         }),
       ),
     );
+  } finally {
+    await deleteApp(app);
+  }
+}
+
+/**
+ * Siembra un mundo real en Firestore, directo (sin pasar por el Level
+ * Editor): mismo contenido que `seedExampleWorld` (src/lib/level/
+ * seedExampleWorld.ts) — un nivel real ("Ciudad Central" como nivel) más un
+ * `GameWorld` con ese nivel como nodo `isStart`. Sirve para probar el hub
+ * del jugador (`/mapa`, Fase 28) navegando directo a la ruta, sin depender
+ * de a dónde manda el despachador `/jugar/{childId}`. El Mundo es del
+ * padre (`parents/{parentId}/world`), no del hijo: no recibe `childId`.
+ */
+export async function sembrarMundoDeEjemplo(correo: string): Promise<{ levelId: string }> {
+  const app = initializeApp(
+    { apiKey: "demo-api-key", projectId: "demo-numerario" },
+    `mundo-${crypto.randomUUID()}`,
+  );
+  try {
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
+
+    const db = getFirestore(app);
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+    const level = ciudadCentralAsLevel(user.uid);
+    await insertLevel(firestoreFns, db, user.uid, level);
+
+    const node: WorldNode = {
+      levelId: level.id,
+      chapterId: null,
+      position: { x: 50, y: 50 },
+      label: level.name,
+      icon: "🏙️",
+      unlock: { kind: "always" },
+      isStart: true,
+    };
+    const base = await ensureWorld(firestoreFns, db, user.uid, user.uid);
+    await saveWorld(firestoreFns, db, user.uid, {
+      ...base,
+      nodes: [...base.nodes.filter((n) => n.levelId !== node.levelId), node],
+    });
+
+    return { levelId: level.id };
   } finally {
     await deleteApp(app);
   }

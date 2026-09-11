@@ -71,6 +71,7 @@ export const WORLD_RULE_FIELDS: PropertyFieldDef[] = [
     key: "showWorldMap",
     label: "Habilitar el mapa del mundo para el jugador",
     default: DEFAULT_WORLD_RULES.showWorldMap,
+    hint: "Apagado esconde solo la grilla de niveles; el resto de la pantalla (zonas, boss, tienda, diario) sigue disponible.",
   },
   {
     kind: "boolean",
