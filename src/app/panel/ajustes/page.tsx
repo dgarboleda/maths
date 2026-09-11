@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import { signOut } from "firebase/auth";
-import { DatabaseBackup, ImageIcon, KeyRound, Trash2, UserRound, Users } from "lucide-react";
+import { Check, Copy, DatabaseBackup, ImageIcon, KeyRound, Smartphone, Trash2, UserRound, Users } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { useFamily, type ChildDoc } from "@/components/family/FamilyProvider";
 import { getFirebase } from "@/lib/firebase";
@@ -99,6 +99,12 @@ export default function AjustesPage() {
       </SectionCard>
 
       {parentId && (
+        <SectionCard title="Entrar desde su propio dispositivo" icon={<Smartphone className="size-4" aria-hidden="true" />}>
+          <ChildDeviceLink parentId={parentId} />
+        </SectionCard>
+      )}
+
+      {parentId && (
         <SectionCard title="Respaldo" icon={<DatabaseBackup className="size-4" aria-hidden="true" />}>
           <BackupPanel parentId={parentId} />
         </SectionCard>
@@ -113,6 +119,56 @@ export default function AjustesPage() {
       {pickingAvatarChild && parentId && (
         <AvatarPickerDialog parentId={parentId} child={pickingAvatarChild} onClose={() => setPickingAvatarChild(null)} onSaved={() => setPickingAvatarChild(null)} />
       )}
+    </div>
+  );
+}
+
+/**
+ * El enlace lleva el `parentId` en la URL a propósito: no es un secreto que
+ * proteja los datos (eso lo hacen firestore.rules/storage.rules vía los
+ * claims del custom token, no la URL) — es solo el identificador de la
+ * familia para que `/entrar/{parentId}` sepa a quién pedirle la lista de
+ * perfiles. Quien lo reciba solo puede avanzar más allá si conoce, además,
+ * el PIN de 4 dígitos de un hijo (verificado del lado del servidor, con
+ * bloqueo tras varios intentos fallidos — ver `functions/src/index.ts`).
+ */
+function ChildDeviceLink({ parentId }: { parentId: string }) {
+  const [copied, setCopied] = useState(false);
+  const link = typeof window !== "undefined" ? `${window.location.origin}/entrar/${parentId}` : "";
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("No se pudo copiar el enlace", err);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <p className="text-sm text-slate-400">
+        Comparte este enlace con el dispositivo de tu hijo para que entre directo a elegir su perfil, sin que abras
+        tu sesión ahí.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          readOnly
+          value={link}
+          onFocus={(e) => e.currentTarget.select()}
+          aria-label="Enlace para entrar desde otro dispositivo"
+          className="family-input min-w-0 flex-1 text-xs"
+        />
+        <button
+          type="button"
+          onClick={copyLink}
+          className="flex min-h-11 items-center gap-1.5 rounded-xl border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
+        >
+          {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+          {copied ? "¡Copiado!" : "Copiar"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -33,7 +33,7 @@ import { useRequirePlacement } from "@/lib/useRequirePlacement";
  * `juego.spec.ts`, …) siga teniendo algo real que visitar.
  */
 export default function CiudadCentralLegacyPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
@@ -44,7 +44,7 @@ export default function CiudadCentralLegacyPage() {
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
   const [panel, setPanel] = useState<"ninguno" | "tienda">("ninguno");
   const [streak, setStreak] = useState(0);
-  const totalStars = useTotalStars(user?.uid, params.childId);
+  const totalStars = useTotalStars(parentId, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
   const placementPending = useRequirePlacement(params.childId, child, router);
 
@@ -53,12 +53,12 @@ export default function CiudadCentralLegacyPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
       .then(({ db, firestore: { doc, getDoc } }) => {
         if (cancelled) return;
-        return getDoc(doc(db, "parents", user.uid, "children", params.childId)).then((snap) => {
+        return getDoc(doc(db, "parents", parentId, "children", params.childId)).then((snap) => {
           if (cancelled) return;
           if (snap.exists()) {
             setChild(snap.data() as ChildProfile);
@@ -69,14 +69,14 @@ export default function CiudadCentralLegacyPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
       .then(({ db, firestore: { collection, getDocs } }) =>
-        getDocs(collection(db, "parents", user.uid, "children", params.childId, "skillsProgress")),
+        getDocs(collection(db, "parents", parentId, "children", params.childId, "skillsProgress")),
       )
       .then((snap) => {
         if (cancelled) return;
@@ -91,14 +91,14 @@ export default function CiudadCentralLegacyPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
       .then(({ db, firestore: { collection, getDocs } }) =>
-        getDocs(collection(db, "parents", user.uid, "children", params.childId, "badges")),
+        getDocs(collection(db, "parents", parentId, "children", params.childId, "badges")),
       )
       .then((snap) => {
         if (cancelled) return;
@@ -108,17 +108,17 @@ export default function CiudadCentralLegacyPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
     getFirebase()
       .then(({ db, firestore: { collection, onSnapshot, orderBy, query } }) => {
         if (cancelled) return;
         const q = query(
-          collection(db, "parents", user.uid, "children", params.childId, "redemptionRequests"),
+          collection(db, "parents", parentId, "children", params.childId, "redemptionRequests"),
           orderBy("createdAt", "desc"),
         );
         unsubscribe = onSnapshot(q, (snap) => {
@@ -130,9 +130,9 @@ export default function CiudadCentralLegacyPage() {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
-  if (loading || !user) {
+  if (loading || !user || !parentId) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
@@ -187,7 +187,7 @@ export default function CiudadCentralLegacyPage() {
 
         <QuestScene
           childId={params.childId}
-          parentId={user.uid}
+          parentId={parentId}
           childName={child.name}
           progressBySkill={progressBySkill}
           streak={streak}
@@ -205,7 +205,7 @@ export default function CiudadCentralLegacyPage() {
 
       {panel === "tienda" && (
         <ShopPanel
-          parentId={user.uid}
+          parentId={parentId}
           childId={params.childId}
           maxStars={totalStars ?? 0}
           requests={requests}

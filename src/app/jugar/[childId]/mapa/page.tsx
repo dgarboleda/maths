@@ -28,7 +28,7 @@ const STATE_CLASS: Record<string, string> = {
  * `starLedger` reales (`worldGraphState`) — cero estado propio de mundo.
  */
 export default function JugarMapaPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
@@ -36,7 +36,7 @@ export default function JugarMapaPage() {
   const [levels, setLevels] = useState<LevelDefinition[] | null>(null);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [progressLoaded, setProgressLoaded] = useState(false);
-  const totalStars = useTotalStars(user?.uid, params.childId);
+  const totalStars = useTotalStars(parentId, params.childId);
   const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
@@ -44,10 +44,10 @@ export default function JugarMapaPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
-      .then(({ db, firestore: { doc, getDoc } }) => getDoc(doc(db, "parents", user.uid, "children", params.childId)))
+      .then(({ db, firestore: { doc, getDoc } }) => getDoc(doc(db, "parents", parentId, "children", params.childId)))
       .then((snap) => {
         if (!cancelled && snap.exists()) setChild(snap.data() as ChildProfile);
       })
@@ -55,13 +55,13 @@ export default function JugarMapaPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
-      .then(({ db, firestore: { collection, getDocs } }) => getDocs(collection(db, "parents", user.uid, "children", params.childId, "skillsProgress")))
+      .then(({ db, firestore: { collection, getDocs } }) => getDocs(collection(db, "parents", parentId, "children", params.childId, "skillsProgress")))
       .then((snap) => {
         if (cancelled) return;
         const map: Record<string, SkillProgress> = {};
@@ -75,15 +75,15 @@ export default function JugarMapaPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     getFirebase()
       .then(async ({ db, firestore }) => {
-        const [w, summaries] = await Promise.all([getWorld(firestore, db, user.uid), listLevels(firestore, db, user.uid)]);
-        const full = await Promise.all(summaries.map((s) => getLevel(firestore, db, user.uid, s.id)));
+        const [w, summaries] = await Promise.all([getWorld(firestore, db, parentId), listLevels(firestore, db, parentId)]);
+        const full = await Promise.all(summaries.map((s) => getLevel(firestore, db, parentId, s.id)));
         return { w, levels: full.filter((l): l is LevelDefinition => l !== null) };
       })
       .then(({ w, levels: full }) => {
@@ -95,9 +95,9 @@ export default function JugarMapaPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
-  if (loading || !user || !child || placementPending || !progressLoaded || !levels || !world) {
+  if (loading || !user || !parentId || !child || placementPending || !progressLoaded || !levels || !world) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">

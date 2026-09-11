@@ -20,12 +20,12 @@ import { useRequirePlacement } from "@/lib/useRequirePlacement";
  * de `skillsProgress` en cada render.
  */
 export default function MisionesPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string }>();
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
-  const totalStars = useTotalStars(user?.uid, params.childId);
+  const totalStars = useTotalStars(parentId, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
   const placementPending = useRequirePlacement(params.childId, child, router);
 
@@ -34,7 +34,7 @@ export default function MisionesPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     (async () => {
       const {
@@ -42,12 +42,12 @@ export default function MisionesPage() {
         firestore: { collection, doc, getDoc, getDocs },
       } = await getFirebase();
       if (cancelled) return;
-      const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
+      const childSnap = await getDoc(doc(db, "parents", parentId, "children", params.childId));
       if (cancelled || !childSnap.exists()) return;
       setChild(childSnap.data() as ChildProfile);
 
       const progressSnap = await getDocs(
-        collection(db, "parents", user.uid, "children", params.childId, "skillsProgress"),
+        collection(db, "parents", parentId, "children", params.childId, "skillsProgress"),
       );
       if (cancelled) return;
       const map: Record<string, SkillProgress> = {};
@@ -57,9 +57,9 @@ export default function MisionesPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
-  if (loading || !user || !child || placementPending) {
+  if (loading || !user || !parentId || !child || placementPending) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">

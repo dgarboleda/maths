@@ -5,6 +5,10 @@ rules_version = '2';
 // pertenece al padre que lo subió; nadie más lo lista, lo sustituye ni lo
 // borra. Los niveles de ese padre son los únicos que lo referencian
 // (docs/asset-management-plan.md §F.1).
+//
+// Un hijo con su propia sesión (claims { role: "child", parentId, childId }
+// emitidos por verifyChildPin — ver firestore.rules) necesita LEER estos
+// assets para poder jugar un nivel que los use; nunca subirlos ni borrarlos.
 service firebase.storage {
   match /b/{bucket}/o {
 
@@ -12,8 +16,17 @@ service firebase.storage {
       return request.auth != null && request.auth.uid == parentId;
     }
 
+    // `.get(key, default)`, no acceso con punto — ver la misma nota en
+    // firestore.rules: un token de padre normal no tiene estas claims y
+    // `.role`/`.parentId` tiran una excepción de evaluación en vez de `null`.
+    function isAnyChildOf(parentId) {
+      return request.auth != null
+        && request.auth.token.get('role', null) == 'child'
+        && request.auth.token.get('parentId', null) == parentId;
+    }
+
     match /parents/{parentId}/level-assets/{assetFile} {
-      allow read: if isParent(parentId);
+      allow read: if isParent(parentId) || isAnyChildOf(parentId);
 
       // Frontera de seguridad REAL (no una guarda de UX): tamaño y tipo.
       // El redimensionado en cliente apunta a ~400KB; estos 4MB son el

@@ -4,13 +4,13 @@ rules_version = '2';
 // Todo lo del hogar cuelga debajo: children/{childId}, y dentro de cada hijo
 // sus colecciones de progreso, intentos, estrellas y canjes.
 //
-// Pendiente de decidir antes de construir el juego: cómo entra el NIÑO a su
-// perfil sin volver a autenticarse con Google. Estas reglas asumen, por ahora,
-// que el dispositivo ya está en la sesión autenticada del padre (uso
-// compartido en el mismo navegador/tablet). Si más adelante se quiere que el
-// niño entre solo con su PIN sin la sesión del padre, hace falta emitir un
-// token personalizado desde una Cloud Function que valide el PIN — no se
-// puede resolver únicamente con estas reglas declarativas.
+// El niño también puede tener su PROPIA sesión, sin la del padre en el mismo
+// dispositivo: `verifyChildPin` (Cloud Function, functions/src/index.ts)
+// valida el PIN contra Firestore con el Admin SDK (que no pasa por estas
+// reglas) y emite un custom token con claims { role: "child", parentId,
+// childId } — nunca un uid real de Firebase Auth. `isChild`/`isAnyChildOf`
+// leen esos claims. Un hijo nunca puede ELEGIR sus propios claims: los pone
+// la función, con el PIN ya verificado del lado del servidor.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -18,47 +18,96 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == parentId;
     }
 
+    // Cualquier hijo autenticado de ESTA familia (para leer contenido
+    // compartido entre hermanos: niveles, mundo, currícula). `.get(key,
+    // default)` (no acceso con punto): un token de padre normal no tiene
+    // NINGUNA de estas claims — ni siquiera en `false` — y leer una clave
+    // ausente con `.role`/`.parentId` hace que el motor de reglas tire una
+    // excepción de evaluación en vez de devolver `null` (verificado con el
+    // emulador: sin este cambio, cualquier lectura denegada de un padre
+    // — donde `isParent` da `false` y por eso SÍ se llega a evaluar esto —
+    // mostraba "Property role is undefined on object" en vez de un simple
+    // permiso denegado).
+    function isAnyChildOf(parentId) {
+      return request.auth != null
+        && request.auth.token.get('role', null) == 'child'
+        && request.auth.token.get('parentId', null) == parentId;
+    }
+
+    // Ese hijo puntual (para sus propios datos de progreso).
+    function isChild(parentId, childId) {
+      return isAnyChildOf(parentId) && request.auth.token.get('childId', null) == childId;
+    }
+
+    function isParentOrChild(parentId, childId) {
+      return isParent(parentId) || isChild(parentId, childId);
+    }
+
     match /parents/{parentId} {
+      // El documento del padre no lo lee ningún hijo — nada bajo /jugar/**
+      // lo necesita.
       allow read, write: if isParent(parentId);
 
       match /children/{childId} {
-        allow read, write: if isParent(parentId);
+        allow read: if isParentOrChild(parentId, childId);
+        allow create, delete: if isParent(parentId);
+        // El hijo solo puede tocar su propio documento para marcar la
+        // evaluación diagnóstica como completa (evaluacion/page.tsx) — nunca
+        // su nombre, PIN, avatar o cualquier otro campo.
+        allow update: if isParent(parentId)
+          || (isChild(parentId, childId)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['placementStatus']));
 
         match /skillsProgress/{skillId} {
-          allow read, write: if isParent(parentId);
+          allow read, write: if isParentOrChild(parentId, childId);
         }
 
+        // Bitácora de intentos: se agrega, nunca se corrige ni se borra
+        // desde el dispositivo del hijo.
         match /attempts/{attemptId} {
-          allow read, write: if isParent(parentId);
+          allow read, create: if isParentOrChild(parentId, childId);
+          allow update, delete: if isParent(parentId);
         }
 
+        // Libro mayor de estrellas: mismo criterio — el hijo solo agrega
+        // entradas al jugar, nunca edita ni borra una ya escrita.
         match /starLedger/{entryId} {
-          allow read, write: if isParent(parentId);
+          allow read, create: if isParentOrChild(parentId, childId);
+          allow update, delete: if isParent(parentId);
         }
 
+        // El hijo pide un canje; solo el padre lo aprueba/rechaza/borra.
         match /redemptionRequests/{requestId} {
-          allow read, write: if isParent(parentId);
+          allow read, create: if isParentOrChild(parentId, childId);
+          allow update, delete: if isParent(parentId);
         }
 
+        // La evaluación diagnóstica la rinde el propio hijo; el resultado ya
+        // guardado no se corrige a mano.
         match /placements/{placementId} {
-          allow read, write: if isParent(parentId);
+          allow read, create: if isParentOrChild(parentId, childId);
+          allow update, delete: if isParent(parentId);
         }
 
+        // Insignias: se otorgan solas durante el juego, igual que
+        // skillsProgress.
         match /badges/{badgeId} {
-          allow read, write: if isParent(parentId);
+          allow read, write: if isParentOrChild(parentId, childId);
         }
       }
 
       // Niveles del Level Editor (docs/level-editor-plan.md §10.2): propiedad
       // del padre-autor, no de un hijo — cualquier hijo de la familia puede
-      // jugarlos, igual que /curriculum es del catálogo, no de un hijo.
+      // jugarlos (lectura), igual que /curriculum es del catálogo, no de un
+      // hijo. Autoría (escritura) sigue siendo solo del padre.
       match /levels/{levelId} {
-        allow read, write: if isParent(parentId);
+        allow read: if isParent(parentId) || isAnyChildOf(parentId);
+        allow write: if isParent(parentId);
 
         // Cada guardado deja un snapshot inmutable — nunca se pisa ni se
         // borra una versión ya escrita (versionado optimista, §10.4).
         match /versions/{versionId} {
-          allow read: if isParent(parentId);
+          allow read: if isParent(parentId) || isAnyChildOf(parentId);
           allow create: if isParent(parentId);
           allow update, delete: if false;
         }
@@ -68,16 +117,18 @@ service cloud.firestore {
       // (docs/asset-management-plan.md §C.2). El archivo vive en Storage
       // (storage.rules); acá solo su ficha: etiqueta, tipo, dimensiones.
       match /levelAssets/{assetId} {
-        allow read, write: if isParent(parentId);
+        allow read: if isParent(parentId) || isAnyChildOf(parentId);
+        allow write: if isParent(parentId);
       }
 
       // Mundo del juego: historia, capítulos, grafo de niveles, reglas
       // generales y catálogo de avatares (docs/level-editor-plan-v2.md §3).
       // Mismo dueño y mismo versionado inmutable que /levels.
       match /world/{worldId} {
-        allow read, write: if isParent(parentId);
+        allow read: if isParent(parentId) || isAnyChildOf(parentId);
+        allow write: if isParent(parentId);
         match /versions/{versionId} {
-          allow read: if isParent(parentId);
+          allow read: if isParent(parentId) || isAnyChildOf(parentId);
           allow create: if isParent(parentId);
           allow update, delete: if false;
         }
@@ -87,15 +138,19 @@ service cloud.firestore {
       // §7.3): módulos con el mismo contrato que los de código (id, hilo,
       // dificultad, prerrequisitos, generador, concepto, ejemplos). Sin
       // subcolección de versiones — un módulo es mucho más chico que un
-      // nivel y no justifica ese costo.
+      // nivel y no justifica ese costo. Un hijo la lee para poder jugar
+      // (useCustomCurriculum se hidrata también en /jugar/{childId}/**);
+      // solo el padre la edita.
       match /curriculumModules/{moduleId} {
-        allow read, write: if isParent(parentId);
+        allow read: if isParent(parentId) || isAnyChildOf(parentId);
+        allow write: if isParent(parentId);
       }
     }
 
     // Contenido curricular: catálogo compartido de hilos/unidades, de solo
-    // lectura para cualquier usuario autenticado; se administra aparte
-    // (consola o script de siembra), nunca desde el cliente del juego.
+    // lectura para cualquier usuario autenticado (padre o hijo); se
+    // administra aparte (consola o script de siembra), nunca desde el
+    // cliente del juego.
     match /curriculum/{document=**} {
       allow read: if request.auth != null;
       allow write: if false;

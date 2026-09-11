@@ -12,13 +12,14 @@ import { useCustomCurriculum } from "@/lib/curriculum/useCustomCurriculum";
  * render de un nivel con un desafío personalizado vería `undefined` y
  * rompería (`ConceptoGeneric`, `EjemplosTab`, el runtime de niveles…).
  *
- * `useAuth` alcanza para el `parentId`: la sesión del dispositivo siempre es
- * la del padre (ver la nota en `firestore.rules`), así que `user.uid` ES el
- * dueño de los módulos personalizados de esta familia.
+ * `useAuth` ya resuelve el `parentId` efectivo, sea una sesión del padre o
+ * la propia del hijo (custom token con claims `{ role: "child", parentId,
+ * childId }` — ver `firestore.rules`/`functions/src/index.ts`): en ambos
+ * casos es el dueño de los módulos personalizados de esta familia.
  */
 export default function JugarChildLayout({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
-  const { ready } = useCustomCurriculum(user?.uid);
+  const { user, loading, parentId } = useAuth();
+  const { ready } = useCustomCurriculum(parentId);
 
   // Mientras no se sabe si hay sesión (o no la hay), se deja pasar a
   // `children` sin tocar nada: cada pantalla ya tiene su propio efecto de

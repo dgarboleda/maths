@@ -26,7 +26,7 @@ import { useRequirePlacement } from "@/lib/useRequirePlacement";
  * objeto sigue llevando a la pantalla completa del tema.
  */
 export default function ZonaPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string; strand: string }>();
   const strand = getStrand(params.strand);
@@ -35,7 +35,7 @@ export default function ZonaPage() {
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [selected, setSelected] = useState<Interactable | null>(null);
   const [streak, setStreak] = useState(0);
-  const totalStars = useTotalStars(user?.uid, params.childId);
+  const totalStars = useTotalStars(parentId, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
   const placementPending = useRequirePlacement(params.childId, child, router);
 
@@ -44,7 +44,7 @@ export default function ZonaPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     (async () => {
       const {
@@ -52,12 +52,12 @@ export default function ZonaPage() {
         firestore: { collection, doc, getDoc, getDocs },
       } = await getFirebase();
       if (cancelled) return;
-      const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
+      const childSnap = await getDoc(doc(db, "parents", parentId, "children", params.childId));
       if (cancelled || !childSnap.exists()) return;
       setChild(childSnap.data() as ChildProfile);
 
       const progressSnap = await getDocs(
-        collection(db, "parents", user.uid, "children", params.childId, "skillsProgress"),
+        collection(db, "parents", parentId, "children", params.childId, "skillsProgress"),
       );
       if (cancelled) return;
       const map: Record<string, SkillProgress> = {};
@@ -67,9 +67,9 @@ export default function ZonaPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
-  if (loading || !user) {
+  if (loading || !user || !parentId) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
@@ -188,7 +188,7 @@ export default function ZonaPage() {
 
       {selected && selectedModule && (
         <PuzzleOverlay
-          parentId={user.uid}
+          parentId={parentId}
           childId={params.childId}
           interactable={selected}
           mod={selectedModule}

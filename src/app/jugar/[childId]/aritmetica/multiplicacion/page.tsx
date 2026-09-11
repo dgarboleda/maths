@@ -41,14 +41,14 @@ function panelProps(id: TabId) {
 }
 
 export default function MultiplicacionPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string }>();
 
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progress, setProgress] = useState<SkillProgress | undefined>(undefined);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
-  const totalStars = useTotalStars(user?.uid, params.childId);
+  const totalStars = useTotalStars(parentId, params.childId);
   const [streak, setStreak] = useState(0);
   const [repeatsToday, setRepeatsToday] = useState(0);
   const [soundOn, toggleSound] = useSoundPreference();
@@ -60,7 +60,7 @@ export default function MultiplicacionPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!parentId) return;
     let cancelled = false;
     (async () => {
       const {
@@ -68,12 +68,12 @@ export default function MultiplicacionPage() {
         firestore: { collection, doc, getDoc, getDocs },
       } = await getFirebase();
       if (cancelled) return;
-      const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
+      const childSnap = await getDoc(doc(db, "parents", parentId, "children", params.childId));
       if (cancelled || !childSnap.exists()) return;
       setChild(childSnap.data() as ChildProfile);
 
       const progressSnap = await getDocs(
-        collection(db, "parents", user.uid, "children", params.childId, "skillsProgress"),
+        collection(db, "parents", parentId, "children", params.childId, "skillsProgress"),
       );
       if (cancelled) return;
       const map: Record<string, SkillProgress> = {};
@@ -84,10 +84,10 @@ export default function MultiplicacionPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId]);
+  }, [parentId, params.childId]);
 
   async function submitAnswer(correct: boolean): Promise<number> {
-    if (!user) return 0;
+    if (!parentId) return 0;
 
     // El progreso/racha/estrellas se calculan de una función pura sobre
     // estado que ya tenemos en el cliente: no hace falta esperar a que
@@ -105,14 +105,14 @@ export default function MultiplicacionPage() {
     setProgress(updated);
 
     const persistAttempt = async () => {
-      await addDoc(collection(db, "parents", user.uid, "children", params.childId, "attempts"), {
+      await addDoc(collection(db, "parents", parentId, "children", params.childId, "attempts"), {
         skillId: `aritmetica-${KIND}-d5`,
         itemId: crypto.randomUUID(),
         correct,
         createdAt: serverTimestamp(),
       });
       await setDoc(
-        doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", SKILL_KEY),
+        doc(db, "parents", parentId, "children", params.childId, "skillsProgress", SKILL_KEY),
         updated,
       );
     };
@@ -126,7 +126,7 @@ export default function MultiplicacionPage() {
     const stars = starsForAnswer({ difficulty: 5, streak, repeatsToday });
     setStreak((s) => s + 1);
     setRepeatsToday((n) => n + 1);
-    addDoc(collection(db, "parents", user.uid, "children", params.childId, "starLedger"), {
+    addDoc(collection(db, "parents", parentId, "children", params.childId, "starLedger"), {
       delta: stars,
       reason: "problem_solved",
       attemptId: null,
@@ -135,7 +135,7 @@ export default function MultiplicacionPage() {
     return stars;
   }
 
-  if (loading || !user) {
+  if (loading || !user || !parentId) {
     return (
       <main id="contenido"
         tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">

@@ -43,7 +43,7 @@ function panelProps(id: TabId) {
 }
 
 export default function TopicPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, parentId } = useAuth();
   const router = useRouter();
   const params = useParams<{ childId: string; strand: string; moduleId: string }>();
   const strand = getStrand(params.strand);
@@ -52,7 +52,7 @@ export default function TopicPage() {
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [progress, setProgress] = useState<SkillProgress | undefined>(undefined);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
-  const totalStars = useTotalStars(user?.uid, params.childId);
+  const totalStars = useTotalStars(parentId, params.childId);
   const [streak, setStreak] = useState(0);
   const [repeatsToday, setRepeatsToday] = useState(0);
   const [soundOn, toggleSound] = useSoundPreference();
@@ -67,7 +67,7 @@ export default function TopicPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user || !mod) return;
+    if (!parentId || !mod) return;
     let cancelled = false;
     (async () => {
       const {
@@ -75,12 +75,12 @@ export default function TopicPage() {
         firestore: { collection, doc, getDoc, getDocs },
       } = await getFirebase();
       if (cancelled) return;
-      const childSnap = await getDoc(doc(db, "parents", user.uid, "children", params.childId));
+      const childSnap = await getDoc(doc(db, "parents", parentId, "children", params.childId));
       if (cancelled || !childSnap.exists()) return;
       setChild(childSnap.data() as ChildProfile);
 
       const progressSnap = await getDocs(
-        collection(db, "parents", user.uid, "children", params.childId, "skillsProgress"),
+        collection(db, "parents", parentId, "children", params.childId, "skillsProgress"),
       );
       if (cancelled) return;
       const map: Record<string, SkillProgress> = {};
@@ -91,10 +91,10 @@ export default function TopicPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, params.childId, mod, skillKey]);
+  }, [parentId, params.childId, mod, skillKey]);
 
   async function submitAnswer(correct: boolean, hintsUsed = 0): Promise<number> {
-    if (!user || !mod) return 0;
+    if (!parentId || !mod) return 0;
 
     // El progreso/racha/estrellas se calculan de una función pura sobre
     // estado que ya tenemos en el cliente: no hace falta esperar a que
@@ -113,14 +113,14 @@ export default function TopicPage() {
     setProgress(updated);
 
     const persistAttempt = async () => {
-      await addDoc(collection(db, "parents", user.uid, "children", params.childId, "attempts"), {
+      await addDoc(collection(db, "parents", parentId, "children", params.childId, "attempts"), {
         skillId: `${mod.strandSlug}-topico-${mod.id}`,
         itemId: crypto.randomUUID(),
         correct,
         createdAt: serverTimestamp(),
       });
       await setDoc(
-        doc(db, "parents", user.uid, "children", params.childId, "skillsProgress", skillKey),
+        doc(db, "parents", parentId, "children", params.childId, "skillsProgress", skillKey),
         updated,
       );
     };
@@ -128,7 +128,7 @@ export default function TopicPage() {
 
     if (!wasMastered && updated.masteredAt) {
       const mergedProgress = { ...progressBySkill, [mod.id]: updated };
-      awardMasteryBadges(firestore, db, user.uid, params.childId, mod, mergedProgress).catch((err) =>
+      awardMasteryBadges(firestore, db, parentId, params.childId, mod, mergedProgress).catch((err) =>
         console.error("No se pudo otorgar la insignia", err),
       );
       triggerConfetti();
@@ -143,7 +143,7 @@ export default function TopicPage() {
     const stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday, hintsUsed });
     setStreak((s) => s + 1);
     setRepeatsToday((n) => n + 1);
-    addDoc(collection(db, "parents", user.uid, "children", params.childId, "starLedger"), {
+    addDoc(collection(db, "parents", parentId, "children", params.childId, "starLedger"), {
       delta: stars,
       reason: "problem_solved",
       attemptId: null,
@@ -153,27 +153,27 @@ export default function TopicPage() {
   }
 
   function handleCoheteWin() {
-    if (!user) return;
+    if (!parentId) return;
     const BOSS_BONUS = 15;
     getFirebase()
       .then(async ({ db, firestore }) => {
         await firestore.addDoc(
-          firestore.collection(db, "parents", user.uid, "children", params.childId, "starLedger"),
+          firestore.collection(db, "parents", parentId, "children", params.childId, "starLedger"),
           { delta: BOSS_BONUS, reason: "boss_level", attemptId: null, createdAt: firestore.serverTimestamp() },
         );
-        await awardBadge(firestore, db, user.uid, params.childId, "rapido");
+        await awardBadge(firestore, db, parentId, params.childId, "rapido");
       })
       .catch((err) => console.error("No se pudo otorgar el bono del Cohete", err));
   }
 
   function handleNoHintStreak() {
-    if (!user) return;
+    if (!parentId) return;
     getFirebase()
-      .then(({ db, firestore }) => awardBadge(firestore, db, user.uid, params.childId, "estratega"))
+      .then(({ db, firestore }) => awardBadge(firestore, db, parentId, params.childId, "estratega"))
       .catch((err) => console.error("No se pudo otorgar la insignia", err));
   }
 
-  if (loading || !user) {
+  if (loading || !user || !parentId) {
     return (
       <main id="contenido"
         tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
