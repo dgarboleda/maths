@@ -120,6 +120,40 @@ describe("firestore.rules — sesión propia del hijo (custom token)", () => {
     }
   });
 
+  /** Bug real reportado: con la sesión propia del hijo (custom token, no la
+   *  del padre compartiendo dispositivo), el login disparaba `recordStreak`
+   *  desde el despachador y Firestore devolvía "Missing or insufficient
+   *  permissions" en consola — la regla de arriba solo dejaba pasar
+   *  `placementStatus`, y para cuando existió no hacía falta nada más.
+   *  Fase 30 (`seenStoryIds`), Fase 32 (`avatarId`) y Fase 35 (`streakDays`/
+   *  `lastPlayedDay`) agregaron escrituras nuevas al mismo documento sin
+   *  agregarlas acá — las pruebas e2e de esas fases nunca lo agarraron
+   *  porque corren como sesión del padre (ver e2e/utilidades.ts:
+   *  `entrarAlPerfil`), no con un custom token de hijo de verdad. */
+  test("también puede actualizar avatarId, seenStoryIds y su racha — nunca varios campos ajenos a la vez", async () => {
+    const { app, db, parentId, childId } = await nuevaFamiliaConDosHijos();
+    try {
+      const ref = firestoreFns.doc(db, "parents", parentId, "children", childId);
+      await firestoreFns.updateDoc(ref, { avatarId: "zorro" });
+      await firestoreFns.updateDoc(ref, { seenStoryIds: ["intro"] });
+      await firestoreFns.updateDoc(ref, { streakDays: 2, lastPlayedDay: "2026-01-16" });
+
+      const snap = await firestoreFns.getDoc(ref);
+      expect(snap.data()).toMatchObject({
+        avatarId: "zorro",
+        seenStoryIds: ["intro"],
+        streakDays: 2,
+        lastPlayedDay: "2026-01-16",
+      });
+
+      // Ninguno de estos campos nuevos abre la puerta a colarse junto con
+      // uno prohibido en la misma escritura.
+      await expect(firestoreFns.updateDoc(ref, { avatarId: "lobo", pinHash: "hackeado" })).rejects.toThrow();
+    } finally {
+      await deleteApp(app);
+    }
+  });
+
   test("NO puede leer ni escribir los datos de otro hijo de la misma familia", async () => {
     const { app, db, parentId, otherChildId } = await nuevaFamiliaConDosHijos();
     try {

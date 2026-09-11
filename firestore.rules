@@ -51,12 +51,17 @@ service cloud.firestore {
       match /children/{childId} {
         allow read: if isParentOrChild(parentId, childId);
         allow create, delete: if isParent(parentId);
-        // El hijo solo puede tocar su propio documento para marcar la
-        // evaluación diagnóstica como completa (evaluacion/page.tsx) — nunca
-        // su nombre, PIN, avatar o cualquier otro campo.
+        // El hijo solo puede tocar su propio documento para su propio
+        // progreso de juego — nunca su nombre, PIN, ni nada que el padre
+        // administre. Campos permitidos: `placementStatus` (evaluación
+        // diagnóstica, evaluacion/page.tsx), `avatarId` (elegir avatar,
+        // Fase 32, AvatarPickerDialog.tsx), `seenStoryIds` (historia ya
+        // vista, Fase 30, mapa/page.tsx) y `streakDays`/`lastPlayedDay`
+        // (racha de días jugados, Fase 35, src/lib/streak.ts).
         allow update: if isParent(parentId)
           || (isChild(parentId, childId)
-              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['placementStatus']));
+              && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['placementStatus', 'avatarId', 'seenStoryIds', 'streakDays', 'lastPlayedDay']));
 
         match /skillsProgress/{skillId} {
           allow read, write: if isParentOrChild(parentId, childId);
