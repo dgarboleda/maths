@@ -127,7 +127,11 @@ export interface WorldRules {
   /** Qué hacer cuando el módulo de un desafío no está desbloqueado
    *  (`isUnlocked` falso) para ese hijo. */
   lockedModulePolicy: "hide" | "showLocked" | "allowAnyway";
-  /** Habilita /jugar/{childId}/mapa. */
+  /** Habilita la grilla de nodos en /jugar/{childId}/mapa. Con esto en
+   *  `false` esa ruta sigue existiendo como hub (barra superior, zonas,
+   *  boss, tienda, diario) — solo se oculta el mapa de niveles en sí, para
+   *  mundos lineales que no quieren mostrarlo (Fase 28, docs/plan-
+   *  jugabilidad.md §2.5). */
   showWorldMap: boolean;
   defaultSoundOn: boolean;
   /** Volver a mostrar la intro del mundo/capítulo cada vez, o solo la 1.ª. */
