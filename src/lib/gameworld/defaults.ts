@@ -9,7 +9,6 @@ export const DEFAULT_WORLD_RULES: WorldRules = {
   hintsAfterAttempts: 2,
   lockedModulePolicy: "showLocked",
   showWorldMap: true,
-  defaultSoundOn: true,
   replayStoryBeats: false,
 };
 

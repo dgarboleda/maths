@@ -112,11 +112,21 @@ export interface WorldLink {
  * REGLAS GENERALES
  * ════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * `defaultSoundOn` se retiró en la Fase 29 (docs/plan-jugabilidad.md §3): un
+ * documento de Mundo viejo puede seguir teniendo ese campo en Firestore —
+ * `migrateWorld` no lo toca, y no hace falta: TS simplemente deja de leerlo.
+ * Siempre lo pisaba `useSoundPreference` (preferencia de dispositivo), que
+ * gana siempre — nunca tuvo efecto real.
+ */
 export interface WorldRules {
   levelCompletion: "allChallengesCorrect" | "allChallengesMastered" | "anyChallengeCorrect";
   /** Volver a un nivel ya completado. */
   allowReplay: boolean;
-  /** Al completar un nivel, saltar automáticamente al siguiente desbloqueado. */
+  /** Al completar un nivel (según `levelCompletion`), ofrece ir al mapa en
+   *  vez de navegar solo — el runtime no conoce el grafo del mundo (nodos/
+   *  desbloqueos), así que no apunta a un nivel específico; el mapa
+   *  (Fase 28) ya muestra qué sigue disponible. */
   autoAdvance: boolean;
   /** Un desafío bloquea el paso, o solo recompensa. */
   challengesAreMandatory: boolean;
@@ -133,7 +143,6 @@ export interface WorldRules {
    *  mundos lineales que no quieren mostrarlo (Fase 28, docs/plan-
    *  jugabilidad.md §2.5). */
   showWorldMap: boolean;
-  defaultSoundOn: boolean;
   /** Volver a mostrar la intro del mundo/capítulo cada vez, o solo la 1.ª. */
   replayStoryBeats: boolean;
 }
