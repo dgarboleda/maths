@@ -2,11 +2,13 @@ import { type Problem, randInt, shuffle } from "./problem";
 import {
   compararHints,
   conteoHints,
+  conteoTresHints,
   conversionUnidadesHints,
   dineroHints,
   mediaHints,
   medianaHints,
   modaHints,
+  ordenamientosHints,
   probabilidadHints,
   rangoHints,
   tiempoHints,
@@ -16,6 +18,15 @@ const UNIT_CONVERSIONS: Array<[string, string, number]> = [
   ["metros", "centímetros", 100],
   ["kilogramos", "gramos", 1000],
   ["litros", "mililitros", 1000],
+];
+
+/** Sucesos sobre 20 tarjetas numeradas del 1 al 20, elegidos para que la probabilidad dé un porcentaje entero. */
+const CARD_EVENTS: Array<{ suceso: string; casos: string; favorable: number }> = [
+  { suceso: "un múltiplo de 5", casos: "son múltiplos de 5", favorable: 4 },
+  { suceso: "un número par", casos: "son pares", favorable: 10 },
+  { suceso: "un múltiplo de 4", casos: "son múltiplos de 4", favorable: 5 },
+  { suceso: "un número mayor que 15", casos: "son mayores que 15", favorable: 5 },
+  { suceso: "un múltiplo de 10", casos: "son múltiplos de 10", favorable: 2 },
 ];
 
 export function generateProblem(difficulty: number): Problem {
@@ -146,42 +157,97 @@ export function generateProblem(difficulty: number): Problem {
       };
     }
     case 9: {
-      const combos: Array<[number, number]> = [
-        [1, 2],
-        [1, 4],
-        [3, 4],
-        [1, 5],
-        [2, 5],
-        [1, 10],
-        [1, 20],
-        [1, 25],
-        [3, 25],
-        [7, 20],
-        [9, 10],
-        [1, 50],
-      ];
-      const [favorable, total] = combos[randInt(0, combos.length - 1)];
+      const variant = randInt(0, 2);
+      if (variant === 0) {
+        const combos: Array<[number, number]> = [
+          [1, 2],
+          [1, 4],
+          [3, 4],
+          [1, 5],
+          [2, 5],
+          [1, 10],
+          [1, 20],
+          [1, 25],
+          [3, 25],
+          [7, 20],
+          [9, 10],
+          [1, 50],
+        ];
+        const [favorable, total] = combos[randInt(0, combos.length - 1)];
+        return {
+          id,
+          difficulty,
+          kind: "probabilidad",
+          prompt: `Una bolsa tiene ${total} bolas en total, y ${favorable} son rojas. Si sacas una al azar, ¿cuál es la probabilidad de que sea roja, en porcentaje?`,
+          answer: (favorable * 100) / total,
+          inputType: "integer",
+          hints: probabilidadHints(favorable, total, (favorable * 100) / total, "son rojas"),
+        };
+      }
+      if (variant === 1) {
+        const total = Math.random() < 0.5 ? 10 : 20;
+        const favorable = randInt(1, total - 1);
+        return {
+          id,
+          difficulty,
+          kind: "probabilidad",
+          prompt: `Una ruleta tiene ${total} casillas del mismo tamaño y ${favorable} son azules. Si la haces girar, ¿cuál es la probabilidad (en %) de que caiga en azul?`,
+          answer: (favorable * 100) / total,
+          inputType: "integer",
+          hints: probabilidadHints(favorable, total, (favorable * 100) / total, "son azules"),
+        };
+      }
+      const event = CARD_EVENTS[randInt(0, CARD_EVENTS.length - 1)];
       return {
         id,
         difficulty,
         kind: "probabilidad",
-        prompt: `Una bolsa tiene ${total} bolas en total, y ${favorable} son rojas. Si sacas una al azar, ¿cuál es la probabilidad de que sea roja, en porcentaje?`,
-        answer: (favorable / total) * 100,
+        prompt: `En una caja hay 20 tarjetas numeradas del 1 al 20. Si sacas una al azar, ¿cuál es la probabilidad (en %) de sacar ${event.suceso}?`,
+        answer: (event.favorable * 100) / 20,
         inputType: "integer",
-        hints: probabilidadHints(favorable, total, (favorable / total) * 100),
+        hints: probabilidadHints(event.favorable, 20, (event.favorable * 100) / 20, event.casos),
       };
     }
     default: {
-      const opciones1 = randInt(2, 5);
-      const opciones2 = randInt(2, 5);
+      const variant = randInt(0, 2);
+      if (variant === 0) {
+        const opciones1 = randInt(2, 5);
+        const opciones2 = randInt(2, 5);
+        return {
+          id,
+          difficulty: 10,
+          kind: "conteo",
+          prompt: `Tienes ${opciones1} camisetas y ${opciones2} pantalones. ¿De cuántas formas distintas puedes combinarlos?`,
+          answer: opciones1 * opciones2,
+          inputType: "integer",
+          hints: conteoHints(opciones1, opciones2, opciones1 * opciones2),
+        };
+      }
+      if (variant === 1) {
+        const entradas = randInt(2, 4);
+        const platos = randInt(2, 4);
+        const postres = randInt(2, 3);
+        const answer = entradas * platos * postres;
+        return {
+          id,
+          difficulty: 10,
+          kind: "conteo_tres",
+          prompt: `Un restaurante ofrece ${entradas} entradas, ${platos} platos principales y ${postres} postres. Si eliges uno de cada uno, ¿cuántos menús distintos puedes armar?`,
+          answer,
+          inputType: "integer",
+          hints: conteoTresHints(entradas, platos, postres, answer),
+        };
+      }
+      const n = randInt(3, 4);
+      const answer = n === 3 ? 6 : 24;
       return {
         id,
         difficulty: 10,
-        kind: "conteo",
-        prompt: `Tienes ${opciones1} camisetas y ${opciones2} pantalones. ¿De cuántas formas distintas puedes combinarlos?`,
-        answer: opciones1 * opciones2,
+        kind: "ordenamientos",
+        prompt: `¿De cuántas formas distintas se pueden ordenar ${n} amigos en una fila para una foto?`,
+        answer,
         inputType: "integer",
-        hints: conteoHints(opciones1, opciones2, opciones1 * opciones2),
+        hints: ordenamientosHints(n, answer),
       };
     }
   }

@@ -1,14 +1,16 @@
 import { type Problem, randInt, choiceSet } from "./problem";
 import {
   datoIrrelevanteHints,
-  deduccionHints,
+  estimacionHints,
   optimizacionHints,
+  pensarHaciaAtrasHints,
   presupuestoHints,
   problemaDivisionHints,
   problemaDosPasosHints,
   problemaMultiplicacionSumaHints,
   problemaRestaHints,
   problemaSumaHints,
+  redondeoCentenaHints,
   redondeoHints,
 } from "./hints";
 
@@ -117,29 +119,63 @@ export function generateProblem(difficulty: number): Problem {
       };
     }
     case 8: {
-      const n = randInt(11, 989);
-      const rounded = Math.round(n / 10) * 10;
+      const variant = randInt(0, 2);
+      if (variant === 0) {
+        const n = randInt(11, 989);
+        const rounded = Math.round(n / 10) * 10;
+        return {
+          id,
+          difficulty,
+          kind: "redondeo",
+          prompt: `Redondea ${n} a la decena más cercana.`,
+          answer: rounded,
+          inputType: "integer",
+          hints: redondeoHints(n, rounded),
+        };
+      }
+      if (variant === 1) {
+        const n = randInt(101, 9899);
+        const rounded = Math.round(n / 100) * 100;
+        return {
+          id,
+          difficulty,
+          kind: "redondeo_centena",
+          prompt: `Redondea ${n} a la centena más cercana.`,
+          answer: rounded,
+          inputType: "integer",
+          hints: redondeoCentenaHints(n, rounded),
+        };
+      }
+      const a = randInt(120, 880);
+      const b = randInt(120, 880);
+      const ra = Math.round(a / 100) * 100;
+      const rb = Math.round(b / 100) * 100;
       return {
         id,
         difficulty,
-        kind: "redondeo",
-        prompt: `Redondea ${n} a la decena más cercana.`,
-        answer: rounded,
+        kind: "estimacion",
+        prompt: `Estima ${a} + ${b} redondeando cada número a la centena más cercana. ¿Qué resultado aproximado obtienes?`,
+        answer: ra + rb,
         inputType: "integer",
-        hints: redondeoHints(n, rounded),
+        hints: estimacionHints(a, b, ra, rb, ra + rb),
       };
     }
     case 9: {
-      const secret = randInt(1, 50);
-      const add = randInt(2, 20);
+      // Dos operaciones que hay que deshacer en orden inverso: la versión
+      // "en palabras" de una ecuación de dos pasos, antes de escribirla con x.
+      const x = randInt(2, 15);
+      const m = randInt(2, 5);
+      const a = randInt(1, 20);
+      const suma = Math.random() < 0.6 || m * x - a <= 0;
+      const result = suma ? m * x + a : m * x - a;
       return {
         id,
         difficulty,
-        kind: "deduccion",
-        prompt: `Pienso un número. Si le sumo ${add}, obtengo ${secret + add}. ¿Cuál es mi número?`,
-        answer: secret,
+        kind: "pensar_hacia_atras",
+        prompt: `Pienso un número. Lo multiplico por ${m} y después ${suma ? "le sumo" : "le resto"} ${a}. Obtengo ${result}. ¿Qué número pensé?`,
+        answer: x,
         inputType: "integer",
-        hints: deduccionHints(add, secret + add, secret),
+        hints: pensarHaciaAtrasHints(m, a, suma, result, x),
       };
     }
     default: {

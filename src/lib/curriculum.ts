@@ -20,6 +20,8 @@ import { DataConcept } from "@/components/topic/concepts/DataConcept";
 import { WordProblemConcept } from "@/components/topic/concepts/WordProblemConcept";
 import { McdMcmConcept } from "@/components/topic/concepts/McdMcmConcept";
 import { FraccionesDistintoDenomConcept } from "@/components/topic/concepts/FraccionesDistintoDenomConcept";
+import { SlidesConcept } from "@/components/topic/concepts/SlidesConcept";
+import { CONCEPT_SLIDES } from "./curriculum/conceptSlides";
 import { STRANDS } from "./strands";
 import { allModules, getCustomModule } from "./curriculum/customRegistry";
 
@@ -306,7 +308,7 @@ export const MODULES: ModuleDef[] = [
     id: "algebra-d8",
     strandSlug: "algebra",
     difficulty: 8,
-    label: "Desigualdades",
+    label: "Inecuaciones",
     emoji: "📏",
     tier: 7,
     pisa: pisa("cambio", "2"),
@@ -318,7 +320,7 @@ export const MODULES: ModuleDef[] = [
     id: "algebra-d9",
     strandSlug: "algebra",
     difficulty: 9,
-    label: "Funciones",
+    label: "Funciones desde una tabla",
     emoji: "🎛️",
     tier: 8,
     pisa: pisa("cambio", "3"),
@@ -358,15 +360,15 @@ export const MODULES: ModuleDef[] = [
     id: "geometria-d2",
     strandSlug: "geometria",
     difficulty: 2,
-    label: "Vértices",
-    emoji: "🔹",
+    label: "Cuerpos geométricos",
+    emoji: "🧊",
     tier: 1,
     pisa: pisa("espacio", "1c"),
     // Sin prerrequisitos a propósito: es objetivo de la misión 2 del mundo
     // (world/quests.ts) y no debe quedar bloqueado detrás de otra práctica.
     prerequisites: [],
     generateProblem: () => generateGeometria(2),
-    ConceptComponent: () => ShapeConcept({ variant: "sides" }),
+    ConceptComponent: () => SlidesConcept({ slides: CONCEPT_SLIDES["geometria-d2"] }),
   },
   {
     id: "geometria-d3",
@@ -663,7 +665,7 @@ export const MODULES: ModuleDef[] = [
     id: "logica-d8",
     strandSlug: "logica",
     difficulty: 8,
-    label: "Redondeo",
+    label: "Redondeo y estimación",
     emoji: "🎯",
     tier: 3,
     pisa: pisa("cantidad", "1b"),
@@ -699,7 +701,7 @@ export const MODULES: ModuleDef[] = [
     id: "logica-d9",
     strandSlug: "logica",
     difficulty: 9,
-    label: "Deducción",
+    label: "Pensar hacia atrás",
     emoji: "🤔",
     tier: 5,
     pisa: pisa("cambio", "1a"),

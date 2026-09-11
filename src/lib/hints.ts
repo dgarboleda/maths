@@ -187,19 +187,22 @@ export function ecuacionDosPasosHints(m: number, b: number, total: number, x: nu
   ];
 }
 
-export function desigualdadHints(b: number, answer: number): Hints {
+export function desigualdadDosPasosHints(m: number, b: number, c: number, greater: boolean, answer: number): Hints {
+  const signo = greater ? ">" : "≤";
+  const limite = (c - b) % m === 0 ? `${(c - b) / m}` : `${c - b}/${m}`;
   return [
-    `x > ${b} significa "mayor que ${b}", no "igual a ${b}".`,
-    `El menor número entero mayor que ${b} es el siguiente en la fila de números.`,
-    `${b} + 1 = ${answer}.`,
+    `Una desigualdad se despeja como una ecuación: primero se deshace la suma, después la multiplicación.`,
+    `Resta ${b}: ${m}x ${signo} ${c - b}. Divide entre ${m}: x ${signo} ${limite}.`,
+    greater ? `El menor entero mayor que ${limite} es ${answer}.` : `El mayor entero que no pasa de ${limite} es ${answer}.`,
   ];
 }
 
-export function funcionHints(m: number, b: number, x: number, answer: number): Hints {
+export function funcionTablaHints(m: number, b: number, n: number, answer: number): Hints {
+  const constante = b === 0 ? "" : ` ${b > 0 ? "+" : "−"} ${Math.abs(b)}`;
   return [
-    `Una función es una regla: reemplaza x por el valor que te dan.`,
-    `${m} × ${x} = ${m * x}.`,
-    `${m * x} ${b >= 0 ? "+" : "−"} ${Math.abs(b)} = ${answer}.`,
+    `Fíjate cuánto aumenta y cada vez que x aumenta 1: eso te dice por cuánto se multiplica x.`,
+    `y aumenta de ${m} en ${m}, y con x = 1 vale ${m + b}: la regla es y = ${m}x${constante}.`,
+    `${m} × ${n}${constante} = ${answer}.`,
   ];
 }
 
@@ -208,6 +211,20 @@ export function cuadraticaHints(square: number, root: number): Hints {
     `x² = ${square} significa que x multiplicado por sí mismo da ${square}.`,
     `Busca un número que multiplicado por sí mismo dé ${square}.`,
     `√${square} = ${root}.`,
+  ];
+}
+
+/** "x − 3", "x + 2", "x": el factor lineal que se anula en `raiz`. */
+function factorLineal(raiz: number): string {
+  if (raiz === 0) return "x";
+  return raiz > 0 ? `x − ${raiz}` : `x + ${-raiz}`;
+}
+
+export function factorizarHints(r1: number, r2: number, b: number, c: number): Hints {
+  return [
+    `Busca dos números que multiplicados den ${c} y sumados den ${b}: con ellos la ecuación se escribe como un producto igual a 0.`,
+    `Esos números son ${-r1} y ${-r2}, así que la ecuación queda (${factorLineal(r1)})(${factorLineal(r2)}) = 0.`,
+    `Un producto vale 0 si alguno de sus factores vale 0: x = ${r1} o x = ${r2}. La mayor es ${r1}.`,
   ];
 }
 
@@ -221,12 +238,32 @@ export function ladosHints(nombre: string, sides: number): Hints {
   ];
 }
 
-export function verticesHints(nombre: string, sides: number): Hints {
-  return [
-    `En un polígono, cada esquina (vértice) está donde se juntan dos lados.`,
-    `El número de vértices es igual al número de lados del ${nombre}.`,
-    `El ${nombre} tiene ${sides} vértices.`,
-  ];
+function capitalizar(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+export function cuerposHints(nombre: string, feature: "caras" | "vertices" | "aristas", answer: number): Hints {
+  const cuerpo = capitalizar(nombre);
+  switch (feature) {
+    case "caras":
+      return [
+        `Las caras son las superficies planas del cuerpo.`,
+        `Imagina ${nombre} y cuenta cada superficie plana, sin olvidar la de abajo.`,
+        `${cuerpo} tiene ${answer} caras.`,
+      ];
+    case "vertices":
+      return [
+        `Los vértices son las esquinas, donde se juntan las aristas.`,
+        `Cuenta las esquinas de ${nombre}: las de arriba y las de abajo.`,
+        `${cuerpo} tiene ${answer} vértices.`,
+      ];
+    default:
+      return [
+        `Las aristas son los bordes rectos donde se juntan dos caras.`,
+        `Cuenta primero los bordes de la base y después los que suben desde ella.`,
+        `${cuerpo} tiene ${answer} aristas.`,
+      ];
+  }
 }
 
 export function perimetroHints(largo: number, ancho: number, answer: number): Hints {
@@ -277,12 +314,30 @@ export function volumenHints(largo: number, ancho: number, alto: number, answer:
   ];
 }
 
-export function coordenadasHints(x: number, dx: number, answer: number): Hints {
-  const direccion = dx >= 0 ? "suma" : "resta";
+export function coordenadasHints(inicial: number, d: number, answer: number, eje: "x" | "y" = "x"): Hints {
   return [
-    `Moverse a la derecha suma a la coordenada x; moverse a la izquierda resta.`,
-    `${direccion === "suma" ? "Suma" : "Resta"} ${Math.abs(dx)} a ${x}.`,
-    `${x} ${dx >= 0 ? "+" : "−"} ${Math.abs(dx)} = ${answer}.`,
+    eje === "x"
+      ? `Moverse a la derecha suma a la coordenada x; moverse a la izquierda resta.`
+      : `Moverse hacia arriba suma a la coordenada y; moverse hacia abajo resta.`,
+    `${d >= 0 ? "Suma" : "Resta"} ${Math.abs(d)} a ${inicial}.`,
+    `${inicial} ${d >= 0 ? "+" : "−"} ${Math.abs(d)} = ${answer}.`,
+  ];
+}
+
+export function cuadranteHints(x: number, y: number, answer: number): Hints {
+  const romanos = ["I", "II", "III", "IV"];
+  return [
+    `Los cuadrantes se numeran I, II, III y IV en sentido contrario a las agujas del reloj, empezando arriba a la derecha.`,
+    `x = ${x} es ${x > 0 ? "positivo (derecha)" : "negativo (izquierda)"} e y = ${y} es ${y > 0 ? "positivo (arriba)" : "negativo (abajo)"}.`,
+    `El punto (${x}, ${y}) está en el cuadrante ${romanos[answer - 1]}.`,
+  ];
+}
+
+export function distanciaEjeHints(a: number, b: number, eje: "x" | "y", answer: number): Hints {
+  return [
+    `Los dos puntos están sobre la misma línea ${eje === "x" ? "horizontal" : "vertical"}: solo cambia la coordenada ${eje}.`,
+    `La distancia es cuántos pasos hay de ${a} a ${b}: la diferencia entre ambos, sin signo.`,
+    `|${a} − ${b < 0 ? `(${b})` : b}| = ${answer}.`,
   ];
 }
 
@@ -302,11 +357,12 @@ export function pitagorasCatetoHints(c: number, a: number, answer: number): Hint
   ];
 }
 
-export function semejanzaHints(scale: number, smallSide: number, answer: number): Hints {
+export function semejanzaRazonHints(s1: number, g1: number, s2: number, answer: number): Hints {
+  const razon = Number.isInteger(g1 / s1) ? `${g1} ÷ ${s1} = ${g1 / s1}` : `${g1}/${s1}`;
   return [
-    `En figuras semejantes, todos los lados se multiplican por la misma razón de escala.`,
-    `Multiplica el lado pequeño por la razón de escala: ${smallSide} × ${scale}.`,
-    `${smallSide} × ${scale} = ${answer}.`,
+    `En figuras semejantes, cada lado del grande es el lado correspondiente del pequeño multiplicado por la misma razón de escala.`,
+    `La razón de escala es ${razon}: multiplica ${s2} por esa razón.`,
+    `${s2} × ${g1} ÷ ${s1} = ${answer}.`,
   ];
 }
 
@@ -376,10 +432,10 @@ export function rangoHints(max: number, min: number, answer: number): Hints {
   ];
 }
 
-export function probabilidadHints(favorable: number, total: number, answer: number): Hints {
+export function probabilidadHints(favorable: number, total: number, answer: number, casos = "son rojas"): Hints {
   return [
     `La probabilidad es "casos que sirven" entre "casos totales".`,
-    `${favorable} de ${total} son rojas: eso es ${favorable}/${total}.`,
+    `${favorable} de ${total} ${casos}: eso es ${favorable}/${total}.`,
     `${favorable}/${total} × 100 = ${answer}%.`,
   ];
 }
@@ -389,6 +445,23 @@ export function conteoHints(opciones1: number, opciones2: number, answer: number
     `Por cada opción del primer grupo, puedes combinarla con cada opción del segundo.`,
     `Multiplica el número de camisetas por el número de pantalones.`,
     `${opciones1} × ${opciones2} = ${answer}.`,
+  ];
+}
+
+export function conteoTresHints(a: number, b: number, c: number, answer: number): Hints {
+  return [
+    `Cada entrada se combina con cada plato, y cada una de esas combinaciones con cada postre.`,
+    `Primero entradas × platos: ${a} × ${b} = ${a * b}. Después multiplica por los postres.`,
+    `${a} × ${b} × ${c} = ${answer}.`,
+  ];
+}
+
+export function ordenamientosHints(n: number, answer: number): Hints {
+  const factores = Array.from({ length: n }, (_, i) => n - i).join(" × ");
+  return [
+    `Piensa lugar por lugar: ¿cuántos pueden ir primero? ¿Y segundo, cuando ya hay uno ubicado?`,
+    `Para el primer lugar hay ${n} opciones, para el segundo ${n - 1}, y así hasta el último.`,
+    `${factores} = ${answer}.`,
   ];
 }
 
@@ -458,11 +531,29 @@ export function redondeoHints(n: number, answer: number): Hints {
   ];
 }
 
-export function deduccionHints(add: number, result: number, answer: number): Hints {
+export function redondeoCentenaHints(n: number, answer: number): Hints {
+  const abajo = Math.floor(n / 100) * 100;
   return [
-    `Si sumar te llevó al resultado, para volver al número original hay que restar.`,
-    `Resta lo que se sumó (${add}) del resultado (${result}).`,
-    `${result} − ${add} = ${answer}.`,
+    `Fíjate en el dígito de las decenas para decidir si subes o bajas a la centena.`,
+    `${n} está entre ${abajo} y ${abajo + 100}; si las decenas son 5 o más, se sube.`,
+    `Redondeado a la centena más cercana, ${n} es ${answer}.`,
+  ];
+}
+
+export function estimacionHints(a: number, b: number, ra: number, rb: number, answer: number): Hints {
+  return [
+    `Estimar es cambiar cada número por uno redondo y cercano, para poder sumar de cabeza.`,
+    `${a} se redondea a ${ra} y ${b} a ${rb}.`,
+    `${ra} + ${rb} = ${answer}.`,
+  ];
+}
+
+export function pensarHaciaAtrasHints(m: number, a: number, suma: boolean, result: number, answer: number): Hints {
+  const antes = suma ? result - a : result + a;
+  return [
+    `Para volver al número pensado, deshaz los pasos en orden inverso y con la operación contraria.`,
+    `El último paso fue ${suma ? `sumar ${a}` : `restar ${a}`}: ${result} ${suma ? "−" : "+"} ${a} = ${antes}.`,
+    `Después deshaz la multiplicación: ${antes} ÷ ${m} = ${answer}.`,
   ];
 }
 
