@@ -3,6 +3,7 @@ import type { ModuleDef } from "./curriculum";
 import type { SkillProgress } from "./types";
 import { recordAttempt, recordReview, todayKey } from "./mastery";
 import { starsForAnswer } from "./economy";
+import { awardStars } from "./starLedger";
 
 export interface AttemptOutcome {
   updatedProgress: SkillProgress;
@@ -57,12 +58,7 @@ export async function recordModuleAttempt(
   let stars = 0;
   if (correct) {
     stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday: 0, hintsUsed });
-    await addDoc(collection(db, "parents", parentId, "children", childId, "starLedger"), {
-      delta: stars,
-      reason: "problem_solved",
-      attemptId: null,
-      createdAt: serverTimestamp(),
-    });
+    await awardStars(firestoreFns, db, parentId, childId, stars, "problem_solved");
   }
 
   return { updatedProgress, wasMastered, stars };

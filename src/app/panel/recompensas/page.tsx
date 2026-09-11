@@ -6,6 +6,7 @@ import { Check, Gift, Medal, Star, X } from "lucide-react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { useChildDashboard, type RequestDoc } from "@/lib/family/useChildDashboard";
 import { getFirebase } from "@/lib/firebase";
+import { awardStars } from "@/lib/starLedger";
 import { ChildSwitcher, EmptyState, SectionCard, SkeletonRows } from "@/components/family/ui";
 
 export default function RecompensasPage() {
@@ -30,17 +31,10 @@ export default function RecompensasPage() {
     if (resolvingId || !parentId || !selectedChildId) return;
     setResolvingId(request.id);
     try {
-      const {
-        db,
-        firestore: { addDoc, collection, doc, serverTimestamp, updateDoc },
-      } = await getFirebase();
+      const { db, firestore } = await getFirebase();
+      const { doc, serverTimestamp, updateDoc } = firestore;
       if (approve) {
-        await addDoc(collection(db, "parents", parentId, "children", selectedChildId, "starLedger"), {
-          delta: -request.starsSpent,
-          reason: "redemption",
-          attemptId: null,
-          createdAt: serverTimestamp(),
-        });
+        await awardStars(firestore, db, parentId, selectedChildId, -request.starsSpent, "redemption");
       }
       await updateDoc(
         doc(db, "parents", parentId, "children", selectedChildId, "redemptionRequests", request.id),

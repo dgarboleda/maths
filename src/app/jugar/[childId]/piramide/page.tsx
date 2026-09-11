@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile } from "@/lib/types";
 import { starsForAnswer } from "@/lib/economy";
+import { awardStars } from "@/lib/starLedger";
 import { GameShell } from "@/components/GameShell";
 import { PyramidGame } from "@/components/pyramid/PyramidGame";
 import { useTotalStars } from "@/lib/useTotalStars";
@@ -49,10 +50,8 @@ export default function PiramidePage() {
   async function submitAnswer(difficulty: number, correct: boolean): Promise<number> {
     if (!parentId) return 0;
 
-    const {
-      db,
-      firestore: { addDoc, collection, serverTimestamp },
-    } = await getFirebase();
+    const { db, firestore } = await getFirebase();
+    const { addDoc, collection, serverTimestamp } = firestore;
 
     await addDoc(collection(db, "parents", parentId, "children", params.childId, "attempts"), {
       skillId: "piramide",
@@ -67,12 +66,7 @@ export default function PiramidePage() {
     }
 
     const stars = starsForAnswer({ difficulty, streak, repeatsToday });
-    await addDoc(collection(db, "parents", parentId, "children", params.childId, "starLedger"), {
-      delta: stars,
-      reason: "problem_solved",
-      attemptId: null,
-      createdAt: serverTimestamp(),
-    });
+    await awardStars(firestore, db, parentId, params.childId, stars, "problem_solved");
     setStreak((s) => s + 1);
     setRepeatsToday((n) => n + 1);
     return stars;

@@ -8,6 +8,7 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { recordAttempt, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
+import { awardStars } from "@/lib/starLedger";
 import { isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
@@ -98,8 +99,8 @@ export default function MultiplicacionPage() {
     // juego se congelaba hasta el siguiente tick del cronómetro. Ahora se
     // actualiza el estado local y se responde de inmediato; el guardado en
     // Firestore corre en segundo plano.
-    const { db, firestore: { addDoc, collection, doc, serverTimestamp, setDoc } } =
-      await getFirebase();
+    const { db, firestore } = await getFirebase();
+    const { addDoc, collection, doc, serverTimestamp, setDoc } = firestore;
 
     const updated = recordAttempt(progress, correct, todayKey());
     setProgress(updated);
@@ -126,12 +127,9 @@ export default function MultiplicacionPage() {
     const stars = starsForAnswer({ difficulty: 5, streak, repeatsToday });
     setStreak((s) => s + 1);
     setRepeatsToday((n) => n + 1);
-    addDoc(collection(db, "parents", parentId, "children", params.childId, "starLedger"), {
-      delta: stars,
-      reason: "problem_solved",
-      attemptId: null,
-      createdAt: serverTimestamp(),
-    }).catch((err) => console.error("No se pudo guardar la estrella", err));
+    awardStars(firestore, db, parentId, params.childId, stars, "problem_solved").catch((err) =>
+      console.error("No se pudo guardar la estrella", err),
+    );
     return stars;
   }
 

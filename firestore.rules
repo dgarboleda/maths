@@ -76,6 +76,15 @@ service cloud.firestore {
           allow update, delete: if isParent(parentId);
         }
 
+        // Contador agregado (docs/auditoria-rendimiento-accesibilidad.md
+        // §1.2, src/lib/starLedger.ts): mismo dueño que el libro mayor que
+        // resume — `awardStars` lo escribe en el mismo `writeBatch` que la
+        // entrada de `starLedger` de arriba, así que necesita el mismo
+        // permiso de escritura.
+        match /starBalance/{docId} {
+          allow read, write: if isParentOrChild(parentId, childId);
+        }
+
         // El hijo pide un canje; solo el padre lo aprueba/rechaza/borra.
         match /redemptionRequests/{requestId} {
           allow read, create: if isParentOrChild(parentId, childId);

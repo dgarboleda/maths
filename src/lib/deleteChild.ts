@@ -10,6 +10,7 @@ const CHILD_SUBCOLLECTIONS = [
   "skillsProgress",
   "attempts",
   "starLedger",
+  "starBalance",
   "redemptionRequests",
   "placements",
   "badges",

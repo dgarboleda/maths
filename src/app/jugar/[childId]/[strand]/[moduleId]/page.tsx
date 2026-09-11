@@ -8,6 +8,7 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { recordAttempt, todayKey } from "@/lib/mastery";
 import { starsForAnswer } from "@/lib/economy";
+import { awardStars } from "@/lib/starLedger";
 import { getStrand } from "@/lib/strands";
 import { getModule, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { getStrandNarrative } from "@/lib/narrative";
@@ -143,12 +144,9 @@ export default function TopicPage() {
     const stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday, hintsUsed });
     setStreak((s) => s + 1);
     setRepeatsToday((n) => n + 1);
-    addDoc(collection(db, "parents", parentId, "children", params.childId, "starLedger"), {
-      delta: stars,
-      reason: "problem_solved",
-      attemptId: null,
-      createdAt: serverTimestamp(),
-    }).catch((err) => console.error("No se pudo guardar la estrella", err));
+    awardStars(firestore, db, parentId, params.childId, stars, "problem_solved").catch((err) =>
+      console.error("No se pudo guardar la estrella", err),
+    );
     return stars;
   }
 
@@ -157,10 +155,7 @@ export default function TopicPage() {
     const BOSS_BONUS = 15;
     getFirebase()
       .then(async ({ db, firestore }) => {
-        await firestore.addDoc(
-          firestore.collection(db, "parents", parentId, "children", params.childId, "starLedger"),
-          { delta: BOSS_BONUS, reason: "boss_level", attemptId: null, createdAt: firestore.serverTimestamp() },
-        );
+        await awardStars(firestore, db, parentId, params.childId, BOSS_BONUS, "boss_level");
         await awardBadge(firestore, db, parentId, params.childId, "rapido");
       })
       .catch((err) => console.error("No se pudo otorgar el bono del Cohete", err));
