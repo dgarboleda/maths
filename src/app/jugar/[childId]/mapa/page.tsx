@@ -22,6 +22,8 @@ import { STRANDS } from "@/lib/strands";
 import { WorldTopBar } from "@/components/world/WorldHud";
 import { ShopPanel, type RequestDoc } from "@/components/world/ShopPanel";
 import { StoryBeatOverlay } from "@/components/world/StoryBeatOverlay";
+import { AvatarPickerDialog } from "@/components/family/AvatarPickerDialog";
+import { useResolvedAvatar } from "@/lib/useResolvedAvatar";
 import { playSound } from "@/lib/gameSound";
 
 const STATE_LABEL: Record<string, string> = { bloqueado: "Bloqueado", disponible: "Disponible", completado: "Completado" };
@@ -53,7 +55,14 @@ export default function JugarMapaPage() {
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
   const [requests, setRequests] = useState<RequestDoc[]>([]);
   const [panel, setPanel] = useState<"ninguno" | "tienda">("ninguno");
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  // Fase 32 (docs/plan-jugabilidad.md §6): `useResolvedAvatar` lee el
+  // `avatarId` del hijo una sola vez al montar — este contador fuerza una
+  // relectura justo después de elegir uno nuevo, para que el HUD lo
+  // refleje sin recargar la página.
+  const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
   const totalStars = useTotalStars(parentId, params.childId);
+  const { avatar: resolvedAvatar } = useResolvedAvatar(parentId, params.childId, progressBySkill, avatarRefreshKey);
   const [soundOn, toggleSound] = useSoundPreference();
   const placementPending = useRequirePlacement(params.childId, child, router);
 
@@ -195,6 +204,8 @@ export default function JugarMapaPage() {
         onToggleSound={toggleSound}
         nextChallengeModule={nextChallenge(progressBySkill)}
         nextReviewModule={nextReview(progressBySkill)}
+        avatarHeadshotSrc={resolvedAvatar?.headshotSrc}
+        onAvatarClick={() => setAvatarPickerOpen(true)}
       />
 
       <div className="mx-auto max-w-3xl space-y-6">
@@ -328,6 +339,18 @@ export default function JugarMapaPage() {
       )}
 
       {storyMoment && <StoryBeatOverlay beats={storyMoment.beats} onClose={() => dismissStory(storyMoment.storyId)} />}
+
+      {avatarPickerOpen && (
+        <AvatarPickerDialog
+          parentId={parentId}
+          child={{ ...child, id: params.childId }}
+          onClose={() => setAvatarPickerOpen(false)}
+          onSaved={(avatarId) => {
+            setChild((c) => (c ? { ...c, avatarId } : c));
+            setAvatarRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
     </main>
   );
 }

@@ -66,6 +66,7 @@ export function PuzzleOverlay({
   mod,
   progressBySkill,
   streak,
+  repeatsToday = 0,
   soundOn,
   rules = LEGACY_RULES,
   onClose,
@@ -81,6 +82,11 @@ export function PuzzleOverlay({
   mod: ModuleDef;
   progressBySkill: Record<string, SkillProgress>;
   streak: number;
+  /** Fase 32 (docs/plan-jugabilidad.md §6) — cuántas veces ya se resolvió
+   *  ESTE módulo en la sesión, para `economy.ts:diminishingFactor`.
+   *  `undefined`/0 reproduce el comportamiento de siempre: Ciudad Central
+   *  legacy nunca lo pasa. */
+  repeatsToday?: number;
   soundOn: boolean;
   /** Fase 29 (docs/plan-jugabilidad.md §3) — `undefined` reproduce el
    *  comportamiento de siempre (`LEGACY_RULES`): Ciudad Central legacy
@@ -163,6 +169,7 @@ export function PuzzleOverlay({
         correct,
         streak,
         hintLevel,
+        repeatsToday,
       );
       mastered = !outcome.wasMastered && outcome.updatedProgress.masteredAt !== null;
       if (mastered) {

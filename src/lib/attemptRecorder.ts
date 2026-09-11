@@ -31,6 +31,14 @@ export async function recordModuleAttempt(
   /** Pistas pedidas en este problema: descuenta estrellas con la misma regla
    * de `economy.ts` que ya aplica la pestaña Práctica. */
   hintsUsed = 0,
+  /** Fase 32 (docs/plan-jugabilidad.md §6): cuántas veces ya se resolvió
+   * este mismo módulo en la sesión actual — antes siempre 0 acá (a
+   * diferencia de la pestaña Práctica, que sí lo cuenta), así que machacar
+   * el mismo desafío fácil dentro de un nivel rendía estrellas plenas para
+   * siempre. Aproximación de sesión, no agregación diaria real (mismo
+   * comentario que `economy.ts:diminishingFactor`) — el llamador decide
+   * cómo la cuenta. */
+  repeatsToday = 0,
 ): Promise<AttemptOutcome> {
   const { addDoc, collection, doc, serverTimestamp, setDoc } = firestoreFns;
 
@@ -57,7 +65,7 @@ export async function recordModuleAttempt(
 
   let stars = 0;
   if (correct) {
-    stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday: 0, hintsUsed });
+    stars = starsForAnswer({ difficulty: mod.difficulty, streak, repeatsToday, hintsUsed });
     await awardStars(firestoreFns, db, parentId, childId, stars, "problem_solved");
   }
 

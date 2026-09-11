@@ -39,6 +39,7 @@ export function LevelChallengeOverlay({
   childId,
   progressBySkill,
   streak,
+  repeatsToday,
   soundOn,
   rules,
   onClose,
@@ -53,6 +54,9 @@ export function LevelChallengeOverlay({
   childId: string;
   progressBySkill: Record<string, SkillProgress>;
   streak: number;
+  /** Fase 32 (docs/plan-jugabilidad.md §6) — reenviado tal cual a
+   *  `PuzzleOverlay`. `undefined` reproduce el comportamiento de siempre. */
+  repeatsToday?: number;
   soundOn: boolean;
   /** Fase 29 (docs/plan-jugabilidad.md §3) — reenviadas tal cual a
    *  `PuzzleOverlay`. `undefined` reproduce el comportamiento de siempre. */
@@ -90,6 +94,7 @@ export function LevelChallengeOverlay({
       mod={mod}
       progressBySkill={progressBySkill}
       streak={streak}
+      repeatsToday={repeatsToday}
       soundOn={soundOn}
       rules={rules}
       onClose={onClose}

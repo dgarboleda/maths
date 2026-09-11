@@ -40,6 +40,13 @@ export function useResolvedAvatar(
   parentId: string | undefined,
   childId: string | undefined,
   progressBySkill: Record<string, SkillProgress>,
+  /** Fase 32 (docs/plan-jugabilidad.md §6): cambiar este valor fuerza a
+   *  releer el `avatarId` del hijo — el hook lo carga una sola vez al
+   *  montar, así que sin esto el hub seguiría mostrando el avatar viejo
+   *  después de elegir uno nuevo en `AvatarPickerDialog`, hasta recargar la
+   *  página. `undefined` (el único caso hasta esta fase, `LevelRuntime` no
+   *  lo pasa) no cambia nada. */
+  refreshKey?: unknown,
 ): ResolvedAvatarResult {
   const totalStars = useTotalStars(parentId, childId);
   const [world, setWorld] = useState<GameWorld | null>(null);
@@ -86,7 +93,7 @@ export function useResolvedAvatar(
     return () => {
       cancelled = true;
     };
-  }, [parentId, childId]);
+  }, [parentId, childId, refreshKey]);
 
   // Sin `parentId`/`childId` no hay ningún fetch en marcha (los efectos de
   // arriba ni arrancan) — `worldLoaded`/`avatarIdLoaded` se quedarían en
