@@ -198,12 +198,14 @@ describe("Motor de evaluación de ubicación (lógica pura)", () => {
     // Geometría queda con el menor avance relativo, pero todo lo que sigue
     // después de lados y vértices exige aritmética de 2.º grado en adelante
     // (perímetro pide sumar hasta 100), que la evaluación no llegó a
-    // acreditar: aritmética se quedó en 1.º. Aritmética, con un avance
-    // apenas mayor, sí tiene un módulo libre para recomendar.
+    // acreditar: aritmética se quedó en 1.º. Aritmética, empatada con
+    // geometría (ambas llegan a tier 8), sí tiene un módulo libre para
+    // recomendar. El empate lo resuelve el orden de inserción (el sort es
+    // estable): geometría va primero para que se intente y se descarte.
     const perStrand: Record<string, PlacementStrandRecord> = {
+      geometria: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
       aritmetica: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
       algebra: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
-      geometria: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
       medicion: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
       logica: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
     };
@@ -212,10 +214,12 @@ describe("Motor de evaluación de ubicación (lógica pura)", () => {
       progressBySkill[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
     }
 
-    // Confirma la premisa del caso: geometría tiene el menor avance relativo...
+    // Confirma la premisa del caso: geometría tiene el menor avance relativo
+    // (empatada con aritmética)...
     const ratio = (slug: string) =>
       (perStrand[slug].highestTierPassed + 1) / (modulesForStrand(slug).at(-1)!.tier + 1);
-    for (const slug of ["aritmetica", "algebra", "medicion", "logica"]) {
+    expect(ratio("geometria")).toBe(ratio("aritmetica"));
+    for (const slug of ["algebra", "medicion", "logica"]) {
       expect(ratio("geometria")).toBeLessThan(ratio(slug));
     }
     // ...pero está bloqueada: no hay nada que recomendar ahí todavía.
@@ -224,7 +228,9 @@ describe("Motor de evaluación de ubicación (lógica pura)", () => {
     const plan = pickPersonalizedPlan(perStrand, progressBySkill);
     expect(plan).not.toBeNull();
     expect(plan?.strand.slug).toBe("aritmetica");
-    expect(plan?.module.id).toBe("aritmetica-d3");
+    // Valor posicional y sumas hasta 100 son ambos tier 2; a igual tier
+    // manda la dificultad, y valor posicional va primero.
+    expect(plan?.module.id).toBe("aritmetica-valor-posicional");
   });
 
   test("con todo dominado (evaluación perfecta en los cinco hilos), el plan personalizado no revienta: simplemente no hay nada que recomendar", () => {

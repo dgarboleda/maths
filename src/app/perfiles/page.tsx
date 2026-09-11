@@ -24,24 +24,10 @@ export default function PerfilesPage() {
   const [children, setChildren] = useState<ChildDoc[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
-  const [banner, setBanner] = useState<string | null>(null);
-  const [projectId, setProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [user, loading, router]);
-
-  useEffect(() => {
-    // Diagnóstico: el projectId de Firebase no es secreto (viaja en cada
-    // petición al backend) y mostrarlo aquí permite comparar, en segundos,
-    // que el proyecto al que habla ESTE build sea el mismo que se está
-    // mirando en la consola de Firebase — las NEXT_PUBLIC_FIREBASE_* se
-    // incrustan en el build (ver README) y un build viejo servido desde
-    // caché puede seguir apuntando a un proyecto distinto.
-    getFirebase()
-      .then(({ app }) => setProjectId(app.options.projectId ?? null))
-      .catch(() => setProjectId(null));
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -128,12 +114,6 @@ export default function PerfilesPage() {
             {listError}
           </p>
         )}
-        {banner && (
-          <p role="status" className="rounded-xl bg-emerald-500/10 px-3.5 py-2.5 text-sm font-bold text-emerald-300">
-            {banner}
-          </p>
-        )}
-
         {children.length === 0 && !showForm && (
           <div className="family-panel flex flex-col items-center gap-3 rounded-2xl px-6 py-8 text-center sm:flex-row sm:text-left">
             <Image
@@ -170,18 +150,8 @@ export default function PerfilesPage() {
         </div>
 
         {showForm && (
-          <NewChildForm
-            parentId={user.uid}
-            onDone={(message) => {
-              setShowForm(false);
-              setBanner(message ?? null);
-            }}
-          />
+          <NewChildForm parentId={user.uid} onDone={() => setShowForm(false)} />
         )}
-
-        <p className="text-center text-[10px] text-indigo-300/80">
-          build: diag-v4 · proyecto Firebase: {projectId ?? "cargando…"}
-        </p>
       </div>
     </main>
   );
@@ -368,7 +338,7 @@ function NewChildForm({
   onDone,
 }: {
   parentId: string;
-  onDone: (message?: string) => void;
+  onDone: () => void;
 }) {
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -392,38 +362,17 @@ function NewChildForm({
     try {
       const pinHash = await hashPin(pin);
       const {
-        app,
         db,
-        firestore: { addDoc, collection, getDocsFromServer, serverTimestamp },
+        firestore: { addDoc, collection, serverTimestamp },
       } = await getFirebase();
       const childrenCollection = collection(db, "parents", parentId, "children");
-      const ref = await addDoc(childrenCollection, {
+      await addDoc(childrenCollection, {
         name,
         birthDate,
         pinHash,
         createdAt: serverTimestamp(),
       });
-      // Diagnóstico: addDoc() ya garantiza que el documento fue confirmado
-      // por el backend antes de resolver (así lo documenta el SDK: la
-      // promesa no se resuelve hasta que el servidor confirma la
-      // escritura). Igual se fuerza una relectura con getDocsFromServer
-      // —ignora la caché local— para descartar además un problema de
-      // reglas de lectura, y se muestra a qué proyecto de Firebase se
-      // escribió: NEXT_PUBLIC_FIREBASE_* se incrusta en el build (ver
-      // README), así que un build viejo servido desde caché puede seguir
-      // hablando con un proyecto distinto al que se mira en la consola.
-      const projectId = app.options.projectId ?? "desconocido";
-      const consoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore/data/parents/${parentId}/children/${ref.id}`;
-      const snap = await getDocsFromServer(childrenCollection);
-      const found = snap.docs.some((d) => d.id === ref.id);
-      const message = found
-        ? `"${name}" guardado en el proyecto "${projectId}" (id ${ref.id}). La colección tiene ${snap.size} perfil(es) en el servidor. Verifícalo en: ${consoleUrl}`
-        : `"${name}" se guardó (id ${ref.id}) en el proyecto "${projectId}" pero al releer desde el servidor no aparece (${snap.size} documento(s) encontrados). Revisa las reglas de lectura o si hay más de una base de datos de Firestore en ese proyecto.`;
-      // Diagnóstico temporal: alert() nativo además del banner en pantalla,
-      // para descartar que el mensaje no se vea por caché/CSS — un alert()
-      // es imposible de pasar por alto y bloquea hasta que se cierre.
-      window.alert(message);
-      onDone(message);
+      onDone();
     } catch (err) {
       console.error("No se pudo guardar el hijo", err);
       const code = (err as { code?: string })?.code;
@@ -431,7 +380,6 @@ function NewChildForm({
       const message = code
         ? `No se pudo guardar (${code}). ${rawMessage}`
         : `No se pudo guardar. ${rawMessage}`;
-      window.alert(message);
       setError(message);
     } finally {
       setSubmitting(false);
