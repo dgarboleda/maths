@@ -47,6 +47,13 @@ export function StoryBeatEditor({ beats, onChange }: { beats: StoryBeat[]; onCha
             value={beat.text}
             onChange={(e) => updateBeat(i, { text: e.target.value })}
           />
+          <input
+            type="text"
+            placeholder="/illustrations/khaos.webp (retrato, opcional)"
+            className={INPUT_CLASS}
+            value={beat.portrait}
+            onChange={(e) => updateBeat(i, { portrait: e.target.value })}
+          />
         </div>
       ))}
       <Tooltip content="Agrega una línea nueva a la cinemática." side="top">

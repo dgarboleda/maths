@@ -14,12 +14,14 @@ import { listLevels, getLevel } from "@/lib/level/persistence/levelRepository";
 import type { LevelDefinition } from "@/lib/level/schema";
 import { getWorld } from "@/lib/gameworld/persistence/worldRepository";
 import { worldGraphState } from "@/lib/gameworld/progress";
+import { currentStoryMoment } from "@/lib/gameworld/storyProgress";
 import type { GameWorld } from "@/lib/gameworld/schema";
 import { masteredCountForStrand, nextChallenge, nextReview } from "@/lib/curriculum";
 import { getStrandNarrative } from "@/lib/narrative";
 import { STRANDS } from "@/lib/strands";
 import { WorldTopBar } from "@/components/world/WorldHud";
 import { ShopPanel, type RequestDoc } from "@/components/world/ShopPanel";
+import { StoryBeatOverlay } from "@/components/world/StoryBeatOverlay";
 import { playSound } from "@/lib/gameSound";
 
 const STATE_LABEL: Record<string, string> = { bloqueado: "Bloqueado", disponible: "Disponible", completado: "Completado" };
@@ -161,6 +163,25 @@ export default function JugarMapaPage() {
 
   const levelsById = Object.fromEntries(levels.map((l) => [l.id, l]));
   const graphState = worldGraphState(world, levelsById, progressBySkill, totalStars ?? 0);
+
+  // Fase 30 (docs/plan-jugabilidad.md §4): intro/outro del mundo. `child` ya
+  // está cargado acá (el gate de arriba lo exige), así que el hub es el
+  // primer sitio real donde mostrarlos.
+  const allNodesComplete = world.nodes.length > 0 && world.nodes.every((n) => graphState[n.levelId] === "completado");
+  const seenStoryIds = child.seenStoryIds ?? [];
+  const storyMoment = currentStoryMoment(world, { seenStoryIds, allNodesComplete });
+
+  async function dismissStory(storyId: string) {
+    const next = [...seenStoryIds, storyId];
+    setChild((c) => (c ? { ...c, seenStoryIds: next } : c));
+    if (!parentId) return;
+    try {
+      const { db, firestore } = await getFirebase();
+      await firestore.updateDoc(firestore.doc(db, "parents", parentId, "children", params.childId), { seenStoryIds: next });
+    } catch (err) {
+      console.error("No se pudo guardar el progreso de la historia", err);
+    }
+  }
 
   return (
     <main id="contenido" tabIndex={-1} className="min-h-screen bg-slate-950 px-4 pb-6 pt-24 sm:px-6">
@@ -305,6 +326,8 @@ export default function JugarMapaPage() {
           onClose={() => setPanel("ninguno")}
         />
       )}
+
+      {storyMoment && <StoryBeatOverlay beats={storyMoment.beats} onClose={() => dismissStory(storyMoment.storyId)} />}
     </main>
   );
 }
