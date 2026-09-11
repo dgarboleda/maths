@@ -541,4 +541,16 @@ está mejor cubierto por la prueba de integración de §2.6.
   la build de producción — Turbopack desde Next 16 — ignora). Ver
   `lighthouserc.json`, `.github/workflows/ci.yml` (job "Presupuesto de
   rendimiento") y `npm run perf`.
-- **Clonar/compartir mundos.** Ver §2.1.
+- ~~**Clonar/compartir mundos.**~~ Implementado en `src/lib/backup/
+  cloneBundle.ts`: a diferencia de `importBundle` (ids originales,
+  sobrescribe), genera ids nuevos para todo lo que trae el paquete y lo
+  fusiona con lo que ya haya en la cuenta destino — nunca pisa nada propio.
+  Reescribe las referencias cruzadas que §2.1 señalaba como el riesgo real
+  (`WorldNode.levelId`, `WorldLink.from/toLevelId`, `LevelExit.target.
+  levelId`, `ChallengePlacement.moduleId` de módulos personalizados,
+  `unlock.levelIds`/`moduleIds` de nodos y avatares), con `validateWorld`/
+  `validateLevel` corriendo sobre el resultado ya remapeado como red de
+  seguridad (nunca bloquea: se reporta, igual que `missingAssets`). "Sumar
+  como copia nueva" en `BackupPanel.tsx` (Ajustes) sirve tanto para recibir
+  el mundo de otra familia como para, en la misma cuenta, sumar un paquete
+  exportado antes sin pisar el actual.
