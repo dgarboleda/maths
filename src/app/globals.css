@@ -31,6 +31,54 @@ body {
 }
 
 /*
+ * Barra de scroll a juego con el resto del diseño: fina, redondeada y en el
+ * violeta/índigo de la app en vez del gris nativo del sistema. Dos variantes
+ * con el mismo patrón que las clases .world- y .family- de más abajo —
+ * claro para las pantallas de práctica (por defecto) y oscuro dentro de las
+ * que pintan `bg-slate-950` (login, perfiles, panel familiar, mundo,
+ * editores). El color viaja por variable CSS heredada, así que cualquier
+ * contenedor con scroll nuevo — incluido uno anidado varios niveles adentro
+ * — coge el tono correcto sin tener que tocarlo aparte.
+ */
+:root {
+  --scrollbar-thumb: rgba(124, 58, 237, 0.35);
+  --scrollbar-thumb-hover: rgba(124, 58, 237, 0.55);
+  --scrollbar-track: rgba(226, 232, 240, 0.6);
+}
+
+[class~="bg-slate-950"] {
+  --scrollbar-thumb: rgba(129, 140, 248, 0.45);
+  --scrollbar-thumb-hover: rgba(129, 140, 248, 0.7);
+  --scrollbar-track: rgba(15, 17, 41, 0.6);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/*
  * Foco visible en todo lo que se pueda enfocar. Los campos usaban
  * `outline-none` y solo cambiaban el color del borde, que no alcanza como
  * indicador de foco (WCAG 2.4.7 / 1.4.11).
