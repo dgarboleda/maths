@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { idDeHijo, sembrarMundoDeEjemplo, sesionDeHijo } from "./utilidades";
+import { idDeHijo, otorgarDominio, sembrarMundoDeEjemplo, sembrarNivelConTerminal, sesionDeHijo } from "./utilidades";
 
 /**
  * Hub del jugador (`/mapa`) — Fase 28 (docs/plan-jugabilidad.md §2). Antes
@@ -64,5 +64,19 @@ test.describe("Hub del jugador", () => {
     // toque desde dentro de un nivel" que pedía la fase).
     await page.getByRole("link", { name: "Ciudad Central" }).click();
     await expect(page).toHaveURL(new RegExp(`/mapa$`));
+  });
+
+  test("allowReplay: false deja de mostrar como enlace un nodo ya completado (Fase 29)", async ({ page }) => {
+    const { correo } = await sesionDeHijo(page);
+    const childId = idDeHijo(page);
+    // Dominar el módulo directo en Firestore basta para que `levelCompleted`
+    // (allChallengesCorrect, la regla por defecto) dé el nodo por completado
+    // sin tener que jugarlo de verdad.
+    await otorgarDominio(correo, childId, ["aritmetica-d1"]);
+    const { levelId } = await sembrarNivelConTerminal(correo, "aritmetica-d1", { allowReplay: false });
+
+    await page.goto(`/jugar/${childId}/mapa`);
+    await expect(page.getByText("Completado")).toBeVisible();
+    await expect(page.locator(`a[href="/jugar/${childId}/nivel/${levelId}"]`)).toHaveCount(0);
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { PuzzleOverlay } from "@/components/world/PuzzleOverlay";
+import { PuzzleOverlay, type PuzzleRules } from "@/components/world/PuzzleOverlay";
 import { getModule } from "@/lib/curriculum";
 import type { InteractionKind } from "@/lib/world/scenes";
 import type { ChallengePlacement, LevelEntity } from "@/lib/level/schema";
@@ -40,8 +40,10 @@ export function LevelChallengeOverlay({
   progressBySkill,
   streak,
   soundOn,
+  rules,
   onClose,
   onResolved,
+  onWaived,
   recordAttempt,
   awardBadges,
 }: {
@@ -52,8 +54,14 @@ export function LevelChallengeOverlay({
   progressBySkill: Record<string, SkillProgress>;
   streak: number;
   soundOn: boolean;
+  /** Fase 29 (docs/plan-jugabilidad.md §3) — reenviadas tal cual a
+   *  `PuzzleOverlay`. `undefined` reproduce el comportamiento de siempre. */
+  rules?: PuzzleRules;
   onClose: () => void;
   onResolved: (result: { moduleId: string; updated: SkillProgress; correct: boolean; stars: number }) => void;
+  /** "Salir" sin resolver con `challengesAreMandatory: false` — ver
+   *  `PuzzleOverlay.onWaive`. */
+  onWaived?: () => void;
   /** Overrides de Play Test (Fase 11) — reenviados tal cual a `PuzzleOverlay`.
    *  `undefined` en el juego real: ese es el comportamiento por defecto. */
   recordAttempt?: typeof recordModuleAttempt;
@@ -83,7 +91,9 @@ export function LevelChallengeOverlay({
       progressBySkill={progressBySkill}
       streak={streak}
       soundOn={soundOn}
+      rules={rules}
       onClose={onClose}
+      onWaive={onWaived}
       recordAttempt={recordAttempt}
       awardBadges={awardBadges}
       onResolved={(moduleId, updated, correct) => {

@@ -75,12 +75,6 @@ export const WORLD_RULE_FIELDS: PropertyFieldDef[] = [
   },
   {
     kind: "boolean",
-    key: "defaultSoundOn",
-    label: "Sonido activado por defecto",
-    default: DEFAULT_WORLD_RULES.defaultSoundOn,
-  },
-  {
-    kind: "boolean",
     key: "replayStoryBeats",
     label: "Repetir la intro del mundo/capítulo cada vez",
     default: DEFAULT_WORLD_RULES.replayStoryBeats,

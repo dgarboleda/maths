@@ -11,6 +11,8 @@ import { useSoundPreference } from "@/lib/useSoundPreference";
 import { useRequirePlacement } from "@/lib/useRequirePlacement";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useLevelDoc } from "@/lib/level/persistence/useLevelDoc";
+import { getWorld } from "@/lib/gameworld/persistence/worldRepository";
+import type { WorldRules } from "@/lib/gameworld/schema";
 import { LevelRuntime } from "@/components/level/runtime/LevelRuntime";
 
 /**
@@ -31,6 +33,11 @@ export default function JugarNivelPage() {
   const [notFound, setNotFound] = useState(false);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [progressLoaded, setProgressLoaded] = useState(false);
+  // Fase 29 (docs/plan-jugabilidad.md §3): `undefined` mientras carga (el
+  // runtime lo trata igual que "sin reglas" — comportamiento de siempre),
+  // `null` si el padre nunca creó un Mundo (mismo caso). `LevelRuntime` no
+  // llega a bloquearse esperando esto: se pasa tal cual, cargue o no.
+  const [worldRules, setWorldRules] = useState<WorldRules | null | undefined>(undefined);
   const [soundOn] = useSoundPreference();
   const placementPending = useRequirePlacement(params.childId, child, router);
   const { level, loading: levelLoading } = useLevelDoc(parentId, params.levelId);
@@ -83,6 +90,23 @@ export default function JugarNivelPage() {
       cancelled = true;
     };
   }, [parentId, params.childId]);
+
+  useEffect(() => {
+    if (!parentId) return;
+    let cancelled = false;
+    getFirebase()
+      .then(({ db, firestore }) => getWorld(firestore, db, parentId))
+      .then((w) => {
+        if (!cancelled) setWorldRules(w?.rules ?? null);
+      })
+      .catch((err) => {
+        console.error("No se pudieron cargar las reglas del mundo", err);
+        if (!cancelled) setWorldRules(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [parentId]);
 
   if (loading || !user || !parentId) {
     return (
@@ -149,6 +173,7 @@ export default function JugarNivelPage() {
           childName={child.name}
           progressBySkill={progressBySkill}
           soundOn={soundOn}
+          rules={worldRules ?? undefined}
         />
       </div>
     </main>

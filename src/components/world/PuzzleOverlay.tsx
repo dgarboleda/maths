@@ -12,7 +12,29 @@ import { QuestionWidget } from "@/components/topic/QuestionWidget";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { KIND_ICON, type Interactable } from "@/lib/world/scenes";
+import type { WorldRules } from "@/lib/gameworld/schema";
 import { useDialogFocus } from "./useDialogFocus";
+
+/** Reglas que `PuzzleOverlay` de verdad necesita — no toda `WorldRules`,
+ *  para que un fixture de test (o el `sandbox` del Play Test) no tenga que
+ *  inventar las otras 6. */
+export type PuzzleRules = Pick<WorldRules, "maxAttemptsPerChallenge" | "hintsAfterAttempts" | "lockedModulePolicy" | "challengesAreMandatory">;
+
+/**
+ * Reglas por defecto cuando no llega ninguna `rules` — Ciudad Central
+ * legacy (`QuestScene.tsx`, que no se toca) nunca las pasa. Reproducen
+ * exactamente el comportamiento de antes de la Fase 29: 1 intento (revela
+ * al primer fallo), pista siempre disponible, desafío bloqueado siempre
+ * visible bloqueado, y "mandatorio" (Ciudad Central nunca tuvo la otra
+ * opción). Nunca usar `DEFAULT_WORLD_RULES` acá: su
+ * `maxAttemptsPerChallenge: 0` (ilimitado) cambiaría ese comportamiento.
+ */
+const LEGACY_RULES: PuzzleRules = {
+  maxAttemptsPerChallenge: 1,
+  hintsAfterAttempts: 0,
+  lockedModulePolicy: "showLocked",
+  challengesAreMandatory: true,
+};
 
 const KIND_HEADLINE: Record<Interactable["kind"], string> = {
   terminal: "TERMINAL BLOQUEADA",
@@ -45,8 +67,10 @@ export function PuzzleOverlay({
   progressBySkill,
   streak,
   soundOn,
+  rules = LEGACY_RULES,
   onClose,
   onResolved,
+  onWaive,
   recordAttempt,
   onStars,
   awardBadges,
@@ -58,8 +82,17 @@ export function PuzzleOverlay({
   progressBySkill: Record<string, SkillProgress>;
   streak: number;
   soundOn: boolean;
+  /** Fase 29 (docs/plan-jugabilidad.md §3) — `undefined` reproduce el
+   *  comportamiento de siempre (`LEGACY_RULES`): Ciudad Central legacy
+   *  nunca pasa esto. */
+  rules?: PuzzleRules;
   onClose: () => void;
   onResolved: (moduleId: string, updated: SkillProgress, correct: boolean) => void;
+  /** Fase 29: "Salir" sin resolver, con `challengesAreMandatory: false` y el
+   *  módulo desbloqueado — nunca escribe nada en Firestore (no hay intento
+   *  real), pero avisa al runtime para que un desafío no obligatorio no
+   *  bloquee la puerta que dependa de él. */
+  onWaive?: () => void;
   /** Sustituye a `recordModuleAttempt` — usado por el runtime del Level
    *  Editor (Fase 10) para reutilizar este componente byte a byte sin
    *  bifurcarlo. Ninguna llamada existente pasa esta prop, así que el
@@ -79,6 +112,7 @@ export function PuzzleOverlay({
   const [problem] = useState<Problem>(() => mod.generateProblem());
   const [hintLevel, setHintLevel] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [wrongCount, setWrongCount] = useState(0);
   const [result, setResult] = useState<{
     correct: boolean;
     stars: number;
@@ -86,13 +120,32 @@ export function PuzzleOverlay({
   } | null>(null);
 
   const missing = missingPrerequisites(progressBySkill, mod.id);
-  const locked = missing.length > 0;
+  // "allowAnyway" deja jugar igual aunque falte un prerrequisito; "hide" ya
+  // se resuelve antes de llegar acá (LevelRuntime.onEntityClick no llega a
+  // abrir este overlay) — acá solo quedan "showLocked" (bloquear, de
+  // siempre) y "allowAnyway".
+  const locked = missing.length > 0 && rules.lockedModulePolicy !== "allowAnyway";
   const isCore = interactable.kind === "mecanismo" || interactable.kind === "puerta";
+  const maxAttempts = rules.maxAttemptsPerChallenge; // 0 = ilimitado
 
   async function submit(given: number) {
     if (saving || result) return;
-    setSaving(true);
     const correct = isCorrectAnswer(problem, given);
+
+    // Reintento (Fase 29): con intentos restantes, un fallo NO se escribe en
+    // Firestore todavía — solo feedback local. Se escribe un único
+    // `recordModuleAttempt` más abajo, con el resultado final (acertó, o se
+    // agotaron los intentos) y `hintLevel` acumulado de todos los intentos:
+    // si se escribiera un intento por cada reintento, `recentAccuracy` se
+    // hundiría por practicar de más, no de menos.
+    const exhausted = maxAttempts > 0 && wrongCount + 1 >= maxAttempts;
+    if (!correct && !exhausted) {
+      setWrongCount((n) => n + 1);
+      playSound("wrong", soundOn);
+      return;
+    }
+
+    setSaving(true);
     try {
       const { db, firestore } = await getFirebase();
       const outcome = await (recordAttempt ?? recordModuleAttempt)(
@@ -124,6 +177,14 @@ export function PuzzleOverlay({
     }
     playSound(correct ? "correct" : "wrong", soundOn);
     if (correct) triggerConfetti();
+  }
+
+  /** "Salir" (Fase 29): con el desafío sin resolver y `challengesAreMandatory:
+   *  false`, avisa al runtime antes de cerrar — nunca si está bloqueado por
+   *  prerrequisito (eso no lo decide esta regla) ni si ya hay `result`. */
+  function handleExit() {
+    if (!locked && !result && !rules.challengesAreMandatory) onWaive?.();
+    onClose();
   }
 
   return (
@@ -166,7 +227,7 @@ export function PuzzleOverlay({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleExit}
             className="rounded-xl bg-slate-800 px-3 py-1.5 text-sm font-bold text-slate-300 hover:bg-slate-700"
           >
             Salir
@@ -221,7 +282,11 @@ export function PuzzleOverlay({
                     {problem.prompt}
                   </p>
 
-                  {problem.hints && (
+                  {/* Fase 29: la pista queda diferida hasta `hintsAfterAttempts`
+                      fallos — con el default legacy (0) esto es siempre
+                      cierto, cero cambio de comportamiento fuera de un mundo
+                      que configuró la regla. */}
+                  {problem.hints && wrongCount >= rules.hintsAfterAttempts && (
                     <div className="mt-3 space-y-2">
                       <div role="status" aria-live="polite">
                         {hintLevel > 0 && (
@@ -248,8 +313,29 @@ export function PuzzleOverlay({
                     </div>
                   )}
 
+                  {/* Fase 29: feedback de un fallo con reintentos restantes —
+                      `key={wrongCount}` remonta el párrafo para que la
+                      animación de temblor se repita en cada fallo nuevo, no
+                      solo en el primero. */}
+                  {wrongCount > 0 && !result && (
+                    <p
+                      key={wrongCount}
+                      role="status"
+                      aria-live="polite"
+                      className="anim-shake mt-3 rounded-xl border border-red-400/30 bg-red-950/40 px-3 py-2 text-sm font-bold text-red-200"
+                    >
+                      ✗ Todavía no — inténtalo de nuevo
+                      {maxAttempts > 0 ? ` (intento ${wrongCount + 1} de ${maxAttempts})` : ""}.
+                    </p>
+                  )}
+
                   <div className="mt-3 rounded-xl border border-white/10 bg-slate-950/60 p-4">
-                    <QuestionWidget problem={problem} onSubmit={submit} promptId={promptId} disabled={saving} />
+                    {/* `key` combina el problema con el intento: un reintento
+                        remonta el control de respuesta con estado limpio — sin
+                        esto, la variante "choice" queda bloqueada tras su
+                        primer clic (se deshabilita a sí misma al elegir) y las
+                        demás conservarían el valor ya tipeado. */}
+                    <QuestionWidget key={`${problem.id}-${wrongCount}`} problem={problem} onSubmit={submit} promptId={promptId} disabled={saving} />
                   </div>
                 </div>
               )}

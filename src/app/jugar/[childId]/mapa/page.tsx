@@ -191,6 +191,11 @@ export default function JugarMapaPage() {
                 const level = levelsById[node.levelId];
                 const state = graphState[node.levelId] ?? "bloqueado";
                 const locked = state === "bloqueado";
+                // Fase 29 (docs/plan-jugabilidad.md §3): `allowReplay: false`
+                // deja de mostrar como clicable un nodo ya completado — sigue
+                // viéndose "Completado" (mismo STATE_CLASS), solo deja de ser
+                // un enlace.
+                const replayBlocked = state === "completado" && !world.rules.allowReplay;
                 const content = (
                   <>
                     <span className="text-2xl leading-none">{node.icon || "🧩"}</span>
@@ -203,7 +208,7 @@ export default function JugarMapaPage() {
                 );
                 return (
                   <li key={node.levelId}>
-                    {locked || !level ? (
+                    {locked || replayBlocked || !level ? (
                       <div className={`flex min-h-24 flex-col items-center justify-center gap-1 rounded-xl border px-3 py-3 text-center ${STATE_CLASS[state]}`}>{content}</div>
                     ) : (
                       <Link

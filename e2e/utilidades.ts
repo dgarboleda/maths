@@ -5,9 +5,11 @@ import { collection, connectFirestoreEmulator, doc, getDocs, getFirestore, setDo
 import * as firestoreFns from "firebase/firestore";
 import { STRANDS } from "../src/lib/strands";
 import { ciudadCentralAsLevel } from "../src/lib/level/legacy/ciudadCentral";
+import { buildSalaConTerminal } from "../src/lib/level/templates/salaConTerminal";
 import { insertLevel } from "../src/lib/level/persistence/levelRepository";
 import { ensureWorld, saveWorld } from "../src/lib/gameworld/persistence/worldRepository";
-import type { WorldNode } from "../src/lib/gameworld/schema";
+import { DEFAULT_WORLD_RULES } from "../src/lib/gameworld/defaults";
+import type { WorldNode, WorldRules } from "../src/lib/gameworld/schema";
 
 export const CLAVE_PADRE = "secreto123";
 
@@ -202,6 +204,64 @@ export async function sembrarMundoDeEjemplo(correo: string): Promise<{ levelId: 
     await saveWorld(firestoreFns, db, user.uid, {
       ...base,
       nodes: [...base.nodes.filter((n) => n.levelId !== node.levelId), node],
+    });
+
+    return { levelId: level.id };
+  } finally {
+    await deleteApp(app);
+  }
+}
+
+/**
+ * Siembra "Sala con terminal" (la plantilla más simple del Level Editor —
+ * un desafío, una misión de un objetivo) con un `moduleId` real asignado, y
+ * un `GameWorld` cuyas `WorldRules` se pueden sobreescribir — para probar
+ * en un navegador real (no solo en el componente aislado) que la Fase 29
+ * (docs/plan-jugabilidad.md §3) llega desde Firestore hasta `PuzzleOverlay`
+ * a través de `nivel/[levelId]/page.tsx` → `LevelRuntime` →
+ * `LevelChallengeOverlay`.
+ */
+export async function sembrarNivelConTerminal(
+  correo: string,
+  moduleId: string,
+  rulesOverride: Partial<WorldRules> = {},
+): Promise<{ levelId: string }> {
+  const app = initializeApp(
+    { apiKey: "demo-api-key", projectId: "demo-numerario" },
+    `terminal-${crypto.randomUUID()}`,
+  );
+  try {
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
+
+    const db = getFirestore(app);
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+    const level = buildSalaConTerminal(user.uid, "Sala de prueba", {
+      src: "/illustrations/academia-infinita.webp",
+      width: 1024,
+      height: 768,
+      alt: "Sala de prueba",
+      projection: "flat",
+    });
+    level.challenges = [{ ...level.challenges[0], moduleId }];
+    await insertLevel(firestoreFns, db, user.uid, level);
+
+    const node: WorldNode = {
+      levelId: level.id,
+      chapterId: null,
+      position: { x: 50, y: 50 },
+      label: level.name,
+      icon: "🧪",
+      unlock: { kind: "always" },
+      isStart: true,
+    };
+    const base = await ensureWorld(firestoreFns, db, user.uid, user.uid);
+    await saveWorld(firestoreFns, db, user.uid, {
+      ...base,
+      rules: { ...DEFAULT_WORLD_RULES, ...rulesOverride },
+      nodes: [...base.nodes.filter((n) => n.levelId !== level.id), node],
     });
 
     return { levelId: level.id };
