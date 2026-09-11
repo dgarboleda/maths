@@ -102,23 +102,23 @@ describe("Motor de evaluación de ubicación (lógica pura)", () => {
   });
 
   test("los otorgamientos resuelven prerrequisitos cruzados entre hilos igual que jugando de verdad", () => {
-    // algebra-d4 (franja 5) exige algebra-d3 (franja 3) Y aritmetica-d6 (franja 4).
-    const conAritmeticaHasta3: Record<string, PlacementStrandRecord> = {
-      aritmetica: { itemsAsked: 4, itemsCorrect: 4, highestTierPassed: 3, gradeBand: gradeBandForTier(3), weakTiers: [] },
+    // algebra-d4 (grado 4) exige algebra-d3 (grado 3) Y aritmetica-d6 (grado 3).
+    const conAritmeticaHasta2: Record<string, PlacementStrandRecord> = {
+      aritmetica: { itemsAsked: 4, itemsCorrect: 4, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
       algebra: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 3, gradeBand: gradeBandForTier(3), weakTiers: [] },
     };
     const progresoParcial: Record<string, SkillProgress> = {};
-    for (const id of grantsFromPlacement(conAritmeticaHasta3, {})) {
+    for (const id of grantsFromPlacement(conAritmeticaHasta2, {})) {
       progresoParcial[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
     }
-    expect(isUnlocked(progresoParcial, "algebra-d4")).toBe(false); // falta aritmetica-d6 (franja 4)
+    expect(isUnlocked(progresoParcial, "algebra-d4")).toBe(false); // falta aritmetica-d6 (grado 3)
 
-    const conAritmeticaHasta4: Record<string, PlacementStrandRecord> = {
-      ...conAritmeticaHasta3,
-      aritmetica: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 4, gradeBand: gradeBandForTier(4), weakTiers: [] },
+    const conAritmeticaHasta3: Record<string, PlacementStrandRecord> = {
+      ...conAritmeticaHasta2,
+      aritmetica: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 3, gradeBand: gradeBandForTier(3), weakTiers: [] },
     };
     const progresoCompleto: Record<string, SkillProgress> = {};
-    for (const id of grantsFromPlacement(conAritmeticaHasta4, {})) {
+    for (const id of grantsFromPlacement(conAritmeticaHasta3, {})) {
       progresoCompleto[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
     }
     expect(isMastered(progresoCompleto, "aritmetica-d6")).toBe(true);
@@ -195,34 +195,42 @@ describe("Motor de evaluación de ubicación (lógica pura)", () => {
   });
 
   test("si el hilo con menor avance queda sin módulo recomendable (bloqueado por prerrequisito cruzado), el plan personalizado cae a otro hilo en vez de desaparecer", () => {
-    // Álgebra queda con el menor avance relativo (1/10) pero su único
-    // módulo siguiente (algebra-d2) exige aritmetica-d2, que la evaluación
-    // no llegó a acreditar (aritmética se quedó en la franja 0) — y ese
-    // bloqueo se propaga a toda la cadena de álgebra. Aritmética, con un
-    // avance apenas mayor (1/9), sí tiene un módulo libre para recomendar.
+    // Geometría queda con el menor avance relativo, pero todo lo que sigue
+    // después de lados y vértices exige aritmética de 2.º grado en adelante
+    // (perímetro pide sumar hasta 100), que la evaluación no llegó a
+    // acreditar: aritmética se quedó en 1.º. Aritmética, empatada con
+    // geometría (ambas llegan a tier 8), sí tiene un módulo libre para
+    // recomendar. El empate lo resuelve el orden de inserción (el sort es
+    // estable): geometría va primero para que se intente y se descarte.
     const perStrand: Record<string, PlacementStrandRecord> = {
-      aritmetica: { itemsAsked: 2, itemsCorrect: 1, highestTierPassed: 0, gradeBand: gradeBandForTier(0), weakTiers: [] },
-      algebra: { itemsAsked: 2, itemsCorrect: 1, highestTierPassed: 0, gradeBand: gradeBandForTier(0), weakTiers: [] },
-      geometria: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
-      medicion: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
-      logica: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
+      geometria: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
+      aritmetica: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
+      algebra: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
+      medicion: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
+      logica: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
     };
     const progressBySkill: Record<string, SkillProgress> = {};
     for (const id of grantsFromPlacement(perStrand, {})) {
       progressBySkill[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
     }
 
-    // Confirma la premisa del caso: álgebra tiene el menor avance relativo...
+    // Confirma la premisa del caso: geometría tiene el menor avance relativo
+    // (empatada con aritmética)...
     const ratio = (slug: string) =>
       (perStrand[slug].highestTierPassed + 1) / (modulesForStrand(slug).at(-1)!.tier + 1);
-    expect(ratio("algebra")).toBeLessThan(ratio("aritmetica"));
+    expect(ratio("geometria")).toBe(ratio("aritmetica"));
+    for (const slug of ["algebra", "medicion", "logica"]) {
+      expect(ratio("geometria")).toBeLessThan(ratio(slug));
+    }
     // ...pero está bloqueada: no hay nada que recomendar ahí todavía.
-    expect(recommendedModule(progressBySkill, "algebra")).toBeNull();
+    expect(recommendedModule(progressBySkill, "geometria")).toBeNull();
 
     const plan = pickPersonalizedPlan(perStrand, progressBySkill);
     expect(plan).not.toBeNull();
     expect(plan?.strand.slug).toBe("aritmetica");
-    expect(plan?.module.id).toBe("aritmetica-d2");
+    // Valor posicional y sumas hasta 100 son ambos tier 2; a igual tier
+    // manda la dificultad, y valor posicional va primero.
+    expect(plan?.module.id).toBe("aritmetica-valor-posicional");
   });
 
   test("con todo dominado (evaluación perfecta en los cinco hilos), el plan personalizado no revienta: simplemente no hay nada que recomendar", () => {

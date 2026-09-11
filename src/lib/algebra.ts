@@ -2,18 +2,27 @@ import { type Problem, randInt, shuffle } from "./problem";
 import {
   balanzaHints,
   cuadraticaHints,
-  desigualdadHints,
+  desigualdadDosPasosHints,
   ecuacionDosPasosHints,
   ecuacionMultiplicacionHints,
   ecuacionRestaHints,
   ecuacionSumaHints,
   evaluarExpresionHints,
-  funcionHints,
+  factorizarHints,
+  funcionTablaHints,
   patronHints,
   proporcionesHints,
 } from "./hints";
 
 const PATTERN_SYMBOLS = ["●", "■", "▲"];
+
+/** "x² − 5x + 6", "x² − 9", "x² + x − 2": el trinomio con sus signos bien escritos. */
+export function quadraticText(b: number, c: number): string {
+  let text = "x²";
+  if (b !== 0) text += ` ${b > 0 ? "+" : "−"} ${Math.abs(b) === 1 ? "" : Math.abs(b)}x`;
+  if (c !== 0) text += ` ${c > 0 ? "+" : "−"} ${Math.abs(c)}`;
+  return text;
+}
 
 export function generateProblem(difficulty: number): Problem {
   const id = crypto.randomUUID();
@@ -142,42 +151,70 @@ export function generateProblem(difficulty: number): Problem {
       };
     }
     case 8: {
-      const b = randInt(3, 20);
+      // mx + b > c (menor entero) o mx + b ≤ c (mayor entero). El resto `r`
+      // hace que el límite (c − b)/m no siempre sea entero: hay que decidir
+      // hacia qué lado redondear según el sentido de la desigualdad.
+      const m = randInt(2, 5);
+      const b = randInt(1, 12);
+      const t = randInt(1, 10);
+      const r = randInt(0, m - 1);
+      const c = m * t + b + r;
+      const greater = Math.random() < 0.5;
+      const answer = greater ? t + 1 : t;
       return {
         id,
         difficulty,
         kind: "desigualdad",
-        prompt: `¿Cuál es el menor número entero que cumple x > ${b}?`,
-        answer: b + 1,
+        prompt: greater
+          ? `¿Cuál es el menor número entero que cumple ${m}x + ${b} > ${c}?`
+          : `¿Cuál es el mayor número entero que cumple ${m}x + ${b} ≤ ${c}?`,
+        answer,
         inputType: "integer",
-        hints: desigualdadHints(b, b + 1),
+        hints: desigualdadDosPasosHints(m, b, c, greater, answer),
       };
     }
     case 9: {
       const m = randInt(2, 6);
-      const b = randInt(-10, 10);
-      const x = randInt(1, 10);
+      const b = randInt(-2, 10);
+      const n = randInt(6, 12);
+      const rows = [1, 2, 3].map((x) => `x = ${x} → y = ${m * x + b}`).join("; ");
       return {
         id,
         difficulty,
         kind: "funcion",
-        prompt: `f(x) = ${m}x ${b >= 0 ? "+" : "−"} ${Math.abs(b)}. ¿Cuánto es f(${x})?`,
-        answer: m * x + b,
+        prompt: `Una tabla sigue siempre la misma regla: ${rows}. ¿Cuánto vale y cuando x = ${n}?`,
+        answer: m * n + b,
         inputType: "integer",
-        hints: funcionHints(m, b, x, m * x + b),
+        hints: funcionTablaHints(m, b, n, m * n + b),
       };
     }
     default: {
-      const root = randInt(2, 15);
-      const square = root * root;
+      if (Math.random() < 0.4) {
+        const root = randInt(2, 15);
+        const square = root * root;
+        return {
+          id,
+          difficulty: 10,
+          kind: "ecuacion_cuadratica",
+          prompt: `x² = ${square}. ¿Cuánto vale x (el valor positivo)?`,
+          answer: root,
+          inputType: "integer",
+          hints: cuadraticaHints(square, root),
+        };
+      }
+      // (x − r1)(x − r2) = 0 con raíces enteras y r1 > r2.
+      const r1 = randInt(1, 9);
+      const r2 = randInt(-9, r1 - 1);
+      const b = -(r1 + r2);
+      const c = r1 * r2;
       return {
         id,
         difficulty: 10,
-        kind: "ecuacion_cuadratica",
-        prompt: `x² = ${square}. ¿Cuánto vale x (el valor positivo)?`,
-        answer: root,
+        kind: "ecuacion_cuadratica_factorizable",
+        prompt: `${quadraticText(b, c)} = 0. ¿Cuál es la solución mayor?`,
+        answer: r1,
         inputType: "integer",
-        hints: cuadraticaHints(square, root),
+        hints: factorizarHints(r1, r2, b, c),
       };
     }
   }

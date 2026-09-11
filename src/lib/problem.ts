@@ -51,6 +51,40 @@ export function shuffle<T>(items: T[]): T[] {
   return copy;
 }
 
+export function pick<T>(items: readonly T[]): T {
+  return items[randInt(0, items.length - 1)];
+}
+
+export function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * Opciones de texto (fracciones, "Son iguales", interpretaciones...) para
+ * un problema `choice`: la correcta va primero en `options`. Las opciones
+ * se barajan y la respuesta es el índice de la correcta, igual que en los
+ * patrones de símbolos de álgebra.
+ */
+export function textChoices(options: string[]): Pick<Problem, "choices" | "choiceLabels" | "answer"> {
+  const order = shuffle(options.map((_, i) => i));
+  return { choices: order, choiceLabels: order.map((i) => options[i]), answer: 0 };
+}
+
+const SUPERSCRIPT_DIGITS = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
+
+/** Exponente en superíndice: 10 + superscript(4) → "10⁴". */
+export function superscript(n: number): string {
+  return String(n)
+    .split("")
+    .map((ch) => (ch === "-" ? "⁻" : SUPERSCRIPT_DIGITS[Number(ch)]))
+    .join("");
+}
+
+/** Miles separados por espacio ("45 000 000"): el punto se confundiría con la coma decimal de los enunciados. */
+export function formatThousands(n: number): string {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
 /** Texto a mostrar para una respuesta: la choiceLabel correspondiente si existe, si no el número tal cual. */
 export function formatAnswer(problem: Problem, answer: number): string | number {
   if (problem.choices && problem.choiceLabels) {
@@ -111,7 +145,9 @@ export function generateUniqueBatch(generate: () => Problem, count: number): Pro
 
 export function isCorrectAnswer(problem: Problem, given: number): boolean {
   if (Number.isNaN(given)) return false;
-  if (problem.inputType === "decimal") return Math.abs(given - problem.answer) < 0.05;
+  // Iguales hasta los centésimos: absorbe el error de coma flotante sin
+  // aceptar una respuesta distinta (con ±0.05, 0.2 pasaba por 0.21).
+  if (problem.inputType === "decimal") return Math.abs(given - problem.answer) < 0.005;
   return given === problem.answer;
 }
 

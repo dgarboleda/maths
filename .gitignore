@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-levels-v2/
 /out/
 
 # production

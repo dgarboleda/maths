@@ -168,9 +168,11 @@ function ShapeCoords() {
   const [x, setX] = useState(2);
   const [y, setY] = useState(3);
   const [dx, setDx] = useState(3);
+  const [dy, setDy] = useState(0);
   const px = 100 + x * 8;
   const py = 100 - y * 8;
   const npx = 100 + (x + dx) * 8;
+  const npy = 100 - (y + dy) * 8;
   return (
     <div className="space-y-6 text-center">
       <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Coordenadas y traslaciones 📍</h2>
@@ -178,18 +180,24 @@ function ShapeCoords() {
         Cada punto del plano se ubica con dos números (x, y): x dice cuánto moverte a los lados, y dice cuánto
         moverte hacia arriba o abajo. <strong>Trasladar</strong> es mover un punto sin cambiar su forma.
       </p>
-      <div className="grid grid-cols-1 gap-4 rounded-2xl border-2 border-purple-100 bg-purple-50 p-6 text-left md:grid-cols-3">
+      <p className="text-slate-600">
+        Los ejes dividen el plano en cuatro <strong>cuadrantes</strong>: I arriba a la derecha (x e y positivos), II
+        arriba a la izquierda, III abajo a la izquierda y IV abajo a la derecha. Si dos puntos comparten una
+        coordenada, su distancia es la diferencia de la otra.
+      </p>
+      <div className="grid grid-cols-1 gap-4 rounded-2xl border-2 border-purple-100 bg-purple-50 p-6 text-left md:grid-cols-2">
         <MiniSlider label="x" value={x} setValue={setX} min={-9} max={9} />
         <MiniSlider label="y" value={y} setValue={setY} min={-9} max={9} />
         <MiniSlider label="Mover en x" value={dx} setValue={setDx} min={-9} max={9} />
+        <MiniSlider label="Mover en y" value={dy} setValue={setDy} min={-9} max={9} />
       </div>
       <svg aria-hidden="true" viewBox="0 0 200 200" className="mx-auto h-48 w-48 bg-slate-50">
         <line x1="0" y1="100" x2="200" y2="100" stroke="#cbd5e1" />
         <line x1="100" y1="0" x2="100" y2="200" stroke="#cbd5e1" />
         <circle cx={px} cy={py} r="5" fill="#7C3AED" />
-        <circle cx={npx} cy={py} r="5" fill="#DB2777" />
+        <circle cx={npx} cy={npy} r="5" fill="#DB2777" />
       </svg>
-      <Formula text={`(${x}, ${y}) se mueve a (${x + dx}, ${y})`} />
+      <Formula text={`(${x}, ${y}) se mueve a (${x + dx}, ${y + dy})`} />
     </div>
   );
 }
@@ -210,6 +218,10 @@ function ShapePythagoras() {
         <polygon points={`30,140 ${30 + a * 8},140 30,${140 - b * 8}`} fill="#DDD6FE" stroke="#7C3AED" strokeWidth="3" />
       </svg>
       <Formula text={`c = √(${a}² + ${b}²) = ${c.toFixed(1)}`} />
+      <p className="text-slate-600">
+        Si lo que falta es un cateto, se despeja al revés: b = √(c² − a²). Sirve para cualquier situación con un
+        ángulo recto — una escalera apoyada en una pared, la diagonal de una pantalla, una rampa.
+      </p>
     </div>
   );
 }
@@ -249,6 +261,10 @@ function ShapeScale() {
         );
       })()}
       <Formula text={`Lado grande = ${side} × ${scale} = ${side * scale}`} />
+      <p className="text-slate-600">
+        La escala no siempre es un número entero. Si un lado de 4 cm corresponde a uno de 6 cm, la razón es 6/4:
+        cualquier otro lado del pequeño se multiplica por 6 y se divide entre 4 (uno de 8 cm pasa a 12 cm).
+      </p>
     </div>
   );
 }

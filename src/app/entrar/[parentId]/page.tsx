@@ -159,8 +159,11 @@ function PinDialog({
       setChecking(false);
       if (code.includes("resource-exhausted")) {
         setError("Demasiados intentos. Espera un momento e intenta de nuevo.");
-      } else {
+      } else if (code.includes("permission-denied")) {
         setError("PIN incorrecto");
+      } else {
+        console.error("No se pudo verificar el PIN", err);
+        setError("Error del servidor. Intenta de nuevo en un momento.");
       }
       setShakes((s) => s + 1);
       setPin("");

@@ -2,12 +2,30 @@ import type { ComponentType } from "react";
 import type { Problem } from "./problem";
 import type { SkillProgress } from "./types";
 import { isReviewDue, reviewDueAt } from "./mastery";
+import { pisa, type PisaTag } from "./pisa";
 import { generateProblem as generateAritmetica } from "./arithmetic";
 import { generateProblem as generateAlgebra } from "./algebra";
 import { generateProblem as generateGeometria } from "./geometria";
 import { generateProblem as generateMedicion } from "./medicion";
 import { generateProblem as generateLogica } from "./logica";
 import { generateMcdMcmProblem, generateUnlikeFractionsProblem } from "./aritmeticaMcdMcm";
+import {
+  generateDecimalesMultDivProblem,
+  generateDivisionLargaProblem,
+  generateDivisionRestoProblem,
+  generateFraccionConceptoProblem,
+  generateFraccionDeCantidadProblem,
+  generateFraccionDecimalPorcentajeProblem,
+  generateFraccionesEquivalentesProblem,
+  generateFraccionesMultDivProblem,
+  generateJerarquiaProblem,
+  generateMultVariasCifrasProblem,
+  generateNotacionCientificaProblem,
+  generatePorcentajeAplicadoProblem,
+  generatePotenciasProblem,
+  generateRaicesProblem,
+  generateValorPosicionalProblem,
+} from "./aritmeticaTemas";
 import { NumberLineConcept } from "@/components/topic/concepts/NumberLineConcept";
 import { ArrayConcept } from "@/components/topic/concepts/ArrayConcept";
 import { FractionBarConcept } from "@/components/topic/concepts/FractionBarConcept";
@@ -19,6 +37,8 @@ import { DataConcept } from "@/components/topic/concepts/DataConcept";
 import { WordProblemConcept } from "@/components/topic/concepts/WordProblemConcept";
 import { McdMcmConcept } from "@/components/topic/concepts/McdMcmConcept";
 import { FraccionesDistintoDenomConcept } from "@/components/topic/concepts/FraccionesDistintoDenomConcept";
+import { SlidesConcept } from "@/components/topic/concepts/SlidesConcept";
+import { CONCEPT_SLIDES } from "./curriculum/conceptSlides";
 import { STRANDS } from "./strands";
 import { allModules, getCustomModule } from "./curriculum/customRegistry";
 
@@ -30,10 +50,15 @@ import { allModules, getCustomModule } from "./curriculum/customRegistry";
  * ninguna relación real entre hilos ni permitía insertar un tema nuevo sin
  * renumerar todo.
  *
+ * El destino es el nivel que evalúa PISA a los 15 años (ver pisa.ts y
+ * docs/curricula-pisa.md): `tier` es el grado escolar de referencia y
+ * `pisa` la categoría y el nivel de desempeño de los ítems del módulo.
+ *
  * El `id` de los 50 módulos que ya existían es exactamente la clave que ya
  * se usa como doc id de `skillsProgress` ("{strand}-d{difficulty}") — no
- * hace falta migrar ningún progreso guardado. Los módulos nuevos usan un id
- * descriptivo en vez de un número de nivel.
+ * hace falta migrar ningún progreso guardado, y por eso esos ids nunca se
+ * renombran aunque cambie su tema, grado o prerrequisitos. Los módulos
+ * nuevos usan un id descriptivo en vez de un número de nivel.
  */
 export interface ModuleDef {
   id: string;
@@ -43,8 +68,14 @@ export interface ModuleDef {
   difficulty: number;
   label: string;
   emoji: string;
-  /** Franja de la currícula, solo para agrupar en la vista del padre. */
+  /** Grado escolar de referencia: 0 = preescolar, 1–10 = 1.º a 10.º
+   * (progresión CCSS-M). Agrupa en la vista del padre y ordena las
+   * recomendaciones (`nextChallenge` prefiere el grado más bajo). */
   tier: number;
+  /** Categoría y nivel PISA de los ítems del módulo. Obligatorio en los
+   * módulos de código (lo exige curriculum-grafo.test.ts); los
+   * personalizados (cst-*) no lo tienen y quedan fuera de la medición PISA. */
+  pisa?: PisaTag;
   /** Ids de otros módulos —de cualquier hilo— que hay que dominar antes. */
   prerequisites: string[];
   generateProblem: () => Problem;
@@ -54,8 +85,13 @@ export interface ModuleDef {
   href?: (childId: string) => string;
 }
 
+/** Concepto hecho de láminas (curriculum/conceptSlides.ts), para los temas sin visualización propia. */
+function slidesFor(moduleId: string): ComponentType {
+  return () => SlidesConcept({ slides: CONCEPT_SLIDES[moduleId] ?? [] });
+}
+
 export const MODULES: ModuleDef[] = [
-  // ── Aritmética ──────────────────────────────────────────────────────
+  // ── Aritmética (PISA: Cantidad) ────────────────────────────────────
   {
     id: "aritmetica-d1",
     strandSlug: "aritmetica",
@@ -63,6 +99,7 @@ export const MODULES: ModuleDef[] = [
     label: "Sumas hasta 5",
     emoji: "➕",
     tier: 0,
+    pisa: pisa("cantidad", "B"),
     prerequisites: [],
     generateProblem: () => generateAritmetica(1),
     ConceptComponent: () => NumberLineConcept({ min: 0, max: 5 }),
@@ -74,6 +111,7 @@ export const MODULES: ModuleDef[] = [
     label: "Sumas y restas hasta 10",
     emoji: "➖",
     tier: 1,
+    pisa: pisa("cantidad", "1c"),
     prerequisites: ["aritmetica-d1"],
     generateProblem: () => generateAritmetica(2),
     ConceptComponent: () => NumberLineConcept({ min: 0, max: 10 }),
@@ -85,9 +123,22 @@ export const MODULES: ModuleDef[] = [
     label: "Sumas y restas hasta 100",
     emoji: "🔢",
     tier: 2,
+    pisa: pisa("cantidad", "1c"),
     prerequisites: ["aritmetica-d2"],
     generateProblem: () => generateAritmetica(3),
     ConceptComponent: () => NumberLineConcept({ min: 0, max: 100 }),
+  },
+  {
+    id: "aritmetica-valor-posicional",
+    strandSlug: "aritmetica",
+    difficulty: 2,
+    label: "Valor posicional",
+    emoji: "🧱",
+    tier: 2,
+    pisa: pisa("cantidad", "1c"),
+    prerequisites: ["aritmetica-d2"],
+    generateProblem: generateValorPosicionalProblem,
+    ConceptComponent: slidesFor("aritmetica-valor-posicional"),
   },
   {
     id: "aritmetica-d4",
@@ -96,7 +147,8 @@ export const MODULES: ModuleDef[] = [
     label: "Sumas y restas hasta 1000",
     emoji: "🧮",
     tier: 3,
-    prerequisites: ["aritmetica-d3"],
+    pisa: pisa("cantidad", "1b"),
+    prerequisites: ["aritmetica-d3", "aritmetica-valor-posicional"],
     generateProblem: () => generateAritmetica(4),
     ConceptComponent: () => NumberLineConcept({ min: 0, max: 999 }),
   },
@@ -106,7 +158,8 @@ export const MODULES: ModuleDef[] = [
     difficulty: 5,
     label: "Multiplicación",
     emoji: "✖️",
-    tier: 4,
+    tier: 3,
+    pisa: pisa("cantidad", "1b"),
     prerequisites: ["aritmetica-d3"],
     generateProblem: () => generateAritmetica(5),
     ConceptComponent: () => ArrayConcept({ mode: "mult" }),
@@ -118,10 +171,96 @@ export const MODULES: ModuleDef[] = [
     difficulty: 6,
     label: "División",
     emoji: "➗",
-    tier: 4,
+    tier: 3,
+    pisa: pisa("cantidad", "1b"),
     prerequisites: ["aritmetica-d5"],
     generateProblem: () => generateAritmetica(6),
     ConceptComponent: () => ArrayConcept({ mode: "div" }),
+  },
+  {
+    id: "aritmetica-fraccion-concepto",
+    strandSlug: "aritmetica",
+    difficulty: 3,
+    label: "¿Qué es una fracción?",
+    emoji: "🥧",
+    tier: 3,
+    pisa: pisa("cantidad", "1b"),
+    // Repartir en partes iguales es la idea de fracción: viene de la división.
+    prerequisites: ["aritmetica-d6"],
+    generateProblem: generateFraccionConceptoProblem,
+    ConceptComponent: () => FractionBarConcept({ mode: "fraction" }),
+  },
+  {
+    id: "aritmetica-division-resto",
+    strandSlug: "aritmetica",
+    difficulty: 4,
+    label: "División con resto",
+    emoji: "🍬",
+    tier: 4,
+    pisa: pisa("cantidad", "1a"),
+    prerequisites: ["aritmetica-d6"],
+    generateProblem: generateDivisionRestoProblem,
+    ConceptComponent: slidesFor("aritmetica-division-resto"),
+  },
+  {
+    id: "aritmetica-mult-varias-cifras",
+    strandSlug: "aritmetica",
+    difficulty: 4,
+    label: "Multiplicación de varias cifras",
+    emoji: "🏗️",
+    tier: 4,
+    pisa: pisa("cantidad", "1a"),
+    prerequisites: ["aritmetica-d5", "aritmetica-d4"],
+    generateProblem: generateMultVariasCifrasProblem,
+    ConceptComponent: slidesFor("aritmetica-mult-varias-cifras"),
+  },
+  {
+    id: "aritmetica-d7",
+    strandSlug: "aritmetica",
+    difficulty: 7,
+    label: "Fracciones",
+    emoji: "🍕",
+    tier: 4,
+    pisa: pisa("cantidad", "1a"),
+    prerequisites: ["aritmetica-fraccion-concepto"],
+    generateProblem: () => generateAritmetica(7),
+    ConceptComponent: () => FractionBarConcept({ mode: "fraction" }),
+  },
+  {
+    id: "aritmetica-fracciones-equivalentes",
+    strandSlug: "aritmetica",
+    difficulty: 4,
+    label: "Fracciones equivalentes",
+    emoji: "🟰",
+    tier: 4,
+    pisa: pisa("cantidad", "1a"),
+    prerequisites: ["aritmetica-fraccion-concepto", "aritmetica-d5"],
+    generateProblem: generateFraccionesEquivalentesProblem,
+    ConceptComponent: slidesFor("aritmetica-fracciones-equivalentes"),
+  },
+  {
+    id: "aritmetica-division-larga",
+    strandSlug: "aritmetica",
+    difficulty: 5,
+    label: "División de varias cifras",
+    emoji: "📜",
+    tier: 5,
+    pisa: pisa("cantidad", "1a"),
+    prerequisites: ["aritmetica-division-resto", "aritmetica-mult-varias-cifras"],
+    generateProblem: generateDivisionLargaProblem,
+    ConceptComponent: slidesFor("aritmetica-division-larga"),
+  },
+  {
+    id: "aritmetica-jerarquia",
+    strandSlug: "aritmetica",
+    difficulty: 5,
+    label: "Jerarquía de operaciones",
+    emoji: "🪜",
+    tier: 5,
+    pisa: pisa("cantidad", "1a"),
+    prerequisites: ["aritmetica-d6", "aritmetica-mult-varias-cifras"],
+    generateProblem: generateJerarquiaProblem,
+    ConceptComponent: slidesFor("aritmetica-jerarquia"),
   },
   {
     id: "aritmetica-mcd-mcm",
@@ -130,20 +269,11 @@ export const MODULES: ModuleDef[] = [
     label: "MCD y MCM",
     emoji: "🔗",
     tier: 5,
-    prerequisites: ["aritmetica-d6"],
+    pisa: pisa("cantidad", "1a"),
+    // Divisores y múltiplos se buscan dividiendo y mirando el resto.
+    prerequisites: ["aritmetica-division-resto"],
     generateProblem: generateMcdMcmProblem,
     ConceptComponent: McdMcmConcept,
-  },
-  {
-    id: "aritmetica-d7",
-    strandSlug: "aritmetica",
-    difficulty: 7,
-    label: "Fracciones",
-    emoji: "🍕",
-    tier: 6,
-    prerequisites: ["aritmetica-d6"],
-    generateProblem: () => generateAritmetica(7),
-    ConceptComponent: () => FractionBarConcept({ mode: "fraction" }),
   },
   {
     id: "aritmetica-fracciones-2",
@@ -151,10 +281,23 @@ export const MODULES: ModuleDef[] = [
     difficulty: 7,
     label: "Fracciones con distinto denominador",
     emoji: "🍕",
-    tier: 6,
-    prerequisites: ["aritmetica-d7", "aritmetica-mcd-mcm"],
+    tier: 5,
+    pisa: pisa("cantidad", "1a"),
+    prerequisites: ["aritmetica-d7", "aritmetica-fracciones-equivalentes", "aritmetica-mcd-mcm"],
     generateProblem: generateUnlikeFractionsProblem,
     ConceptComponent: FraccionesDistintoDenomConcept,
+  },
+  {
+    id: "aritmetica-fraccion-de-cantidad",
+    strandSlug: "aritmetica",
+    difficulty: 5,
+    label: "Fracción de una cantidad",
+    emoji: "🍫",
+    tier: 5,
+    pisa: pisa("cantidad", "1a"),
+    prerequisites: ["aritmetica-fracciones-equivalentes", "aritmetica-d6"],
+    generateProblem: generateFraccionDeCantidadProblem,
+    ConceptComponent: slidesFor("aritmetica-fraccion-de-cantidad"),
   },
   {
     id: "aritmetica-d8",
@@ -162,10 +305,61 @@ export const MODULES: ModuleDef[] = [
     difficulty: 8,
     label: "Decimales",
     emoji: "🔟",
-    tier: 7,
-    prerequisites: ["aritmetica-d7"],
+    tier: 5,
+    pisa: pisa("cantidad", "1a"),
+    // Los décimos se leen como fracciones de denominador 10, y las cuentas
+    // llegan a 3 cifras: pide ambas cosas.
+    prerequisites: ["aritmetica-d7", "aritmetica-d4"],
     generateProblem: () => generateAritmetica(8),
     ConceptComponent: () => FractionBarConcept({ mode: "decimal" }),
+  },
+  {
+    id: "aritmetica-potencias",
+    strandSlug: "aritmetica",
+    difficulty: 6,
+    label: "Potencias",
+    emoji: "⚡",
+    tier: 6,
+    pisa: pisa("cantidad", "2"),
+    prerequisites: ["aritmetica-mult-varias-cifras"],
+    generateProblem: generatePotenciasProblem,
+    ConceptComponent: slidesFor("aritmetica-potencias"),
+  },
+  {
+    id: "aritmetica-fracciones-mult-div",
+    strandSlug: "aritmetica",
+    difficulty: 6,
+    label: "Multiplicar y dividir fracciones",
+    emoji: "✂️",
+    tier: 6,
+    pisa: pisa("cantidad", "2"),
+    prerequisites: ["aritmetica-fracciones-2", "aritmetica-fraccion-de-cantidad"],
+    generateProblem: generateFraccionesMultDivProblem,
+    ConceptComponent: slidesFor("aritmetica-fracciones-mult-div"),
+  },
+  {
+    id: "aritmetica-decimales-mult-div",
+    strandSlug: "aritmetica",
+    difficulty: 6,
+    label: "Multiplicar y dividir decimales",
+    emoji: "🪙",
+    tier: 6,
+    pisa: pisa("cantidad", "2"),
+    prerequisites: ["aritmetica-d8", "aritmetica-mult-varias-cifras", "aritmetica-division-larga"],
+    generateProblem: generateDecimalesMultDivProblem,
+    ConceptComponent: slidesFor("aritmetica-decimales-mult-div"),
+  },
+  {
+    id: "aritmetica-fraccion-decimal-porcentaje",
+    strandSlug: "aritmetica",
+    difficulty: 6,
+    label: "Fracciones, decimales y porcentajes",
+    emoji: "🔄",
+    tier: 6,
+    pisa: pisa("cantidad", "2"),
+    prerequisites: ["aritmetica-d8", "aritmetica-fracciones-equivalentes"],
+    generateProblem: generateFraccionDecimalPorcentajeProblem,
+    ConceptComponent: () => FractionBarConcept({ mode: "percent" }),
   },
   {
     id: "aritmetica-d9",
@@ -173,8 +367,9 @@ export const MODULES: ModuleDef[] = [
     difficulty: 9,
     label: "Porcentajes",
     emoji: "💯",
-    tier: 7,
-    prerequisites: ["aritmetica-d7"],
+    tier: 6,
+    pisa: pisa("cantidad", "2"),
+    prerequisites: ["aritmetica-fraccion-decimal-porcentaje", "aritmetica-fraccion-de-cantidad"],
     generateProblem: () => generateAritmetica(9),
     ConceptComponent: () => FractionBarConcept({ mode: "percent" }),
   },
@@ -184,13 +379,52 @@ export const MODULES: ModuleDef[] = [
     difficulty: 10,
     label: "Números enteros",
     emoji: "🌡️",
-    tier: 8,
-    prerequisites: ["aritmetica-d4"],
+    tier: 7,
+    pisa: pisa("cantidad", "2"),
+    // El generador también multiplica con negativos, no solo suma y resta.
+    prerequisites: ["aritmetica-d4", "aritmetica-d5"],
     generateProblem: () => generateAritmetica(10),
     ConceptComponent: () => NumberLineConcept({ min: -20, max: 20 }),
   },
+  {
+    id: "aritmetica-porcentaje-aplicado",
+    strandSlug: "aritmetica",
+    difficulty: 7,
+    label: "Aumentos y descuentos",
+    emoji: "🏷️",
+    tier: 7,
+    // Varios pasos en contexto: un nivel por encima de su grado.
+    pisa: pisa("cantidad", "3"),
+    prerequisites: ["aritmetica-d9", "aritmetica-decimales-mult-div"],
+    generateProblem: generatePorcentajeAplicadoProblem,
+    ConceptComponent: slidesFor("aritmetica-porcentaje-aplicado"),
+  },
+  {
+    id: "aritmetica-raices",
+    strandSlug: "aritmetica",
+    difficulty: 8,
+    label: "Raíz cuadrada",
+    emoji: "🌱",
+    tier: 8,
+    pisa: pisa("cantidad", "3"),
+    prerequisites: ["aritmetica-potencias"],
+    generateProblem: generateRaicesProblem,
+    ConceptComponent: slidesFor("aritmetica-raices"),
+  },
+  {
+    id: "aritmetica-notacion-cientifica",
+    strandSlug: "aritmetica",
+    difficulty: 8,
+    label: "Notación científica",
+    emoji: "🔭",
+    tier: 8,
+    pisa: pisa("cantidad", "3"),
+    prerequisites: ["aritmetica-potencias", "aritmetica-decimales-mult-div"],
+    generateProblem: generateNotacionCientificaProblem,
+    ConceptComponent: slidesFor("aritmetica-notacion-cientifica"),
+  },
 
-  // ── Álgebra ─────────────────────────────────────────────────────────
+  // ── Álgebra (PISA: Cambio y relaciones) ────────────────────────────
   {
     id: "algebra-d1",
     strandSlug: "algebra",
@@ -198,6 +432,7 @@ export const MODULES: ModuleDef[] = [
     label: "Patrones",
     emoji: "🔁",
     tier: 0,
+    pisa: pisa("cambio", "B"),
     prerequisites: [],
     generateProblem: () => generateAlgebra(1),
     ConceptComponent: PatternConcept,
@@ -208,7 +443,8 @@ export const MODULES: ModuleDef[] = [
     difficulty: 2,
     label: "Balanza (igualdad)",
     emoji: "⚖️",
-    tier: 2,
+    tier: 1,
+    pisa: pisa("cambio", "1c"),
     prerequisites: ["aritmetica-d2"],
     generateProblem: () => generateAlgebra(2),
     ConceptComponent: BalanceConcept,
@@ -220,7 +456,8 @@ export const MODULES: ModuleDef[] = [
     label: "Ecuaciones simples",
     emoji: "🧩",
     tier: 3,
-    prerequisites: ["algebra-d2"],
+    pisa: pisa("cambio", "1b"),
+    prerequisites: ["algebra-d2", "aritmetica-d3"],
     generateProblem: () => generateAlgebra(3),
     ConceptComponent: () => AlgebraConcept({ variant: "simple" }),
   },
@@ -230,21 +467,11 @@ export const MODULES: ModuleDef[] = [
     difficulty: 4,
     label: "Ecuaciones (× y −)",
     emoji: "🧩",
-    tier: 5,
+    tier: 4,
+    pisa: pisa("cambio", "1a"),
     prerequisites: ["algebra-d3", "aritmetica-d6"],
     generateProblem: () => generateAlgebra(4),
     ConceptComponent: () => AlgebraConcept({ variant: "mult-sub" }),
-  },
-  {
-    id: "algebra-d5",
-    strandSlug: "algebra",
-    difficulty: 5,
-    label: "Proporciones",
-    emoji: "🔀",
-    tier: 6,
-    prerequisites: ["aritmetica-d6", "algebra-d4"],
-    generateProblem: () => generateAlgebra(5),
-    ConceptComponent: () => AlgebraConcept({ variant: "proportion" }),
   },
   {
     id: "algebra-d6",
@@ -252,10 +479,24 @@ export const MODULES: ModuleDef[] = [
     difficulty: 6,
     label: "Evaluar expresiones",
     emoji: "🔡",
-    tier: 7,
-    prerequisites: ["algebra-d3", "aritmetica-d5"],
+    tier: 6,
+    pisa: pisa("cambio", "2"),
+    // Evaluar mx + b es aplicar la jerarquía de operaciones con una letra.
+    prerequisites: ["algebra-d3", "aritmetica-jerarquia"],
     generateProblem: () => generateAlgebra(6),
     ConceptComponent: () => AlgebraConcept({ variant: "evaluate" }),
+  },
+  {
+    id: "algebra-d5",
+    strandSlug: "algebra",
+    difficulty: 5,
+    label: "Proporciones",
+    emoji: "🔀",
+    tier: 7,
+    pisa: pisa("cambio", "2"),
+    prerequisites: ["aritmetica-d6", "algebra-d4"],
+    generateProblem: () => generateAlgebra(5),
+    ConceptComponent: () => AlgebraConcept({ variant: "proportion" }),
   },
   {
     id: "algebra-d7",
@@ -263,7 +504,8 @@ export const MODULES: ModuleDef[] = [
     difficulty: 7,
     label: "Ecuaciones de dos pasos",
     emoji: "🧮",
-    tier: 8,
+    tier: 7,
+    pisa: pisa("cambio", "2"),
     prerequisites: ["algebra-d4", "algebra-d6"],
     generateProblem: () => generateAlgebra(7),
     ConceptComponent: () => AlgebraConcept({ variant: "two-step" }),
@@ -272,10 +514,11 @@ export const MODULES: ModuleDef[] = [
     id: "algebra-d8",
     strandSlug: "algebra",
     difficulty: 8,
-    label: "Desigualdades",
+    label: "Inecuaciones",
     emoji: "📏",
-    tier: 8,
-    prerequisites: ["algebra-d3"],
+    tier: 7,
+    pisa: pisa("cambio", "2"),
+    prerequisites: ["algebra-d7"],
     generateProblem: () => generateAlgebra(8),
     ConceptComponent: () => AlgebraConcept({ variant: "inequality" }),
   },
@@ -283,9 +526,10 @@ export const MODULES: ModuleDef[] = [
     id: "algebra-d9",
     strandSlug: "algebra",
     difficulty: 9,
-    label: "Funciones",
+    label: "Funciones desde una tabla",
     emoji: "🎛️",
     tier: 8,
+    pisa: pisa("cambio", "3"),
     prerequisites: ["algebra-d6"],
     generateProblem: () => generateAlgebra(9),
     ConceptComponent: () => AlgebraConcept({ variant: "function" }),
@@ -296,13 +540,16 @@ export const MODULES: ModuleDef[] = [
     difficulty: 10,
     label: "Ecuaciones cuadráticas",
     emoji: "🌀",
-    tier: 9,
-    prerequisites: ["algebra-d7", "geometria-d9"],
+    tier: 10,
+    pisa: pisa("cambio", "5"),
+    // Antes dependía de Pitágoras, al revés de lo que corresponde: es
+    // Pitágoras el que necesita saber sacar raíces, no esto de aquello.
+    prerequisites: ["algebra-d7", "aritmetica-raices"],
     generateProblem: () => generateAlgebra(10),
     ConceptComponent: () => AlgebraConcept({ variant: "quadratic" }),
   },
 
-  // ── Geometría ───────────────────────────────────────────────────────
+  // ── Geometría (PISA: Espacio y forma) ──────────────────────────────
   {
     id: "geometria-d1",
     strandSlug: "geometria",
@@ -310,6 +557,7 @@ export const MODULES: ModuleDef[] = [
     label: "Lados de figuras",
     emoji: "🔺",
     tier: 0,
+    pisa: pisa("espacio", "B"),
     prerequisites: [],
     generateProblem: () => generateGeometria(1),
     ConceptComponent: () => ShapeConcept({ variant: "sides" }),
@@ -318,12 +566,15 @@ export const MODULES: ModuleDef[] = [
     id: "geometria-d2",
     strandSlug: "geometria",
     difficulty: 2,
-    label: "Vértices",
-    emoji: "🔹",
-    tier: 0,
+    label: "Cuerpos geométricos",
+    emoji: "🧊",
+    tier: 1,
+    pisa: pisa("espacio", "1c"),
+    // Sin prerrequisitos a propósito: es objetivo de la misión 2 del mundo
+    // (world/quests.ts) y no debe quedar bloqueado detrás de otra práctica.
     prerequisites: [],
     generateProblem: () => generateGeometria(2),
-    ConceptComponent: () => ShapeConcept({ variant: "sides" }),
+    ConceptComponent: slidesFor("geometria-d2"),
   },
   {
     id: "geometria-d3",
@@ -331,8 +582,10 @@ export const MODULES: ModuleDef[] = [
     difficulty: 3,
     label: "Perímetro",
     emoji: "📏",
-    tier: 2,
-    prerequisites: ["aritmetica-d2"],
+    tier: 3,
+    pisa: pisa("espacio", "1b"),
+    // Los perímetros llegan a 80: hace falta sumar hasta 100.
+    prerequisites: ["geometria-d1", "aritmetica-d3"],
     generateProblem: () => generateGeometria(3),
     ConceptComponent: () => ShapeConcept({ variant: "perimeter" }),
   },
@@ -342,21 +595,11 @@ export const MODULES: ModuleDef[] = [
     difficulty: 4,
     label: "Área de rectángulos",
     emoji: "📐",
-    tier: 4,
-    prerequisites: ["aritmetica-d5"],
+    tier: 3,
+    pisa: pisa("espacio", "1b"),
+    prerequisites: ["geometria-d3", "aritmetica-d5"],
     generateProblem: () => generateGeometria(4),
     ConceptComponent: () => ShapeConcept({ variant: "area-rect" }),
-  },
-  {
-    id: "geometria-d5",
-    strandSlug: "geometria",
-    difficulty: 5,
-    label: "Área de triángulos",
-    emoji: "🔻",
-    tier: 5,
-    prerequisites: ["geometria-d4"],
-    generateProblem: () => generateGeometria(5),
-    ConceptComponent: () => ShapeConcept({ variant: "area-triangle" }),
   },
   {
     id: "geometria-d6",
@@ -365,7 +608,9 @@ export const MODULES: ModuleDef[] = [
     label: "Ángulos",
     emoji: "📐",
     tier: 5,
-    prerequisites: ["geometria-d3"],
+    pisa: pisa("espacio", "1a"),
+    // Complementar a 90° o 180° es restar con números de 3 cifras.
+    prerequisites: ["geometria-d1", "aritmetica-d4"],
     generateProblem: () => generateGeometria(6),
     ConceptComponent: () => ShapeConcept({ variant: "angle" }),
   },
@@ -375,10 +620,25 @@ export const MODULES: ModuleDef[] = [
     difficulty: 7,
     label: "Volumen",
     emoji: "📦",
-    tier: 6,
-    prerequisites: ["geometria-d4"],
+    tier: 5,
+    pisa: pisa("espacio", "1a"),
+    // Tres factores de hasta 10: el producto llega a 1000.
+    prerequisites: ["geometria-d4", "aritmetica-mult-varias-cifras"],
     generateProblem: () => generateGeometria(7),
     ConceptComponent: () => ShapeConcept({ variant: "volume" }),
+  },
+  {
+    id: "geometria-d5",
+    strandSlug: "geometria",
+    difficulty: 5,
+    label: "Área de triángulos",
+    emoji: "🔻",
+    tier: 6,
+    pisa: pisa("espacio", "2"),
+    // Base hasta 20 por altura hasta 12: sale de las tablas.
+    prerequisites: ["geometria-d4", "aritmetica-mult-varias-cifras"],
+    generateProblem: () => generateGeometria(5),
+    ConceptComponent: () => ShapeConcept({ variant: "area-triangle" }),
   },
   {
     id: "geometria-d8",
@@ -386,7 +646,8 @@ export const MODULES: ModuleDef[] = [
     difficulty: 8,
     label: "Coordenadas",
     emoji: "📍",
-    tier: 8,
+    tier: 7,
+    pisa: pisa("espacio", "2"),
     prerequisites: ["aritmetica-d10"],
     generateProblem: () => generateGeometria(8),
     ConceptComponent: () => ShapeConcept({ variant: "coords" }),
@@ -398,7 +659,8 @@ export const MODULES: ModuleDef[] = [
     label: "Teorema de Pitágoras",
     emoji: "📐",
     tier: 8,
-    prerequisites: ["aritmetica-d5"],
+    pisa: pisa("espacio", "3"),
+    prerequisites: ["aritmetica-raices", "geometria-d5"],
     generateProblem: () => generateGeometria(9),
     ConceptComponent: () => ShapeConcept({ variant: "pythagoras" }),
   },
@@ -408,20 +670,22 @@ export const MODULES: ModuleDef[] = [
     difficulty: 10,
     label: "Figuras semejantes",
     emoji: "🔍",
-    tier: 9,
+    tier: 8,
+    pisa: pisa("espacio", "3"),
     prerequisites: ["algebra-d5"],
     generateProblem: () => generateGeometria(10),
     ConceptComponent: () => ShapeConcept({ variant: "scale" }),
   },
 
-  // ── Medición y datos ────────────────────────────────────────────────
+  // ── Medición y datos (PISA: Cantidad d1–d4; Incertidumbre y datos el resto) ──
   {
     id: "medicion-d1",
     strandSlug: "medicion",
     difficulty: 1,
     label: "Comparar números",
     emoji: "⚖️",
-    tier: 0,
+    tier: 1,
+    pisa: pisa("cantidad", "1c"),
     prerequisites: [],
     generateProblem: () => generateMedicion(1),
     ConceptComponent: () => NumberLineConcept({ min: 0, max: 20 }),
@@ -433,7 +697,9 @@ export const MODULES: ModuleDef[] = [
     label: "Dinero",
     emoji: "💰",
     tier: 2,
-    prerequisites: ["aritmetica-d2"],
+    pisa: pisa("cantidad", "1c"),
+    // Los totales llegan a 75: hace falta sumar hasta 100.
+    prerequisites: ["aritmetica-d3"],
     generateProblem: () => generateMedicion(2),
     ConceptComponent: () => DataConcept({ variant: "money" }),
   },
@@ -444,6 +710,7 @@ export const MODULES: ModuleDef[] = [
     label: "Tiempo",
     emoji: "⏰",
     tier: 3,
+    pisa: pisa("cantidad", "1b"),
     prerequisites: ["aritmetica-d3"],
     generateProblem: () => generateMedicion(3),
     ConceptComponent: () => DataConcept({ variant: "clock" }),
@@ -455,31 +722,11 @@ export const MODULES: ModuleDef[] = [
     label: "Conversión de unidades",
     emoji: "📏",
     tier: 4,
-    prerequisites: ["aritmetica-d5"],
+    pisa: pisa("cantidad", "1a"),
+    // Multiplicar por 100 o 1000 es mover cifras de lugar.
+    prerequisites: ["aritmetica-d5", "aritmetica-valor-posicional"],
     generateProblem: () => generateMedicion(4),
     ConceptComponent: () => DataConcept({ variant: "convert" }),
-  },
-  {
-    id: "medicion-d5",
-    strandSlug: "medicion",
-    difficulty: 5,
-    label: "Media (promedio)",
-    emoji: "📊",
-    tier: 5,
-    prerequisites: ["aritmetica-d6"],
-    generateProblem: () => generateMedicion(5),
-    ConceptComponent: () => DataConcept({ variant: "stats" }),
-  },
-  {
-    id: "medicion-d6",
-    strandSlug: "medicion",
-    difficulty: 6,
-    label: "Mediana",
-    emoji: "📊",
-    tier: 5,
-    prerequisites: ["aritmetica-d6"],
-    generateProblem: () => generateMedicion(6),
-    ConceptComponent: () => DataConcept({ variant: "stats" }),
   },
   {
     id: "medicion-d7",
@@ -487,8 +734,10 @@ export const MODULES: ModuleDef[] = [
     difficulty: 7,
     label: "Moda",
     emoji: "📊",
-    tier: 5,
-    prerequisites: ["aritmetica-d6"],
+    tier: 4,
+    pisa: pisa("datos", "1a"),
+    // La moda solo pide contar repeticiones: no necesita dividir.
+    prerequisites: ["aritmetica-d3"],
     generateProblem: () => generateMedicion(7),
     ConceptComponent: () => DataConcept({ variant: "stats" }),
   },
@@ -498,9 +747,48 @@ export const MODULES: ModuleDef[] = [
     difficulty: 8,
     label: "Rango",
     emoji: "📊",
-    tier: 5,
-    prerequisites: ["aritmetica-d6"],
+    tier: 4,
+    pisa: pisa("datos", "1a"),
+    // El rango es una resta: no necesita dividir.
+    prerequisites: ["aritmetica-d3"],
     generateProblem: () => generateMedicion(8),
+    ConceptComponent: () => DataConcept({ variant: "stats" }),
+  },
+  {
+    id: "medicion-d10",
+    strandSlug: "medicion",
+    difficulty: 10,
+    label: "Conteo",
+    emoji: "🧮",
+    tier: 4,
+    pisa: pisa("datos", "1a"),
+    prerequisites: ["aritmetica-d5"],
+    generateProblem: () => generateMedicion(10),
+    ConceptComponent: () => DataConcept({ variant: "counting" }),
+  },
+  {
+    id: "medicion-d6",
+    strandSlug: "medicion",
+    difficulty: 6,
+    label: "Mediana",
+    emoji: "📊",
+    tier: 6,
+    pisa: pisa("datos", "2"),
+    // Ordenar los datos (comparar) y ya conocer el rango, que también los ordena.
+    prerequisites: ["medicion-d8", "medicion-d1"],
+    generateProblem: () => generateMedicion(6),
+    ConceptComponent: () => DataConcept({ variant: "stats" }),
+  },
+  {
+    id: "medicion-d5",
+    strandSlug: "medicion",
+    difficulty: 5,
+    label: "Media (promedio)",
+    emoji: "📊",
+    tier: 6,
+    pisa: pisa("datos", "2"),
+    prerequisites: ["aritmetica-d6"],
+    generateProblem: () => generateMedicion(5),
     ConceptComponent: () => DataConcept({ variant: "stats" }),
   },
   {
@@ -510,23 +798,14 @@ export const MODULES: ModuleDef[] = [
     label: "Probabilidad",
     emoji: "🎲",
     tier: 7,
-    prerequisites: ["aritmetica-d7"],
+    pisa: pisa("datos", "2"),
+    // La respuesta se da en porcentaje, y contar casos es la base.
+    prerequisites: ["aritmetica-fraccion-decimal-porcentaje", "medicion-d10"],
     generateProblem: () => generateMedicion(9),
     ConceptComponent: () => DataConcept({ variant: "probability" }),
   },
-  {
-    id: "medicion-d10",
-    strandSlug: "medicion",
-    difficulty: 10,
-    label: "Conteo",
-    emoji: "🧮",
-    tier: 7,
-    prerequisites: ["aritmetica-d5"],
-    generateProblem: () => generateMedicion(10),
-    ConceptComponent: () => DataConcept({ variant: "counting" }),
-  },
 
-  // ── Lógica ──────────────────────────────────────────────────────────
+  // ── Lógica: resolución de problemas (PISA: Cantidad salvo que se indique) ──
   {
     id: "logica-d1",
     strandSlug: "logica",
@@ -534,6 +813,7 @@ export const MODULES: ModuleDef[] = [
     label: "Problemas de suma",
     emoji: "🍎",
     tier: 1,
+    pisa: pisa("cantidad", "1c"),
     prerequisites: ["aritmetica-d1"],
     generateProblem: () => generateLogica(1),
     ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 1 }),
@@ -544,25 +824,11 @@ export const MODULES: ModuleDef[] = [
     difficulty: 2,
     label: "Problemas de resta",
     emoji: "🎈",
-    tier: 2,
+    tier: 1,
+    pisa: pisa("cantidad", "1c"),
     prerequisites: ["aritmetica-d2", "logica-d1"],
     generateProblem: () => generateLogica(2),
     ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 2 }),
-  },
-  {
-    id: "logica-d3",
-    strandSlug: "logica",
-    difficulty: 3,
-    label: "Problemas de división",
-    emoji: "🍪",
-    tier: 5,
-    // "Repartir en partes iguales" se puede razonar con multiplicación de
-    // prueba, sin necesitar el símbolo ÷ todavía — se ubica antes de
-    // aritmetica-d6 a propósito, para introducir la idea de división en
-    // palabras antes de formalizarla.
-    prerequisites: ["aritmetica-d5"],
-    generateProblem: () => generateLogica(3),
-    ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 3 }),
   },
   {
     id: "logica-d4",
@@ -570,10 +836,27 @@ export const MODULES: ModuleDef[] = [
     difficulty: 4,
     label: "Problemas de dos pasos",
     emoji: "👫",
-    tier: 3,
+    tier: 2,
+    pisa: pisa("cantidad", "1c"),
     prerequisites: ["aritmetica-d3", "logica-d2"],
     generateProblem: () => generateLogica(4),
     ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 4 }),
+  },
+  {
+    id: "logica-d3",
+    strandSlug: "logica",
+    difficulty: 3,
+    label: "Problemas de división",
+    emoji: "🍪",
+    tier: 3,
+    pisa: pisa("cantidad", "1b"),
+    // "Repartir en partes iguales" se puede razonar con multiplicación de
+    // prueba, sin necesitar el símbolo ÷ todavía — por eso exige
+    // aritmetica-d5 y no aritmetica-d6, para introducir la idea de división
+    // en palabras antes de formalizarla.
+    prerequisites: ["aritmetica-d5"],
+    generateProblem: () => generateLogica(3),
+    ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 3 }),
   },
   {
     id: "logica-d5",
@@ -581,10 +864,23 @@ export const MODULES: ModuleDef[] = [
     difficulty: 5,
     label: "Problemas combinados",
     emoji: "✏️",
-    tier: 5,
+    tier: 3,
+    pisa: pisa("cantidad", "1b"),
     prerequisites: ["logica-d3", "logica-d4"],
     generateProblem: () => generateLogica(5),
     ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 5 }),
+  },
+  {
+    id: "logica-d8",
+    strandSlug: "logica",
+    difficulty: 8,
+    label: "Redondeo y estimación",
+    emoji: "🎯",
+    tier: 3,
+    pisa: pisa("cantidad", "1b"),
+    prerequisites: ["aritmetica-d4"],
+    generateProblem: () => generateLogica(8),
+    ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 8 }),
   },
   {
     id: "logica-d6",
@@ -592,7 +888,8 @@ export const MODULES: ModuleDef[] = [
     difficulty: 6,
     label: "Datos que sobran",
     emoji: "🔍",
-    tier: 5,
+    tier: 4,
+    pisa: pisa("cantidad", "1a"),
     prerequisites: ["logica-d5"],
     generateProblem: () => generateLogica(6),
     ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 6 }),
@@ -603,30 +900,21 @@ export const MODULES: ModuleDef[] = [
     difficulty: 7,
     label: "Presupuesto",
     emoji: "💵",
-    tier: 6,
+    tier: 4,
+    pisa: pisa("cantidad", "1a"),
     prerequisites: ["medicion-d2", "logica-d6"],
     generateProblem: () => generateLogica(7),
     ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 7 }),
   },
   {
-    id: "logica-d8",
-    strandSlug: "logica",
-    difficulty: 8,
-    label: "Redondeo",
-    emoji: "🎯",
-    tier: 6,
-    prerequisites: ["aritmetica-d4"],
-    generateProblem: () => generateLogica(8),
-    ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 8 }),
-  },
-  {
     id: "logica-d9",
     strandSlug: "logica",
     difficulty: 9,
-    label: "Deducción",
+    label: "Pensar hacia atrás",
     emoji: "🤔",
-    tier: 7,
-    prerequisites: ["logica-d6"],
+    tier: 5,
+    pisa: pisa("cambio", "1a"),
+    prerequisites: ["algebra-d4", "aritmetica-d6"],
     generateProblem: () => generateLogica(9),
     ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 9 }),
   },
@@ -636,8 +924,11 @@ export const MODULES: ModuleDef[] = [
     difficulty: 10,
     label: "Optimización",
     emoji: "🎈",
-    tier: 8,
-    prerequisites: ["logica-d7", "aritmetica-d6"],
+    tier: 5,
+    // Varios pasos en contexto: un nivel por encima de su grado.
+    pisa: pisa("cantidad", "2"),
+    // "¿Cuántos alcanzan?" es una división con resto que se descarta.
+    prerequisites: ["aritmetica-division-resto", "logica-d7"],
     generateProblem: () => generateLogica(10),
     ConceptComponent: () => WordProblemConcept({ strandSlug: "logica", difficulty: 10 }),
   },
@@ -650,7 +941,7 @@ const MODULES_BY_ID = new Map(MODULES.map((m) => [m.id, m]));
 export { allModules } from "./curriculum/customRegistry";
 
 /** Cae al registro de módulos personalizados (Fase 20,
- *  docs/level-editor-plan-v2.md §7.1) cuando `id` no es uno de los ~52
+ *  docs/level-editor-plan-v2.md §7.1) cuando `id` no es uno de los
  *  módulos de código — nunca al revés, así un `cst-*` nunca puede pisar un
  *  módulo de código con el mismo id. */
 export function getModule(id: string): ModuleDef | undefined {
@@ -662,7 +953,7 @@ export function moduleHref(childId: string, mod: ModuleDef): string {
   return mod.href ? mod.href(childId) : `/jugar/${childId}/${mod.strandSlug}/${mod.id}`;
 }
 
-/** Módulos de un hilo, en orden de franja (y de dificultad dentro de la franja). */
+/** Módulos de un hilo, en orden de grado (y de dificultad dentro del grado). */
 export function modulesForStrand(strandSlug: string): ModuleDef[] {
   return allModules()
     .filter((m) => m.strandSlug === strandSlug)
@@ -676,14 +967,43 @@ export function isMastered(
   return Boolean(progressBySkill[moduleId]?.masteredAt);
 }
 
-/** Desbloqueado = todos los prerrequisitos están dominados (sin prerrequisitos, siempre desbloqueado). */
+/**
+ * Prerrequisitos que cuentan como cumplidos: los módulos dominados más todo
+ * su cierre transitivo de prerrequisitos. Quien domina un módulo ya demostró
+ * lo que ese módulo exige, aunque no lo haya practicado por separado —
+ * porque la evaluación lo ubicó más arriba, o porque la currícula le agregó
+ * un prerrequisito nuevo después de que lo dominara. Sin esto, cada tema
+ * insertado en la currícula volvería a bloquear avances ya ganados.
+ */
+function satisfiedIds(progressBySkill: Record<string, SkillProgress>): Set<string> {
+  const satisfied = new Set<string>();
+  const pending = Object.keys(progressBySkill).filter((id) => isMastered(progressBySkill, id));
+  while (pending.length > 0) {
+    const id = pending.pop()!;
+    if (satisfied.has(id)) continue;
+    satisfied.add(id);
+    const mod = getModule(id);
+    if (mod) pending.push(...mod.prerequisites);
+  }
+  return satisfied;
+}
+
+/**
+ * Desbloqueado = todos los prerrequisitos están cumplidos (ver
+ * `satisfiedIds`); sin prerrequisitos, siempre desbloqueado. Un módulo que
+ * ya tiene progreso guardado sigue desbloqueado aunque la currícula le haya
+ * sumado un prerrequisito después: nunca se le quita a un niño algo que ya
+ * estaba practicando.
+ */
 export function isUnlocked(
   progressBySkill: Record<string, SkillProgress>,
   moduleId: string,
 ): boolean {
   const mod = getModule(moduleId);
   if (!mod) return false;
-  return mod.prerequisites.every((p) => isMastered(progressBySkill, p));
+  if (progressBySkill[moduleId]) return true;
+  const satisfied = satisfiedIds(progressBySkill);
+  return mod.prerequisites.every((p) => satisfied.has(p));
 }
 
 export function missingPrerequisites(
@@ -691,9 +1011,10 @@ export function missingPrerequisites(
   moduleId: string,
 ): ModuleDef[] {
   const mod = getModule(moduleId);
-  if (!mod) return [];
+  if (!mod || isUnlocked(progressBySkill, moduleId)) return [];
+  const satisfied = satisfiedIds(progressBySkill);
   return mod.prerequisites
-    .filter((p) => !isMastered(progressBySkill, p))
+    .filter((p) => !satisfied.has(p))
     .map((p) => getModule(p))
     .filter((m): m is ModuleDef => m !== undefined);
 }
@@ -733,7 +1054,7 @@ export function masteredCountForStrand(
  * bloqueado, nunca ya dominado), pero mirando todos los hilos a la vez.
  * Si se pasa `preferredStrand`, se prioriza el recomendado de ese hilo;
  * si no hay ninguno ahí (o no se pasó), se elige entre los recomendados de
- * cada hilo el de menor franja, y ante empate el que aparece primero en
+ * cada hilo el de menor grado, y ante empate el que aparece primero en
  * `STRANDS`.
  */
 export function nextChallenge(

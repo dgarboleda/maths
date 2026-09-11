@@ -7,6 +7,8 @@
  * llamar a la función correspondiente con esas mismas variables.
  */
 
+import { formatThousands, superscript } from "./problem";
+
 type Hints = [string, string, string];
 
 // ── Aritmética ──────────────────────────────────────────────────────────
@@ -84,6 +86,279 @@ export function enterosHints(a: number, op: "+" | "−" | "×", b: number, answe
       ? `Multiplica los valores y decide el signo del resultado.`
       : `Piensa en una recta numérica: ${a} y muévete según ${op} ${b}.`,
     `(${a}) ${op} ${b} = ${answer}.`,
+  ];
+}
+
+// ── Cantidad: temas hacia PISA (aritmeticaTemas.ts) ─────────────────────
+
+export function valorCifraHints(n: number, digit: number, lugar: string, answer: number): Hints {
+  return [
+    `Cada cifra vale distinto según el lugar que ocupa: unidades, decenas o centenas.`,
+    `En ${n}, el ${digit} está en el lugar de las ${lugar}.`,
+    `${digit} ${lugar} = ${answer}.`,
+  ];
+}
+
+export function componerNumeroHints(c: number, d: number, u: number, n: number): Hints {
+  return [
+    `Una centena vale 100, una decena vale 10 y una unidad vale 1.`,
+    `${c} × 100 + ${d} × 10 + ${u}.`,
+    `${c * 100} + ${d * 10} + ${u} = ${n}.`,
+  ];
+}
+
+export function fraccionConceptoHints(k: number, d: number): Hints {
+  return [
+    `Una fracción dice en cuántas partes iguales se dividió el entero (abajo) y cuántas de esas partes se toman (arriba).`,
+    `El entero se cortó en ${d} partes iguales: el denominador es ${d}.`,
+    `Son ${k} de ${d} partes: ${k}/${d}.`,
+  ];
+}
+
+export function divisionRestoHints(a: number, b: number, q: number, r: number, askRemainder: boolean): Hints {
+  return [
+    `Busca el múltiplo de ${b} más grande que no se pase de ${a}.`,
+    `${b} × ${q} = ${b * q}, y ${b} × ${q + 1} = ${b * (q + 1)} ya se pasa.`,
+    askRemainder ? `Sobran ${a} − ${b * q} = ${r}.` : `A cada uno le tocan ${q} (y sobran ${r}).`,
+  ];
+}
+
+export function multVariasCifrasHints(a: number, b: number, answer: number): Hints {
+  if (b < 10) {
+    const tens = a - (a % 10);
+    const units = a % 10;
+    return [
+      `Descompón el número grande en decenas y unidades, y multiplica cada parte.`,
+      `${a} = ${tens} + ${units}: ${tens} × ${b} = ${tens * b} y ${units} × ${b} = ${units * b}.`,
+      `${tens * b} + ${units * b} = ${answer}.`,
+    ];
+  }
+  const tens = b - (b % 10);
+  const units = b % 10;
+  return [
+    `Descompón el segundo número en decenas y unidades, y multiplica cada parte por el primero.`,
+    `${a} × ${tens} = ${a * tens} y ${a} × ${units} = ${a * units}.`,
+    `${a * tens} + ${a * units} = ${answer}.`,
+  ];
+}
+
+export function ampliarFraccionHints(n: number, d: number, k: number): Hints {
+  return [
+    `Dos fracciones son equivalentes si el numerador y el denominador se multiplican por el mismo número.`,
+    `${d} × ${k} = ${d * k}: el denominador se multiplicó por ${k}.`,
+    `${n} × ${k} = ${n * k}, así que ${n}/${d} = ${n * k}/${d * k}.`,
+  ];
+}
+
+export function simplificarFraccionHints(N: number, D: number, k: number, n: number, d: number): Hints {
+  return [
+    `Simplificar es dividir el numerador y el denominador por el mismo número.`,
+    `${D} ÷ ${k} = ${d}: divide también el numerador entre ${k}.`,
+    `${N} ÷ ${k} = ${n}, así que ${N}/${D} = ${n}/${d}.`,
+  ];
+}
+
+export function compararFraccionesHints(n1: number, d1: number, n2: number, d2: number, bigger: string): Hints {
+  const d = d1 * d2;
+  return [
+    `Para comparar fracciones, conviértelas al mismo denominador.`,
+    `${n1}/${d1} = ${n1 * d2}/${d} y ${n2}/${d2} = ${n2 * d1}/${d}.`,
+    `Con el mismo denominador, gana el numerador más grande: la mayor es ${bigger}.`,
+  ];
+}
+
+export function divisionLargaHints(a: number, b: number, q: number): Hints {
+  const tens = Math.floor(q / 10) * 10;
+  return [
+    `Divide por partes: busca primero un múltiplo redondo de ${b} que se acerque a ${a}.`,
+    tens > 0
+      ? `${b} × ${tens} = ${b * tens}; faltan ${a - b * tens}, y ${a - b * tens} ÷ ${b} = ${q - tens}.`
+      : `Busca qué número multiplicado por ${b} da ${a}.`,
+    `${a} ÷ ${b} = ${q}, porque ${b} × ${q} = ${a}.`,
+  ];
+}
+
+export function jerarquiaHints(first: string, second: string): Hints {
+  return [
+    `Primero se resuelve lo que está entre paréntesis, después multiplicaciones y divisiones, y al final sumas y restas.`,
+    first,
+    second,
+  ];
+}
+
+export function fraccionDeCantidadHints(n: number, d: number, total: number, answer: number): Hints {
+  const unit = total / d;
+  return [
+    `Para calcular una fracción de una cantidad, divide entre el denominador y multiplica por el numerador.`,
+    `${total} ÷ ${d} = ${unit}: eso es 1/${d} de ${total}.`,
+    `${unit} × ${n} = ${answer}.`,
+  ];
+}
+
+export function potenciaHints(base: number, exp: number, answer: number): Hints {
+  const repeated = Array.from({ length: exp }, () => base).join(" × ");
+  return [
+    `Una potencia es una multiplicación repetida: la base se multiplica por sí misma tantas veces como indica el exponente.`,
+    `${base}${superscript(exp)} = ${repeated}.`,
+    `${repeated} = ${formatThousands(answer)}.`,
+  ];
+}
+
+export function duplicarHints(start: number, hours: number, answer: number): Hints {
+  return [
+    `Duplicarse cada hora es multiplicarse por 2 cada vez.`,
+    `Después de ${hours} horas: ${start} × 2${superscript(hours)} = ${start} × ${2 ** hours}.`,
+    `${start} × ${2 ** hours} = ${answer}.`,
+  ];
+}
+
+export function multFraccionesHints(a: number, b: number, c: number, d: number): Hints {
+  return [
+    `Para multiplicar fracciones se multiplica numerador por numerador y denominador por denominador.`,
+    `Denominador: ${b} × ${d} = ${b * d}. Numerador: ${a} × ${c}.`,
+    `${a} × ${c} = ${a * c}, así que el resultado es ${a * c}/${b * d}.`,
+  ];
+}
+
+export function dividirFraccionHints(n: number, c: number, k: number, answer: number): Hints {
+  return [
+    `Dividir entre una fracción es preguntar cuántas veces cabe: equivale a multiplicar por la fracción dada vuelta.`,
+    `${n} ÷ ${c}/${k} = ${n} × ${k}/${c}.`,
+    `${n} × ${k} ÷ ${c} = ${answer}.`,
+  ];
+}
+
+function cifrasDecimales(n: number): number {
+  const text = String(n);
+  return text.includes(".") ? text.split(".")[1].length : 0;
+}
+
+export function multDecimalHints(a: number, b: number, answer: number): Hints {
+  const da = cifrasDecimales(a);
+  const db = cifrasDecimales(b);
+  const A = Math.round(a * 10 ** da);
+  const B = Math.round(b * 10 ** db);
+  const total = da + db;
+  return [
+    `Multiplica como si no hubiera coma, y al final separa tantas cifras decimales como tienen los dos números juntos.`,
+    `${A} × ${B} = ${A * B}.`,
+    `Se separan ${total} ${total === 1 ? "cifra decimal" : "cifras decimales"}: ${a} × ${b} = ${answer}.`,
+  ];
+}
+
+export function divDecimalHints(a: number, b: number, q: number): Hints {
+  return [
+    `Divide como si fueran enteros y pon la coma en el resultado en el mismo lugar que en el dividendo.`,
+    `Piensa en décimos: ${Math.round(a * 10)} décimos ÷ ${b} = ${Math.round(q * 10)} décimos.`,
+    `${a} ÷ ${b} = ${q}.`,
+  ];
+}
+
+export function fraccionAPorcentajeHints(n: number, d: number, pct: number): Hints {
+  return [
+    `Porcentaje significa "de cada 100": busca una fracción equivalente con denominador 100.`,
+    `${d} × ${100 / d} = 100, así que multiplica también el numerador por ${100 / d}.`,
+    `${n}/${d} = ${pct}/100 = ${pct}%.`,
+  ];
+}
+
+export function fraccionADecimalHints(n: number, d: number, dec: number): Hints {
+  const centesimos = n * (100 / d);
+  return [
+    `Una fracción es una división: numerador entre denominador.`,
+    `Pásala a centésimos: ${n}/${d} = ${centesimos}/100.`,
+    `${centesimos}/100 = ${dec}.`,
+  ];
+}
+
+export function decimalAPorcentajeHints(dec: number, pct: number): Hints {
+  return [
+    `Para pasar un decimal a porcentaje, multiplícalo por 100.`,
+    `${dec} son ${pct} centésimos.`,
+    `${dec} × 100 = ${pct}%.`,
+  ];
+}
+
+export function porcentajeADecimalHints(pct: number, dec: number): Hints {
+  return [
+    `Un porcentaje es una fracción con denominador 100.`,
+    `${pct}% = ${pct}/100.`,
+    `${pct} ÷ 100 = ${dec}.`,
+  ];
+}
+
+export function descuentoHints(price: number, pct: number, final: number): Hints {
+  const off = (price * pct) / 100;
+  return [
+    `Un descuento se resta del precio: primero calcula cuánto es el descuento.`,
+    `${pct}% de ${price} = ${off}.`,
+    `${price} − ${off} = ${final}.`,
+  ];
+}
+
+export function aumentoHints(price: number, pct: number, final: number): Hints {
+  const up = (price * pct) / 100;
+  return [
+    `Un aumento se suma al precio: primero calcula cuánto sube.`,
+    `${pct}% de ${price} = ${up}.`,
+    `${price} + ${up} = ${final}.`,
+  ];
+}
+
+export function cambioPorcentualHints(base: number, nuevo: number, pct: number): Hints {
+  const diff = Math.abs(nuevo - base);
+  return [
+    `El porcentaje de cambio compara cuánto cambió con lo que valía al principio (no con lo que vale ahora).`,
+    `Cambió ${diff} sobre ${base}: eso es ${diff}/${base}.`,
+    `${diff}/${base} × 100 = ${pct}%.`,
+  ];
+}
+
+export function raizHints(n: number, r: number): Hints {
+  return [
+    `La raíz cuadrada de un número es el número que, multiplicado por sí mismo, da ese número.`,
+    `Busca un número que al cuadrado dé ${n}: prueba con ${Math.max(1, r - 1)}, ${r}, ${r + 1}...`,
+    `${r} × ${r} = ${n}, así que √${n} = ${r}.`,
+  ];
+}
+
+export function ladoCuadradoHints(area: number, r: number): Hints {
+  return [
+    `El área de un cuadrado es lado × lado: el lado es la raíz cuadrada del área.`,
+    `Busca un número que multiplicado por sí mismo dé ${area}.`,
+    `${r} × ${r} = ${area}: cada lado mide ${r} m.`,
+  ];
+}
+
+export function estimarRaizHints(n: number, r: number): Hints {
+  return [
+    `Busca los cuadrados perfectos más cercanos a ${n}: uno por debajo y otro por encima.`,
+    `${r}² = ${r * r} y ${r + 1}² = ${(r + 1) * (r + 1)}.`,
+    `${r * r} < ${n} < ${(r + 1) * (r + 1)}, así que √${n} está entre ${r} y ${r + 1}: el menor es ${r}.`,
+  ];
+}
+
+export function expandirCientificaHints(m: number, e: number, n: number): Hints {
+  return [
+    `Multiplicar por una potencia de 10 corre la coma hacia la derecha tantos lugares como indica el exponente.`,
+    `10${superscript(e)} = ${formatThousands(10 ** e)}: la coma de ${m} se corre ${e} lugares (completando con ceros).`,
+    `${m} × 10${superscript(e)} = ${formatThousands(n)}.`,
+  ];
+}
+
+export function exponenteCientificaHints(n: number, m: number, e: number): Hints {
+  return [
+    `En notación científica el primer número queda entre 1 y 10, y el exponente cuenta cuántos lugares se corrió la coma.`,
+    `Cuenta las cifras de ${formatThousands(n)} que van después de la primera: cada una es un lugar que se corre la coma.`,
+    `${formatThousands(n)} = ${m} × 10${superscript(e)}: el exponente es ${e}.`,
+  ];
+}
+
+export function productoCientificaHints(a: number, e1: number, b: number, e2: number): Hints {
+  return [
+    `Agrupa: multiplica los números por un lado y las potencias de 10 por otro.`,
+    `${a} × ${b} = ${a * b}. Al multiplicar potencias de la misma base, los exponentes se suman.`,
+    `10${superscript(e1)} × 10${superscript(e2)} = 10${superscript(e1 + e2)}: el exponente es ${e1 + e2}.`,
   ];
 }
 
@@ -187,19 +462,22 @@ export function ecuacionDosPasosHints(m: number, b: number, total: number, x: nu
   ];
 }
 
-export function desigualdadHints(b: number, answer: number): Hints {
+export function desigualdadDosPasosHints(m: number, b: number, c: number, greater: boolean, answer: number): Hints {
+  const signo = greater ? ">" : "≤";
+  const limite = (c - b) % m === 0 ? `${(c - b) / m}` : `${c - b}/${m}`;
   return [
-    `x > ${b} significa "mayor que ${b}", no "igual a ${b}".`,
-    `El menor número entero mayor que ${b} es el siguiente en la fila de números.`,
-    `${b} + 1 = ${answer}.`,
+    `Una desigualdad se despeja como una ecuación: primero se deshace la suma, después la multiplicación.`,
+    `Resta ${b}: ${m}x ${signo} ${c - b}. Divide entre ${m}: x ${signo} ${limite}.`,
+    greater ? `El menor entero mayor que ${limite} es ${answer}.` : `El mayor entero que no pasa de ${limite} es ${answer}.`,
   ];
 }
 
-export function funcionHints(m: number, b: number, x: number, answer: number): Hints {
+export function funcionTablaHints(m: number, b: number, n: number, answer: number): Hints {
+  const constante = b === 0 ? "" : ` ${b > 0 ? "+" : "−"} ${Math.abs(b)}`;
   return [
-    `Una función es una regla: reemplaza x por el valor que te dan.`,
-    `${m} × ${x} = ${m * x}.`,
-    `${m * x} ${b >= 0 ? "+" : "−"} ${Math.abs(b)} = ${answer}.`,
+    `Fíjate cuánto aumenta y cada vez que x aumenta 1: eso te dice por cuánto se multiplica x.`,
+    `y aumenta de ${m} en ${m}, y con x = 1 vale ${m + b}: la regla es y = ${m}x${constante}.`,
+    `${m} × ${n}${constante} = ${answer}.`,
   ];
 }
 
@@ -208,6 +486,20 @@ export function cuadraticaHints(square: number, root: number): Hints {
     `x² = ${square} significa que x multiplicado por sí mismo da ${square}.`,
     `Busca un número que multiplicado por sí mismo dé ${square}.`,
     `√${square} = ${root}.`,
+  ];
+}
+
+/** "x − 3", "x + 2", "x": el factor lineal que se anula en `raiz`. */
+function factorLineal(raiz: number): string {
+  if (raiz === 0) return "x";
+  return raiz > 0 ? `x − ${raiz}` : `x + ${-raiz}`;
+}
+
+export function factorizarHints(r1: number, r2: number, b: number, c: number): Hints {
+  return [
+    `Busca dos números que multiplicados den ${c} y sumados den ${b}: con ellos la ecuación se escribe como un producto igual a 0.`,
+    `Esos números son ${-r1} y ${-r2}, así que la ecuación queda (${factorLineal(r1)})(${factorLineal(r2)}) = 0.`,
+    `Un producto vale 0 si alguno de sus factores vale 0: x = ${r1} o x = ${r2}. La mayor es ${r1}.`,
   ];
 }
 
@@ -221,12 +513,32 @@ export function ladosHints(nombre: string, sides: number): Hints {
   ];
 }
 
-export function verticesHints(nombre: string, sides: number): Hints {
-  return [
-    `En un polígono, cada esquina (vértice) está donde se juntan dos lados.`,
-    `El número de vértices es igual al número de lados del ${nombre}.`,
-    `El ${nombre} tiene ${sides} vértices.`,
-  ];
+function capitalizar(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+export function cuerposHints(nombre: string, feature: "caras" | "vertices" | "aristas", answer: number): Hints {
+  const cuerpo = capitalizar(nombre);
+  switch (feature) {
+    case "caras":
+      return [
+        `Las caras son las superficies planas del cuerpo.`,
+        `Imagina ${nombre} y cuenta cada superficie plana, sin olvidar la de abajo.`,
+        `${cuerpo} tiene ${answer} caras.`,
+      ];
+    case "vertices":
+      return [
+        `Los vértices son las esquinas, donde se juntan las aristas.`,
+        `Cuenta las esquinas de ${nombre}: las de arriba y las de abajo.`,
+        `${cuerpo} tiene ${answer} vértices.`,
+      ];
+    default:
+      return [
+        `Las aristas son los bordes rectos donde se juntan dos caras.`,
+        `Cuenta primero los bordes de la base y después los que suben desde ella.`,
+        `${cuerpo} tiene ${answer} aristas.`,
+      ];
+  }
 }
 
 export function perimetroHints(largo: number, ancho: number, answer: number): Hints {
@@ -277,12 +589,30 @@ export function volumenHints(largo: number, ancho: number, alto: number, answer:
   ];
 }
 
-export function coordenadasHints(x: number, dx: number, answer: number): Hints {
-  const direccion = dx >= 0 ? "suma" : "resta";
+export function coordenadasHints(inicial: number, d: number, answer: number, eje: "x" | "y" = "x"): Hints {
   return [
-    `Moverse a la derecha suma a la coordenada x; moverse a la izquierda resta.`,
-    `${direccion === "suma" ? "Suma" : "Resta"} ${Math.abs(dx)} a ${x}.`,
-    `${x} ${dx >= 0 ? "+" : "−"} ${Math.abs(dx)} = ${answer}.`,
+    eje === "x"
+      ? `Moverse a la derecha suma a la coordenada x; moverse a la izquierda resta.`
+      : `Moverse hacia arriba suma a la coordenada y; moverse hacia abajo resta.`,
+    `${d >= 0 ? "Suma" : "Resta"} ${Math.abs(d)} a ${inicial}.`,
+    `${inicial} ${d >= 0 ? "+" : "−"} ${Math.abs(d)} = ${answer}.`,
+  ];
+}
+
+export function cuadranteHints(x: number, y: number, answer: number): Hints {
+  const romanos = ["I", "II", "III", "IV"];
+  return [
+    `Los cuadrantes se numeran I, II, III y IV en sentido contrario a las agujas del reloj, empezando arriba a la derecha.`,
+    `x = ${x} es ${x > 0 ? "positivo (derecha)" : "negativo (izquierda)"} e y = ${y} es ${y > 0 ? "positivo (arriba)" : "negativo (abajo)"}.`,
+    `El punto (${x}, ${y}) está en el cuadrante ${romanos[answer - 1]}.`,
+  ];
+}
+
+export function distanciaEjeHints(a: number, b: number, eje: "x" | "y", answer: number): Hints {
+  return [
+    `Los dos puntos están sobre la misma línea ${eje === "x" ? "horizontal" : "vertical"}: solo cambia la coordenada ${eje}.`,
+    `La distancia es cuántos pasos hay de ${a} a ${b}: la diferencia entre ambos, sin signo.`,
+    `|${a} − ${b < 0 ? `(${b})` : b}| = ${answer}.`,
   ];
 }
 
@@ -302,11 +632,12 @@ export function pitagorasCatetoHints(c: number, a: number, answer: number): Hint
   ];
 }
 
-export function semejanzaHints(scale: number, smallSide: number, answer: number): Hints {
+export function semejanzaRazonHints(s1: number, g1: number, s2: number, answer: number): Hints {
+  const razon = Number.isInteger(g1 / s1) ? `${g1} ÷ ${s1} = ${g1 / s1}` : `${g1}/${s1}`;
   return [
-    `En figuras semejantes, todos los lados se multiplican por la misma razón de escala.`,
-    `Multiplica el lado pequeño por la razón de escala: ${smallSide} × ${scale}.`,
-    `${smallSide} × ${scale} = ${answer}.`,
+    `En figuras semejantes, cada lado del grande es el lado correspondiente del pequeño multiplicado por la misma razón de escala.`,
+    `La razón de escala es ${razon}: multiplica ${s2} por esa razón.`,
+    `${s2} × ${g1} ÷ ${s1} = ${answer}.`,
   ];
 }
 
@@ -376,10 +707,10 @@ export function rangoHints(max: number, min: number, answer: number): Hints {
   ];
 }
 
-export function probabilidadHints(favorable: number, total: number, answer: number): Hints {
+export function probabilidadHints(favorable: number, total: number, answer: number, casos = "son rojas"): Hints {
   return [
     `La probabilidad es "casos que sirven" entre "casos totales".`,
-    `${favorable} de ${total} son rojas: eso es ${favorable}/${total}.`,
+    `${favorable} de ${total} ${casos}: eso es ${favorable}/${total}.`,
     `${favorable}/${total} × 100 = ${answer}%.`,
   ];
 }
@@ -389,6 +720,23 @@ export function conteoHints(opciones1: number, opciones2: number, answer: number
     `Por cada opción del primer grupo, puedes combinarla con cada opción del segundo.`,
     `Multiplica el número de camisetas por el número de pantalones.`,
     `${opciones1} × ${opciones2} = ${answer}.`,
+  ];
+}
+
+export function conteoTresHints(a: number, b: number, c: number, answer: number): Hints {
+  return [
+    `Cada entrada se combina con cada plato, y cada una de esas combinaciones con cada postre.`,
+    `Primero entradas × platos: ${a} × ${b} = ${a * b}. Después multiplica por los postres.`,
+    `${a} × ${b} × ${c} = ${answer}.`,
+  ];
+}
+
+export function ordenamientosHints(n: number, answer: number): Hints {
+  const factores = Array.from({ length: n }, (_, i) => n - i).join(" × ");
+  return [
+    `Piensa lugar por lugar: ¿cuántos pueden ir primero? ¿Y segundo, cuando ya hay uno ubicado?`,
+    `Para el primer lugar hay ${n} opciones, para el segundo ${n - 1}, y así hasta el último.`,
+    `${factores} = ${answer}.`,
   ];
 }
 
@@ -458,11 +806,29 @@ export function redondeoHints(n: number, answer: number): Hints {
   ];
 }
 
-export function deduccionHints(add: number, result: number, answer: number): Hints {
+export function redondeoCentenaHints(n: number, answer: number): Hints {
+  const abajo = Math.floor(n / 100) * 100;
   return [
-    `Si sumar te llevó al resultado, para volver al número original hay que restar.`,
-    `Resta lo que se sumó (${add}) del resultado (${result}).`,
-    `${result} − ${add} = ${answer}.`,
+    `Fíjate en el dígito de las decenas para decidir si subes o bajas a la centena.`,
+    `${n} está entre ${abajo} y ${abajo + 100}; si las decenas son 5 o más, se sube.`,
+    `Redondeado a la centena más cercana, ${n} es ${answer}.`,
+  ];
+}
+
+export function estimacionHints(a: number, b: number, ra: number, rb: number, answer: number): Hints {
+  return [
+    `Estimar es cambiar cada número por uno redondo y cercano, para poder sumar de cabeza.`,
+    `${a} se redondea a ${ra} y ${b} a ${rb}.`,
+    `${ra} + ${rb} = ${answer}.`,
+  ];
+}
+
+export function pensarHaciaAtrasHints(m: number, a: number, suma: boolean, result: number, answer: number): Hints {
+  const antes = suma ? result - a : result + a;
+  return [
+    `Para volver al número pensado, deshaz los pasos en orden inverso y con la operación contraria.`,
+    `El último paso fue ${suma ? `sumar ${a}` : `restar ${a}`}: ${result} ${suma ? "−" : "+"} ${a} = ${antes}.`,
+    `Después deshaz la multiplicación: ${antes} ÷ ${m} = ${answer}.`,
   ];
 }
 

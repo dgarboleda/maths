@@ -50,7 +50,8 @@ export function generateProblem(difficulty: number): Problem {
       }
       const isAdd = Math.random() < 0.5;
       let a = randInt(0, 10);
-      let b = randInt(0, 10);
+      // La recta numérica termina en 10: una suma mayor no se podría marcar.
+      let b = isAdd ? randInt(0, 10 - a) : randInt(0, 10);
       if (!isAdd && a < b) [a, b] = [b, a];
       const answer = isAdd ? a + b : a - b;
       return {

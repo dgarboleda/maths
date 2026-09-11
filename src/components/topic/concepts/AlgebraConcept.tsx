@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MiniSlider, SliderPair, Formula } from "./shared";
+import { quadraticText } from "@/lib/algebra";
 
 export type AlgebraVariant =
   | "simple"
@@ -171,28 +172,44 @@ function TwoStepEquation() {
 }
 
 function InequalityConcept() {
+  const [m, setM] = useState(3);
   const [b, setB] = useState(4);
-  const min = 0;
-  const max = 12;
-  const ticks = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  const [c, setC] = useState(20);
+  const restante = c - b;
+  const limite = restante / m;
+  const menorEntero = Math.floor(limite) + 1;
+  const limiteTexto = Number.isInteger(limite) ? `${limite}` : `${restante}/${m} ≈ ${limite.toFixed(1)}`;
+  const desde = Math.max(0, Math.floor(limite) - 5);
+  const ticks = Array.from({ length: 12 }, (_, i) => desde + i);
 
   return (
     <div className="space-y-6 text-center">
-      <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Desigualdades 📏</h2>
+      <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Inecuaciones 📏</h2>
       <p className="text-slate-600">
-        Una desigualdad no tiene una única solución: x &gt; b significa que <strong>todos</strong> los números mayores
-        que b la cumplen, no solo uno.
+        Una inecuación no tiene una única solución: la cumplen <strong>todos</strong> los números que hacen que el
+        lado izquierdo quede más grande que el derecho. Se despeja igual que una ecuación de dos pasos: primero se
+        deshace la suma, después la multiplicación.
       </p>
-      <div className="rounded-2xl border-2 border-purple-100 bg-purple-50 p-6">
-        <MiniSlider label="b" value={b} setValue={setB} min={min} max={max - 1} />
+      <div className="grid grid-cols-1 gap-6 rounded-2xl border-2 border-purple-100 bg-purple-50 p-6 text-left md:grid-cols-3">
+        <MiniSlider label="Multiplica x por" value={m} setValue={setM} min={1} max={5} />
+        <MiniSlider label="Le suma" value={b} setValue={setB} min={0} max={10} />
+        <MiniSlider label="Tiene que superar a" value={c} setValue={setC} min={11} max={40} />
       </div>
-      <Formula text={`x > ${b}`} />
+      <Formula text={`${m}x + ${b} > ${c}`} />
+      <div className="mx-auto max-w-sm space-y-2 rounded-xl border border-purple-200 bg-purple-50 p-4 text-left text-slate-700">
+        <p>
+          <strong>Paso 1</strong> — resta {b} de los dos lados: {m}x &gt; {restante}
+        </p>
+        <p>
+          <strong>Paso 2</strong> — divide entre {m}: x &gt; {limiteTexto}
+        </p>
+      </div>
       <div className="flex flex-wrap items-center justify-center gap-1 rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
         {ticks.map((n) => (
           <span
             key={n}
             className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-              n > b ? "bg-purple-600 text-white" : "bg-slate-200 text-slate-700"
+              n > limite ? "bg-purple-600 text-white" : "bg-slate-200 text-slate-700"
             }`}
           >
             {n}
@@ -200,7 +217,8 @@ function InequalityConcept() {
         ))}
       </div>
       <p className="text-slate-600">
-        El menor número entero que cumple x &gt; {b} es <strong className="text-purple-800">{b + 1}</strong>.
+        El menor número entero que la cumple es <strong className="text-purple-800">{menorEntero}</strong>. Con ≤ se
+        busca al revés: el mayor entero que no pasa del límite.
       </p>
     </div>
   );
@@ -213,10 +231,11 @@ function FunctionConcept() {
 
   return (
     <div className="space-y-6 text-center">
-      <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Funciones 🎛️</h2>
+      <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Funciones y tablas 🎛️</h2>
       <p className="text-slate-600">
         Una función es una máquina: le das un número (x) y siempre te devuelve el mismo resultado (f(x)), calculado
-        con la misma regla.
+        con la misma regla. Si solo tienes la tabla, mira cuánto aumenta el resultado cada vez que x aumenta 1: ese
+        es el número que multiplica a x. Lo que falta para llegar al primer valor es lo que se suma.
       </p>
       <SliderPair labelA="Multiplica x por" a={m} setA={setM} labelB="Le suma" b={b} setB={setB} maxA={6} maxB={10} />
       <Formula text={`f(x) = ${m}x ${b >= 0 ? "+" : "−"} ${Math.abs(b)}`} />
@@ -227,18 +246,69 @@ function FunctionConcept() {
           </div>
         ))}
       </div>
+      <p className="text-slate-600">
+        Cada vez que x aumenta 1, f(x) aumenta {m}: por eso la regla multiplica x por {m}.
+      </p>
     </div>
   );
 }
 
 function QuadraticConcept() {
+  const [mode, setMode] = useState<"cuadrado" | "trinomio">("cuadrado");
+
+  return (
+    <div className="space-y-6 text-center">
+      <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Ecuaciones cuadráticas 🌀</h2>
+      <div className="flex justify-center gap-3">
+        {(["cuadrado", "trinomio"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={mode === m}
+            onClick={() => setMode(m)}
+            className={`rounded-xl border-2 px-5 py-2 font-bold transition-colors ${
+              mode === m ? "border-purple-700 bg-purple-600 text-white" : "border-purple-200 bg-white text-purple-700 hover:bg-purple-100"
+            }`}
+          >
+            {m === "cuadrado" ? "x² = c" : "x² + bx + c = 0"}
+          </button>
+        ))}
+      </div>
+      {mode === "cuadrado" ? <SquareRootPart /> : <FactoringPart />}
+    </div>
+  );
+}
+
+function FactoringPart() {
+  const [r1, setR1] = useState(3);
+  const [r2, setR2] = useState(2);
+  const b = -(r1 + r2);
+  const c = r1 * r2;
+  const factor = (r: number) => (r === 0 ? "x" : `x − ${r}`);
+
+  return (
+    <>
+      <p className="text-slate-600">
+        Cuando también hay un término con x, se buscan dos números que multiplicados den c y sumados den b. Con ellos
+        la ecuación se escribe como un producto igual a 0 — y un producto vale 0 solo si alguno de sus factores vale 0.
+      </p>
+      <SliderPair labelA="Una solución" a={r1} setA={setR1} labelB="La otra solución" b={r2} setB={setR2} maxA={9} maxB={9} />
+      <Formula text={`${quadraticText(b, c)} = 0`} />
+      <p className="text-slate-600">
+        Se factoriza como ({factor(r1)})({factor(r2)}) = 0, así que x = <strong className="text-purple-800">{r1}</strong> o
+        x = <strong className="text-purple-800">{r2}</strong>.
+      </p>
+    </>
+  );
+}
+
+function SquareRootPart() {
   const [root, setRoot] = useState(4);
   const square = root * root;
   const px = Math.min(140, root * 20);
 
   return (
-    <div className="space-y-6 text-center">
-      <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Ecuaciones cuadráticas 🌀</h2>
+    <>
       <p className="text-slate-600">
         x² significa x × x. Si x² = c, para despejar x hacemos lo contrario de elevar al cuadrado: sacamos la raíz
         cuadrada. Geométricamente, x² es el área de un cuadrado de lado x.
@@ -258,7 +328,7 @@ function QuadraticConcept() {
       <p className="text-slate-600">
         Para despejar x, saca la raíz cuadrada de {square}: √{square} = <strong className="text-purple-800">{root}</strong>
       </p>
-    </div>
+    </>
   );
 }
 

@@ -69,7 +69,7 @@ export function DatosTab({
           />
         </label>
         <label className="block">
-          <span className={LABEL_CLASS}>Franja (tier, agrupa en el panel)</span>
+          <span className={LABEL_CLASS}>Grado (0 = preescolar, agrupa en el panel)</span>
           <input type="number" min={0} className={INPUT_CLASS} value={doc.tier} onChange={(e) => onChange({ ...doc, tier: Number(e.target.value) })} />
         </label>
       </div>
