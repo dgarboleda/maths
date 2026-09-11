@@ -52,6 +52,9 @@ cloudflare-env.d.ts
 *-debug.log
 /.firebase/
 
+# Lighthouse CI (npm run perf)
+/.lighthouseci/
+
 # OpenNext / Cloudflare Workers
 .open-next
 .wrangler

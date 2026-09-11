@@ -135,7 +135,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Pruebas
 
 Tres capas, cada una con el runner que le corresponde — ninguna es un
-sustituto de las otras:
+sustituto de las otras — más un presupuesto de rendimiento aparte:
 
 - **`npm run test`** (Vitest + jsdom) — lógica pura (`src/test/unit/`:
   navmesh, geometría, `validateLevel`, el motor de evaluación de ubicación,
@@ -158,6 +158,16 @@ sustituto de las otras:
   Editor, narrativa secundaria) se repartió entre las dos capas de arriba;
   ver el propio `e2e/*.spec.ts` y `src/test/unit|integration/*.test.ts`
   para el detalle de qué se movió a dónde.
+- **`npm run perf`** ([Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci),
+  configurado en `lighthouserc.json`) — presupuesto de rendimiento y
+  accesibilidad sobre `/login` (la única pantalla pública sin sesión ni
+  emuladores), corriendo contra `next build && next start`. Falla si el
+  peso de JS o el peso total de la página crecen por encima del umbral
+  fijado (docs/auditoria-rendimiento-accesibilidad.md §1.2) o si el puntaje
+  de accesibilidad baja de 0.9; el puntaje de rendimiento (más ruidoso en
+  CI compartido) solo avisa, no bloquea. No es un sustituto de las tres
+  capas de arriba — no ejercita lógica ni recorridos, solo el costo de la
+  primera carga.
 
 Antes, la lógica pura y la persistencia contra el emulador vivían también
 en `e2e/` como specs de Playwright sin usar `page` — el único runner

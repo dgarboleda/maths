@@ -536,6 +536,9 @@ está mejor cubierto por la prueba de integración de §2.6.
   entero en cada pantalla. Está bien identificado en
   `auditoria-rendimiento-accesibilidad.md` §1.2 y necesita migrar saldos
   existentes; es una fase propia, no un apéndice de estas.
-- **Presupuesto de rendimiento en CI** (Lighthouse / bundle-analyzer).
-  Merece existir, no bloquea nada de acá.
+- ~~**Presupuesto de rendimiento en CI**~~ Implementado con Lighthouse CI
+  (no `@next/bundle-analyzer`: envuelve el `webpack()` de `next.config`, que
+  la build de producción — Turbopack desde Next 16 — ignora). Ver
+  `lighthouserc.json`, `.github/workflows/ci.yml` (job "Presupuesto de
+  rendimiento") y `npm run perf`.
 - **Clonar/compartir mundos.** Ver §2.1.
