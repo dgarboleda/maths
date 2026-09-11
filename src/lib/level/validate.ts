@@ -1,4 +1,5 @@
 import { isWalkableInMesh, polygonIsSimple, type NavigationMesh } from "@/lib/world/navmesh";
+import { isKnownActivityId } from "./activities/registry";
 import type { LevelDefinition, LevelEventRule, LevelIssue, NavPolygon } from "./schema";
 
 /**
@@ -30,6 +31,10 @@ import type { LevelDefinition, LevelEventRule, LevelIssue, NavPolygon } from "./
  * 8. Ningún id se repite dentro de su propia colección.
  * 8b. (Fase 25) Todo `ChallengePlacement.moduleId` está asignado — nunca
  *     vacío (ver `validateChallengeModules`).
+ * 8c. (Fase 33) Todo `ChallengePlacement.activityId` es uno del registro
+ *     (`activities/registry.ts`) — un id inventado o mal escrito nunca
+ *     revienta en el juego real (`LevelActivityOverlay` cae a "puzzle" en
+ *     silencio), pero acá sí se avisa al autor antes de publicar.
  *
  * 9. (Fase 8) Detección ESTÁTICA de ciclos en la cadena de eventos — T4
  *    (§13): una regla que dispara un `START_CHALLENGE`/`UPDATE_MISSION`
@@ -58,6 +63,7 @@ export function validateLevel(level: LevelDefinition): LevelIssue[] {
   validateEntityInteractions(level, mesh, issues);
   validateReferences(level, issues);
   validateChallengeModules(level, issues);
+  validateChallengeActivities(level, issues);
   validateUniqueIds(level, issues);
   validateEventCycles(level, issues);
   validateBudgets(level, issues);
@@ -277,6 +283,21 @@ function validateChallengeModules(level: LevelDefinition, issues: LevelIssue[]):
       issues.push({
         severity: "error",
         message: "Hay un desafío sin ningún módulo de práctica asignado todavía.",
+        target: { kind: "challenge", id: challenge.id },
+      });
+    }
+  }
+}
+
+/** Fase 33 (docs/plan-jugabilidad.md §7): un `activityId` desconocido nunca
+ *  rompe el juego (el runtime cae a "puzzle" en silencio) — esto es aviso al
+ *  autor, no una red de seguridad de la que dependa el jugador. */
+function validateChallengeActivities(level: LevelDefinition, issues: LevelIssue[]): void {
+  for (const challenge of level.challenges) {
+    if (!isKnownActivityId(challenge.activityId)) {
+      issues.push({
+        severity: "error",
+        message: `El desafío tiene una actividad desconocida ("${challenge.activityId}").`,
         target: { kind: "challenge", id: challenge.id },
       });
     }
