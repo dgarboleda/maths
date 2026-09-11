@@ -20,8 +20,12 @@ export async function awardMasteryBadges(
   mergedProgress: Record<string, SkillProgress>,
 ): Promise<void> {
   const badges: Promise<void>[] = [];
-  if (mod.tier === 0) badges.push(awardBadge(firestoreFns, db, parentId, childId, "resolutor"));
-  if (modulesForStrand(mod.strandSlug).every((m) => isMastered(mergedProgress, m.id))) {
+  const strandModules = modulesForStrand(mod.strandSlug);
+  // "Tu primer tema en un hilo": los del grado más bajo de ese hilo (no
+  // todos los hilos arrancan en preescolar — Medición y Lógica, en 1.º).
+  const entryTier = Math.min(...strandModules.map((m) => m.tier));
+  if (mod.tier === entryTier) badges.push(awardBadge(firestoreFns, db, parentId, childId, "resolutor"));
+  if (strandModules.every((m) => isMastered(mergedProgress, m.id))) {
     badges.push(awardBadge(firestoreFns, db, parentId, childId, `maestro-${mod.strandSlug}`));
   }
   await Promise.all(badges);

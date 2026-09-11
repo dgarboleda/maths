@@ -13,6 +13,7 @@ import type { ChildProfile, Placement, SkillProgress } from "@/lib/types";
 import { getStrand, STRANDS } from "@/lib/strands";
 import { allModules, isMastered, isUnlocked, missingPrerequisites } from "@/lib/curriculum";
 import { moduleForTier } from "@/lib/placement";
+import { getPisaCategory, gradeLabel, PISA_LEVELS } from "@/lib/pisa";
 import { ageFromBirthDate } from "@/lib/family/age";
 import { Avatar } from "@/components/world/Avatar";
 import {
@@ -302,15 +303,16 @@ export default function ChildDetailPage() {
       <div className="flex flex-col gap-2">
         <h2 className="font-display text-lg font-bold text-white">Currícula completa</h2>
         <p className="text-sm text-slate-400">
-          Cada franja agrupa temas de nivel similar. Un tema se desbloquea cuando se dominan todos sus prerrequisitos
-          (mostrados entre paréntesis cuando está bloqueado), sin importar de qué materia vengan.
+          Los temas se agrupan por grado escolar de referencia, y cada uno indica su área y nivel en la escala de PISA.
+          Un tema se desbloquea cuando se dominan todos sus prerrequisitos (mostrados entre paréntesis cuando está
+          bloqueado), sin importar de qué materia vengan.
         </p>
       </div>
 
       <div className="flex flex-col gap-6">
         {tiers.map((tier) => (
-          <section key={tier} aria-label={`Franja ${tier + 1}`} className="flex flex-col gap-2">
-            <h2 className="text-xs font-bold uppercase tracking-wide text-indigo-300">Franja {tier + 1}</h2>
+          <section key={tier} aria-label={gradeLabel(tier)} className="flex flex-col gap-2">
+            <h2 className="text-xs font-bold uppercase tracking-wide text-indigo-300">{gradeLabel(tier)}</h2>
             <ul className="flex flex-col gap-1">
               {allModules()
                 .filter((m) => m.tier === tier)
@@ -320,6 +322,7 @@ export default function ChildDetailPage() {
                 const unlocked = isUnlocked(progressBySkill, mod.id);
                 const missing = missingPrerequisites(progressBySkill, mod.id);
                 const strandLabel = getStrand(mod.strandSlug)?.label ?? mod.strandSlug;
+                const pisaCategory = mod.pisa ? getPisaCategory(mod.pisa.category) : undefined;
                 return (
                   <li
                     key={mod.id}
@@ -334,6 +337,13 @@ export default function ChildDetailPage() {
                       <span className="font-semibold text-white">
                         {mod.emoji} {mod.label}
                       </span>
+                      {mod.pisa && pisaCategory && (
+                        <span className="rounded-full border border-cyan-400/25 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-200">
+                          <span aria-hidden="true">{pisaCategory.emoji} </span>
+                          PISA {PISA_LEVELS[mod.pisa.level].code}
+                          <span className="sr-only"> · {pisaCategory.label}</span>
+                        </span>
+                      )}
                     </span>
                     {mastered ? (
                       <span className="font-bold text-emerald-300">

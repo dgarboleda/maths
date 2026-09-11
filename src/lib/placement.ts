@@ -2,6 +2,7 @@ import type { ModuleDef } from "./curriculum";
 import { modulesForStrand, isMastered, nextChallenge, recommendedModule } from "./curriculum";
 import type { PlacementStrandRecord, SkillProgress } from "./types";
 import { getStrand, STRANDS, type StrandDef } from "./strands";
+import { gradeLabel } from "./pisa";
 
 /**
  * Evaluación diagnóstica inicial ("prueba de ubicación"), inspirada en dos
@@ -105,23 +106,10 @@ export function answerPlacementItem(state: StrandPlacementState, correct: boolea
   };
 }
 
-const GRADE_BAND_BY_TIER: Record<number, string> = {
-  0: "preescolar–1.º",
-  1: "1.º",
-  2: "1.º–2.º",
-  3: "2.º–3.º",
-  4: "3.º",
-  5: "3.º–4.º",
-  6: "4.º–5.º",
-  7: "5.º–6.º",
-  8: "6.º–7.º",
-  9: "7.º–8.º",
-};
-
-/** Aproxima una franja de currícula a un grado escolar equivalente (progresión CCSS-M). */
+/** La franja de un módulo ya es su grado escolar de referencia (progresión CCSS-M, ver pisa.ts). */
 export function gradeBandForTier(tier: number): string {
   if (tier < 0) return "por reforzar las bases";
-  return GRADE_BAND_BY_TIER[tier] ?? `franja ${tier + 1}`;
+  return gradeLabel(tier);
 }
 
 /**

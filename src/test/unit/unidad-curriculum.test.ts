@@ -5,7 +5,7 @@ import { compileModule } from "@/lib/curriculum/compileModule";
 import { createEmptyCustomModule, slugForLabel } from "@/lib/curriculum/defaults";
 import { validateCustomModule } from "@/lib/curriculum/validateCustomModule";
 import { allModules, clearCustomModules, registerCustomModules } from "@/lib/curriculum/customRegistry";
-import { getModule, isUnlocked, modulesForStrand, nextReview } from "@/lib/curriculum";
+import { getModule, isUnlocked, missingPrerequisites, modulesForStrand, nextReview } from "@/lib/curriculum";
 import type { ArithmeticGeneratorSpec, CustomModuleDoc } from "@/lib/curriculum/customSchema";
 import { problemSignature } from "@/lib/problem";
 import type { SkillProgress } from "@/lib/types";
@@ -228,6 +228,31 @@ describe("nextReview — Fase 27, repaso espaciado (docs/plan-salto-producto.md 
     };
     expect(nextReview(progressBySkill, now)).not.toBeNull(); // el repaso de d1 está bien vencido
     expect(isUnlocked(progressBySkill, "aritmetica-d2")).toBe(true); // pero sigue desbloqueado igual
+  });
+});
+
+describe("Desbloqueo compatible con cambios en la currícula", () => {
+  const dominado = (): SkillProgress => ({ recentResults: [], recentAccuracy: 1, masteredAt: Date.now() });
+
+  test("un prerrequisito sin dominar cuenta como cumplido si un módulo dominado lo exige, aunque sea de forma transitiva", () => {
+    // geometria-d5 → geometria-d4 → aritmetica-d5: quien domina el área de
+    // triángulos ya demostró las tablas, aunque nunca las haya practicado aparte.
+    const progress = { "geometria-d5": dominado() };
+    expect(isUnlocked(progress, "medicion-d10")).toBe(true); // solo exige aritmetica-d5
+    expect(missingPrerequisites(progress, "medicion-d10")).toEqual([]);
+  });
+
+  test("lo que queda fuera de ese cierre sigue bloqueado", () => {
+    const progress = { "algebra-d7": dominado() };
+    expect(isUnlocked(progress, "geometria-d8")).toBe(false);
+    expect(missingPrerequisites(progress, "geometria-d8").map((m) => m.id)).toEqual(["aritmetica-d10"]);
+  });
+
+  test("un módulo con progreso guardado sigue desbloqueado aunque ahora le falte un prerrequisito", () => {
+    const enCurso: SkillProgress = { recentResults: [{ correct: true, day: "2026-01-01" }], recentAccuracy: 1, masteredAt: null };
+    expect(isUnlocked({}, "geometria-d9")).toBe(false);
+    expect(isUnlocked({ "geometria-d9": enCurso }, "geometria-d9")).toBe(true);
+    expect(missingPrerequisites({ "geometria-d9": enCurso }, "geometria-d9")).toEqual([]);
   });
 });
 

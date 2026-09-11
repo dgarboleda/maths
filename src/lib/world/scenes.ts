@@ -92,13 +92,25 @@ function labelFor(kind: InteractionKind, mod: ModuleDef): string {
   return `${KIND_NOUN[kind]} · ${mod.label}`;
 }
 
-/** Serpentina: dos columnas que van bajando, para que se lea como un recorrido. */
-function positionFor(index: number): { x: number; y: number } {
+const FIRST_ROW_Y = 12;
+const LAST_ROW_MAX_Y = 89.5;
+const ROW_STEP_Y = 15.5;
+
+/**
+ * Serpentina: dos columnas que van bajando, para que se lea como un
+ * recorrido. `y` es un porcentaje del alto de la escena, que crece con la
+ * cantidad de filas (`ZoneScene.tsx`): hasta 6 filas se usa el paso de
+ * siempre, y con más se achica para que la última fila nunca se salga del
+ * lienzo.
+ */
+function positionFor(index: number, total: number): { x: number; y: number } {
   const row = Math.floor(index / 2);
+  const rows = Math.ceil(total / 2);
+  const step = rows > 1 ? Math.min(ROW_STEP_Y, (LAST_ROW_MAX_Y - FIRST_ROW_Y) / (rows - 1)) : ROW_STEP_Y;
   const leftColumn = index % 2 === 0;
   return {
     x: leftColumn ? 26 : 68,
-    y: 12 + row * 15.5,
+    y: FIRST_ROW_Y + row * step,
   };
 }
 
@@ -124,7 +136,7 @@ export function zoneScene(strandSlug: string): ZoneScene | null {
         label: labelFor(kind, mod),
         clue: clueFor(kind, mod, narrative.zoneName),
         reward: rewardFor(kind, narrative.zoneName),
-        ...positionFor(i),
+        ...positionFor(i, modules.length),
       };
     }),
   };
