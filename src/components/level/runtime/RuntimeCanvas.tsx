@@ -29,6 +29,7 @@ export function RuntimeCanvas({
   playerVisible,
   onGroundClick,
   onEntityClick,
+  interactingEntityId,
 }: {
   level: LevelDefinition;
   runtimeState: LevelRuntimeState;
@@ -54,6 +55,8 @@ export function RuntimeCanvas({
   playerVisible: boolean;
   onGroundClick: (xPct: number, yPct: number) => void;
   onEntityClick: (entity: LevelEntity) => void;
+  /** Fase 31 (docs/plan-jugabilidad.md §5) — ver `RuntimeEntity.interacting`. */
+  interactingEntityId?: string | null;
 }) {
   const sceneRef = useRef<HTMLDivElement>(null);
   // `0` = sin tope de zoom (ver useCameraBox.ts): a pedido explícito, el
@@ -89,7 +92,15 @@ export function RuntimeCanvas({
     key: entity.id,
     y: entity.position.y,
     layer: entity.layer,
-    render: () => <RuntimeEntity entity={entity} runtimeState={runtimeState} onInteract={onEntityClick} depth={level.depth} />,
+    render: () => (
+      <RuntimeEntity
+        entity={entity}
+        runtimeState={runtimeState}
+        onInteract={onEntityClick}
+        depth={level.depth}
+        interacting={entity.id === interactingEntityId}
+      />
+    ),
   }));
   const paintedPlayer: Painted = {
     key: "__player__",

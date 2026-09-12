@@ -99,7 +99,7 @@ export function PyramidGame({
     setFeedback(null);
     if (isLast) {
       playSound("fanfare", soundOn);
-      triggerConfetti();
+      triggerConfetti("medium"); // Fase 31: pirámide completa
     }
   }
 

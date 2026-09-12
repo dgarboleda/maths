@@ -84,7 +84,7 @@ export function PracticeRoundGeneric({
   function next() {
     if (questionNumber >= ROUND_LENGTH) {
       playSound("fanfare", soundOn);
-      triggerConfetti();
+      triggerConfetti("medium"); // Fase 31: ronda completa
       setFinished(true);
       return;
     }
