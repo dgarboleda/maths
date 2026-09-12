@@ -1,30 +1,17 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useFamily } from "@/components/family/FamilyProvider";
 import { DEFAULT_DEPTH_CONFIG } from "@/lib/level/depth";
 import { getEntityType } from "@/lib/level/entities";
-import { newBackgroundFilterId, newBackgroundLayerId } from "@/lib/level/ids";
-import type { LevelBackgroundFilter, LevelBackgroundLayer, LevelDepthConfig } from "@/lib/level/schema";
+import { newBackgroundFilterId } from "@/lib/level/ids";
+import type { LevelBackgroundFilter, LevelDepthConfig } from "@/lib/level/schema";
 import { IconButton } from "@/components/ui/IconButton";
 import { useLevelEditor } from "./LevelEditorProvider";
-import { BackgroundPicker } from "./assets/BackgroundPicker";
 import { ConditionEditor } from "./ConditionEditor";
-import { FieldLabel } from "./fields/PropertyFields";
 import { help } from "./helpText";
 
 const LABEL_CLASS = "mb-1 block text-[11px] font-bold text-slate-400";
 const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50";
-
-const EFFECT_OPTIONS: { value: LevelBackgroundLayer["effect"]; label: string }[] = [
-  { value: "none", label: "Ninguno" },
-  { value: "fog", label: "Niebla" },
-  { value: "rain", label: "Lluvia" },
-  { value: "snow", label: "Nieve" },
-  { value: "lightning", label: "Rayos" },
-  { value: "particles", label: "Partículas" },
-  { value: "glow", label: "Brillo ambiental" },
-];
 
 /**
  * Puntos de partida razonables para "Añadir filtro de noche/día" — las dos
@@ -46,18 +33,12 @@ const DAY_FILTER_PRESET = { flag: "noche", value: false, css: "brightness(1.08) 
  * se había usado nunca) — cero acciones de reducer nuevas.
  */
 export function DepthPanel() {
-  const { parentId } = useFamily();
   const { state, dispatch } = useLevelEditor();
   const depth: LevelDepthConfig = state.level.depth ?? DEFAULT_DEPTH_CONFIG;
-  const layers = state.level.background.layers ?? [];
   const filters = state.level.background.filters ?? [];
 
   function setDepth(patch: Partial<LevelDepthConfig>) {
     dispatch({ type: "SET_LEVEL_FIELD", patch: { depth: { ...depth, ...patch } } });
-  }
-
-  function setLayers(next: LevelBackgroundLayer[]) {
-    dispatch({ type: "SET_BACKGROUND", background: { ...state.level.background, layers: next } });
   }
 
   function setFilters(next: LevelBackgroundFilter[]) {
@@ -79,41 +60,6 @@ export function DepthPanel() {
 
   function deleteFilter(id: string) {
     setFilters(filters.filter((f) => f.id !== id));
-  }
-
-  function addLayer() {
-    // `src: ""` a propósito (docs/asset-management-plan.md §E.3): antes de
-    // esta fase se preseleccionaba Ciudad Central (una escena completa y
-    // opaca), lo que dejaba el parallax inutilizable por defecto — ahora el
-    // autor elige explícitamente una imagen (de su biblioteca o de fábrica)
-    // desde el `BackgroundPicker` de abajo.
-    //
-    // `depth: 1.2` (no 1) a propósito — reporte del usuario ("no funciona el
-    // efecto parallax ni las capas ni los efectos"): con `depth < 1` la capa
-    // se dibuja DETRÁS del fondo principal (`BackgroundLayer.tsx`), que casi
-    // siempre es una imagen opaca que cubre toda la escena — la capa (imagen
-    // y/o efecto) queda invisible sin que el autor entienda por qué. `>1`
-    // (primer plano) es visible de entrada sobre cualquier fondo; `<1` sigue
-    // disponible para quien de verdad lo necesite (ver el aviso más abajo).
-    const layer: LevelBackgroundLayer = {
-      id: newBackgroundLayerId(),
-      src: "",
-      depth: 1.2,
-      offsetY: 0,
-      opacity: 1,
-      scale: 100,
-      loop: false,
-      effect: "none",
-    };
-    setLayers([...layers, layer]);
-  }
-
-  function updateLayer(id: string, patch: Partial<LevelBackgroundLayer>) {
-    setLayers(layers.map((l) => (l.id === id ? { ...l, ...patch } : l)));
-  }
-
-  function deleteLayer(id: string) {
-    setLayers(layers.filter((l) => l.id !== id));
   }
 
   return (
@@ -275,97 +221,10 @@ export function DepthPanel() {
       <section className="space-y-2 border-t border-indigo-500/10 pt-3">
         <div className="flex items-center justify-between">
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Capas de fondo (parallax + clima)</h3>
-          <IconButton icon={Plus} label="Añadir capa" tooltip={help("depth.addLayer").text} side="left" tone="accent" onClick={addLayer} />
         </div>
-
-        {layers.length === 0 && <p className="text-[11px] text-slate-400">Sin capas adicionales — el fondo se mueve como siempre.</p>}
-
-        {layers.map((layer, i) => (
-          <div key={layer.id} className="space-y-2 rounded-md border border-indigo-500/15 bg-slate-900/40 p-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-300">Capa {i + 1}</span>
-              <IconButton icon={Trash2} label={`Eliminar capa ${i + 1}`} tooltip={help("depth.removeLayer").text} side="left" tone="danger" onClick={() => deleteLayer(layer.id)} />
-            </div>
-            <label className="block">
-              <FieldLabel label="Efecto" hint={help("depth.effect").text} />
-              <select
-                className={INPUT_CLASS}
-                value={layer.effect}
-                onChange={(e) => updateLayer(layer.id, { effect: e.target.value as LevelBackgroundLayer["effect"] })}
-              >
-                {EFFECT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div>
-              <span className={LABEL_CLASS}>Imagen {layer.effect !== "none" && "(opcional con un efecto elegido)"}</span>
-              {parentId ? (
-                <BackgroundPicker parentId={parentId} for="layer" compact value={layer.src} onChange={(selection) => updateLayer(layer.id, { src: selection.src })} />
-              ) : (
-                !layer.src && layer.effect === "none" && <p className="text-[11px] text-amber-300">Elegí una imagen o un efecto para esta capa.</p>
-              )}
-            </div>
-            <label className="block">
-              <span className={LABEL_CLASS}>Profundidad (0 fija · 1 como el fondo · &gt;1 primer plano)</span>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                className={INPUT_CLASS}
-                value={layer.depth}
-                onChange={(e) => updateLayer(layer.id, { depth: Number(e.target.value) })}
-              />
-              {layer.depth < 1 && (
-                <p className="mt-1 text-amber-300">
-                  ⚠ Con menos de 1 esta capa queda DETRÁS del fondo — invisible si el fondo es una imagen opaca de punta a punta (lo más común). Usá más de 1 para que se vea encima.
-                </p>
-              )}
-            </label>
-            <label className="block">
-              <span className={LABEL_CLASS}>Escala (% del ancho de la escena)</span>
-              <input
-                type="number"
-                step="5"
-                min="1"
-                max="100"
-                className={INPUT_CLASS}
-                value={layer.scale ?? 100}
-                onChange={(e) => updateLayer(layer.id, { scale: Number(e.target.value) })}
-              />
-              <p className="mt-1 text-slate-400">
-                {(layer.scale ?? 100) >= 100
-                  ? "100 = cubre toda la escena, de punta a punta (como el fondo)."
-                  : "Menos de 100 = tamaño natural, centrada — un elemento suelto (una nube, un cartel), no un segundo fondo."}
-              </p>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block">
-                <span className={LABEL_CLASS}>Desplaz. Y (%)</span>
-                <input
-                  type="number"
-                  className={INPUT_CLASS}
-                  value={layer.offsetY}
-                  onChange={(e) => updateLayer(layer.id, { offsetY: Number(e.target.value) })}
-                />
-              </label>
-              <label className="block">
-                <span className={LABEL_CLASS}>Opacidad</span>
-                <input
-                  type="number"
-                  step="0.05"
-                  min="0"
-                  max="1"
-                  className={INPUT_CLASS}
-                  value={layer.opacity}
-                  onChange={(e) => updateLayer(layer.id, { opacity: Number(e.target.value) })}
-                />
-              </label>
-            </div>
-          </div>
-        ))}
+        <p className="text-[11px] leading-relaxed text-slate-400">
+          Se editan en la caja de herramientas flotante — botón &quot;Capas&quot; en la barra inferior.
+        </p>
       </section>
     </div>
   );

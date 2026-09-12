@@ -119,6 +119,11 @@ export interface LevelBackgroundFilter {
  */
 export interface LevelBackgroundLayer {
   id: string;
+  /** Nombre opcional para identificarla en la caja de capas del editor
+   *  (`LayersToolbox.tsx`) — puramente organizativo, no afecta el juego.
+   *  Niveles guardados antes de este campo no lo tienen; el editor muestra
+   *  "Capa N" (posición en la lista) cuando falta o está vacío. */
+  name?: string;
   /** Ruta bajo /illustrations/, mismo criterio que el fondo principal. */
   src: string;
   /**
