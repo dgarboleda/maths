@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type MouseEvent, type ReactNode } from "react";
+import { useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { useCameraBox } from "@/components/world/useCameraBox";
 import { evaluateCondition } from "@/lib/level/events/conditions";
 import type { LevelDefinition, LevelEntity } from "@/lib/level/schema";
@@ -59,6 +59,12 @@ export function RuntimeCanvas({
   interactingEntityId?: string | null;
 }) {
   const sceneRef = useRef<HTMLDivElement>(null);
+  // Si la imagen de fondo se borró de la biblioteca (docs/asset-management-plan.md
+  // §G riesgo R4) `background.src` puede quedar apuntando a una URL muerta.
+  // Sin este control el hijo vería el icono de imagen rota del navegador en
+  // mitad de la partida; en vez de eso se oculta y queda el fondo neutro del
+  // propio canvas (`bg-slate-950` más abajo).
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   // `0` = sin tope de zoom (ver useCameraBox.ts): a pedido explícito, el
   // fondo de un nivel del Editor siempre cubre el 100% del visor, sin la
   // garantía de alcanzabilidad que sí necesita Ciudad Central legacy (cuyos
@@ -126,13 +132,14 @@ export function RuntimeCanvas({
       <BackgroundLayers layers={backLayers} sceneBox={sceneBox} pose={pose} />
 
       <div className="absolute" style={{ left: sceneBox.left, top: sceneBox.top, width: sceneBox.width, height: sceneBox.height }}>
-        {level.background.src && (
+        {level.background.src && failedSrc !== level.background.src && (
           // eslint-disable-next-line @next/next/no-img-element -- tamaño nativo variable por nivel
           <img
             src={level.background.src}
             alt={level.background.alt}
             className="block size-full object-cover transition-[filter] duration-1000"
             style={{ filter: activeFilter?.css }}
+            onError={() => setFailedSrc(level.background.src)}
           />
         )}
 
