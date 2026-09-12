@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { UploadCloud } from "lucide-react";
+import { Image as ImageIcon, Mountain, UploadCloud, UserRound } from "lucide-react";
 import { prepareUpload } from "@/lib/level/assets/imageProcessing";
 import { checkQuota, gradeResolution, RESOLUTION_THRESHOLDS, sanitizeLabel, validateFileMeta, type AssetKind, type PreparedAssetUpload } from "@/lib/level/assets/imageRules";
 import { uploadAsset, type LevelAsset } from "@/lib/level/assets/assetRepository";
@@ -12,6 +12,54 @@ const INPUT_CLASS = "w-full rounded-md border border-indigo-500/20 bg-slate-950/
 
 const KIND_LABEL: Record<AssetKind, string> = { scene: "fondo de escena", layer: "capa", avatar: "avatar" };
 const KIND_RADIO_LABEL: Record<AssetKind, string> = { scene: "Fondo de escena completa", layer: "Capa de parallax", avatar: "Avatar de personaje" };
+
+/**
+ * Copy explicativo por tipo — a pedido del usuario ("qué tipo de imagen se
+ * debe subir en cada opción, tamaño, cuál sería el resultado final"): antes
+ * de esta fase las 3 opciones eran solo una etiqueta sin contexto. `icon` +
+ * `KindPreview` dan una idea visual rápida del resultado sin necesitar fotos
+ * de ejemplo reales (ninguna imagen de stock vive en el repo).
+ */
+const KIND_INFO: Record<AssetKind, { icon: typeof ImageIcon; description: string; shape: string }> = {
+  scene: {
+    icon: ImageIcon,
+    description: "Llena toda la pantalla del nivel, de punta a punta. Usá una escena horizontal (paisaje, interior, etc.) — se recorta para cubrir el área jugable, así que evitá detalles importantes muy pegados a los bordes.",
+    shape: `Panorámica (ancho > alto). Ideal: ${RESOLUTION_THRESHOLDS.scene.recommendedWidth}px de ancho o más.`,
+  },
+  layer: {
+    icon: Mountain,
+    description: "Una franja decorativa (nubes, montañas lejanas, un horizonte) que se desliza a otra velocidad que la cámara, detrás o delante del fondo principal — nunca lo reemplaza. Con fondo transparente (PNG/WebP) deja ver lo que hay detrás.",
+    shape: `Tira ancha y baja (mucho más ancha que alta). Ideal: ${RESOLUTION_THRESHOLDS.layer.recommendedWidth}px de ancho o más.`,
+  },
+  avatar: {
+    icon: UserRound,
+    description: "El personaje jugable: retrato o cuerpo entero. Se recorta en redondo, así que centrá la figura y usá fondo transparente (PNG/WebP) — con fondo opaco se ve un cuadrado en vez de un círculo.",
+    shape: `Cuadrada (ancho = alto). Ideal: ${RESOLUTION_THRESHOLDS.avatar.recommendedWidth}px de ancho o más.`,
+  },
+};
+
+/** Miniatura de cómo queda cada tipo una vez en el nivel — puro CSS, sin
+ *  imagen de ejemplo real. */
+function KindPreview({ kind }: { kind: AssetKind }) {
+  if (kind === "scene") {
+    return (
+      <div className="h-12 w-20 shrink-0 rounded-md bg-gradient-to-br from-cyan-500/40 to-indigo-500/40" aria-hidden="true" />
+    );
+  }
+  if (kind === "layer") {
+    return (
+      <div className="flex h-12 w-20 shrink-0 flex-col justify-center gap-1 rounded-md bg-slate-800/60 p-1.5" aria-hidden="true">
+        <div className="h-2.5 w-full rounded-sm bg-cyan-500/40" />
+        <div className="h-2.5 w-2/3 rounded-sm bg-indigo-500/30" />
+      </div>
+    );
+  }
+  return (
+    <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-slate-800/60" aria-hidden="true">
+      <div className="size-9 rounded-full bg-gradient-to-br from-cyan-500/40 to-indigo-500/40" />
+    </div>
+  );
+}
 
 /**
  * Subir una imagen a la biblioteca del padre — docs/asset-management-plan.md
@@ -111,6 +159,8 @@ export function AssetUploader({
   }
 
   const grade = originalDims ? gradeResolution(originalDims.width, originalDims.height, kind) : null;
+  const kindInfo = KIND_INFO[kind];
+  const KindIcon = kindInfo.icon;
 
   return (
     <div className="space-y-3 rounded-lg border border-indigo-500/20 bg-slate-900/50 p-3 text-xs">
@@ -140,6 +190,18 @@ export function AssetUploader({
               </label>
             ))}
           </fieldset>
+
+          <div className="flex items-start gap-3 rounded-md border border-indigo-500/15 bg-slate-950/40 p-2.5">
+            <KindPreview kind={kind} />
+            <div className="space-y-1">
+              <p className="flex items-center gap-1.5 font-bold text-slate-200">
+                <KindIcon className="size-3.5 shrink-0 text-cyan-300" aria-hidden="true" />
+                {KIND_RADIO_LABEL[kind]}
+              </p>
+              <p className="text-slate-300">{kindInfo.description}</p>
+              <p className="text-slate-400">{kindInfo.shape}</p>
+            </div>
+          </div>
 
           <label className="block">
             <span className={LABEL_CLASS} id={`${fileInputId}-label`}>
