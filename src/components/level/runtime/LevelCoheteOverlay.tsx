@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { CoheteGeneric } from "@/components/topic/CoheteGeneric";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
@@ -8,6 +8,7 @@ import { getFirebase } from "@/lib/firebase";
 import { getModule, missingPrerequisites, moduleHref } from "@/lib/curriculum";
 import { recordModuleAttempt } from "@/lib/attemptRecorder";
 import { awardMasteryBadges } from "@/lib/masteryRewards";
+import { getRecord, recordIfBest, type PersonalRecord } from "@/lib/records";
 import type { ChallengePlacement, LevelEntity } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
 
@@ -64,6 +65,34 @@ export function LevelCoheteOverlay({
   const liveProgressRef = useRef(progressBySkill);
   const totalStarsRef = useRef(0);
   const resolvedRef = useRef(false);
+  // Fase 35 (docs/plan-jugabilidad.md §9): `recordAttempt` presente = Play
+  // Test (mismo criterio que LevelRuntime.tsx pasando
+  // `sandboxServices?.recordAttempt`) — igual que el intento no se guarda de
+  // verdad, la marca personal tampoco: ni se lee ni se escribe.
+  const isSandbox = Boolean(recordAttempt);
+  const [record, setRecord] = useState<PersonalRecord | null>(null);
+
+  useEffect(() => {
+    if (isSandbox || !mod) return;
+    let cancelled = false;
+    getFirebase()
+      .then(({ db, firestore }) => getRecord(firestore, db, parentId, childId, "cohete", mod.id))
+      .then((r) => {
+        if (!cancelled) setRecord(r);
+      })
+      .catch((err) => console.error("No se pudo cargar la marca del Cohete", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [isSandbox, mod, parentId, childId]);
+
+  function handleGameOver(correctCount: number) {
+    if (isSandbox || !mod) return;
+    getFirebase()
+      .then(({ db, firestore }) => recordIfBest(firestore, db, parentId, childId, "cohete", mod.id, correctCount, record))
+      .then((next) => setRecord(next))
+      .catch((err) => console.error("No se pudo guardar la marca del Cohete", err));
+  }
 
   if (!mod) return null;
 
@@ -153,7 +182,14 @@ export function LevelCoheteOverlay({
             Salir
           </button>
         </div>
-        <CoheteGeneric moduleId={mod.id} soundOn={soundOn} onAnswer={onAnswer} onWin={handleWin} />
+        <CoheteGeneric
+          moduleId={mod.id}
+          soundOn={soundOn}
+          onAnswer={onAnswer}
+          onWin={handleWin}
+          bestScore={record?.best}
+          onGameOver={handleGameOver}
+        />
       </div>
     </div>
   );

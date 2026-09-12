@@ -404,6 +404,33 @@ export async function sembrarProgresoCercaDeDominio(
   }
 }
 
+/** Fase 35 (docs/plan-jugabilidad.md §9) — siembra directo en Firestore el
+ *  estado de racha previo a la sesión, para que el despachador
+ *  (`/jugar/{childId}`) la actualice de verdad al visitarlo. */
+export async function sembrarRacha(
+  correo: string,
+  childId: string,
+  streakDays: number,
+  lastPlayedDay: string,
+): Promise<void> {
+  const app = initializeApp(
+    { apiKey: "demo-api-key", projectId: "demo-numerario" },
+    `racha-${crypto.randomUUID()}`,
+  );
+  try {
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
+
+    const db = getFirestore(app);
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+    await setDoc(doc(db, "parents", user.uid, "children", childId), { streakDays, lastPlayedDay }, { merge: true });
+  } finally {
+    await deleteApp(app);
+  }
+}
+
 /** Otorga directo en Firestore una insignia ya ganada, sin recorrer el evento real que la dispara. */
 export async function otorgarInsignia(correo: string, childId: string, badgeId: string): Promise<void> {
   const app = initializeApp(

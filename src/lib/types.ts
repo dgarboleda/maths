@@ -31,6 +31,11 @@ export interface ChildProfile {
    *  Fase 30, docs/plan-jugabilidad.md §4). Array corto, aditivo: nunca se
    *  quita nada. `replayStoryBeats: true` lo ignora por completo. */
   seenStoryIds?: string[];
+  /** Racha de días jugados (Fase 35, docs/plan-jugabilidad.md §9,
+   *  `lib/streak.ts`) — solo suma; un día perdido reinicia `streakDays` a
+   *  1, nunca a 0. `lastPlayedDay` es un `todayKey()` (mastery.ts). */
+  streakDays?: number;
+  lastPlayedDay?: string;
 }
 
 /** /curriculum/{skillId} — catálogo de solo lectura, sembrado aparte */

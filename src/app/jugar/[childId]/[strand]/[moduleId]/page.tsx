@@ -16,6 +16,7 @@ import { triggerConfetti } from "@/lib/confetti";
 import { playSound } from "@/lib/gameSound";
 import { awardBadge } from "@/lib/awardBadge";
 import { awardMasteryBadges } from "@/lib/masteryRewards";
+import { getRecord, recordIfBest, type PersonalRecord } from "@/lib/records";
 import { GameShell, TabNav, tabId, tabPanelId } from "@/components/GameShell";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
@@ -60,6 +61,7 @@ export default function TopicPage() {
   const [soundOn, toggleSound] = useSoundPreference();
   const [activeTab, setActiveTab] = useState<TabId>("concepto");
   const [celebration, setCelebration] = useState<{ label: string; zoneName: string } | null>(null);
+  const [coheteRecord, setCoheteRecord] = useState<PersonalRecord | null>(null);
   const placementPending = useRequirePlacement(params.childId, child, router);
 
   const skillKey = mod?.id ?? "";
@@ -94,6 +96,30 @@ export default function TopicPage() {
       cancelled = true;
     };
   }, [parentId, params.childId, mod, skillKey]);
+
+  useEffect(() => {
+    if (!parentId || !mod) return;
+    let cancelled = false;
+    getFirebase()
+      .then(({ db, firestore }) => getRecord(firestore, db, parentId, params.childId, "cohete", mod.id))
+      .then((record) => {
+        if (!cancelled) setCoheteRecord(record);
+      })
+      .catch((err) => console.error("No se pudo cargar la marca del Cohete", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [parentId, params.childId, mod]);
+
+  function handleCoheteGameOver(correctCount: number) {
+    if (!parentId || !mod) return;
+    getFirebase()
+      .then(({ db, firestore }) =>
+        recordIfBest(firestore, db, parentId, params.childId, "cohete", mod.id, correctCount, coheteRecord),
+      )
+      .then((next) => setCoheteRecord(next))
+      .catch((err) => console.error("No se pudo guardar la marca del Cohete", err));
+  }
 
   async function submitAnswer(correct: boolean, hintsUsed = 0): Promise<number> {
     if (!parentId || !mod) return 0;
@@ -293,7 +319,14 @@ export default function TopicPage() {
       )}
       {activeTab === "cohete" && (
         <div {...panelProps("cohete")}>
-          <CoheteGeneric moduleId={mod.id} soundOn={soundOn} onAnswer={submitAnswer} onWin={handleCoheteWin} />
+          <CoheteGeneric
+            moduleId={mod.id}
+            soundOn={soundOn}
+            onAnswer={submitAnswer}
+            onWin={handleCoheteWin}
+            bestScore={coheteRecord?.best}
+            onGameOver={handleCoheteGameOver}
+          />
         </div>
       )}
       {activeTab === "ejemplos" && (
