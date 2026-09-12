@@ -9,7 +9,7 @@ import type { Pose } from "@/lib/level/runtime/useAlexMovement";
 import { RuntimeEntity } from "./RuntimeEntity";
 import { RuntimeZones } from "./RuntimeZones";
 import { RuntimePlayer } from "./RuntimePlayer";
-import { BackgroundLayers } from "./BackgroundLayers";
+import { BackgroundLayers, WeatherEffects } from "./BackgroundLayers";
 
 /**
  * El "mundo" del nivel — mismo esquema geométrico que `QuestScene.tsx:396-477`
@@ -168,6 +168,14 @@ export function RuntimeCanvas({
       </div>
 
       <BackgroundLayers layers={frontLayers} sceneBox={sceneBox} pose={pose} />
+      {/* Los efectos de clima se pintan UNA sola vez, por encima de todo
+          (fondo, capas y entidades) sin importar la profundidad de su capa:
+          a diferencia de la imagen decorativa de una capa (que sí puede
+          querer quedar detrás del fondo, p. ej. un cielo lejano), la lluvia/
+          niebla/etc. es una superposición ambiental de pantalla — ocultarla
+          detrás de un fondo opaco (el caso común) la volvía invisible sin
+          ningún aviso. */}
+      <WeatherEffects layers={layers} />
     </div>
   );
 }
