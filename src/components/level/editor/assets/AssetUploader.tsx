@@ -211,7 +211,7 @@ export function AssetUploader({
   const busy = status === "uploading";
 
   return (
-    <div className="space-y-3 rounded-lg border border-indigo-500/20 bg-slate-900/50 p-3 text-xs">
+    <div className="@container space-y-3 rounded-lg border border-indigo-500/20 bg-slate-900/50 p-3 text-xs">
       <div className="flex items-center gap-2">
         <UploadCloud className="size-4 shrink-0 text-cyan-300" aria-hidden="true" />
         <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Subir imagen</h3>
@@ -236,7 +236,16 @@ export function AssetUploader({
           {step === "kind" && (
             <fieldset>
               <legend className="mb-2 block text-slate-300">¿Qué vas a subir?</legend>
-              <div className="grid gap-2 sm:grid-cols-3">
+              {/* `@lg:` (container, no `sm:` de viewport) — reporte del usuario
+                  ("los textos se ven montados"): este mismo `AssetUploader`
+                  también se embebe angosto dentro de DepthPanel (imagen de
+                  una capa de parallax), y `sm:` mide el ancho de la VENTANA,
+                  no el de ese panel — en una ventana ancha forzaba 3 columnas
+                  apretadas en ~300px aunque el panel fuera angosto. `@lg`
+                  mide el contenedor real (`@container` en el div raíz de
+                  este componente, arriba), así que se apila en 1 columna ahí
+                  y sigue en 3 en el formulario ancho de "Nuevo nivel". */}
+              <div className="grid gap-2 @lg:grid-cols-3">
                 {(Object.keys(KIND_RADIO_LABEL) as AssetKind[]).map((k) => {
                   const info = KIND_INFO[k];
                   const Icon = info.icon;
