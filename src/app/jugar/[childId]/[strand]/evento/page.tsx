@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
@@ -9,11 +10,13 @@ import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { getStrand } from "@/lib/strands";
 import { isMastered, isUnlocked, modulesForStrand, type ModuleDef } from "@/lib/curriculum";
 import { getStrandNarrative } from "@/lib/narrative";
+import { ZONE_GUARDIAN } from "@/lib/world/guardians";
 import { GameShell } from "@/components/GameShell";
 import { MultiModuleChallenge } from "@/components/topic/MultiModuleChallenge";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
 import { useRequirePlacement } from "@/lib/useRequirePlacement";
+import { playSound } from "@/lib/gameSound";
 
 const MAX_CHALLENGES = 3;
 
@@ -112,6 +115,10 @@ export default function CodigoSecretoPage() {
   }
 
   const narrative = getStrandNarrative(strand.slug);
+  // Fase 34 (docs/plan-jugabilidad.md §8): "el boss de zona usa el guardián
+  // de ese hilo" — el mismo que ya se muestra corrompido en ZoneScene.tsx,
+  // ahora también acá, antes de enfrentarlo de verdad.
+  const guardian = ZONE_GUARDIAN[strand.slug];
 
   return (
     <GameShell
@@ -151,19 +158,31 @@ export default function CodigoSecretoPage() {
           </p>
         ) : (
           <div className="rounded-3xl border-2 border-indigo-500/30 bg-slate-900/60 p-6 shadow-xl">
+            {guardian && (
+              <div className="mb-4 flex flex-col items-center gap-2 text-center">
+                <Image src={guardian.art} alt="" aria-hidden="true" width={72} height={72} className="rounded-2xl border border-rose-400/30" />
+                <p className="font-display text-lg font-bold text-rose-200">{guardian.name}</p>
+                <p className="text-xs text-slate-400">{guardian.corruption}</p>
+              </div>
+            )}
             <MultiModuleChallenge
               childId={params.childId}
               modules={modules}
               soundOn={soundOn}
+              lives={3}
+              onDefeat={() => playSound("fail", soundOn)}
               theme={{
                 icon: "🔐",
                 title: "Código secreto",
                 tagline: `${narrative.zoneName}: descifra el código resolviendo cada reto.`,
-                closingMessage: "¡Código completo! Desbloqueaste el acceso.",
+                closingMessage: guardian?.defeated ?? "¡Código completo! Desbloqueaste el acceso.",
               }}
-              onStepResolved={(index, correct) => {
+              onStepResolved={(index, correct, problem) => {
+                // Fase 34: antes Math.random() — un código que no codificaba
+                // nada real. El dígito ahora sale del propio problema
+                // resuelto (Math.abs por si el generador admite negativos).
                 if (correct) {
-                  setDigits((prev) => ({ ...prev, [index]: Math.floor(Math.random() * 10) }));
+                  setDigits((prev) => ({ ...prev, [index]: Math.abs(problem.answer) % 10 }));
                 }
               }}
             />
