@@ -152,7 +152,18 @@ function PinDialog({
       );
       const { data } = await verify({ parentId, childId: child.id, pin });
       const { auth } = await getFirebase();
-      await signInWithCustomToken(auth, data.token);
+      const { user } = await signInWithCustomToken(auth, data.token);
+      // Bug real: navegar apenas resuelve `signInWithCustomToken` no
+      // alcanza a esperar los claims { role: "child", ... } del ID token —
+      // `AuthProvider` los lee con su propio `getIdTokenResult()` (async),
+      // y el listener interno de Firestore (que también depende de ese
+      // mismo token) podía terminar de refrescarse recién después de que
+      // `/jugar/{childId}` ya hubiera intentado leer/escribir, mostrando
+      // "permission-denied" en consola en el primer intento. Forzar la
+      // lectura acá, antes de navegar, deja el token con los claims listo
+      // en la misma caché de Auth que usan tanto `AuthProvider` como
+      // Firestore, sin agregar un `setTimeout` a ciegas.
+      await user.getIdTokenResult();
       router.push(`/jugar/${child.id}`);
     } catch (err) {
       const code = (err as { code?: string })?.code ?? "";
