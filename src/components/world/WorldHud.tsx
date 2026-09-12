@@ -33,6 +33,8 @@ export function WorldTopBar({
   onToggleSound,
   nextChallengeModule,
   nextReviewModule,
+  avatarHeadshotSrc,
+  onAvatarClick,
 }: {
   childId: string;
   childName: string;
@@ -49,6 +51,14 @@ export function WorldTopBar({
    *  producto.md §5.5) — opcional: las pantallas que todavía no calculan
    *  `nextReview()` simplemente no muestran este chip, sin romper nada. */
   nextReviewModule?: ModuleDef | null;
+  /** Fase 32 (docs/plan-jugabilidad.md §6): retrato del avatar elegido del
+   *  catálogo del Mundo (`useResolvedAvatar`) — `undefined` pinta el
+   *  retrato de fábrica de siempre (`Avatar.tsx`). */
+  avatarHeadshotSrc?: string;
+  /** Si se pasa, el retrato del HUD se vuelve un botón (el hub lo usa para
+   *  abrir `AvatarPickerDialog`) — `undefined` lo deja como el `<span>`
+   *  decorativo de siempre; Ciudad Central legacy nunca lo pasa. */
+  onAvatarClick?: () => void;
 }) {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-center px-3 pt-3 sm:px-4 sm:pt-4">
@@ -56,9 +66,24 @@ export function WorldTopBar({
         className="world-hud-panel pointer-events-auto flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-full bg-cover bg-center px-3 py-2 sm:gap-3 sm:px-4 lg:max-w-none"
         style={{ backgroundImage: "linear-gradient(rgba(15,12,35,0.82),rgba(15,12,35,0.82)), url(/illustrations/icon-hud-frame.webp)" }}
       >
-        <span className="anim-idle flex h-9 items-center justify-center rounded-2xl border border-white/15 bg-slate-900/80 px-1.5">
-          <Avatar className="h-8" title={`Personaje de ${childName}`} />
-        </span>
+        {onAvatarClick ? (
+          <button
+            type="button"
+            onClick={onAvatarClick}
+            aria-label={`Cambiar el avatar de ${childName}`}
+            // Sin `anim-idle` acá a propósito: un botón que nunca deja de
+            // rebotar es más difícil de acertar con precisión (y a Playwright
+            // no lo deja nunca "estable" para el clic) — la decoración de
+            // reposo queda solo para el `<span>` no interactivo de abajo.
+            className="flex h-9 items-center justify-center rounded-2xl border border-white/15 bg-slate-900/80 px-1.5 transition-colors hover:border-cyan-300/50"
+          >
+            <Avatar headshotSrc={avatarHeadshotSrc} className="h-8" title={`Personaje de ${childName}`} />
+          </button>
+        ) : (
+          <span className="anim-idle flex h-9 items-center justify-center rounded-2xl border border-white/15 bg-slate-900/80 px-1.5">
+            <Avatar headshotSrc={avatarHeadshotSrc} className="h-8" title={`Personaje de ${childName}`} />
+          </span>
+        )}
 
         <div>
           <h1 className="world-text-glow bg-gradient-to-r from-violet-300 to-fuchsia-300 bg-clip-text font-display text-base font-bold text-transparent sm:text-lg">

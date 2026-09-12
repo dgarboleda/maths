@@ -9,7 +9,7 @@ import { buildSalaConTerminal } from "../src/lib/level/templates/salaConTerminal
 import { insertLevel } from "../src/lib/level/persistence/levelRepository";
 import { ensureWorld, saveWorld } from "../src/lib/gameworld/persistence/worldRepository";
 import { DEFAULT_WORLD_RULES } from "../src/lib/gameworld/defaults";
-import type { WorldNode, WorldRules, WorldStory } from "../src/lib/gameworld/schema";
+import type { AvatarCatalog, WorldNode, WorldRules, WorldStory } from "../src/lib/gameworld/schema";
 
 export const CLAVE_PADRE = "secreto123";
 
@@ -178,6 +178,7 @@ export async function otorgarDominio(correo: string, childId: string, moduleIds:
 export async function sembrarMundoDeEjemplo(
   correo: string,
   storyOverride: Partial<WorldStory> = {},
+  avatarsOverride?: AvatarCatalog,
 ): Promise<{ levelId: string }> {
   const app = initializeApp(
     { apiKey: "demo-api-key", projectId: "demo-numerario" },
@@ -207,6 +208,7 @@ export async function sembrarMundoDeEjemplo(
     await saveWorld(firestoreFns, db, user.uid, {
       ...base,
       story: { ...base.story, ...storyOverride },
+      avatars: avatarsOverride ?? base.avatars,
       nodes: [...base.nodes.filter((n) => n.levelId !== node.levelId), node],
     });
 

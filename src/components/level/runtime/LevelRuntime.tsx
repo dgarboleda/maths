@@ -84,6 +84,11 @@ export function LevelRuntime({
   const [openDialogId, setOpenDialogId] = useState<string | null>(null);
   const [openChallengeId, setOpenChallengeId] = useState<string | null>(null);
   const [missionOpen, setMissionOpen] = useState(false);
+  // Fase 32 (docs/plan-jugabilidad.md §6): cuántas veces ya se resolvió
+  // (bien) cada módulo en esta sesión — mismo patrón que `repeatsToday` en
+  // [moduleId]/page.tsx, por moduleId en vez de estar cerrado sobre uno
+  // solo, porque acá un mismo nivel puede tener varios desafíos distintos.
+  const [moduleRepeats, setModuleRepeats] = useState<Record<string, number>>({});
   // Fase 31 (docs/plan-jugabilidad.md §5): id de la entidad que acaba de
   // recibir un clic — dispara `.anim-interact` en `RuntimeCanvas` por
   // 350ms (mismo largo que la animación en globals.css) y se limpia sola.
@@ -276,6 +281,10 @@ export function LevelRuntime({
   function handleChallengeResolved(result: { moduleId: string; updated: SkillProgress; correct: boolean; stars: number }) {
     setProgressBySkill((prev) => ({ ...prev, [result.moduleId]: result.updated }));
     setStreak((s) => (result.correct ? s + 1 : 0));
+    // Fase 32: solo cuenta aciertos, mismo criterio que [moduleId]/page.tsx
+    // — la próxima vez que se abra ESTE módulo (no antes: `submit()` ya usó
+    // el valor de este render para calcular las estrellas de este intento).
+    if (result.correct) setModuleRepeats((prev) => ({ ...prev, [result.moduleId]: (prev[result.moduleId] ?? 0) + 1 }));
     if (openChallengeId) {
       runtime.applyEvent(result.correct ? "ON_CHALLENGE_SUCCESS" : "ON_CHALLENGE_FAILED", openChallengeId, {
         correct: result.correct,
@@ -375,6 +384,7 @@ export function LevelRuntime({
           childId={childId}
           progressBySkill={progressBySkill}
           streak={streak}
+          repeatsToday={moduleRepeats[activePlacement.moduleId] ?? 0}
           soundOn={soundOn}
           rules={rules}
           onClose={() => setOpenChallengeId(null)}
