@@ -19,36 +19,42 @@ export interface ZoneGuardian {
   art: string;
 }
 
+// Fase 30 (docs/plan-jugabilidad.md §4): antes los 5 compartían la misma
+// imagen (`null-guardian.webp`), que ahora queda reservada para el
+// guardián del mundo (Khaos, Fase 34) — cada zona tiene su propio Null,
+// elegido por afinidad con su texto de corrupción ("drena" → drenador,
+// "corrompe" → corruptor, "deforma" → convertidor, "fragmenta" →
+// fragmentador, "enreda" → controlador).
 export const ZONE_GUARDIAN: Record<string, ZoneGuardian> = {
   aritmetica: {
     name: "El Apagador",
     corruption: "Drena el AXIA de Ciudad Central noche tras noche.",
     defeated: "El Apagador se disuelve: Ciudad Central vuelve a brillar por completo.",
-    art: "/illustrations/null-guardian.webp",
+    art: "/illustrations/null-drenador.webp",
   },
   algebra: {
     name: "El Predictor",
     corruption: "Corrompe los datos y las predicciones del Laboratorio Futuro.",
     defeated: "El Predictor se disuelve: el Laboratorio Futuro vuelve a calcular con AXIA puro.",
-    art: "/illustrations/null-guardian.webp",
+    art: "/illustrations/null-corruptor.webp",
   },
   geometria: {
     name: "La Distorsión",
     corruption: "Deforma el espacio del Desierto Geométrico.",
     defeated: "La Distorsión se disuelve: el Desierto Geométrico recupera su forma.",
-    art: "/illustrations/null-guardian.webp",
+    art: "/illustrations/null-convertidor.webp",
   },
   medicion: {
     name: "El Devorador",
     corruption: "Fragmenta los sistemas numéricos de las Cumbres.",
     defeated: "El Devorador se disuelve: las Cumbres Numéricas quedan restauradas.",
-    art: "/illustrations/null-guardian.webp",
+    art: "/illustrations/null-fragmentador.webp",
   },
   logica: {
     name: "El Enigma",
     corruption: "Enreda la lógica de las Islas del Pensamiento en acertijos sin salida.",
     defeated: "El Enigma se disuelve: las Islas del Pensamiento vuelven a tener sentido.",
-    art: "/illustrations/null-guardian.webp",
+    art: "/illustrations/null-controlador.webp",
   },
 };
 

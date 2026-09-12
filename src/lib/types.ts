@@ -26,6 +26,11 @@ export interface ChildProfile {
    *  nueva. `useResolvedAvatar` decide si sigue vigente (puede haberse
    *  vuelto a bloquear, o haberse borrado del catálogo). */
   avatarId?: string;
+  /** Ids sintéticos de `StoryBeat[]` ya vistos ("world:intro",
+   *  "world:outro", "chapter:{id}:intro" — ver `gameworld/storyProgress.ts`,
+   *  Fase 30, docs/plan-jugabilidad.md §4). Array corto, aditivo: nunca se
+   *  quita nada. `replayStoryBeats: true` lo ignora por completo. */
+  seenStoryIds?: string[];
 }
 
 /** /curriculum/{skillId} — catálogo de solo lectura, sembrado aparte */

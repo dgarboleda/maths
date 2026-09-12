@@ -9,7 +9,7 @@ import { buildSalaConTerminal } from "../src/lib/level/templates/salaConTerminal
 import { insertLevel } from "../src/lib/level/persistence/levelRepository";
 import { ensureWorld, saveWorld } from "../src/lib/gameworld/persistence/worldRepository";
 import { DEFAULT_WORLD_RULES } from "../src/lib/gameworld/defaults";
-import type { WorldNode, WorldRules } from "../src/lib/gameworld/schema";
+import type { WorldNode, WorldRules, WorldStory } from "../src/lib/gameworld/schema";
 
 export const CLAVE_PADRE = "secreto123";
 
@@ -175,7 +175,10 @@ export async function otorgarDominio(correo: string, childId: string, moduleIds:
  * de a dónde manda el despachador `/jugar/{childId}`. El Mundo es del
  * padre (`parents/{parentId}/world`), no del hijo: no recibe `childId`.
  */
-export async function sembrarMundoDeEjemplo(correo: string): Promise<{ levelId: string }> {
+export async function sembrarMundoDeEjemplo(
+  correo: string,
+  storyOverride: Partial<WorldStory> = {},
+): Promise<{ levelId: string }> {
   const app = initializeApp(
     { apiKey: "demo-api-key", projectId: "demo-numerario" },
     `mundo-${crypto.randomUUID()}`,
@@ -203,6 +206,7 @@ export async function sembrarMundoDeEjemplo(correo: string): Promise<{ levelId: 
     const base = await ensureWorld(firestoreFns, db, user.uid, user.uid);
     await saveWorld(firestoreFns, db, user.uid, {
       ...base,
+      story: { ...base.story, ...storyOverride },
       nodes: [...base.nodes.filter((n) => n.levelId !== node.levelId), node],
     });
 
