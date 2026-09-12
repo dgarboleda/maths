@@ -94,10 +94,14 @@ export function formatAnswer(problem: Problem, answer: number): string | number 
   return answer;
 }
 
-/** Distractores numéricos cercanos a la respuesta correcta, sin negativos. */
-export function choiceSet(answer: number, spread: number): number[] {
+/** Distractores numéricos cercanos a la respuesta correcta, sin negativos.
+ *  `count` (default 3, el tamaño de siempre) es el total de valores
+ *  devueltos, respuesta incluida — los minijuegos arcade (Fase 36,
+ *  docs/plan-minijuegos-retro.md) necesitan más candidatos simultáneos en
+ *  pantalla que una ficha de opción múltiple normal. */
+export function choiceSet(answer: number, spread: number, count = 3): number[] {
   const options = new Set<number>([answer]);
-  while (options.size < 3) {
+  while (options.size < count) {
     const candidate = answer + randInt(-spread, spread);
     if (candidate >= 0) options.add(candidate);
   }

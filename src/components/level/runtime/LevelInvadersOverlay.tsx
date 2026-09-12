@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { CoheteGeneric } from "@/components/topic/CoheteGeneric";
+import { InvadersGeneric } from "@/components/topic/InvadersGeneric";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
 import { getFirebase } from "@/lib/firebase";
 import { getModule, missingPrerequisites } from "@/lib/curriculum";
@@ -13,22 +13,17 @@ import type { ChallengePlacement, LevelEntity } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
 
 /**
- * Actividad "cohete" de un `ChallengePlacement` — Fase 33 (docs/plan-
- * jugabilidad.md §7). `CoheteGeneric` reporta con `onAnswer(correct) =>
- * Promise<estrellas>`, un contrato distinto al de `PuzzleOverlay`
- * (`recordAttempt`/`awardBadges` inyectados) — acá se adapta uno al otro:
- * cada respuesta de la carrera pasa por el MISMO `recordModuleAttempt` (o su
- * sustituto de Play Test/sandbox, la prop de siempre) que ya usa
- * `PuzzleOverlay`, así que el intento se guarda exactamente donde se
- * guardaría jugando la ficha normal — y el sandbox del Play Test lo
- * intercepta igual de bien: es el mismo mecanismo, no uno nuevo.
+ * Actividad "invaders" de un `ChallengePlacement` — Fase 40 (docs/plan-
+ * minijuegos-retro.md), mismo patrón que `LevelNumberPacOverlay.tsx` (Fase
+ * 39): `InvadersGeneric` reporta con `onAnswer(correct) => Promise<estrellas>`,
+ * acá se adapta al mismo `recordModuleAttempt` (o su sustituto de Play
+ * Test/sandbox) que usa `PuzzleOverlay`.
  *
- * A diferencia de `PuzzleOverlay`, ganar la carrera es el único desenlace
- * que resuelve el desafío del nivel (`onResolved`) — perder por tiempo dejar
- * la carrera sin resolver, exactamente como cerrar una ficha sin responder:
- * `CoheteGeneric` ya ofrece "Jugar de nuevo" por su cuenta.
+ * Ganar (repeler todas las oleadas) es el único desenlace que resuelve el
+ * desafío del nivel (`onResolved`) — agotar las vidas deja el desafío sin
+ * resolver, igual que cerrar una ficha sin responder.
  */
-export function LevelCoheteOverlay({
+export function LevelInvadersOverlay({
   placement,
   entity,
   parentId,
@@ -58,17 +53,9 @@ export function LevelCoheteOverlay({
   const titleId = useId();
   const { dialogRef, handleKeyDown } = useDialogFocus(onClose);
   const mod = getModule(placement.moduleId);
-  // Progreso "vivo" de este módulo durante la carrera: cada `onAnswer` lo
-  // actualiza — sin esto, un acierto a mitad de carrera nunca vería el
-  // acierto anterior y `wasMastered`/streak de mastery.ts quedarían mal
-  // calculados a partir del segundo intento.
   const liveProgressRef = useRef(progressBySkill);
   const totalStarsRef = useRef(0);
   const resolvedRef = useRef(false);
-  // Fase 35 (docs/plan-jugabilidad.md §9): `recordAttempt` presente = Play
-  // Test (mismo criterio que LevelRuntime.tsx pasando
-  // `sandboxServices?.recordAttempt`) — igual que el intento no se guarda de
-  // verdad, la marca personal tampoco: ni se lee ni se escribe.
   const isSandbox = Boolean(recordAttempt);
   const [record, setRecord] = useState<PersonalRecord | null>(null);
 
@@ -76,11 +63,11 @@ export function LevelCoheteOverlay({
     if (isSandbox || !mod) return;
     let cancelled = false;
     getFirebase()
-      .then(({ db, firestore }) => getRecord(firestore, db, parentId, childId, "cohete", mod.id))
+      .then(({ db, firestore }) => getRecord(firestore, db, parentId, childId, "invaders", mod.id))
       .then((r) => {
         if (!cancelled) setRecord(r);
       })
-      .catch((err) => console.error("No se pudo cargar la marca del Cohete", err));
+      .catch((err) => console.error("No se pudo cargar la marca de Invasión numérica", err));
     return () => {
       cancelled = true;
     };
@@ -89,9 +76,9 @@ export function LevelCoheteOverlay({
   function handleGameOver(correctCount: number) {
     if (isSandbox || !mod) return;
     getFirebase()
-      .then(({ db, firestore }) => recordIfBest(firestore, db, parentId, childId, "cohete", mod.id, correctCount, record))
+      .then(({ db, firestore }) => recordIfBest(firestore, db, parentId, childId, "invaders", mod.id, correctCount, record))
       .then((next) => setRecord(next))
-      .catch((err) => console.error("No se pudo guardar la marca del Cohete", err));
+      .catch((err) => console.error("No se pudo guardar la marca de Invasión numérica", err));
   }
 
   if (!mod) return null;
@@ -136,9 +123,6 @@ export function LevelCoheteOverlay({
   }
 
   function handleWin() {
-    // `CoheteGeneric` puede volver a llamar `onWin` si el jugador reinicia
-    // y gana de nuevo dentro de la misma sesión de overlay — el desafío del
-    // nivel solo se resuelve una vez.
     if (resolvedRef.current) return;
     resolvedRef.current = true;
     onResolved({ moduleId: mod!.id, updated: liveProgressRef.current[mod!.id], correct: true, stars: totalStarsRef.current });
@@ -160,7 +144,7 @@ export function LevelCoheteOverlay({
             Salir
           </button>
         </div>
-        <CoheteGeneric
+        <InvadersGeneric
           moduleId={mod.id}
           soundOn={soundOn}
           onAnswer={onAnswer}
