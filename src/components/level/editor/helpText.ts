@@ -31,6 +31,7 @@ export const HELP: Record<string, HelpEntry> = {
   "bottombar.grid": { text: "Muestra una rejilla de referencia sobre el lienzo (solo visual, no afecta el juego)." },
   "bottombar.snap": { text: "Ajusta los puntos que arrastrás a la rejilla más cercana, para alinear más fácil." },
   "bottombar.debug": { text: "Dibuja la malla de navegación real (por dónde puede caminar Alex) sobre la escena." },
+  "bottombar.layers": { text: "Muestra u oculta la caja de herramientas flotante de capas de fondo (parallax y clima)." },
   "bottombar.simplify": { text: "Quita vértices colineales o duplicados sin cambiar la forma del polígono." },
   "bottombar.play": { text: "Juega el nivel tal como está guardado, sin salir del editor.", shortcut: "P" },
 
@@ -93,6 +94,9 @@ export const HELP: Record<string, HelpEntry> = {
   },
   "depth.addFilter": { text: "Agrega un filtro de iluminación en blanco — elegí cuándo se activa y qué CSS aplica." },
   "depth.removeFilter": { text: "Elimina este filtro de iluminación." },
+  "depth.toggleLayer": { text: "Contrae o expande los detalles de esta capa." },
+  "depth.dragLayer": { text: "Arrastrá para reordenar: arriba las capas de más atrás (fondo), abajo las que quedan más adelante." },
+  "depth.renameLayer": { text: "Nombre opcional para identificar la capa — no afecta el juego." },
 
   // ── Biblioteca de imágenes ──
   "asset.upload": { text: "Sube una imagen nueva a tu biblioteca." },

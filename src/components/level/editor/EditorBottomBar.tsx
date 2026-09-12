@@ -1,6 +1,7 @@
 "use client";
 
-import { Bug, Grid3x3, HelpCircle, Magnet, Minus, Plus, Play, Sparkles } from "lucide-react";
+import { useSyncExternalStore } from "react";
+import { Bug, Grid3x3, HelpCircle, Layers, Magnet, Minus, Plus, Play, Sparkles } from "lucide-react";
 import { simplifyPolygon } from "@/lib/world/navmesh";
 import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -9,12 +10,14 @@ import { useLevelEditor } from "./LevelEditorProvider";
 import { useStartPlaytest } from "./usePlaytestGate";
 import { help } from "./helpText";
 import { toggleHelpOverlay } from "./helpOverlayStore";
+import { getLayersToolboxOpen, subscribeLayersToolbox, toggleLayersToolbox } from "./layersToolboxStore";
 
 /** Barra inferior — docs/level-editor-plan.md §5.1. */
 export function EditorBottomBar() {
   const { state, dispatch } = useLevelEditor();
   const selectedPolygon = findSelectedPolygon(state.level, state.selection);
   const playtest = useStartPlaytest();
+  const layersToolboxOpen = useSyncExternalStore(subscribeLayersToolbox, getLayersToolboxOpen, () => false);
 
   function zoomStep(factor: number) {
     dispatch({ type: "SET_VIEWPORT", viewport: { zoom: state.viewport.zoom * factor } });
@@ -67,6 +70,16 @@ export function EditorBottomBar() {
         showLabel
         active={state.debugNav}
         onClick={() => dispatch({ type: "TOGGLE_DEBUG_NAV" })}
+      />
+
+      <IconButton
+        icon={Layers}
+        label="Capas"
+        tooltip={help("bottombar.layers").text}
+        side="top"
+        showLabel
+        active={layersToolboxOpen}
+        onClick={toggleLayersToolbox}
       />
 
       {selectedPolygon && (

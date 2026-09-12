@@ -23,6 +23,7 @@ import { IssuesPanel } from "./IssuesPanel";
 import { ScenePanel } from "./ScenePanel";
 import { ExitEditor } from "./ExitEditor";
 import { HelpOverlay } from "./HelpOverlay";
+import { LayersToolbox } from "./LayersToolbox";
 
 /**
  * Play Test (Fase 11, §11.2 del plan): monta el mismo `LevelRuntime` que el
@@ -218,6 +219,7 @@ export function LevelEditorScreen() {
       </div>
 
       {!inPlaytest && <EditorBottomBar />}
+      {!inPlaytest && <LayersToolbox />}
 
       {conflict && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 p-4">
