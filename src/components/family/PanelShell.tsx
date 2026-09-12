@@ -27,19 +27,40 @@ const NAV = [
  * Monta `FamilyProvider` una sola vez para toda la sección `/panel/*`.
  */
 export function PanelShell({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
+    if (loading) return;
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    // Bug real: `/panel/**` es solo del padre, pero antes solo chequeaba
+    // "hay alguien logueado" — una sesión propia de un hijo (custom token
+    // de /entrar/[parentId], p. ej. una pestaña vieja que nunca cerró
+    // sesión) igual tiene `user` no nulo, así que el panel renderizaba como
+    // si fuera el padre y cada lectura de Firestore fallaba después con
+    // "Missing or insufficient permissions" (las reglas sí distinguen el
+    // rol, aunque esta pantalla no lo hiciera). Además, la persistencia de
+    // Firebase Auth es compartida entre pestañas del mismo origen: una
+    // sesión de hijo abierta en OTRA pestaña puede pisar silenciosamente la
+    // del padre acá. Cerrar esta sesión al detectarla evita que seguir
+    // "contaminando" otras pestañas.
+    if (role === "child") {
+      getFirebase()
+        .then(({ auth }) => signOut(auth))
+        .catch((err) => console.error("No se pudo cerrar la sesión del hijo", err));
+      router.replace("/login");
+    }
+  }, [user, loading, role, router]);
 
   function isActive(item: (typeof NAV)[number]): boolean {
     return item.exact ? pathname === item.href : pathname.startsWith(item.href);
   }
 
-  if (loading || !user) {
+  if (loading || !user || role === "child") {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-indigo-200">
