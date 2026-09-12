@@ -39,6 +39,36 @@ export const ACTIVITIES: ActivityDef[] = [
     label: "Cohete (contrarreloj)",
     hint: "Responder rápido antes de que se acabe el tiempo, para llegar a la meta.",
   },
+  {
+    id: "snake",
+    label: "Serpiente numérica",
+    hint: "Guiar una serpiente hasta el número que resuelve la operación — Fase 36, docs/plan-minijuegos-retro.md.",
+  },
+  {
+    id: "frogger",
+    label: "Estanque de operaciones",
+    hint: "Cruzar saltando al nenúfar con el resultado correcto, esquivando obstáculos — Fase 37, docs/plan-minijuegos-retro.md.",
+  },
+  {
+    id: "runner",
+    label: "Autopista de resultados",
+    hint: "Avance automático: cambiar de carril para cruzar la puerta con el resultado correcto — Fase 38, docs/plan-minijuegos-retro.md.",
+  },
+  {
+    id: "pacman",
+    label: "Laberinto de números",
+    hint: "Recoger el número que resuelve la operación, esquivando al fantasma — Fase 39, docs/plan-minijuegos-retro.md.",
+  },
+  {
+    id: "invaders",
+    label: "Invasión numérica",
+    hint: "Disparar al resultado correcto antes de que la oleada aterrice — Fase 40, docs/plan-minijuegos-retro.md.",
+  },
+  {
+    id: "breakout",
+    label: "Bloques numéricos",
+    hint: "Romper el bloque con el resultado correcto sin dejar caer la pelota — Fase 41, docs/plan-minijuegos-retro.md.",
+  },
 ];
 
 export const DEFAULT_ACTIVITY_ID = "puzzle";
