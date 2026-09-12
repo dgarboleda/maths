@@ -5,6 +5,7 @@ import { Link2, Unlink } from "lucide-react";
 import { allModules } from "@/lib/curriculum";
 import { STRANDS } from "@/lib/strands";
 import { newChallengeId } from "@/lib/level/ids";
+import { ACTIVITIES, DEFAULT_ACTIVITY_ID } from "@/lib/level/activities/registry";
 import type { Problem } from "@/lib/problem";
 import { QuestionWidget } from "@/components/topic/QuestionWidget";
 import { IconButton } from "@/components/ui/IconButton";
@@ -51,6 +52,26 @@ export function ChallengePicker({ entityId }: { entityId: string }) {
             <span className="ml-1.5 rounded bg-cyan-500/15 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-cyan-300">Tuyo</span>
           )}
         </p>
+        {/* Fase 33 (docs/plan-jugabilidad.md §7): qué actividad presenta este
+            desafío — "puzzle" (una ficha) por defecto, o una de las otras
+            del registro. `UPDATE_CHALLENGE` ya existía (editorReducer.ts). */}
+        <div className="space-y-1">
+          <label htmlFor={`actividad-${existing.id}`} className="block text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            Actividad
+          </label>
+          <select
+            id={`actividad-${existing.id}`}
+            value={existing.activityId}
+            onChange={(e) => dispatch({ type: "UPDATE_CHALLENGE", id: existing.id, patch: { activityId: e.target.value } })}
+            className="w-full rounded-md border border-indigo-500/20 bg-slate-950/60 px-2 py-1.5 text-slate-100 outline-none focus:border-cyan-400/50"
+          >
+            {ACTIVITIES.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="flex gap-1.5">
           <Tooltip content={help("challenge.change").text} side="top">
             <button
@@ -91,7 +112,7 @@ export function ChallengePicker({ entityId }: { entityId: string }) {
   const previewMod = allModules().find((m) => m.id === previewModuleId);
 
   function confirm(moduleId: string) {
-    dispatch({ type: "ADD_CHALLENGE", challenge: { id: newChallengeId(), moduleId, activityId: "puzzle", sourceEntityId: entityId } });
+    dispatch({ type: "ADD_CHALLENGE", challenge: { id: newChallengeId(), moduleId, activityId: DEFAULT_ACTIVITY_ID, sourceEntityId: entityId } });
     dispatch({ type: "SELECT", selection: { kind: "entity", id: entityId } });
     setPicking(false);
     setPreviewModuleId(null);

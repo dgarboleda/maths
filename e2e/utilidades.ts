@@ -231,6 +231,7 @@ export async function sembrarNivelConTerminal(
   correo: string,
   moduleId: string,
   rulesOverride: Partial<WorldRules> = {},
+  activityId = "puzzle",
 ): Promise<{ levelId: string }> {
   const app = initializeApp(
     { apiKey: "demo-api-key", projectId: "demo-numerario" },
@@ -251,7 +252,7 @@ export async function sembrarNivelConTerminal(
       alt: "Sala de prueba",
       projection: "flat",
     });
-    level.challenges = [{ ...level.challenges[0], moduleId }];
+    level.challenges = [{ ...level.challenges[0], moduleId, activityId }];
     await insertLevel(firestoreFns, db, user.uid, level);
 
     const node: WorldNode = {

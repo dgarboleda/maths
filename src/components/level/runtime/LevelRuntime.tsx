@@ -19,7 +19,7 @@ import { playSound } from "@/lib/gameSound";
 import { MissionRewardOverlay } from "@/components/world/MissionRewardOverlay";
 import { LevelHud } from "./LevelHud";
 import { RuntimeCanvas } from "./RuntimeCanvas";
-import { LevelChallengeOverlay } from "./LevelChallengeOverlay";
+import { LevelActivityOverlay } from "./LevelActivityOverlay";
 import { LevelDialogOverlay } from "./LevelDialogOverlay";
 import { TouchDPad } from "./TouchDPad";
 import { LevelMissionOverlay } from "./LevelMissionOverlay";
@@ -376,7 +376,7 @@ export function LevelRuntime({
       {missionOpen && mission && <LevelMissionOverlay progress={mission} onClose={() => setMissionOpen(false)} />}
 
       {activePlacement && (
-        <LevelChallengeOverlay
+        <LevelActivityOverlay
           key={activePlacement.id}
           placement={activePlacement}
           entity={level.entities.find((e) => e.id === activePlacement.sourceEntityId)}
