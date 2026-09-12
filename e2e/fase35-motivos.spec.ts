@@ -16,12 +16,29 @@ import {
  * reales las cablean con Firestore de verdad.
  */
 
+/** Zona horaria del contexto de navegador (`playwright.config.ts`) — `nextStreak`
+ *  (streak.ts) corre en el cliente y calcula "hoy"/"ayer" con esa zona, no con
+ *  la del proceso Node que corre este test. Cerca de la medianoche UTC ambas
+ *  difieren en un día calendario entero, así que hay que replicar la MISMA
+ *  zona acá para que "ayer" del test y "ayer" del navegador coincidan siempre. */
+const ZONA_NAVEGADOR = "America/Mexico_City";
+
 function ayer(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: ZONA_NAVEGADOR,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .formatToParts(new Date())
+    .reduce<Record<string, string>>((acc, p) => ({ ...acc, [p.type]: p.value }), {});
+  // Resta un día de calendario en UTC puro (sin DST) sobre los componentes ya
+  // leídos en la zona del navegador — no sobre la instancia de `Date` del
+  // proceso Node, que está en otra zona.
+  const d = new Date(Date.UTC(Number(partes.year), Number(partes.month) - 1, Number(partes.day) - 1));
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
