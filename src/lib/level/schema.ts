@@ -133,6 +133,19 @@ export interface LevelBackgroundLayer {
   offsetY: number;
   /** 0-1. */
   opacity: number;
+  /**
+   * % del ancho de la escena que ocupa la imagen — reporte del usuario ("le
+   * agregué una nube... ¿se puede cambiar su tamaño?"): antes la imagen de
+   * toda capa se estiraba con `object-cover` para cubrir la escena entera,
+   * sin forma de usarla como un elemento decorativo suelto (una nube, no un
+   * segundo fondo). `100` (default de una capa nueva) reproduce ese
+   * comportamiento exacto — cubre todo, igual que siempre — así que niveles
+   * ya guardados (sin este campo) se siguen viendo idénticos. Por debajo de
+   * `100` la imagen se dibuja a su tamaño natural (relación de aspecto
+   * intacta, sin recorte) centrada horizontalmente, con `offsetY` como
+   * posición vertical.
+   */
+  scale: number;
   /** Si la imagen se repite horizontalmente al desplazarse. */
   loop: boolean;
   /**

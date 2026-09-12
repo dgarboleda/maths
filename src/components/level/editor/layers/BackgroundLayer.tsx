@@ -45,6 +45,7 @@ export function BackgroundLayer({ background }: { background: LevelBackground })
   // vería más tenue en el editor que jugando, un WYSIWYG mentiroso.
   function renderLayer(layer: LevelBackgroundLayer) {
     if (!layer.src && layer.effect === "none") return null;
+    const scale = layer.scale ?? 100;
     return (
       <div key={layer.id} className="absolute inset-0 overflow-hidden">
         {layer.src && (
@@ -53,8 +54,12 @@ export function BackgroundLayer({ background }: { background: LevelBackground })
             src={layer.src}
             alt=""
             aria-hidden="true"
-            className="absolute inset-x-0 block w-full object-cover"
-            style={{ top: `${layer.offsetY}%`, height: "100%", opacity: layer.opacity }}
+            className={scale >= 100 ? "absolute inset-x-0 block w-full object-cover" : "absolute block"}
+            style={
+              scale >= 100
+                ? { top: `${layer.offsetY}%`, height: "100%", opacity: layer.opacity }
+                : { left: "50%", top: `${layer.offsetY}%`, width: `${scale}%`, transform: "translateX(-50%)", opacity: layer.opacity }
+            }
           />
         )}
         <WeatherEffect effect={layer.effect} />

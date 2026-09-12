@@ -101,6 +101,7 @@ export function DepthPanel() {
       depth: 1.2,
       offsetY: 0,
       opacity: 1,
+      scale: 100,
       loop: false,
       effect: "none",
     };
@@ -322,6 +323,23 @@ export function DepthPanel() {
                   ⚠ Con menos de 1 esta capa queda DETRÁS del fondo — invisible si el fondo es una imagen opaca de punta a punta (lo más común). Usá más de 1 para que se vea encima.
                 </p>
               )}
+            </label>
+            <label className="block">
+              <span className={LABEL_CLASS}>Escala (% del ancho de la escena)</span>
+              <input
+                type="number"
+                step="5"
+                min="1"
+                max="100"
+                className={INPUT_CLASS}
+                value={layer.scale ?? 100}
+                onChange={(e) => updateLayer(layer.id, { scale: Number(e.target.value) })}
+              />
+              <p className="mt-1 text-slate-400">
+                {(layer.scale ?? 100) >= 100
+                  ? "100 = cubre toda la escena, de punta a punta (como el fondo)."
+                  : "Menos de 100 = tamaño natural, centrada — un elemento suelto (una nube, un cartel), no un segundo fondo."}
+              </p>
             </label>
             <div className="grid grid-cols-2 gap-2">
               <label className="block">

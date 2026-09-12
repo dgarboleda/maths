@@ -13,6 +13,13 @@ import type { Pose } from "@/lib/level/runtime/useAlexMovement";
  * intermedios/mayores se mueven menos/más que la cámara. Sin capas con
  * imagen, este componente no pinta nada.
  *
+ * `layer.scale` (reporte del usuario: "le agregué una nube... ¿se puede
+ * cambiar su tamaño?") decide cómo se dibuja la imagen DENTRO de esa caja:
+ * `>= 100` (default de una capa nueva) la estira con `object-cover` para
+ * cubrir la caja entera, igual que siempre; por debajo, se dibuja a su
+ * tamaño natural (sin recortar), centrada horizontalmente, como un elemento
+ * suelto en vez de un segundo fondo.
+ *
  * El EFECTO de clima de cada capa (`layer.effect`) NO se pinta acá — ver
  * `WeatherEffects` más abajo. Antes vivía dentro de esta misma caja paneada,
  * y con cualquier `depth` distinto de 1 quedaba desalineada del viewport en
@@ -29,6 +36,7 @@ export function BackgroundLayers({ layers, sceneBox, pose }: { layers: LevelBack
       {withImage.map((layer) => {
         const left = parallaxAxis(sceneBox.left, sceneBox.width, pose.x, layer.depth);
         const top = parallaxAxis(sceneBox.top, sceneBox.height, pose.y, layer.depth);
+        const scale = layer.scale ?? 100;
         return (
           <div key={layer.id} className="pointer-events-none absolute overflow-hidden" style={{ left, top, width: sceneBox.width, height: sceneBox.height }}>
             {/* eslint-disable-next-line @next/next/no-img-element -- tamaño nativo variable por nivel, mismo criterio que el fondo principal */}
@@ -36,8 +44,12 @@ export function BackgroundLayers({ layers, sceneBox, pose }: { layers: LevelBack
               src={layer.src}
               alt=""
               aria-hidden="true"
-              className="block w-full object-cover"
-              style={{ position: "relative", top: `${layer.offsetY}%`, height: "100%", opacity: layer.opacity }}
+              className={scale >= 100 ? "block w-full object-cover" : "absolute block"}
+              style={
+                scale >= 100
+                  ? { position: "relative", top: `${layer.offsetY}%`, height: "100%", opacity: layer.opacity }
+                  : { left: "50%", top: `${layer.offsetY}%`, width: `${scale}%`, transform: "translateX(-50%)", opacity: layer.opacity }
+              }
             />
           </div>
         );

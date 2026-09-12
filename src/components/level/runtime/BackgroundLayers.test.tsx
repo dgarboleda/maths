@@ -16,7 +16,7 @@ import type { LevelBackgroundLayer } from "@/lib/level/schema";
 const sceneBox = { left: -200, top: -50, width: 2000, height: 1200 };
 
 function layer(overrides: Partial<LevelBackgroundLayer> = {}): LevelBackgroundLayer {
-  return { id: "capa-1", src: "", depth: 0.5, offsetY: 0, opacity: 1, loop: false, effect: "none", ...overrides };
+  return { id: "capa-1", src: "", depth: 0.5, offsetY: 0, opacity: 1, scale: 100, loop: false, effect: "none", ...overrides };
 }
 
 describe("BackgroundLayers", () => {
@@ -28,6 +28,19 @@ describe("BackgroundLayers", () => {
   test("pinta la imagen de una capa con src, paneada según su profundidad", () => {
     const { container } = render(<BackgroundLayers layers={[layer({ src: "https://example.com/nube.webp" })]} sceneBox={sceneBox} pose={{ x: 50, y: 50, facing: "right" }} />);
     expect(container.querySelector("img")).toHaveAttribute("src", "https://example.com/nube.webp");
+  });
+
+  test("con scale 100 (default) la imagen cubre la caja entera (object-cover)", () => {
+    const { container } = render(<BackgroundLayers layers={[layer({ src: "https://example.com/nube.webp", scale: 100 })]} sceneBox={sceneBox} pose={{ x: 50, y: 50, facing: "right" }} />);
+    expect(container.querySelector("img")).toHaveClass("object-cover", "w-full");
+  });
+
+  test("con scale menor a 100 (reporte: 'la nube cubre toda la imagen, ¿se puede cambiar su tamaño?') la imagen se achica y centra en vez de cubrir todo", () => {
+    const { container } = render(<BackgroundLayers layers={[layer({ src: "https://example.com/nube.webp", scale: 30 })]} sceneBox={sceneBox} pose={{ x: 50, y: 50, facing: "right" }} />);
+    const img = container.querySelector("img") as HTMLElement;
+    expect(img).not.toHaveClass("object-cover");
+    expect(img.style.width).toBe("30%");
+    expect(img.style.left).toBe("50%");
   });
 });
 

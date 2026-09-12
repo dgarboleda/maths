@@ -59,4 +59,17 @@ describe("DepthPanel — profundidad por defecto de una capa nueva", () => {
 
     expect(screen.getByText(/queda DETRÁS del fondo/)).toBeInTheDocument();
   });
+
+  test("una capa nueva se crea con escala 100 (cubre toda la escena, como antes)", async () => {
+    const user = userEvent.setup();
+    render(
+      <TestLevelEditorProvider level={emptyTestLevel()}>
+        <DepthPanel />
+      </TestLevelEditorProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Añadir capa" }));
+
+    expect(screen.getByLabelText(/Escala/)).toHaveValue(100);
+  });
 });
