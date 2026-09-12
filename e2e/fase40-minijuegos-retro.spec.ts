@@ -25,9 +25,13 @@ test.describe("Actividades del nivel — Invasión numérica", () => {
     await page.getByRole("button", { name: "¡Empezar!" }).click();
 
     // Juego real, sin apuntar a ganar: dispara una vez contra el generador
-    // real de preguntas, para confirmar que el cableado no revienta.
+    // real de preguntas, para confirmar que el cableado no revienta. Por
+    // teclado en vez de clickear el botón "Disparar (espacio)": ese botón
+    // es `hidden lg:block` (en móvil se usa el pad táctil de
+    // `HorizontalPad`, con otro aria-label), así que en el proyecto
+    // Playwright "móvil" nunca es visible y el test colgaba.
     await expect(page.getByText(/Vidas:/)).toBeVisible();
-    await page.getByRole("button", { name: "Disparar (espacio)" }).click();
+    await page.keyboard.press("Space");
     await expect(page.getByText(/Vidas:/)).toBeVisible();
 
     await page.getByRole("button", { name: "Salir" }).click();
