@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { X } from "lucide-react";
 import { loadImageSize } from "@/lib/level/backgroundCatalog";
 import { mergeBackgroundOptions, type MergedBackgroundOption } from "@/lib/level/assets/backgroundOptions";
 import type { AssetKind } from "@/lib/level/assets/imageRules";
+import { help } from "../helpText";
 import { useLevelAssets } from "./useLevelAssets";
+import { useAssetDeletion } from "./useAssetDeletion";
+import { DeleteAssetDialog } from "./DeleteAssetDialog";
 import { AssetUploader } from "./AssetUploader";
 
 export interface ResolvedBackgroundSelection {
@@ -65,6 +69,11 @@ export function BackgroundPicker({
   const [showUploader, setShowUploader] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [resolving, setResolving] = useState<string | null>(null);
+  // Borrar una imagen desde acá (docs/asset-management-plan.md §G riesgo
+  // R4): mismo mecanismo que `AssetLibrary`, la única biblioteca completa
+  // del editor — antes de esta fase, esta pantalla (el selector embebido en
+  // "Nuevo nivel"/cambiar fondo) no ofrecía borrar en absoluto.
+  const { pendingDelete, busyId, actionError, requestDelete, confirmDelete, cancelDelete } = useAssetDeletion(parentId, () => void reload());
 
   const merged = mergeBackgroundOptions([], assets ?? [], { for: forKind, selectedSrc: value || undefined });
 
@@ -112,15 +121,38 @@ export function BackgroundPicker({
 
   function Tile({ option }: { option: MergedBackgroundOption }) {
     const checked = value === option.src;
+    // Solo las imágenes propias del padre se pueden borrar acá — "De
+    // fábrica" está deliberadamente desactivado (ver comentario de arriba),
+    // pero si algún día vuelve a mostrarse, esas no son del padre y no
+    // tienen ficha en `levelAssets` para borrar.
+    const asset = option.source === "parent" ? assets?.find((a) => a.url === option.src) : undefined;
     return (
       <label
-        className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-2 text-center transition-colors ${
+        className={`group relative flex cursor-pointer flex-col gap-1 rounded-xl border p-2 text-center transition-colors ${
           checked ? "border-cyan-400/60 bg-cyan-500/10" : "border-indigo-500/20 bg-slate-900/40 hover:border-indigo-400/40"
         }`}
       >
         <input type="radio" name={groupName} value={option.src} checked={checked} onChange={() => void select(option)} className="sr-only" />
         {/* eslint-disable-next-line @next/next/no-img-element -- miniatura, tamaño variable por fondo */}
         <img src={option.thumbSrc} alt="" aria-hidden="true" className={`${thumbSize} w-full rounded-lg object-cover`} />
+        {asset && (
+          <button
+            type="button"
+            aria-label={`Borrar ${asset.label}`}
+            title={help("asset.delete").text}
+            disabled={busyId === asset.id}
+            onClick={(e) => {
+              // No debe alcanzar al <label>: seleccionaría esta opción como
+              // fondo justo antes de borrarla.
+              e.preventDefault();
+              e.stopPropagation();
+              void requestDelete(asset, e.currentTarget);
+            }}
+            className="absolute right-1 top-1 rounded-full bg-slate-950/70 p-1 text-slate-300 opacity-0 transition-opacity hover:bg-rose-600 hover:text-white focus-visible:opacity-100 disabled:opacity-40 group-hover:opacity-100"
+          >
+            <X className="size-3" aria-hidden="true" />
+          </button>
+        )}
         <span className="truncate text-[11px] font-bold text-slate-200">{option.label}</span>
         {resolving === option.src && <span className="text-[10px] text-slate-400">Cargando…</span>}
       </label>
@@ -203,6 +235,13 @@ export function BackgroundPicker({
           )}
         </fieldset>
       )}
+
+      {actionError && (
+        <p role="alert" className="text-[11px] text-rose-300">
+          {actionError}
+        </p>
+      )}
+      {pendingDelete && <DeleteAssetDialog pendingDelete={pendingDelete} onCancel={cancelDelete} onConfirm={() => void confirmDelete()} />}
     </div>
   );
 }
