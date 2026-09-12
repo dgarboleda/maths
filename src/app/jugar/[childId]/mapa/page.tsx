@@ -129,9 +129,13 @@ export default function JugarMapaPage() {
           collection(db, "parents", parentId, "children", params.childId, "redemptionRequests"),
           orderBy("createdAt", "desc"),
         );
-        unsubscribe = onSnapshot(q, (snap) => {
-          setRequests(snap.docs.map((d) => ({ id: d.id, ...(d.data() as RedemptionRequest) })));
-        });
+        unsubscribe = onSnapshot(
+          q,
+          (snap) => {
+            setRequests(snap.docs.map((d) => ({ id: d.id, ...(d.data() as RedemptionRequest) })));
+          },
+          (err) => console.error("No se pudieron escuchar los canjes", err),
+        );
       })
       .catch((err) => console.error("No se pudieron cargar los canjes", err));
     return () => {

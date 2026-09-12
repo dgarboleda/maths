@@ -34,16 +34,20 @@ export function useTotalStars(
       .then(({ db, firestore }) => {
         if (cancelled) return;
         const ref = firestore.doc(db, "parents", parentId, "children", childId, "starBalance", "total");
-        unsubscribe = firestore.onSnapshot(ref, (snap) => {
-          if (snap.exists()) {
-            setBalance({ key: `${parentId}/${childId}`, total: (snap.data().total as number | undefined) ?? 0 });
-          } else if (!seeding) {
-            seeding = true;
-            ensureStarBalanceSeeded(firestore, db, parentId, childId).catch((err) =>
-              console.error("No se pudo migrar el saldo de estrellas", err),
-            );
-          }
-        });
+        unsubscribe = firestore.onSnapshot(
+          ref,
+          (snap) => {
+            if (snap.exists()) {
+              setBalance({ key: `${parentId}/${childId}`, total: (snap.data().total as number | undefined) ?? 0 });
+            } else if (!seeding) {
+              seeding = true;
+              ensureStarBalanceSeeded(firestore, db, parentId, childId).catch((err) =>
+                console.error("No se pudo migrar el saldo de estrellas", err),
+              );
+            }
+          },
+          (err) => console.error("No se pudo escuchar el saldo de estrellas", err),
+        );
       })
       .catch((err) => console.error("No se pudo cargar el saldo de estrellas", err));
 
