@@ -405,26 +405,86 @@ body {
  * `background-image` con distinto tamaño/desfase, no de posiciones al
  * azar por elemento.
  */
-@keyframes world-rain-fall {
+/* Reporte del usuario ("el efecto de lluvia está mal logrado... se ve muy
+ * artificial/plana"): la versión anterior era una sola capa de líneas de
+ * 1px con un corte duro (transparente → opaco de golpe) — a simple vista se
+ * lee como una persiana repetida, no como gotas cayendo. Ahora son 3 capas
+ * de profundidad (el propio elemento + `::before`/`::after`, todavía sin
+ * `Math.random()` en el render): cada una con su propio ángulo (leve
+ * variación entre capas, no todas en paralelo perfecto), separación,
+ * opacidad y velocidad de caída, y cada raya es un degradé suave (difuminada
+ * en los bordes) en vez de un borde duro — se lee como un brillo alargado,
+ * no como una regla. `prefers-reduced-motion` ya cubre `*::before`/`*::after`
+ * globalmente (arriba en este archivo), así que las 3 capas quedan quietas
+ * junto con el resto de las animaciones sin ninguna regla extra acá. */
+@keyframes world-rain-fall-near {
   from {
-    background-position:
-      0 0,
-      40px 0;
+    background-position: 0 0;
   }
   to {
-    background-position:
-      -60px 700px,
-      -20px 700px;
+    background-position: -70px 900px;
+  }
+}
+@keyframes world-rain-fall-mid {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 46px 650px;
+  }
+}
+@keyframes world-rain-fall-far {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -25px 420px;
   }
 }
 .anim-rain {
-  animation: world-rain-fall 0.45s linear infinite;
-  background-image:
-    repeating-linear-gradient(102deg, rgba(191, 219, 254, 0.4) 0px, rgba(191, 219, 254, 0.4) 1px, transparent 1px, transparent 14px),
-    repeating-linear-gradient(102deg, rgba(191, 219, 254, 0.22) 0px, rgba(191, 219, 254, 0.22) 1px, transparent 1px, transparent 22px);
-  background-size:
-    70px 700px,
-    110px 700px;
+  animation: world-rain-fall-near 0.5s linear infinite;
+  background-image: repeating-linear-gradient(
+    101deg,
+    transparent 0px,
+    transparent 4px,
+    rgba(226, 240, 255, 0.08) 5px,
+    rgba(226, 240, 255, 0.55) 6px,
+    rgba(226, 240, 255, 0.12) 7px,
+    transparent 8.5px,
+    transparent 34px
+  );
+  background-size: 90px 900px;
+}
+.anim-rain::before,
+.anim-rain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.anim-rain::before {
+  animation: world-rain-fall-mid 0.8s linear infinite;
+  background-image: repeating-linear-gradient(
+    105deg,
+    transparent 0px,
+    transparent 3px,
+    rgba(191, 219, 254, 0.35) 4px,
+    rgba(191, 219, 254, 0.1) 5px,
+    transparent 6px,
+    transparent 24px
+  );
+  background-size: 130px 650px;
+}
+.anim-rain::after {
+  animation: world-rain-fall-far 1.2s linear infinite;
+  background-image: repeating-linear-gradient(
+    97deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(160, 190, 230, 0.2) 2.6px,
+    transparent 3.4px,
+    transparent 16px
+  );
+  background-size: 70px 420px;
 }
 
 @keyframes world-snow-fall {

@@ -87,12 +87,21 @@ export function DepthPanel() {
     // opaca), lo que dejaba el parallax inutilizable por defecto — ahora el
     // autor elige explícitamente una imagen (de su biblioteca o de fábrica)
     // desde el `BackgroundPicker` de abajo.
+    //
+    // `depth: 1.2` (no 1) a propósito — reporte del usuario ("no funciona el
+    // efecto parallax ni las capas ni los efectos"): con `depth < 1` la capa
+    // se dibuja DETRÁS del fondo principal (`BackgroundLayer.tsx`), que casi
+    // siempre es una imagen opaca que cubre toda la escena — la capa (imagen
+    // y/o efecto) queda invisible sin que el autor entienda por qué. `>1`
+    // (primer plano) es visible de entrada sobre cualquier fondo; `<1` sigue
+    // disponible para quien de verdad lo necesite (ver el aviso más abajo).
     const layer: LevelBackgroundLayer = {
       id: newBackgroundLayerId(),
       src: "",
-      depth: 0.5,
+      depth: 1.2,
       offsetY: 0,
       opacity: 1,
+      scale: 100,
       loop: false,
       effect: "none",
     };
@@ -309,6 +318,28 @@ export function DepthPanel() {
                 value={layer.depth}
                 onChange={(e) => updateLayer(layer.id, { depth: Number(e.target.value) })}
               />
+              {layer.depth < 1 && (
+                <p className="mt-1 text-amber-300">
+                  ⚠ Con menos de 1 esta capa queda DETRÁS del fondo — invisible si el fondo es una imagen opaca de punta a punta (lo más común). Usá más de 1 para que se vea encima.
+                </p>
+              )}
+            </label>
+            <label className="block">
+              <span className={LABEL_CLASS}>Escala (% del ancho de la escena)</span>
+              <input
+                type="number"
+                step="5"
+                min="1"
+                max="100"
+                className={INPUT_CLASS}
+                value={layer.scale ?? 100}
+                onChange={(e) => updateLayer(layer.id, { scale: Number(e.target.value) })}
+              />
+              <p className="mt-1 text-slate-400">
+                {(layer.scale ?? 100) >= 100
+                  ? "100 = cubre toda la escena, de punta a punta (como el fondo)."
+                  : "Menos de 100 = tamaño natural, centrada — un elemento suelto (una nube, un cartel), no un segundo fondo."}
+              </p>
             </label>
             <div className="grid grid-cols-2 gap-2">
               <label className="block">

@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { ImageOff } from "lucide-react";
 import type { LevelBackground, LevelBackgroundLayer } from "@/lib/level/schema";
 import { WeatherEffect } from "@/components/level/runtime/BackgroundLayers";
 
@@ -19,6 +23,14 @@ import { WeatherEffect } from "@/components/level/runtime/BackgroundLayers";
  * `WeatherEffect` del runtime en vez de reimplementar el mismo CSS.
  */
 export function BackgroundLayer({ background }: { background: LevelBackground }) {
+  // Si la imagen se borró de la biblioteca (icono de papelera de
+  // "Mis imágenes", docs/asset-management-plan.md §G riesgo R4 — el autor
+  // pudo confirmar el borrado a pesar del aviso) `src` queda apuntando a una
+  // URL muerta. Sin este control el navegador dibuja su icono de imagen
+  // rota nativo, diminuto y mal ubicado; acá se cambia por un aviso legible
+  // que además le dice al autor qué hacer.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const mainFailed = failedSrc === background.src;
   const layers = background.layers ?? [];
   const backLayers = layers.filter((l) => l.depth < 1);
   const frontLayers = layers.filter((l) => l.depth >= 1);
@@ -33,6 +45,7 @@ export function BackgroundLayer({ background }: { background: LevelBackground })
   // vería más tenue en el editor que jugando, un WYSIWYG mentiroso.
   function renderLayer(layer: LevelBackgroundLayer) {
     if (!layer.src && layer.effect === "none") return null;
+    const scale = layer.scale ?? 100;
     return (
       <div key={layer.id} className="absolute inset-0 overflow-hidden">
         {layer.src && (
@@ -41,8 +54,12 @@ export function BackgroundLayer({ background }: { background: LevelBackground })
             src={layer.src}
             alt=""
             aria-hidden="true"
-            className="absolute inset-x-0 block w-full object-cover"
-            style={{ top: `${layer.offsetY}%`, height: "100%", opacity: layer.opacity }}
+            className={scale >= 100 ? "absolute inset-x-0 block w-full object-cover" : "absolute block"}
+            style={
+              scale >= 100
+                ? { top: `${layer.offsetY}%`, height: "100%", opacity: layer.opacity }
+                : { left: "50%", top: `${layer.offsetY}%`, width: `${scale}%`, transform: "translateX(-50%)", opacity: layer.opacity }
+            }
           />
         )}
         <WeatherEffect effect={layer.effect} />
@@ -54,9 +71,22 @@ export function BackgroundLayer({ background }: { background: LevelBackground })
     <>
       {backLayers.map(renderLayer)}
 
-      {background.src && (
+      {background.src && mainFailed && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-slate-900 text-center text-amber-200" aria-hidden="true">
+          <ImageOff className="size-6" aria-hidden="true" />
+          <span className="text-xs font-bold">Imagen de fondo no disponible</span>
+          <span className="text-[11px] text-amber-200/80">Elige otra en &ldquo;Fondo&rdquo;.</span>
+        </div>
+      )}
+
+      {background.src && !mainFailed && (
         // eslint-disable-next-line @next/next/no-img-element -- tamaño nativo variable por nivel, no vale la pena next/image acá
-        <img src={background.src} alt={background.alt} className="absolute inset-0 block size-full object-cover" />
+        <img
+          src={background.src}
+          alt={background.alt}
+          className="absolute inset-0 block size-full object-cover"
+          onError={() => setFailedSrc(background.src)}
+        />
       )}
 
       {frontLayers.map(renderLayer)}

@@ -4,47 +4,80 @@ import type { LevelBackgroundLayer } from "@/lib/level/schema";
 import type { Pose } from "@/lib/level/runtime/useAlexMovement";
 
 /**
- * Pinta `background.layers` (docs/scene-25d-plan.md §E.1/§H.3) — cada capa es
- * una caja del mismo tamaño que `sceneBox` (la caja de cámara del fondo
- * principal), pero con su propio `left/top` desplazado según `layer.depth`
- * vía `parallaxAxis`: `depth === 1` reproduce EXACTO el `sceneBox` del fondo
- * principal (mismo comportamiento de siempre); `depth === 0` queda fijo
- * (cielo/horizonte, el valor típico para clima — no tiene sentido que la
- * lluvia paneé con el mundo); valores intermedios/mayores se mueven menos/
- * más que la cámara. Sin capas configuradas (`layers` vacío o ausente), este
- * componente no pinta nada — cero cambio visual respecto a antes de esta
- * fase.
+ * Pinta la IMAGEN de cada capa de `background.layers`
+ * (docs/scene-25d-plan.md §E.1/§H.3) — una caja del mismo tamaño que
+ * `sceneBox` (la caja de cámara del fondo principal), pero con su propio
+ * `left/top` desplazado según `layer.depth` vía `parallaxAxis`: `depth === 1`
+ * reproduce EXACTO el `sceneBox` del fondo principal (mismo comportamiento
+ * de siempre); `depth === 0` queda fijo (cielo/horizonte); valores
+ * intermedios/mayores se mueven menos/más que la cámara. Sin capas con
+ * imagen, este componente no pinta nada.
  *
- * `layer.effect` (fog/rain/snow/lightning/particles/glow) se pinta como una
- * superposición CSS aparte, después de la imagen — no depende de `src`: una
- * capa "solo lluvia" (`src: ""`, `effect: "rain"`) es válida, por eso el
- * filtro de abajo solo descarta una capa que no tiene NI imagen NI efecto.
+ * `layer.scale` (reporte del usuario: "le agregué una nube... ¿se puede
+ * cambiar su tamaño?") decide cómo se dibuja la imagen DENTRO de esa caja:
+ * `>= 100` (default de una capa nueva) la estira con `object-cover` para
+ * cubrir la caja entera, igual que siempre; por debajo, se dibuja a su
+ * tamaño natural (sin recortar), centrada horizontalmente, como un elemento
+ * suelto en vez de un segundo fondo.
+ *
+ * El EFECTO de clima de cada capa (`layer.effect`) NO se pinta acá — ver
+ * `WeatherEffects` más abajo. Antes vivía dentro de esta misma caja paneada,
+ * y con cualquier `depth` distinto de 1 quedaba desalineada del viewport en
+ * cuanto la cámara paneaba lo suficiente (reporte del usuario: "se ven los
+ * límites rectangulares" al caminar) — la lluvia/niebla/etc. es una
+ * superposición ambiental de PANTALLA, no un objeto del mundo, así que no
+ * tiene sentido que paneé con la cámara en absoluto.
  */
 export function BackgroundLayers({ layers, sceneBox, pose }: { layers: LevelBackgroundLayer[]; sceneBox: CameraBox; pose: Pose }) {
-  if (layers.length === 0) return null;
+  const withImage = layers.filter((l) => l.src);
+  if (withImage.length === 0) return null;
   return (
     <>
-      {layers.map((layer) => {
-        if (!layer.src && layer.effect === "none") return null;
+      {withImage.map((layer) => {
         const left = parallaxAxis(sceneBox.left, sceneBox.width, pose.x, layer.depth);
         const top = parallaxAxis(sceneBox.top, sceneBox.height, pose.y, layer.depth);
+        const scale = layer.scale ?? 100;
         return (
           <div key={layer.id} className="pointer-events-none absolute overflow-hidden" style={{ left, top, width: sceneBox.width, height: sceneBox.height }}>
-            {layer.src && (
-              // eslint-disable-next-line @next/next/no-img-element -- tamaño nativo variable por nivel, mismo criterio que el fondo principal
-              <img
-                src={layer.src}
-                alt=""
-                aria-hidden="true"
-                className="block w-full object-cover"
-                style={{ position: "relative", top: `${layer.offsetY}%`, height: "100%", opacity: layer.opacity }}
-              />
-            )}
-            <WeatherEffect effect={layer.effect} />
+            {/* eslint-disable-next-line @next/next/no-img-element -- tamaño nativo variable por nivel, mismo criterio que el fondo principal */}
+            <img
+              src={layer.src}
+              alt=""
+              aria-hidden="true"
+              className={scale >= 100 ? "block w-full object-cover" : "absolute block"}
+              style={
+                scale >= 100
+                  ? { position: "relative", top: `${layer.offsetY}%`, height: "100%", opacity: layer.opacity }
+                  : { left: "50%", top: `${layer.offsetY}%`, width: `${scale}%`, transform: "translateX(-50%)", opacity: layer.opacity }
+              }
+            />
           </div>
         );
       })}
     </>
+  );
+}
+
+/**
+ * Superposiciones de clima, ancladas al VIEWPORT (`inset-0` del contenedor
+ * de la escena, ver `RuntimeCanvas.tsx`) — nunca al mundo paneado, para que
+ * cubran siempre el visor completo sin importar hacia dónde camine el
+ * jugador. `RuntimeCanvas` la llama UNA sola vez, por encima de todo
+ * (fondo/capas/entidades), con TODAS las capas juntas (no separadas en
+ * `backLayers`/`frontLayers` como `BackgroundLayers`): a diferencia de la
+ * imagen decorativa de una capa, un efecto de clima no tiene sentido oculto
+ * detrás del fondo — ese era justo el bug reportado (una capa con `depth`
+ * por defecto, detrás del fondo opaco, dejaba su efecto invisible).
+ */
+export function WeatherEffects({ layers }: { layers: LevelBackgroundLayer[] }) {
+  const withEffect = layers.filter((l) => l.effect !== "none");
+  if (withEffect.length === 0) return null;
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {withEffect.map((layer) => (
+        <WeatherEffect key={layer.id} effect={layer.effect} />
+      ))}
+    </div>
   );
 }
 
