@@ -78,7 +78,7 @@ const PROMPT_VALOR_POSICIONAL = /(¿Cuánto vale la cifra \d en el número \d+\?
  *  que esa respuesta llega equivocada a la ronda nueva. `null` = la carrera
  *  ya terminó (no queda ningún enunciado que leer). */
 async function leerProximoEnunciado(page: import("@playwright/test").Page, anterior: string): Promise<string | null> {
-  for (let intento = 0; intento < 60; intento++) {
+  for (let intento = 0; intento < 300; intento++) {
     if (await page.getByText(/¡Misión cumplida!|¡Buen intento!/).isVisible().catch(() => false)) return null;
     try {
       const texto = (await page.getByText(PROMPT_VALOR_POSICIONAL).innerText({ timeout: 300 })).trim();
@@ -89,7 +89,7 @@ async function leerProximoEnunciado(page: import("@playwright/test").Page, anter
     }
     await page.waitForTimeout(50);
   }
-  return null;
+  throw new Error("El Cohete no avanzó al siguiente enunciado ni terminó la carrera.");
 }
 
 test.describe("Racha de días jugados", () => {
@@ -183,7 +183,7 @@ test.describe("Marcas personales", () => {
     // tiempo (0 aciertos) y debe mostrarse "Tu marca: 8", no "¡Nueva marca!".
     await page.getByRole("button", { name: "Jugar de nuevo 🔄" }).click();
     await expect(page.getByText("¡Buen intento!")).toBeVisible({ timeout: 35_000 });
-    await expect(page.getByText(/Tu marca/)).toBeVisible();
+    await expect(page.getByText(/Tu marca/).locator("..")).toContainText("8");
     await expect(page.getByText(/Nueva marca/)).toHaveCount(0);
   });
 });
