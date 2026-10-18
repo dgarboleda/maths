@@ -3,7 +3,12 @@ import AxeBuilder from "@axe-core/playwright";
 import { getLesson } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 
-async function practice(page: Page, lessonId: string) {
+async function practice(page: Page, lessonId: string, game: "frogger" | "cohete") {
+  // La app sortea el juego de cada ejercicio; aquí se fija para que la
+  // prueba sea determinista.
+  await page.addInitScript((forced) => {
+    (window as { __MATHS_TEST_PRACTICE_GAME__?: string }).__MATHS_TEST_PRACTICE_GAME__ = forced;
+  }, game);
   await registrarPadre(page);
   const profile = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
   const childId = await entrarAlEspacio(page, profile.nombre, profile.pin);
@@ -12,8 +17,8 @@ async function practice(page: Page, lessonId: string) {
   return getLesson(lessonId)!;
 }
 
-async function conceptThenNumeric(page: Page, lessonId: string) {
-  const lesson = await practice(page, lessonId);
+async function conceptThenNumeric(page: Page, lessonId: string, game: "frogger" | "cohete") {
+  const lesson = await practice(page, lessonId, game);
   const question = lesson.practice[0];
   await page.getByRole("radio", { name: question.choices!.find((c) => c.id === question.answer)!.label, exact: true }).check();
   await page.getByRole("button", { name: "Comprobar mi respuesta", exact: true }).click();
@@ -29,9 +34,10 @@ function savedAnswer(page: Page) {
 }
 
 test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar dominio", async ({ page }) => {
-  const lesson = await practice(page, "fraccion-cantidad");
-  await page.getByRole("radio", { name: "Estanque", exact: true }).check();
-  await expect(page.getByText(/Esta actividad trabaja una explicación/)).toBeVisible();
+  const lesson = await practice(page, "fraccion-cantidad", "frogger");
+  // Sin selector: la app decide el juego y la pregunta conceptual se responde
+  // en su formato habitual.
+  await expect(page.getByText("Elige cómo practicar")).toHaveCount(0);
   const conceptual = lesson.practice[0];
   await page.getByRole("radio", { name: conceptual.choices!.find((c) => c.id === conceptual.answer)!.label, exact: true }).check();
   await page.getByRole("button", { name: "Comprobar mi respuesta", exact: true }).click();
@@ -55,7 +61,6 @@ test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar d
   await page.getByRole("button", { name: "Pedir una pista", exact: true }).click();
   await expect(page.getByText(q.hints[0], { exact: true })).toBeVisible();
   await page.reload();
-  await page.getByRole("radio", { name: "Estanque", exact: true }).check();
   await expect(page.getByText(q.hints[0], { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Reanudar partida" }).click();
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
@@ -68,19 +73,18 @@ test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar d
   expect(progress.checkPassedAt).toBeNull();
   expect(progress.completedAt).toBeNull();
   await expect(page.getByRole("heading", { name: "¡Cruzaste el estanque!" })).toBeVisible();
-  await page.getByRole("radio", { name: "Escribir", exact: true }).check();
+  // La vía escrita sigue disponible y conserva la respuesta del juego.
+  await page.getByRole("button", { name: "Prefiero escribir la respuesta", exact: true }).click();
   await expect(page.getByRole("textbox", { name: /Tu respuesta/ })).toHaveValue(String(q.answer));
   await page.getByRole("button", { name: "Siguiente actividad", exact: true }).click();
+  // El siguiente ejercicio numérico vuelve a ser un juego sorteado.
+  await page.getByRole("button", { name: "Prefiero escribir la respuesta", exact: true }).click();
   await expect(page.getByText(lesson.practice[2].prompt, { exact: true })).toBeVisible();
 });
 
 test("Cohete: fracción exacta, sin reloj por defecto y recuperación de respuesta perdida sin duplicar evidencia", async ({ page }) => {
-  const q = await conceptThenNumeric(page, "fracciones-unidad");
+  const q = await conceptThenNumeric(page, "fracciones-unidad", "cohete");
   expect(q.answer).toBe(1 / 3);
-  await page.getByRole("radio", { name: "Estanque", exact: true }).check();
-  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Saltar al nenúfar 1/3", exact: true })).toBeVisible();
-  await page.getByRole("radio", { name: "Cohete", exact: true }).check();
   await page.getByRole("button", { name: "¡Iniciar misión!", exact: true }).click();
   await expect(page.getByText("Sin límite", { exact: true })).toBeVisible();
   const input = page.getByRole("textbox", { name: /Tu respuesta/ });
@@ -115,6 +119,7 @@ test("Cohete: fracción exacta, sin reloj por defecto y recuperación de respues
   await expect(page.getByRole("button", { name: "Reintentar guardado", exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "¡Misión cumplida!" })).toBeVisible();
   await page.reload();
+  await page.getByRole("button", { name: "Prefiero escribir la respuesta", exact: true }).click();
   await expect(page.getByRole("textbox", { name: /Tu respuesta/ })).toHaveValue("2/6");
   await expect(page.getByText("Tu respuesta es correcta. Revisa por qué funciona.", { exact: true })).toBeVisible();
   // La respuesta persistida sigue en el ejercicio de práctica, sin salto a evaluación.

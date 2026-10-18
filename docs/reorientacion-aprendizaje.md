@@ -70,13 +70,14 @@ Las métricas educativas nuevas se muestran primero en `/panel/progreso`; la act
 
 ## Minijuegos dentro de las clases
 
-En la etapa **Práctica** se puede elegir **Escribir**, **Estanque** (Frogger)
-o **Cohete**. Las doce clases ofrecen ejercicios numéricos para ambos juegos.
-Cada pregunta conserva su enunciado, respuesta, pistas y desarrollo del catálogo
-educativo compartido. Las preguntas de elección conceptual se responden en su
-formato habitual y la modalidad elegida continúa en el siguiente ejercicio
-numérico. Cambiar de modalidad conserva la evidencia de la pregunta; recargar
-conserva el avance y vuelve a la modalidad escrita.
+En la etapa **Práctica** la aplicación sortea, en cada ejercicio numérico,
+**Estanque** (Frogger) o **Cohete**; el estudiante no tiene que elegir. Las doce
+clases ofrecen ejercicios numéricos para ambos juegos. Cada pregunta conserva su
+enunciado, respuesta, pistas y desarrollo del catálogo educativo compartido.
+Las preguntas de elección conceptual se responden en su formato habitual.
+«Prefiero escribir la respuesta» ofrece siempre la vía escrita (accesibilidad o
+preferencia) y conserva la evidencia de la pregunta; recargar conserva el
+avance y vuelve a sortear el juego.
 
 El estanque usa turnos y botones accesibles, sin obstáculos ni reloj. El cohete
 empieza sin límite de tiempo y permite activar un reto de 30 segundos. Se puede

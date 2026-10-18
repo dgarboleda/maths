@@ -3,6 +3,17 @@ import type { Question } from "@/lib/learning/domain";
 import { shuffle, type Problem } from "@/lib/problem";
 
 export type PracticeMode = "write" | "frogger" | "cohete";
+export type PracticeGame = Exclude<PracticeMode, "write">;
+export const PRACTICE_GAMES: readonly PracticeGame[] = ["frogger", "cohete"];
+
+/** La aplicación sortea el juego de cada ejercicio de práctica; el estudiante
+ * no tiene que decidirlo. `random` se inyecta para las pruebas unitarias; las
+ * e2e fijan el juego con `window.__MATHS_TEST_PRACTICE_GAME__`. */
+export function pickPracticeGame(random: () => number = Math.random): PracticeGame {
+  const forced = (globalThis as { __MATHS_TEST_PRACTICE_GAME__?: unknown }).__MATHS_TEST_PRACTICE_GAME__;
+  if (forced === "frogger" || forced === "cohete") return forced;
+  return PRACTICE_GAMES[Math.min(PRACTICE_GAMES.length - 1, Math.floor(random() * PRACTICE_GAMES.length))];
+}
 
 /** Una pregunta de la clase; el servidor decide el resultado de la respuesta.
  * Los juegos no conceden dominio ni estrellas en esta modalidad. */
