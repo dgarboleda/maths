@@ -55,13 +55,11 @@ async function nuevaFamiliaConDosHijos() {
   await firestoreFns.setDoc(firestoreFns.doc(db, "parents", parentId, "children", childId), {
     name: "Hijo de prueba",
     birthDate: "2015-01-01",
-    pinHash: "x",
     createdAt: Date.now(),
   });
   await firestoreFns.setDoc(firestoreFns.doc(db, "parents", parentId, "children", otherChildId), {
     name: "Hermano de prueba",
     birthDate: "2017-01-01",
-    pinHash: "y",
     createdAt: Date.now(),
   });
   await signOut(auth);
@@ -94,6 +92,12 @@ describe("firestore.rules — sesión propia del hijo (custom token)", () => {
         { skillId: "x", itemId: "1", correct: true, createdAt: firestoreFns.serverTimestamp() },
       );
       await expect(firestoreFns.updateDoc(attemptRef, { correct: false })).rejects.toThrow();
+      // Fecha a mano, campos ajenos o tipos erróneos no entran en la bitácora.
+      const attempts = firestoreFns.collection(db, "parents", parentId, "children", childId, "attempts");
+      await expect(firestoreFns.addDoc(attempts, { skillId: "x", itemId: "2", correct: true, createdAt: firestoreFns.Timestamp.fromMillis(0) })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(attempts, { skillId: "x", itemId: "3", correct: true, createdAt: firestoreFns.serverTimestamp(), stars: 99 })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(attempts, { skillId: "x", itemId: "4", correct: "sí", createdAt: firestoreFns.serverTimestamp() })).rejects.toThrow();
+      await firestoreFns.addDoc(attempts, { skillId: "x", itemId: "5", correct: false, hintsUsed: 2, createdAt: firestoreFns.serverTimestamp() });
 
       await expect(firestoreFns.addDoc(
         firestoreFns.collection(db, "parents", parentId, "children", childId, "starLedger"),

@@ -28,7 +28,6 @@ async function nuevoPadreConHijo() {
   await firestoreFns.setDoc(firestoreFns.doc(db, "parents", user.uid, "children", childId), {
     name: "Hijo de prueba",
     birthDate: "2015-01-01",
-    pinHash: "x",
     createdAt: Date.now(),
   });
   return { app, db, parentId: user.uid, childId };

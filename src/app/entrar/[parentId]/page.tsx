@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { signInWithCustomToken } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
 import { getFirebase, getFirebaseFunctions } from "@/lib/firebase";
+import { accessKeyFromHash } from "@/lib/pin";
 import { Avatar } from "@/components/world/Avatar";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
 
@@ -25,8 +26,9 @@ const KEYPAD = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
  * autenticado como el padre), esta pantalla no tiene ninguna sesión previa:
  * la lista de nombres sale de la Cloud Function `listChildrenPublic` (nunca
  * expone `pinHash`) y la verificación del PIN, de `verifyChildPin` — ambas
- * corren con el Admin SDK, del lado del servidor, y la segunda es la que de
- * verdad decide: `firestore.rules`/`storage.rules` solo confían en los
+ * corren con el Admin SDK, del lado del servidor, y ambas exigen la clave
+ * aleatoria del enlace (fragmento `#k=`, que el navegador no envía al
+ * servidor web). La segunda es la que de verdad decide: `firestore.rules`/`storage.rules` solo confían en los
  * claims { role: "child", parentId, childId } del custom token que esa
  * función emite, nunca en nada que mande el cliente.
  */
@@ -35,17 +37,30 @@ export default function EntrarPage() {
   const [children, setChildren] = useState<PublicChild[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<PublicChild | null>(null);
+  const [accessKey, setAccessKey] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    const key = accessKeyFromHash(window.location.hash);
+    if (!key) {
+      // Enlaces anteriores (sin clave) o copiados a medias.
+      queueMicrotask(() => {
+        if (!cancelled) setLoadError("Este enlace no es válido. Pídele a tu familia que te comparta uno nuevo.");
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
     getFirebaseFunctions()
       .then(({ functions, functionsFns: { httpsCallable } }) =>
-        httpsCallable<{ parentId: string }, { children: PublicChild[] }>(functions, "listChildrenPublic")({
+        httpsCallable<{ parentId: string; accessKey: string }, { children: PublicChild[] }>(functions, "listChildrenPublic")({
           parentId: params.parentId,
+          accessKey: key,
         }),
       )
       .then((res) => {
         if (cancelled) return;
+        setAccessKey(key);
         setChildren(res.data.children);
       })
       .catch((err) => {
@@ -57,8 +72,8 @@ export default function EntrarPage() {
     };
   }, [params.parentId]);
 
-  if (selected) {
-    return <PinDialog parentId={params.parentId} child={selected} onClose={() => setSelected(null)} />;
+  if (selected && accessKey) {
+    return <PinDialog parentId={params.parentId} accessKey={accessKey} child={selected} onClose={() => setSelected(null)} />;
   }
 
   return (
@@ -114,10 +129,12 @@ export default function EntrarPage() {
 
 function PinDialog({
   parentId,
+  accessKey,
   child,
   onClose,
 }: {
   parentId: string;
+  accessKey: string;
   child: PublicChild;
   onClose: () => void;
 }) {
@@ -146,11 +163,11 @@ function PinDialog({
     setError(null);
     try {
       const { functions, functionsFns: { httpsCallable } } = await getFirebaseFunctions();
-      const verify = httpsCallable<{ parentId: string; childId: string; pin: string }, { token: string }>(
-        functions,
-        "verifyChildPin",
-      );
-      const { data } = await verify({ parentId, childId: child.id, pin });
+      const verify = httpsCallable<
+        { parentId: string; childId: string; pin: string; accessKey: string },
+        { token: string }
+      >(functions, "verifyChildPin");
+      const { data } = await verify({ parentId, childId: child.id, pin, accessKey });
       const { auth } = await getFirebase();
       const { user } = await signInWithCustomToken(auth, data.token);
       // Bug real: navegar apenas resuelve `signInWithCustomToken` no
@@ -172,6 +189,8 @@ function PinDialog({
         setError("Demasiados intentos. Espera un momento e intenta de nuevo.");
       } else if (code.includes("permission-denied")) {
         setError("PIN incorrecto");
+      } else if (code.includes("failed-precondition")) {
+        setError("Este enlace ya no es válido. Pídele a tu familia que te comparta uno nuevo.");
       } else {
         console.error("No se pudo verificar el PIN", err);
         setError("Error del servidor. Intenta de nuevo en un momento.");

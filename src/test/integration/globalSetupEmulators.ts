@@ -9,7 +9,7 @@ import { spawn, type ChildProcess } from "node:child_process";
  * empiezan hasta que respondan de verdad.
  */
 const AUTH_URL = "http://127.0.0.1:9099/";
-const FUNCTIONS_URL = "http://127.0.0.1:5001/demo-numerario/us-central1/listChildrenPublic";
+const FUNCTIONS_URL = "http://127.0.0.1:5001/demo-numerario/us-central1/deploymentStatus";
 const READY_TIMEOUT_MS = 180_000;
 const POLL_INTERVAL_MS = 500;
 
@@ -17,7 +17,7 @@ async function isUp(): Promise<boolean> {
   try {
     const [auth, functions] = await Promise.all([
       fetch(AUTH_URL),
-      fetch(FUNCTIONS_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: { parentId: "readiness-probe" } }) }),
+      fetch(FUNCTIONS_URL),
     ]);
     return auth.ok && functions.ok;
   } catch {

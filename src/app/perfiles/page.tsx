@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
-import { hashPin } from "@/lib/pin";
+import { confirmChildPin, setChildPin } from "@/lib/pin";
 import { Avatar } from "@/components/world/Avatar";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
 import type { ChildProfile } from "@/lib/types";
@@ -171,6 +171,19 @@ function ChildCard({ child }: { child: ChildDoc }) {
       </div>
     );
   }
+  // Recién creado: el PIN lo guarda Functions un instante después del alta.
+  // Si ese paso falló del todo, se fija desde Ajustes.
+  if (!child.pinHash) {
+    return (
+      <div className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3 text-center">
+        <span className="font-display font-bold text-white">{child.name}</span>
+        <p role="status" className="text-xs text-indigo-200">Preparando perfil…</p>
+        <Link href="/panel/ajustes" className="min-h-11 py-2 text-sm font-semibold text-cyan-300 underline">
+          Fijar PIN de {child.name}
+        </Link>
+      </div>
+    );
+  }
   if (open) {
     return <PinDialog child={child} onClose={() => setOpen(false)} />;
   }
@@ -199,8 +212,9 @@ function ChildCard({ child }: { child: ChildDoc }) {
 // cada vez que se abre el diálogo.
 function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void }) {
   const router = useRouter();
+  const { user } = useAuth();
   const [pin, setPin] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [shakes, setShakes] = useState(0);
   const pinId = `pin-${child.id}`;
@@ -224,21 +238,34 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
   async function handleConfirm(e?: FormEvent) {
     e?.preventDefault();
     if (pin.length !== 4 || checking) return;
+    if (!user) return;
     setChecking(true);
-    const hashed = await hashPin(pin);
-    setChecking(false);
-    if (hashed === child.pinHash) {
-      router.push(`/jugar/${child.id}`);
-    } else {
-      setError(true);
-      setShakes((s) => s + 1);
-      setPin("");
+    let result: Awaited<ReturnType<typeof confirmChildPin>> | "error";
+    try {
+      result = await confirmChildPin(user.uid, child.id, pin);
+    } catch (err) {
+      console.error("No se pudo comprobar el PIN", err);
+      result = "error";
     }
+    setChecking(false);
+    if (result === "ok") {
+      router.push(`/jugar/${child.id}`);
+      return;
+    }
+    setError(
+      result === "locked"
+        ? "Demasiados intentos. Espera un momento."
+        : result === "error"
+          ? "No se pudo comprobar. Intenta de nuevo."
+          : "PIN incorrecto",
+    );
+    setShakes((s) => s + 1);
+    setPin("");
   }
 
   function press(d: string) {
     if (checking) return;
-    setError(false);
+    setError(null);
     if (d === "borrar") {
       setPin((p) => p.slice(0, -1));
     } else if (pin.length < 4) {
@@ -276,7 +303,7 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
               maxLength={4}
               value={pin}
               onChange={(e) => {
-                setError(false);
+                setError(null);
                 setPin(e.target.value.replace(/\D/g, ""));
               }}
               className={`family-input mt-1.5 h-10 w-24 text-center text-lg tracking-[0.6em]${
@@ -286,7 +313,7 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
           </label>
 
           <span role="alert" className="min-h-4 text-xs font-semibold text-red-300">
-            {error ? "PIN incorrecto" : ""}
+            {error ?? ""}
           </span>
 
           <div
@@ -371,18 +398,24 @@ function NewChildForm({
     }
     setSubmitting(true);
     try {
-      const pinHash = await hashPin(pin);
       const {
         db,
-        firestore: { addDoc, collection, serverTimestamp },
+        firestore: { addDoc, collection, deleteDoc, serverTimestamp },
       } = await getFirebase();
       const childrenCollection = collection(db, "parents", parentId, "children");
-      await addDoc(childrenCollection, {
+      const created = await addDoc(childrenCollection, {
         name,
         birthDate,
-        pinHash,
         createdAt: serverTimestamp(),
       });
+      // El hash del PIN lo escribe Functions; si falla, no dejar un perfil
+      // al que nadie podría entrar.
+      try {
+        await setChildPin(parentId, created.id, pin);
+      } catch (err) {
+        await deleteDoc(created).catch(() => {});
+        throw err;
+      }
       onDone();
     } catch (err) {
       console.error("No se pudo guardar el hijo", err);
