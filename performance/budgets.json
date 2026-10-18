@@ -1,0 +1,5 @@
+{
+  "login": { "scriptBytes": 550000, "totalBytes": 700000, "accessibility": 0.95 },
+  "juego": { "scriptBytes": 650000, "totalBytes": 900000, "accessibility": 0.95 },
+  "editor": { "scriptBytes": 700000, "totalBytes": 1000000, "accessibility": 0.95 }
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * Arranca los emuladores de Auth, Firestore y Storage del proyecto de
+ * Arranca los emuladores de Auth, Firestore, Storage y Functions del proyecto de
  * pruebas (docs/asset-management-plan.md §G Paso 1).
  *
  * Si una ejecución anterior se cortó a lo bruto (Ctrl-C doble, un runner de
@@ -11,8 +11,12 @@
  * se cierra.
  */
 import { execFileSync, spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const PROYECTO = "demo-numerario";
+
+// Functions debe existir también en una copia recién clonada, no solo en CI.
+execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["--prefix", "functions", "run", "build"], { stdio: "inherit" });
 
 function cerrarEmuladorHuerfano() {
   if (process.platform === "win32") return;
@@ -22,6 +26,8 @@ function cerrarEmuladorHuerfano() {
   } catch {
     return; // sin `ps` no se puede comprobar; se sigue igualmente
   }
+  // Un CLI vivo administra sus procesos: no confundirlo con un huérfano.
+  if (salida.split("\n").some((linea) => linea.includes("firebase-tools/lib/bin/firebase.js emulators:start") && linea.includes(`--project ${PROYECTO}`))) return;
   for (const linea of salida.split("\n")) {
     if (!linea.includes("cloud-firestore-emulator")) continue;
     if (!linea.includes(`--project_id ${PROYECTO}`)) continue;
@@ -39,8 +45,8 @@ function cerrarEmuladorHuerfano() {
 cerrarEmuladorHuerfano();
 
 const hijo = spawn(
-  process.platform === "win32" ? "npx.cmd" : "npx",
-  ["firebase", "emulators:start", "--only", "auth,firestore,storage", "--project", PROYECTO],
+  process.execPath,
+  [fileURLToPath(new URL("../node_modules/firebase-tools/lib/bin/firebase.js", import.meta.url)), "emulators:start", "--only", "auth,firestore,storage,functions", "--project", PROYECTO],
   { stdio: "inherit" },
 );
 

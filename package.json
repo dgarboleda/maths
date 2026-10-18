@@ -18,23 +18,26 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "emuladores": "node scripts/emuladores.mjs",
-    "perf": "next build && lhci autorun",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "perf": "node scripts/perf.mjs",
+    "preview": "npm run build && opennextjs-cloudflare preview",
+    "deploy": "node scripts/deploy.mjs",
+    "upload": "npm run build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "audit:security": "node scripts/security-audit.mjs",
+    "functions:build": "npm --prefix functions run build",
+    "verify:deployment": "node scripts/verify-deployment.mjs",
+    "deploy:all": "npm run deploy",
+    "deploy:frontend": "npm run build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
-    "claude": "^0.1.1",
     "firebase": "^12.18.0",
     "lucide-react": "^1.41.0",
-    "next": "16.3.3",
+    "next": "16.4.2",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@lhci/cli": "^0.15.1",
     "@opennextjs/cloudflare": "^1.20.4",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
@@ -47,14 +50,24 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9",
-    "eslint-config-next": "16.3.3",
+    "eslint-config-next": "16.4.2",
     "firebase-tools": "^15.28.2",
     "jest-axe": "^11.0.0",
     "jsdom": "^30.0.1",
+    "lighthouse": "^13.5.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "^8.2.2",
     "vitest": "^5.0.0",
     "wrangler": "^4.127.1"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.6",
+    "@node-minify/core": {
+      "glob": "^10.5.0"
+    },
+    "gaxios": {
+      "uuid": "^11.1.1"
+    }
   }
 }

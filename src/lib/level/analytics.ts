@@ -5,9 +5,8 @@ import type { ChallengePlacement } from "./schema";
 
 type FirestoreFns = typeof import("firebase/firestore");
 
-/** Límite real de Firestore para `where(campo, "in", [...])` — de sobra
- *  para los módulos distintos que un nivel real vaya a tener. */
-const MAX_IN_VALUES = 30;
+/** Muestra reciente, por módulo y por hijo. */
+export const STATS_ATTEMPTS_LIMIT = 200;
 
 /** `serverTimestamp()` llega como `Timestamp` de Firestore al leer, no como
  *  el `number` que declara `Attempt.createdAt` — mismo criterio que
@@ -36,6 +35,8 @@ export interface ChallengeStatsRow {
    *  `Attempt.hintsUsed`) — `null` si ninguno lo tiene (todos son intentos
    *  previos a este campo), nunca 0 disfrazado de "no pidió pistas". */
   avgHintsUsed: number | null;
+  /** Hay más historial que la muestra consultada. */
+  sampleLimited: boolean;
 }
 
 /**
@@ -48,9 +49,8 @@ export interface ChallengeStatsRow {
  * `skillsProgress` sí usa el `moduleId` pelado. Acá se arma esa cadena para
  * consultar; nunca se compara `moduleId` directo contra `skillId`.
  *
- * Rendimiento: UNA consulta por hijo (`where("skillId", "in", [...])`), no
- * una por desafío — un nivel con 6 desafíos × 3 hijos son 18 consultas si
- * se hace ingenuo, esto es como mucho `childIds.length`.
+ * Rendimiento: consultas acotadas e indexadas por hijo/módulo. El límite
+ * se aplica a cada módulo y nunca descarta módulos más allá del número 30.
  *
  * Dos o más `ChallengePlacement` que comparten el mismo `moduleId` tienen
  * EXACTAMENTE las mismas estadísticas: `attempts` no distingue desde qué
@@ -63,8 +63,10 @@ export async function challengeStats(
   parentId: string,
   childIds: string[],
   placements: ChallengePlacement[],
+  maxAttempts = STATS_ATTEMPTS_LIMIT,
 ): Promise<ChallengeStatsRow[]> {
-  const { collection, getDocs, query, where } = firestoreFns;
+  const { collection, getDocs, query, where, orderBy, limit } = firestoreFns;
+  if (!Number.isInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > 500) throw new Error("Límite de intentos inválido.");
 
   const skillIdByModuleId = new Map<string, string>();
   for (const placement of placements) {
@@ -72,22 +74,31 @@ export async function challengeStats(
     const mod = getModule(placement.moduleId);
     if (mod) skillIdByModuleId.set(placement.moduleId, `${mod.strandSlug}-topico-${mod.id}`);
   }
-  const skillIds = [...skillIdByModuleId.values()].slice(0, MAX_IN_VALUES);
+  const skillIds = [...skillIdByModuleId.values()];
 
   const attemptsByChildAndSkill = new Map<string, Attempt[]>();
+  const limited = new Set<string>();
   if (skillIds.length > 0) {
     await Promise.all(
       childIds.map(async (childId) => {
-        const snap = await getDocs(
-          query(collection(db, "parents", parentId, "children", childId, "attempts"), where("skillId", "in", skillIds)),
-        );
-        for (const doc of snap.docs) {
-          const attempt = doc.data() as Attempt;
-          const key = `${childId}::${attempt.skillId}`;
-          const list = attemptsByChildAndSkill.get(key);
-          if (list) list.push(attempt);
-          else attemptsByChildAndSkill.set(key, [attempt]);
-        }
+        // Una muestra por módulo evita descargar años de historial y que
+        // un módulo muy practicado oculte los intentos de otro menos usado.
+        await Promise.all(skillIds.map(async (skillId) => {
+          const snap = await getDocs(
+            query(
+              collection(db, "parents", parentId, "children", childId, "attempts"),
+              where("skillId", "==", skillId), orderBy("createdAt", "desc"), limit(maxAttempts + 1),
+            ),
+          );
+          if (snap.size > maxAttempts) limited.add(`${childId}::${skillId}`);
+          for (const doc of snap.docs.slice(0, maxAttempts)) {
+            const attempt = doc.data() as Attempt;
+            const key = `${childId}::${attempt.skillId}`;
+            const list = attemptsByChildAndSkill.get(key);
+            if (list) list.push(attempt);
+            else attemptsByChildAndSkill.set(key, [attempt]);
+          }
+        }));
       }),
     );
   }
@@ -113,6 +124,7 @@ export async function challengeStats(
         accuracy: attempts.length > 0 ? correct / attempts.length : null,
         lastAttemptAt,
         avgHintsUsed: hintsKnown.length > 0 ? hintsKnown.reduce((sum, a) => sum + (a.hintsUsed ?? 0), 0) / hintsKnown.length : null,
+        sampleLimited: !!skillId && limited.has(`${childId}::${skillId}`),
       });
     }
   }

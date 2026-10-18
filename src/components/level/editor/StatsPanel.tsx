@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { getFirebase } from "@/lib/firebase";
 import { getModule } from "@/lib/curriculum";
-import { challengeStats, type ChallengeStatsRow } from "@/lib/level/analytics";
+import { challengeStats, STATS_ATTEMPTS_LIMIT, type ChallengeStatsRow } from "@/lib/level/analytics";
 import { useLevelEditor } from "./LevelEditorProvider";
 
 /**
@@ -21,7 +21,7 @@ export function StatsPanel() {
   const { state } = useLevelEditor();
   const [stats, setStats] = useState<ChallengeStatsRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const challengeIds = state.level.challenges.map((c) => c.id).join(",");
+  const challengeIds = state.level.challenges.map((c) => `${c.id}:${c.moduleId}`).join(",");
   const childIds = children.map((c) => c.id).join(",");
 
   useEffect(() => {
@@ -75,6 +75,7 @@ export function StatsPanel() {
 
   return (
     <div className="space-y-2.5">
+      <p className="text-[10px] text-slate-400">Últimos {STATS_ATTEMPTS_LIMIT} intentos por módulo.</p>
       {state.level.challenges.map((challenge) => {
         const mod = getModule(challenge.moduleId);
         const rows = stats.filter((r) => r.challengeId === challenge.id);
@@ -93,6 +94,7 @@ export function StatsPanel() {
                     <span className="text-slate-400">
                       {" — "}
                       {row.attempts} intento{row.attempts === 1 ? "" : "s"} · {Math.round((row.accuracy ?? 0) * 100)}% acierto
+                      {row.sampleLimited && " · muestra reciente"}
                       {row.avgHintsUsed !== null && ` · ${row.avgHintsUsed.toFixed(1)} pistas prom.`}
                       {row.lastAttemptAt && ` · últ. ${new Date(row.lastAttemptAt).toLocaleDateString("es", { day: "numeric", month: "short" })}`}
                     </span>

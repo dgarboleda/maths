@@ -26,12 +26,14 @@ jobs:
     name: Lint, tipos y compilación
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm ci --prefix functions
+      - run: npm run functions:build
       - run: npm run lint
       # `typecheck` genera antes los tipos de rutas de Next: sin ellos,
       # `LayoutProps` no existe en un árbol recién clonado.
@@ -48,8 +50,8 @@ jobs:
     name: Tests unitarios y de componente
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -61,20 +63,21 @@ jobs:
       - run: npm run test
 
   test-integration:
-    name: Tests de integración (Firestore/Storage)
+    name: Tests de integración (Firestore/Storage/Functions)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       # El emulador de Firestore es un .jar.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
       - run: npm ci
+      - run: npm ci --prefix functions
       # `globalSetupEmulators.ts` arranca los emuladores (auth/firestore/
       # storage) solo si no están ya arriba, y los apaga al terminar.
       - run: npm run test:integration
@@ -99,17 +102,18 @@ jobs:
         # archivo tenga mucho más peso que otro.
         shard: [1, 2]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       # El emulador de Firestore es un .jar.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
       - run: npm ci
+      - run: npm ci --prefix functions
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --shard=${{ matrix.shard }}/2
       - uses: actions/upload-artifact@v4
@@ -126,18 +130,43 @@ jobs:
     # deberían tardar tanto, pero que falle en vez de colgar el runner.
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      # `/login` es la única pantalla pública que no necesita sesión ni
-      # emuladores (docs/auditoria-rendimiento-accesibilidad.md §1.2): mide
-      # el costo real de la primera carga, que es donde más pesa una
-      # regresión de peso de JS. Los runners de GitHub Actions ya traen
-      # Chrome instalado — lhci lo detecta solo.
+      - run: npm ci --prefix functions
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npx playwright install --with-deps chromium
+      # Build de producción + sesión real: login, juego y editor.
       - run: npm run perf
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rendimiento
+          path: performance-reports/
+
+  seguridad:
+    name: Auditoría de dependencias de frontend y Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix functions
+      - run: npm run audit:security
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: auditoria-dependencias
+          path: security-reports/
 
   e2e-informe:
     name: Combina el informe de e2e
@@ -145,8 +174,8 @@ jobs:
     needs: [e2e]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm

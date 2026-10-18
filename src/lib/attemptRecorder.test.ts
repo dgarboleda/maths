@@ -2,6 +2,8 @@ import { describe, expect, test, vi } from "vitest";
 import { recordModuleAttempt } from "./attemptRecorder";
 import type { ModuleDef } from "./curriculum";
 
+vi.mock("./starLedger", () => ({ awardStars: vi.fn(async () => {}) }));
+
 /**
  * Fase 32 (docs/plan-jugabilidad.md §6): `repeatsToday` llegaba siempre en
  * 0 acá — machacar el mismo desafío fácil rendía estrellas plenas para

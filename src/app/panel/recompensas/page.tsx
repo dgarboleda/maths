@@ -34,7 +34,7 @@ export default function RecompensasPage() {
       const { db, firestore } = await getFirebase();
       const { doc, serverTimestamp, updateDoc } = firestore;
       if (approve) {
-        await awardStars(firestore, db, parentId, selectedChildId, -request.starsSpent, "redemption");
+        await awardStars(firestore, db, parentId, selectedChildId, -request.starsSpent, "redemption", null, `redemption_${request.id}`);
       }
       await updateDoc(
         doc(db, "parents", parentId, "children", selectedChildId, "redemptionRequests", request.id),

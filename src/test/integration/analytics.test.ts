@@ -35,6 +35,21 @@ async function nuevoPadreConHijo() {
 }
 
 describe("analytics — challengeStats", () => {
+  test("limita la muestra a los intentos más recientes y señala el historial adicional", async () => {
+    const { app, db, parentId, childId } = await nuevoPadreConHijo();
+    try {
+      const collection = firestoreFns.collection(db, "parents", parentId, "children", childId, "attempts");
+      for (let i = 0; i < 4; i++) {
+        await firestoreFns.addDoc(collection, { skillId: `${MODULE.strandSlug}-topico-${MODULE.id}`, correct: i > 1, createdAt: firestoreFns.Timestamp.fromMillis(i * 1000) });
+      }
+      const placement: ChallengePlacement = { id: "c1", moduleId: MODULE.id, activityId: "puzzle", sourceEntityId: "e1" };
+      const [row] = await challengeStats(firestoreFns, db, parentId, [childId], [placement], 2);
+      expect(row.attempts).toBe(2);
+      expect(row.correct).toBe(2);
+      expect(row.sampleLimited).toBe(true);
+      expect(row.lastAttemptAt).toBe(3000);
+    } finally { await deleteApp(app); }
+  });
   test("agrega intentos reales por hijo, distinguiendo aciertos y pistas", async () => {
     const { app, db, parentId, childId } = await nuevoPadreConHijo();
     try {

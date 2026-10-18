@@ -9,16 +9,24 @@ import { spawn, type ChildProcess } from "node:child_process";
  * empiezan hasta que respondan de verdad.
  */
 const AUTH_URL = "http://127.0.0.1:9099/";
+const FUNCTIONS_URL = "http://127.0.0.1:5001/demo-numerario/us-central1/listChildrenPublic";
 const READY_TIMEOUT_MS = 180_000;
 const POLL_INTERVAL_MS = 500;
 
 async function isUp(): Promise<boolean> {
   try {
-    const res = await fetch(AUTH_URL);
-    return res.status < 500;
+    const [auth, functions] = await Promise.all([
+      fetch(AUTH_URL),
+      fetch(FUNCTIONS_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: { parentId: "readiness-probe" } }) }),
+    ]);
+    return auth.ok && functions.ok;
   } catch {
     return false;
   }
+}
+
+async function isAuthUp(): Promise<boolean> {
+  try { return (await fetch(AUTH_URL)).ok; } catch { return false; }
 }
 
 async function waitUntilUp(deadline: number): Promise<void> {
@@ -33,6 +41,12 @@ export default async function setup(): Promise<() => Promise<void>> {
   if (await isUp()) {
     return async () => {};
   }
+  // Una recarga de Functions puede tardar unos segundos. No arrancar otro
+  // conjunto de emuladores ni cerrar el Firestore que ya está en uso.
+  if (await isAuthUp()) {
+    await waitUntilUp(Date.now() + READY_TIMEOUT_MS);
+    return async () => {};
+  }
 
   const child: ChildProcess = spawn(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "emuladores"], {
     stdio: "inherit",
@@ -41,9 +55,7 @@ export default async function setup(): Promise<() => Promise<void>> {
     detached: process.platform !== "win32",
   });
 
-  await waitUntilUp(Date.now() + READY_TIMEOUT_MS);
-
-  return async () => {
+  const stop = async () => {
     if (child.exitCode !== null || child.signalCode !== null) return;
     if (process.platform === "win32" || !child.pid) {
       child.kill();
@@ -51,4 +63,11 @@ export default async function setup(): Promise<() => Promise<void>> {
     }
     process.kill(-child.pid, "SIGTERM");
   };
+  try {
+    await waitUntilUp(Date.now() + READY_TIMEOUT_MS);
+  } catch (error) {
+    await stop();
+    throw error;
+  }
+  return stop;
 }

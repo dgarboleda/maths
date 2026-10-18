@@ -55,6 +55,8 @@ cloudflare-env.d.ts
 
 # Lighthouse CI (npm run perf)
 /.lighthouseci/
+/performance-reports/
+/security-reports/
 
 # OpenNext / Cloudflare Workers
 .open-next

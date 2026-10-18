@@ -36,7 +36,9 @@ service cloud.firestore {
 
     // Ese hijo puntual (para sus propios datos de progreso).
     function isChild(parentId, childId) {
-      return isAnyChildOf(parentId) && request.auth.token.get('childId', null) == childId;
+      return isAnyChildOf(parentId) && request.auth.token.get('childId', null) == childId
+        && exists(/databases/$(database)/documents/parents/$(parentId)/children/$(childId))
+        && get(/databases/$(database)/documents/parents/$(parentId)/children/$(childId)).data.get('deleting', false) != true;
     }
 
     function isParentOrChild(parentId, childId) {
@@ -74,20 +76,19 @@ service cloud.firestore {
           allow update, delete: if isParent(parentId);
         }
 
-        // Libro mayor de estrellas: mismo criterio — el hijo solo agrega
-        // entradas al jugar, nunca edita ni borra una ya escrita.
+        // Libro mayor: el hijo lo lee. Solo Functions y la administración
+        // de la familia escriben, nunca el navegador infantil.
         match /starLedger/{entryId} {
-          allow read, create: if isParentOrChild(parentId, childId);
+          allow read: if isParentOrChild(parentId, childId);
+          // Functions valida la sesión y escribe movimiento+saldo atómicamente.
+          allow create: if isParent(parentId);
           allow update, delete: if isParent(parentId);
         }
 
-        // Contador agregado (docs/auditoria-rendimiento-accesibilidad.md
-        // §1.2, src/lib/starLedger.ts): mismo dueño que el libro mayor que
-        // resume — `awardStars` lo escribe en el mismo `writeBatch` que la
-        // entrada de `starLedger` de arriba, así que necesita el mismo
-        // permiso de escritura.
+        // Functions confirma el saldo junto con el movimiento correspondiente.
         match /starBalance/{docId} {
-          allow read, write: if isParentOrChild(parentId, childId);
+          allow read: if isParentOrChild(parentId, childId);
+          allow write: if isParent(parentId);
         }
 
         // El hijo pide un canje; solo el padre lo aprueba/rechaza/borra.
