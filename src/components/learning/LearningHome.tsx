@@ -134,7 +134,7 @@ export function LearningHome({
                   href: "/practicar",
                   icon: PenLine,
                   title: "Practicar",
-                  body: "Resuelve, pide pistas, revisa el desarrollo y vuelve a intentarlo.",
+                  body: "Practica escribiendo, cruza el estanque o impulsa el cohete con ejercicios de tu clase y ayudas.",
                 },
                 {
                   href: "/aventura",

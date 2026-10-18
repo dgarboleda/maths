@@ -10,6 +10,7 @@ import {
 import { getModule } from "@/lib/curriculum";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
+import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 
 const GOAL = 8;
 const START_TIME = 30;
@@ -31,6 +32,7 @@ export function CoheteGeneric({
   onWin,
   bestScore,
   onGameOver,
+  exercise,
 }: {
   moduleId: string;
   soundOn: boolean;
@@ -44,8 +46,10 @@ export function CoheteGeneric({
   /** Se llama al terminar la carrera (ganada o no) con las respuestas
    *  acertadas — el llamador decide si eso mejora la marca guardada. */
   onGameOver?: (correctCount: number) => void;
+  exercise?: LessonExercise;
 }) {
-  const mod = getModule(moduleId)!;
+  const generateProblem = () =>
+    exercise?.problem ?? getModule(moduleId)!.generateProblem();
   const [phase, setPhase] = useState<Phase>("start");
   const [timer, setTimer] = useState(START_TIME);
   const timerRef = useRef(START_TIME);
@@ -58,16 +62,25 @@ export function CoheteGeneric({
   const roundRef = useRef(0);
   const playingRef = useRef(false);
   const [starsThisRound, setStarsThisRound] = useState(0);
-  const [bag, setBag] = useState<Problem[]>(() => drawBag(mod.generateProblem));
+  const [bag, setBag] = useState<Problem[]>(() =>
+    exercise ? [exercise.problem] : drawBag(generateProblem),
+  );
   const [win, setWin] = useState(false);
   const promptId = useId();
 
-  const problem = bag[0];
+  const problem = exercise?.problem ?? bag[0];
+  const goal = exercise ? 1 : GOAL;
+  const shownCount = exercise ? Number(exercise.solved) : correctCount;
+  const shownPhase = exercise?.solved ? "over" : phase;
+  const shownWin = exercise ? exercise.solved : win;
+  const lessonMode = Boolean(exercise);
+  const timerRunning =
+    !exercise || (exercise.timed && !exercise.paused && !exercise.disabled);
 
   function advance() {
     setBag((b) => {
       const rest = b.slice(1);
-      return rest.length > 0 ? rest : drawBag(mod.generateProblem);
+      return rest.length > 0 ? rest : drawBag(generateProblem);
     });
   }
 
@@ -102,13 +115,14 @@ export function CoheteGeneric({
   // una función que React puede volver a ejecutar: en modo estricto la
   // partida terminaba dos veces.
   useEffect(() => {
-    if (phase !== "playing") return;
+    if (shownPhase !== "playing" || !timerRunning) return;
     const id = setInterval(() => {
+      if (lessonMode && document.hidden) return;
       setTimeLeft(timerRef.current - 1);
       if (timerRef.current <= 0) endGame(false);
     }, 1000);
     return () => clearInterval(id);
-  }, [phase, endGame]);
+  }, [shownPhase, timerRunning, endGame, lessonMode]);
 
   function start() {
     playSound("click", soundOn);
@@ -125,7 +139,7 @@ export function CoheteGeneric({
     submittingRef.current = false;
     setSubmitting(false);
     setStarsThisRound(0);
-    setBag(drawBag(mod.generateProblem));
+    setBag(exercise ? [exercise.problem] : drawBag(generateProblem));
     setPhase("playing");
   }
 
@@ -166,7 +180,7 @@ export function CoheteGeneric({
     }
   }
 
-  const progressPct = Math.min(100, (correctCount / GOAL) * 100);
+  const progressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border-4 border-indigo-500 bg-slate-900 p-6 text-white shadow-2xl">
@@ -184,18 +198,20 @@ export function CoheteGeneric({
           🚀 Misión despegue galáctico
         </h2>
         <p className="mb-6 text-sm text-indigo-200">
-          ¡Responde rápido para impulsar tu cohete antes de que se acabe el
-          combustible!
+          {exercise
+            ? "Resuelve el ejercicio de tu clase para impulsar el cohete. Puedes parar y pedir ayuda."
+            : "¡Responde rápido para impulsar tu cohete antes de que se acabe el combustible!"}
         </p>
 
-        {phase === "start" && (
+        {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
+            <div aria-hidden="true" className={`${exercise ? "" : "animate-bounce"} text-6xl`}>
               🚀
             </div>
             <button
               type="button"
               onClick={start}
+              disabled={exercise?.disabled || exercise?.paused}
               className="rounded-2xl border-2 border-white bg-gradient-to-r from-green-400 to-emerald-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Iniciar misión!
@@ -206,15 +222,15 @@ export function CoheteGeneric({
           </div>
         )}
 
-        {phase === "playing" && (
+        {shownPhase === "playing" && (
           <div className="space-y-6">
             <div
               role="progressbar"
               aria-label="Avance del cohete"
               aria-valuemin={0}
-              aria-valuemax={GOAL}
-              aria-valuenow={correctCount}
-              aria-valuetext={`${correctCount} de ${GOAL} respuestas correctas`}
+              aria-valuemax={goal}
+              aria-valuenow={shownCount}
+              aria-valuetext={`${shownCount} de ${goal} respuestas correctas`}
               className="relative flex h-28 items-center justify-between overflow-hidden rounded-2xl border border-indigo-500/40 bg-slate-800/80 p-4 px-6"
             >
               <span aria-hidden="true" className="z-10 text-3xl">
@@ -225,8 +241,10 @@ export function CoheteGeneric({
                 className="absolute left-10 right-10 flex items-center"
               >
                 <div
-                  className="text-4xl transition-all duration-500"
-                  style={{ transform: `translateX(${progressPct * 3.4}px)` }}
+                  className="text-4xl transition-all duration-500 motion-reduce:transition-none"
+                  style={exercise
+                    ? { marginLeft: `${progressPct}%`, transform: `translateX(-${progressPct}%)` }
+                    : { transform: `translateX(${progressPct * 3.4}px)` }}
                 >
                   🚀
                 </div>
@@ -246,17 +264,17 @@ export function CoheteGeneric({
                   aria-live="off"
                   className="font-mono text-2xl font-bold text-yellow-400"
                 >
-                  {timer}s
+                  {exercise && !exercise.timed ? "Sin límite" : `${timer}s`}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              {!exercise && <div className="flex items-center gap-2">
                 <span>
                   <span aria-hidden="true">⭐ </span>Estrellas:
                 </span>
                 <span className="font-mono text-2xl font-bold text-green-400">
                   {starsThisRound}
                 </span>
-              </div>
+              </div>}
             </div>
 
             <div className="rounded-2xl border-2 border-indigo-400 bg-indigo-900/90 p-6 shadow-inner">
@@ -274,39 +292,39 @@ export function CoheteGeneric({
               >
                 {problem.prompt}
               </div>
-              <QuestionWidget
+              {exercise ? exercise.input : <QuestionWidget
                 key={problem.id}
                 problem={problem}
                 disabled={submitting}
                 onSubmit={submit}
                 promptId={promptId}
-              />
+              />}
             </div>
           </div>
         )}
 
-        {phase === "over" && (
+        {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
             <div aria-hidden="true" className="text-6xl">
-              {win ? "🚀🌕" : "🌟"}
+              {shownWin ? "🚀🌕" : "🌟"}
             </div>
             <h3 className="text-3xl font-bold text-yellow-300">
-              {win ? "¡Misión cumplida!" : "¡Buen intento!"}
+              {shownWin ? "¡Misión cumplida!" : "¡Buen intento!"}
             </h3>
             <p className="text-indigo-200">
-              {win
+              {shownWin
                 ? "¡Tu cohete llegó con éxito a la Luna!"
                 : "¡Casi llegas a las estrellas!"}
             </p>
             <div className="mx-auto max-w-xs space-y-2 rounded-xl border border-indigo-700 bg-indigo-950 p-4 text-left">
               <div className="flex justify-between">
                 <span>Respuestas acertadas:</span>
-                <strong className="text-green-400">{correctCount}</strong>
+                <strong className="text-green-400">{shownCount}</strong>
               </div>
-              <div className="flex justify-between">
+              {!exercise && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-yellow-400">+{starsThisRound} ★</strong>
-              </div>
+              </div>}
               {bestAtStart != null && (
                 <div className="flex justify-between border-t border-indigo-800 pt-2">
                   <span>Tu marca:</span>
@@ -320,13 +338,20 @@ export function CoheteGeneric({
                 </div>
               )}
             </div>
-            <button
+            {(!exercise || !exercise.solved) && <button
               type="button"
               onClick={start}
+              disabled={exercise?.disabled || exercise?.paused}
               className="rounded-xl bg-purple-600 px-8 py-3 font-bold text-white hover:bg-purple-500"
             >
               Jugar de nuevo 🔄
-            </button>
+            </button>}
+            {exercise && !exercise.solved && (
+              <p className="text-sm text-indigo-200">
+                El tiempo de la partida terminó. Tu aprendizaje no pierde puntos;
+                puedes reintentar o desactivar el reloj.
+              </p>
+            )}
           </div>
         )}
       </div>

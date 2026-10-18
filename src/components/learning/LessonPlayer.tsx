@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { ArrowRight, BookOpen, Lightbulb } from "lucide-react";
 import {
   currentEvidence,
@@ -34,6 +35,16 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import { LearningVisual } from "./LearningVisual";
+import {
+  lessonProblem,
+  type LessonExercise,
+  type PracticeMode,
+} from "@/lib/minigames/lessonExercise";
+
+const LessonArcade = dynamic(
+  () => import("./LessonArcade").then((module) => module.LessonArcade),
+  { ssr: false, loading: () => <p role="status">Preparando la partida…</p> },
+);
 
 type RequestedStage = "practice" | "review" | null;
 export function LessonPlayer({
@@ -49,6 +60,7 @@ export function LessonPlayer({
   const now = useLearningClock();
   const mutation = useLearningAction(data.parentId, childId);
   const [launched, setLaunched] = useState(false);
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>("write");
   const lesson = getLesson(lessonId);
   const saved = data.progress[lessonId];
   const confirmed =
@@ -234,6 +246,8 @@ export function LessonPlayer({
                   evidence={evidence}
                   disabled={mutation.blocked}
                   run={run}
+                  practiceMode={practiceMode}
+                  setPracticeMode={setPracticeMode}
                 />
               )}
               {progress.stage === "summary" && (
@@ -330,6 +344,8 @@ function QuestionActivity({
   evidence,
   disabled,
   run,
+  practiceMode,
+  setPracticeMode,
 }: {
   lesson: Lesson;
   question: Question;
@@ -337,10 +353,19 @@ function QuestionActivity({
   evidence?: ResponseEvidence;
   disabled: boolean;
   run: (action: LearningAction) => Promise<boolean>;
+  practiceMode: PracticeMode;
+  setPracticeMode: (mode: PracticeMode) => void;
 }) {
   const [response, setResponse] = useState(evidence?.response ?? "");
   const [explanationOpen, setExplanationOpen] = useState(false);
   const [formatError, setFormatError] = useState<string | null>(null);
+  const [manuallyPaused, setManuallyPaused] = useState(false);
+  const [acknowledgedAttempts, setAcknowledgedAttempts] = useState(0);
+  const [timed, setTimed] = useState(false);
+  const problem = useMemo(() => lessonProblem(question), [question]);
+  const arcade = progress.stage === "practice" && practiceMode !== "write" && problem !== null;
+  const errorPaused = Boolean(evidence && !evidence.correct && evidence.attempts > acknowledgedAttempts);
+  const paused = manuallyPaused || errorPaused;
   const assessment = ["diagnostic", "check", "review"].includes(progress.stage);
   const silentCheck = ["check", "review"].includes(progress.stage);
   const locked = Boolean(
@@ -353,6 +378,106 @@ function QuestionActivity({
   const canNext = assessment
     ? Boolean(evidence && evidence.attempts > 0)
     : Boolean(evidence?.correct || evidence?.revealed);
+  const answerForm = (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (disabled || locked || (arcade && paused)) return;
+        if (question.format !== "choice" && parseNumber(response) === null) {
+          setFormatError(
+            "Escribe un número o una fracción válida, como 3/4. El denominador debe ser distinto de cero.",
+          );
+          return;
+        }
+        setFormatError(null);
+        void run({ kind: "answer", questionId: question.id, response });
+      }}
+      className="space-y-4"
+    >
+      <fieldset disabled={disabled || locked || (arcade && paused)} className="space-y-4">
+        <legend className="mb-4 text-xl font-bold leading-relaxed text-white">
+          {question.prompt}
+        </legend>
+        {question.choices ? (
+          <div className="space-y-2">
+            {question.choices.map((option) => (
+              <label
+                key={option.id}
+                className={`flex min-h-12 cursor-pointer items-start gap-3 rounded-xl border p-3 ${response === option.id ? "border-cyan-300 bg-cyan-950/50" : "border-slate-600 bg-slate-950"}`}
+              >
+                <input
+                  type="radio"
+                  name={`answer-${question.id}`}
+                  value={option.id}
+                  checked={response === option.id}
+                  onChange={() => setResponse(option.id)}
+                  className="mt-1 accent-cyan-300"
+                />
+                <span className="text-sm leading-relaxed">
+                  {option.label}
+                </span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div>
+            <label
+              htmlFor={`response-${question.id}`}
+              className="mb-2 block text-sm text-slate-300"
+            >
+              Tu respuesta{question.unit ? ` (${question.unit})` : ""}
+            </label>
+            <input
+              id={`response-${question.id}`}
+              autoComplete="off"
+              value={response}
+              onChange={(e) => {
+                setResponse(e.target.value);
+                setFormatError(null);
+              }}
+              aria-invalid={formatError !== null}
+              maxLength={64}
+              aria-describedby={`format-${question.id}`}
+              className="min-h-12 w-full rounded-xl border border-slate-500 bg-slate-950 px-4 text-lg text-white focus:border-cyan-300 focus:outline-2 focus:outline-cyan-300"
+            />
+            <p
+              id={`format-${question.id}`}
+              className="mt-2 text-xs text-slate-400"
+            >
+              Acepta números, decimales con coma o punto y fracciones como
+              3/4.
+            </p>
+          </div>
+        )}
+      </fieldset>
+      {formatError && (
+        <p role="alert" className="text-sm text-amber-200">
+          {formatError}
+        </p>
+      )}
+      {!locked && (
+        <button
+          className={primaryButton}
+          disabled={disabled || (arcade && paused) || !response.trim()}
+          type="submit"
+        >
+          {assessment ? "Registrar mi respuesta" : "Comprobar mi respuesta"}
+        </button>
+      )}
+    </form>
+  );
+  const exercise: LessonExercise | null = problem ? {
+    problem,
+    solved: Boolean(evidence?.correct),
+    disabled: disabled || locked,
+    paused,
+    timed,
+    input: answerForm,
+    onResponse: (value) => {
+      setResponse(String(value));
+      return run({ kind: "answer", questionId: question.id, response: String(value) });
+    },
+  } : null;
   return (
     <section className="space-y-5 rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-7">
       <p className="text-xs text-slate-400">
@@ -366,6 +491,36 @@ function QuestionActivity({
               ? "Completar un paso"
               : "Resolver"}
       </p>
+      {progress.stage === "practice" && (
+        <fieldset disabled={disabled} className="space-y-3 rounded-xl border border-cyan-300/25 bg-slate-950 p-4">
+          <legend className="px-1 font-bold text-cyan-200">Elige cómo practicar</legend>
+          <div className="flex flex-wrap gap-3">
+            {([
+              ["write", "Escribir"], ["frogger", "Estanque"], ["cohete", "Cohete"],
+            ] as const).map(([mode, label]) => (
+              <label key={mode} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-slate-600 px-3 py-2 text-sm text-white">
+                <input type="radio" name="practice-mode" value={mode}
+                  checked={practiceMode === mode}
+                  onChange={() => {
+                    setPracticeMode(mode);
+                    setManuallyPaused(false);
+                  }} />
+                {label}
+              </label>
+            ))}
+          </div>
+          <p className="text-xs leading-relaxed text-slate-300">
+            Los juegos practican las mismas matemáticas de esta clase. Puedes cambiar de modalidad y conservar tus respuestas y ayudas.
+            La comprobación vendrá después.
+          </p>
+          {practiceMode !== "write" && !problem && (
+            <p className="text-sm text-cyan-100">
+              Esta actividad trabaja una explicación o una decisión conceptual.
+              Respóndela aquí; el juego continúa en el siguiente ejercicio numérico.
+            </p>
+          )}
+        </fieldset>
+      )}
       {progress.stage === "diagnostic" && (
         <div className="rounded-xl bg-cyan-950/40 p-4 text-sm text-cyan-100">
           <p>
@@ -392,92 +547,42 @@ function QuestionActivity({
           <strong>Vamos paso a paso.</strong> {question.hints[0]}
         </p>
       )}
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (disabled || locked) return;
-          if (question.format !== "choice" && parseNumber(response) === null) {
-            setFormatError(
-              "Escribe un número o una fracción válida, como 3/4. El denominador debe ser distinto de cero.",
-            );
-            return;
-          }
-          setFormatError(null);
-          void run({ kind: "answer", questionId: question.id, response });
-        }}
-        className="space-y-4"
-      >
-        <fieldset disabled={disabled || locked} className="space-y-4">
-          <legend className="mb-4 text-xl font-bold leading-relaxed text-white">
-            {question.prompt}
-          </legend>
-          {question.choices ? (
-            <div className="space-y-2">
-              {question.choices.map((option) => (
-                <label
-                  key={option.id}
-                  className={`flex min-h-12 cursor-pointer items-start gap-3 rounded-xl border p-3 ${response === option.id ? "border-cyan-300 bg-cyan-950/50" : "border-slate-600 bg-slate-950"}`}
-                >
-                  <input
-                    type="radio"
-                    name={`answer-${question.id}`}
-                    value={option.id}
-                    checked={response === option.id}
-                    onChange={() => setResponse(option.id)}
-                    className="mt-1 accent-cyan-300"
-                  />
-                  <span className="text-sm leading-relaxed">
-                    {option.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          ) : (
-            <div>
-              <label
-                htmlFor={`response-${question.id}`}
-                className="mb-2 block text-sm text-slate-300"
-              >
-                Tu respuesta{question.unit ? ` (${question.unit})` : ""}
-              </label>
-              <input
-                id={`response-${question.id}`}
-                autoComplete="off"
-                value={response}
-                onChange={(e) => {
-                  setResponse(e.target.value);
-                  setFormatError(null);
+      {arcade && exercise ? (
+        <div className="space-y-4">
+          {!canNext && (
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                className={secondaryButton}
+                disabled={disabled}
+                onClick={() => {
+                  if (paused) {
+                    setManuallyPaused(false);
+                    setAcknowledgedAttempts(evidence?.attempts ?? 0);
+                  } else setManuallyPaused(true);
                 }}
-                aria-invalid={formatError !== null}
-                maxLength={64}
-                aria-describedby={`format-${question.id}`}
-                className="min-h-12 w-full rounded-xl border border-slate-500 bg-slate-950 px-4 text-lg text-white focus:border-cyan-300 focus:outline-2 focus:outline-cyan-300"
-              />
-              <p
-                id={`format-${question.id}`}
-                className="mt-2 text-xs text-slate-400"
               >
-                Acepta números, decimales con coma o punto y fracciones como
-                3/4.
-              </p>
+                {paused ? "Reanudar partida" : "Pausar partida"}
+              </button>
+              {practiceMode === "cohete" && (
+                <label className="flex min-h-11 items-center gap-2 text-sm text-slate-200">
+                  <input type="checkbox" checked={timed} disabled={disabled}
+                    onChange={(event) => setTimed(event.target.checked)} />
+                  Reto con tiempo (opcional)
+                </label>
+              )}
             </div>
           )}
-        </fieldset>
-        {formatError && (
-          <p role="alert" className="text-sm text-amber-200">
-            {formatError}
-          </p>
-        )}
-        {!locked && (
-          <button
-            className={primaryButton}
-            disabled={disabled || !response.trim()}
-            type="submit"
-          >
-            {assessment ? "Registrar mi respuesta" : "Comprobar mi respuesta"}
-          </button>
-        )}
-      </form>
+          {paused && !canNext && (
+            <p role="status" className="rounded-xl bg-cyan-950/50 p-4 text-cyan-100">
+              {errorPaused
+                ? "La partida está en pausa. Revisa la ayuda o pide una pista; después reanuda para intentar el mismo ejercicio."
+                : "Partida en pausa. Puedes pensar o consultar las ayudas antes de continuar."}
+            </p>
+          )}
+          <LessonArcade mode={practiceMode} exercise={exercise} />
+        </div>
+      ) : answerForm}
       <div aria-live="polite" aria-atomic="true">
         {evidence &&
           evidence.attempts > 0 &&
