@@ -10,6 +10,7 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
+import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
@@ -54,6 +55,7 @@ export function FroggerGeneric({
   onWin,
   bestScore,
   onGameOver,
+  exercise,
 }: {
   moduleId: string;
   soundOn: boolean;
@@ -63,21 +65,30 @@ export function FroggerGeneric({
   bestScore?: number | null;
   /** Se llama al agotar las vidas o al ganar, con los estanques cruzados. */
   onGameOver?: (correctCount: number) => void;
+  exercise?: LessonExercise;
 }) {
-  const mod = getModule(moduleId)!;
+  const generateProblem = () =>
+    exercise?.problem ?? getModule(moduleId)!.generateProblem();
+  const goal = exercise ? 1 : GOAL;
+  const startRow = goal * 2;
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
   const [phase, setPhase] = useState<Phase>("start");
-  const [row, setRow] = useState(START_ROW);
+  const [row, setRow] = useState(startRow);
   const [frogX, setFrogX] = useState(CENTER_COL);
   const [lives, setLives] = useState(LIVES_START);
-  const [problem, setProblem] = useState<Problem>(() => mod.generateProblem());
+  const [legacyProblem, setProblem] = useState<Problem>(generateProblem);
+  const problem = exercise?.problem ?? legacyProblem;
   const [candidates, setCandidates] = useState<number[]>([]);
   const [obstacleX, setObstacleX] = useState(CENTER_COL);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
+  const shownPhase = exercise?.solved ? "over" : phase;
+  const shownCount = exercise ? Number(exercise.solved) : correctCount;
+  const shownWin = exercise ? exercise.solved : win;
+  const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused);
 
   const obstacleDirRef = useRef(1);
   const accRef = useRef(0);
@@ -87,10 +98,10 @@ export function FroggerGeneric({
   const obstacleTickMs = scaleWithWave(OBSTACLE_TICK_BASE_MS, OBSTACLE_TICK_STEP_MS, wave, OBSTACLE_TICK_FLOOR_MS);
 
   function spawnCheckpoint() {
-    const nextProblem = mod.generateProblem();
+    const nextProblem = generateProblem();
     const spread = Math.max(8, COLS * 2);
     setProblem(nextProblem);
-    setCandidates(choiceSet(nextProblem.answer, spread, COLS));
+    setCandidates(exercise ? nextProblem.choices! : choiceSet(nextProblem.answer, spread, COLS));
   }
 
   function endGame(didWin: boolean, finalCount: number) {
@@ -106,7 +117,7 @@ export function FroggerGeneric({
 
   function start() {
     playSound("click", soundOn);
-    setRow(START_ROW);
+    setRow(startRow);
     setFrogX(CENTER_COL);
     setObstacleX(CENTER_COL);
     obstacleDirRef.current = 1;
@@ -121,7 +132,20 @@ export function FroggerGeneric({
   }
 
   async function resolveCheckpoint(chosenX: number) {
+    if (busyRef.current || controlsDisabled) return;
     busyRef.current = true;
+    if (exercise) {
+      try {
+        setFrogX(chosenX);
+        setRow(0);
+        // Se envía el valor elegido: ni el resultado ni premios se deciden aquí.
+        await exercise.onResponse(candidates[chosenX]);
+        setRow(startRow);
+      } finally {
+        busyRef.current = false;
+      }
+      return;
+    }
     const correct = candidates[chosenX] === problem.answer;
     playSound(correct ? "correct" : "wrong", soundOn);
     const stars = await onAnswer(correct);
@@ -157,7 +181,7 @@ export function FroggerGeneric({
   }
 
   function handleUp() {
-    if (busyRef.current || phase !== "playing") return;
+    if (busyRef.current || controlsDisabled || shownPhase !== "playing") return;
     const newRow = Math.max(0, row - 1);
     if (newRow === row) return;
     setRow(newRow);
@@ -171,8 +195,8 @@ export function FroggerGeneric({
   }
 
   function handleDown() {
-    if (busyRef.current || phase !== "playing") return;
-    const newRow = Math.min(START_ROW, row + 1);
+    if (busyRef.current || controlsDisabled || shownPhase !== "playing") return;
+    const newRow = Math.min(startRow, row + 1);
     if (newRow === row) return;
     setRow(newRow);
     if (isObstacleRow(newRow)) {
@@ -183,11 +207,11 @@ export function FroggerGeneric({
   }
 
   function handleLeft() {
-    if (busyRef.current) return;
+    if (busyRef.current || controlsDisabled || shownPhase !== "playing") return;
     setFrogX((x) => Math.max(0, x - 1));
   }
   function handleRight() {
-    if (busyRef.current) return;
+    if (busyRef.current || controlsDisabled || shownPhase !== "playing") return;
     setFrogX((x) => Math.min(COLS - 1, x + 1));
   }
 
@@ -207,12 +231,12 @@ export function FroggerGeneric({
       setObstacleX(next);
       if (next === frogX) handleHit();
     },
-    { running: phase === "playing" },
+    { running: !exercise && phase === "playing" },
   );
 
   useArrowKeys(
     { up: handleUp, down: handleDown, left: handleLeft, right: handleRight },
-    { enabled: phase === "playing" },
+    { enabled: !exercise && phase === "playing" },
   );
 
   function onTouchMove(dx: number, dy: number) {
@@ -222,8 +246,8 @@ export function FroggerGeneric({
     else if (dy < 0) handleUp();
   }
 
-  const progressPct = Math.min(100, (correctCount / GOAL) * 100);
-  const inObstacleRow = isObstacleRow(row);
+  const progressPct = Math.min(100, (shownCount / goal) * 100);
+  const inObstacleRow = !exercise && isObstacleRow(row);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border-4 border-sky-500 bg-slate-950 p-6 text-white shadow-2xl">
@@ -237,33 +261,38 @@ export function FroggerGeneric({
         <h2 className="mb-2 bg-gradient-to-r from-lime-300 to-sky-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🐸 Estanque de operaciones
         </h2>
-        <p className="mb-6 text-sm text-sky-200">¡Cruza saltando al nenúfar con el resultado correcto!</p>
+        <p className="mb-6 text-sm text-sky-200">
+          {exercise ? "Piensa y elige un nenúfar para cruzar. En esta clase el estanque funciona por turnos, sin obstáculos ni reloj." : "¡Cruza saltando al nenúfar con el resultado correcto!"}
+        </p>
 
-        {phase === "start" && (
+        {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
+            <div aria-hidden="true" className={`${exercise ? "" : "animate-bounce"} text-6xl`}>
               🐸
             </div>
             <button
               type="button"
               onClick={start}
+              disabled={controlsDisabled}
               className="rounded-2xl border-2 border-white bg-gradient-to-r from-lime-400 to-sky-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-sky-300">Usa las flechas del teclado (o los botones) para saltar.</p>
+            <p className="text-xs text-sky-300">
+              {exercise ? "Selecciona tu respuesta con los botones, usando el teclado o la pantalla táctil." : "Usa las flechas del teclado (o los botones) para saltar."}
+            </p>
           </div>
         )}
 
-        {phase === "playing" && (
+        {shownPhase === "playing" && (
           <div className="space-y-4">
             <div
               role="progressbar"
               aria-label="Estanques cruzados"
               aria-valuemin={0}
-              aria-valuemax={GOAL}
-              aria-valuenow={correctCount}
-              aria-valuetext={`${correctCount} de ${GOAL} estanques cruzados`}
+              aria-valuemax={goal}
+              aria-valuenow={shownCount}
+              aria-valuetext={`${shownCount} de ${goal} estanques cruzados`}
               className="h-3 w-full overflow-hidden rounded-full bg-sky-950"
             >
               <div
@@ -272,14 +301,14 @@ export function FroggerGeneric({
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-sky-700 bg-sky-950/80 p-3 text-sm">
+            {!exercise && <div className="flex items-center justify-between rounded-xl border border-sky-700 bg-sky-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
               </span>
               <span>
                 <span aria-hidden="true">⭐ </span>Estrellas: <strong className="text-lime-300">{starsThisRound}</strong>
               </span>
-            </div>
+            </div>}
 
             <div className="rounded-2xl border-2 border-lime-400 bg-sky-900/40 p-3">
               {problem.flavor && (
@@ -296,7 +325,7 @@ export function FroggerGeneric({
               {inObstacleRow ? "¡Esquiva el obstáculo!" : "Elige el nenúfar correcto"}
             </p>
 
-            <div
+            {!exercise && <div
               aria-hidden="true"
               className="mx-auto grid w-full max-w-sm gap-1 overflow-hidden rounded-2xl border-2 border-sky-700 bg-slate-900 p-2"
               style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
@@ -315,27 +344,48 @@ export function FroggerGeneric({
                   {frogX === col ? "🐸" : inObstacleRow ? "" : candidates[col]}
                 </div>
               ))}
-            </div>
+            </div>}
 
-            <TouchDPad onMove={onTouchMove} />
+            {exercise ? (
+              <div className="space-y-4 rounded-2xl border border-sky-500 bg-gradient-to-b from-sky-900 to-slate-900 p-3">
+                <div aria-hidden="true" className="relative h-12 rounded-xl bg-sky-950">
+                  <span className="absolute text-4xl transition-all duration-500 motion-reduce:transition-none"
+                    style={{ left: `${(frogX / (COLS - 1)) * 75}%`, bottom: row === 0 ? "12px" : "0px" }}>🐸</span>
+                </div>
+                <div role="group" aria-label="Nenúfares: elige tu respuesta" className="flex flex-wrap justify-center gap-3">
+                {candidates.map((value, col) => (
+                  <button
+                    key={value}
+                    type="button"
+                    disabled={controlsDisabled}
+                    onClick={() => void resolveCheckpoint(col)}
+                    className="min-h-14 min-w-14 rounded-2xl border-2 border-lime-300 bg-lime-900 px-3 py-4 font-bold text-lime-100 focus-visible:outline-2 focus-visible:outline-white disabled:opacity-50"
+                    aria-label={`Saltar al nenúfar ${exercise.problem.choiceLabels?.[col] ?? value}`}
+                  >
+                    <span aria-hidden="true">🌿 </span>{exercise.problem.choiceLabels?.[col] ?? value}
+                  </button>
+                ))}
+                </div>
+              </div>
+            ) : <TouchDPad onMove={onTouchMove} />}
           </div>
         )}
 
-        {phase === "over" && (
+        {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
             <div aria-hidden="true" className="text-6xl">
-              {win ? "🐸🏆" : "💦"}
+              {shownWin ? "🐸🏆" : "💦"}
             </div>
-            <h3 className="text-3xl font-bold text-lime-200">{win ? "¡Cruzaste el estanque!" : "¡Buen intento!"}</h3>
+            <h3 className="text-3xl font-bold text-lime-200">{shownWin ? "¡Cruzaste el estanque!" : "¡Buen intento!"}</h3>
             <div className="mx-auto max-w-xs space-y-2 rounded-xl border border-sky-700 bg-sky-950 p-4 text-left">
               <div className="flex justify-between">
                 <span>Estanques cruzados:</span>
-                <strong className="text-lime-300">{correctCount}</strong>
+                <strong className="text-lime-300">{shownCount}</strong>
               </div>
-              <div className="flex justify-between">
+              {!exercise && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-sky-300">+{starsThisRound} ★</strong>
-              </div>
+              </div>}
               {bestScore != null && (
                 <div className="flex justify-between border-t border-sky-800 pt-2">
                   <span>Tu marca:</span>
@@ -343,9 +393,9 @@ export function FroggerGeneric({
                 </div>
               )}
             </div>
-            <button type="button" onClick={start} className="rounded-xl bg-sky-600 px-8 py-3 font-bold text-white hover:bg-sky-500">
+            {!exercise && <button type="button" onClick={start} className="rounded-xl bg-sky-600 px-8 py-3 font-bold text-white hover:bg-sky-500">
               Jugar de nuevo 🔄
-            </button>
+            </button>}
           </div>
         )}
       </div>

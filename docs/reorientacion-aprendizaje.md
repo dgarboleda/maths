@@ -68,6 +68,40 @@ La evaluación de respuestas en servidor impide aceptar un booleano de acierto f
 
 Las métricas educativas nuevas se muestran primero en `/panel/progreso`; la actividad anterior permanece como histórico. No se mezclan las estrellas o la precisión de los minijuegos con las comprobaciones autónomas.
 
+## Minijuegos dentro de las clases
+
+En la etapa **Práctica** se puede elegir **Escribir**, **Estanque** (Frogger)
+o **Cohete**. Las doce clases ofrecen ejercicios numéricos para ambos juegos.
+Cada pregunta conserva su enunciado, respuesta, pistas y desarrollo del catálogo
+educativo compartido. Las preguntas de elección conceptual se responden en su
+formato habitual y la modalidad elegida continúa en el siguiente ejercicio
+numérico. Cambiar de modalidad conserva la evidencia de la pregunta; recargar
+conserva el avance y vuelve a la modalidad escrita.
+
+El estanque usa turnos y botones accesibles, sin obstáculos ni reloj. El cohete
+empieza sin límite de tiempo y permite activar un reto de 30 segundos. Se puede
+pausar; el reloj se detiene durante el guardado, al ocultar la pestaña y al
+revisar un error. Cada error pausa la partida hasta que el estudiante decide
+reanudar, para leer la orientación y pedir pistas antes de reintentar el mismo
+ejercicio. Agotar el tiempo no envía una respuesta ni resta progreso matemático.
+
+Los juegos envían la **respuesta concreta** a `recordLearningAction`, igual
+que la práctica escrita. Functions valida y guarda los intentos y apoyos;
+la interfaz celebra únicamente un acierto confirmado en el avance guardado.
+Los reintentos de red conservan el identificador de operación. No se usa el
+registro antiguo de intentos, marcas o premios y no se añaden estrellas por
+partida. La comprobación conceptual y de transferencia sigue después de la
+práctica: ganar un juego no acredita autonomía ni completa la clase.
+
+Se reutilizan `FroggerGeneric` y `CoheteGeneric` mediante un contrato opcional
+de ejercicio de clase; los modos arcade anteriores conservan su funcionamiento.
+Los componentes de juego se cargan bajo demanda. Esta integración usa el
+contrato educativo existente del protocolo 3 y no cambia funciones, reglas,
+colecciones ni versiones del contenido. Las preguntas mantienen su estado de
+revisión docente pendiente. Snake, Runner, Number Pac, Invaders y Breakout siguen
+disponibles en los niveles anteriores; su incorporación a las clases queda fuera
+de esta entrega.
+
 ## Auditoría del catálogo anterior
 
 El [inventario de los 67 módulos](auditoria-contenido.md) señala cobertura, cambios y trabajo editorial pendiente. Se corrigieron la representación de 10/10 como decimal y las soluciones reales de x² = c. También se explicitó la familia afín y = mx + b antes de extrapolar una tabla y la inversión de la desigualdad al multiplicar o dividir por un número negativo. Los ejemplos de los módulos vinculados usan los nuevos desarrollos autorales; el resto muestra pasos de sus pistas existentes y respeta las etiquetas de respuestas de opción múltiple.
