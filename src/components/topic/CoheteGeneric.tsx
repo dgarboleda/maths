@@ -286,12 +286,12 @@ export function CoheteGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <div
+              {!exercise && <div
                 id={promptId}
                 className="mb-4 text-3xl font-black text-yellow-300 sm:text-4xl"
               >
                 {problem.prompt}
-              </div>
+              </div>}
               {exercise ? exercise.input : <QuestionWidget
                 key={problem.id}
                 problem={problem}
