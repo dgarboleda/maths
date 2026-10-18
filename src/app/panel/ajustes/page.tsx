@@ -64,11 +64,15 @@ export default function AjustesPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-white">{c.name}</p>
+                    {c.deleting && (
+                      <p role="status" className="text-xs text-amber-300">Borrado pendiente. Reintenta para terminarlo.</p>
+                    )}
                     {age !== null && <p className="text-xs text-slate-400">{age} años</p>}
                   </div>
                   <button
                     type="button"
                     onClick={() => setPickingAvatarChild(c)}
+                    disabled={c.deleting}
                     className="flex min-h-11 items-center gap-1.5 rounded-full border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
                   >
                     <ImageIcon className="size-4" aria-hidden="true" />
@@ -77,6 +81,7 @@ export default function AjustesPage() {
                   <button
                     type="button"
                     onClick={() => setResettingChild(c)}
+                    disabled={c.deleting}
                     className="flex min-h-11 items-center gap-1.5 rounded-full border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
                   >
                     <KeyRound className="size-4" aria-hidden="true" />
@@ -88,7 +93,7 @@ export default function AjustesPage() {
                     className="flex min-h-11 items-center gap-1.5 rounded-full border border-red-500/25 bg-red-950/30 px-3.5 text-sm font-bold text-red-300 transition-colors hover:bg-red-950/50"
                   >
                     <Trash2 className="size-4" aria-hidden="true" />
-                    Borrar perfil
+                    {c.deleting ? "Reintentar borrado" : "Borrar perfil"}
                   </button>
                 </li>
               );
@@ -206,9 +211,13 @@ function ResetPinDialog({
       const pinHash = await hashPin(pin);
       const {
         db,
-        firestore: { doc, updateDoc },
+        firestore: { doc, updateDoc, deleteField },
       } = await getFirebase();
-      await updateDoc(doc(db, "parents", parentId, "children", child.id), { pinHash });
+      await updateDoc(doc(db, "parents", parentId, "children", child.id), {
+        pinHash,
+        pinFailCount: 0,
+        pinLockedUntil: deleteField(),
+      });
       onClose();
     } catch (err) {
       console.error("No se pudo restablecer el PIN", err);
@@ -303,10 +312,12 @@ function DeleteChildDialog({
   const [confirmName, setConfirmName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const confirmed = confirmName.trim().length > 0
+    && confirmName.trim().normalize("NFC") === child.name.trim().normalize("NFC");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (confirmName !== child.name || submitting) return;
+    if (!confirmed || submitting) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -315,7 +326,12 @@ function DeleteChildDialog({
       onClose();
     } catch (err) {
       console.error("No se pudo borrar el perfil", err);
-      setError("No se pudo borrar el perfil. Intenta de nuevo.");
+      const code = (err as { code?: string })?.code;
+      setError(
+        code === "permission-denied"
+          ? "No hay permiso para borrar todos los datos del perfil. Entra con la cuenta familiar que lo creó; si el error continúa, es necesario actualizar los permisos del servicio."
+          : "No se pudo completar el borrado. Puedes volver a intentarlo desde Ajustes.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -358,7 +374,7 @@ function DeleteChildDialog({
           <div className="mt-1 flex gap-4">
             <button
               type="submit"
-              disabled={confirmName !== child.name || submitting}
+              disabled={!confirmed || submitting}
               className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
             >
               {submitting ? "Borrando…" : "Borrar perfil"}

@@ -41,7 +41,7 @@ export default function PerfilesPage() {
           q,
           (snap) => {
             setListError(null);
-            setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
+            setChildren(snap.docs.map((d) => ({ ...(d.data() as ChildProfile), id: d.id })));
           },
           (err) => {
             console.error("No se pudo cargar la lista de hijos", err);
@@ -160,6 +160,17 @@ export default function PerfilesPage() {
 function ChildCard({ child }: { child: ChildDoc }) {
   const [open, setOpen] = useState(false);
 
+  if (child.deleting) {
+    return (
+      <div className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3 text-center">
+        <span className="font-display font-bold text-white">{child.name}</span>
+        <p role="status" className="text-xs text-amber-300">Borrado pendiente</p>
+        <Link href="/panel/ajustes" className="min-h-11 py-2 text-sm font-semibold text-cyan-300 underline">
+          Terminar borrado de {child.name}
+        </Link>
+      </div>
+    );
+  }
   if (open) {
     return <PinDialog child={child} onClose={() => setOpen(false)} />;
   }

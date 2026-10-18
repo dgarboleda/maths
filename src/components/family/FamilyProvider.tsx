@@ -50,7 +50,7 @@ export function FamilyProvider({ children: content }: { children: ReactNode }) {
         if (cancelled) return;
         const q = query(collection(db, "parents", parentId, "children"), orderBy("createdAt", "asc"));
         unsubscribe = onSnapshot(q, (snap) => {
-          setChildren(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ChildProfile) })));
+          setChildren(snap.docs.map((d) => ({ ...(d.data() as ChildProfile), id: d.id })));
           setLoadingChildren(false);
         });
       })
