@@ -18,8 +18,9 @@ const eslintConfig = defineConfig([
     "cloudflare-env.d.ts",
     // Cloud Functions (functions/) es un paquete npm aparte, con su propio
     // tsconfig y ciclo de build ("functions/lib" es su salida compilada) —
-    // no forma parte del proyecto de Next.js que lintea esta configuración.
-    "functions/**",
+    // sus fuentes se lintean aquí; su compilación se verifica aparte en CI.
+    "functions/lib/**",
+    "functions/node_modules/**",
   ]),
   // Aislamiento EDITOR ↔ RUNTIME del Level Editor (docs/level-editor-plan.md
   // §11.2/§18.2): el editor modifica datos, el runtime los interpreta, y el

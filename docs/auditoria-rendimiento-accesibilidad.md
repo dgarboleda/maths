@@ -1,3 +1,5 @@
+> Estado actualizado: los presupuestos ahora miden login, juego y editor con una build de producción; el saldo usa Functions y un agregado transaccional. Este documento conserva la auditoría histórica. Consulta [operación](operacion.md) y `performance/budgets.json`.
+
 # Auditoría de rendimiento y accesibilidad
 
 Revisión completa del código de Numerario (Next.js 16 + Firebase, todo en el

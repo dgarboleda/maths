@@ -12,7 +12,7 @@ import type { StoryBeat } from "@/lib/gameworld/schema";
  * mundo no hay entidades de un nivel a las que referenciar — y mostrando el
  * retrato, que `LevelDialogOverlay` declara en su tipo pero nunca pinta.
  */
-export function StoryBeatOverlay({ beats, onClose }: { beats: StoryBeat[]; onClose: () => void }) {
+export function StoryBeatOverlay({ beats, onClose, pending = false, error }: { beats: StoryBeat[]; onClose: () => void; pending?: boolean; error?: string | null }) {
   const [index, setIndex] = useState(0);
   const beat = beats[index];
   if (!beat) return null;
@@ -42,10 +42,12 @@ export function StoryBeatOverlay({ beats, onClose }: { beats: StoryBeat[]; onClo
       <button
         type="button"
         onClick={next}
-        className="mt-4 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white"
+        disabled={pending}
+        className="mt-4 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
       >
-        {isLast ? "Entendido" : "Seguir ▸"}
+        {pending ? "Guardando…" : isLast ? "Entendido" : "Seguir ▸"}
       </button>
+      {error && <p role="alert" className="mt-2 text-sm text-rose-200">{error}</p>}
     </WorldDialog>
   );
 }

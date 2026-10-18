@@ -14,6 +14,7 @@ const CHILD_SUBCOLLECTIONS = [
   "redemptionRequests",
   "placements",
   "badges",
+  "records",
 ] as const;
 
 /**
@@ -31,17 +32,22 @@ export async function deleteChildProfile(
   parentId: string,
   childId: string,
 ): Promise<void> {
-  const { collection, doc, deleteDoc, getDocs, writeBatch } = firestore;
+  const { collection, doc, deleteDoc, getDocs, writeBatch, query, limit, updateDoc } = firestore;
+  const profile = doc(db, "parents", parentId, "children", childId);
+  // Cierra escritores infantiles antes de vaciar subcolecciones. Si falla
+  // un lote, la familia puede reintentar sin que el niño genere huérfanos.
+  await updateDoc(profile, { deleting: true });
 
   for (const sub of CHILD_SUBCOLLECTIONS) {
-    const snap = await getDocs(collection(db, "parents", parentId, "children", childId, sub));
-    const refs = snap.docs.map((d) => d.ref);
-    for (let i = 0; i < refs.length; i += 450) {
+    // Lecturas acotadas: un perfil con años de intentos no se carga entero.
+    while (true) {
+      const snap = await getDocs(query(collection(db, "parents", parentId, "children", childId, sub), limit(450)));
+      if (snap.empty) break;
       const batch = writeBatch(db);
-      for (const ref of refs.slice(i, i + 450)) batch.delete(ref);
+      for (const entry of snap.docs) batch.delete(entry.ref);
       await batch.commit();
     }
   }
 
-  await deleteDoc(doc(db, "parents", parentId, "children", childId));
+  await deleteDoc(profile);
 }

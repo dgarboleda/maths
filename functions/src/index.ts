@@ -1,8 +1,19 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import * as admin from "firebase-admin";
-import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 
-admin.initializeApp();
+initializeApp();
+
+export { initializeStarBalance, updateStarBalance } from "./stars";
+
+export const deploymentStatus = onRequest((_request, response) => {
+  const { release } = JSON.parse(readFileSync(path.join(__dirname, "release.json"), "utf8"));
+  response.set("Cache-Control", "no-store").json({ service: "maths-functions", protocol: 2, release });
+});
 
 /**
  * Frontera de seguridad real para "el niño juega desde su propio
@@ -37,7 +48,7 @@ function hashesMatch(a: string, b: string): boolean {
 }
 
 function childRef(parentId: string, childId: string) {
-  return admin.firestore().collection("parents").doc(parentId).collection("children").doc(childId);
+  return getFirestore().collection("parents").doc(parentId).collection("children").doc(childId);
 }
 
 /**
@@ -48,11 +59,11 @@ function childRef(parentId: string, childId: string) {
  */
 export const listChildrenPublic = onCall(async (request) => {
   const parentId = request.data?.parentId;
-  if (typeof parentId !== "string" || parentId.trim() === "") {
+  if (typeof parentId !== "string" || !/^[^/\s]{1,128}$/.test(parentId)) {
     throw new HttpsError("invalid-argument", "Falta el identificador de la familia.");
   }
 
-  const snap = await admin.firestore().collection("parents").doc(parentId).collection("children").get();
+  const snap = await getFirestore().collection("parents").doc(parentId).collection("children").get();
   return {
     children: snap.docs.map((d) => ({ id: d.id, name: (d.data().name as string | undefined) ?? "" })),
   };
@@ -66,9 +77,9 @@ export const verifyChildPin = onCall(async (request) => {
   };
   if (
     typeof parentId !== "string" ||
-    parentId.trim() === "" ||
+    !/^[^/\s]{1,128}$/.test(parentId) ||
     typeof childId !== "string" ||
-    childId.trim() === "" ||
+    !/^[^/\s]{1,128}$/.test(childId) ||
     typeof pin !== "string" ||
     !PIN_PATTERN.test(pin)
   ) {
@@ -81,16 +92,17 @@ export const verifyChildPin = onCall(async (request) => {
   // escriben atómicamente, para que dos intentos casi simultáneos (o un
   // script que dispare varios a la vez) no se salteen el bloqueo por una
   // condición de carrera.
-  await admin.firestore().runTransaction(async (tx) => {
+  const outcome = await getFirestore().runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists) {
       // Mismo mensaje que un PIN incorrecto: no delatar si el childId existe.
-      throw new HttpsError("permission-denied", "PIN incorrecto.");
+      return "incorrect";
     }
-    const data = snap.data() as { pinHash?: string; pinFailCount?: number; pinLockedUntil?: number };
+    const data = snap.data() as { pinHash?: string; pinFailCount?: number; pinLockedUntil?: number; deleting?: boolean };
+    if (data.deleting) return "incorrect";
     const now = Date.now();
     if (data.pinLockedUntil && data.pinLockedUntil > now) {
-      throw new HttpsError("resource-exhausted", "Demasiados intentos. Espera un momento e intenta de nuevo.");
+      return "locked";
     }
 
     if (!data.pinHash || !hashesMatch(hashPin(pin), data.pinHash)) {
@@ -101,13 +113,21 @@ export const verifyChildPin = onCall(async (request) => {
       } else {
         tx.update(ref, { pinFailCount: failCount });
       }
-      throw new HttpsError("permission-denied", "PIN incorrecto.");
+      // Lanzar aquí abortaría también tx.update: el contador nunca subiría.
+      return "incorrect";
     }
 
-    tx.update(ref, { pinFailCount: 0, pinLockedUntil: admin.firestore.FieldValue.delete() });
+    tx.update(ref, { pinFailCount: 0, pinLockedUntil: FieldValue.delete() });
+    return "ok";
   });
 
-  const uid = `child:${parentId}:${childId}`;
-  const token = await admin.auth().createCustomToken(uid, { role: "child", parentId, childId });
+  if (outcome === "locked") {
+    throw new HttpsError("resource-exhausted", "Demasiados intentos. Espera un momento e intenta de nuevo.");
+  }
+  if (outcome !== "ok") throw new HttpsError("permission-denied", "PIN incorrecto.");
+
+  // Firebase Auth limita el uid a 128 caracteres, incluso con ids largos.
+  const uid = `child:${createHash("sha256").update(JSON.stringify([parentId, childId])).digest("hex")}`;
+  const token = await getAuth().createCustomToken(uid, { role: "child", parentId, childId });
   return { token };
 });

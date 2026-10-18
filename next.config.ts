@@ -1,4 +1,12 @@
 import type { NextConfig } from "next";
+import { execFileSync } from "node:child_process";
+import { version } from "./package.json";
+
+function sourceRelease(): string {
+  if (process.env.MATHS_RELEASE) return process.env.MATHS_RELEASE;
+  try { return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
+  catch { return "unversioned"; }
+}
 
 /*
  * Aunque toda la app es "use client", Next renderiza cada página una vez en
@@ -16,6 +24,7 @@ const firebaseBrowserAliases = {
 };
 
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_RELEASE: sourceRelease(), NEXT_PUBLIC_APP_VERSION: version },
   /*
    * En desarrollo, Next solo sirve sus recursos internos al host con el que
    * arrancó (localhost). Las pruebas E2E abren la app en 127.0.0.1 —el

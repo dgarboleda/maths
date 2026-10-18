@@ -86,7 +86,7 @@ describe("firestore.rules — sesión propia del hijo (custom token)", () => {
     }
   });
 
-  test("puede crear un intento y una entrada del libro de estrellas, pero no editarlos", async () => {
+  test("puede crear intentos, pero no escribir directamente estrellas ni saldo", async () => {
     const { app, db, parentId, childId } = await nuevaFamiliaConDosHijos();
     try {
       const attemptRef = await firestoreFns.addDoc(
@@ -95,11 +95,14 @@ describe("firestore.rules — sesión propia del hijo (custom token)", () => {
       );
       await expect(firestoreFns.updateDoc(attemptRef, { correct: false })).rejects.toThrow();
 
-      const ledgerRef = await firestoreFns.addDoc(
+      await expect(firestoreFns.addDoc(
         firestoreFns.collection(db, "parents", parentId, "children", childId, "starLedger"),
         { delta: 3, reason: "problem_solved", attemptId: null, createdAt: firestoreFns.serverTimestamp() },
-      );
-      await expect(firestoreFns.deleteDoc(ledgerRef)).rejects.toThrow();
+      )).rejects.toThrow();
+      await expect(firestoreFns.setDoc(
+        firestoreFns.doc(db, "parents", parentId, "children", childId, "starBalance", "total"),
+        { total: 99999 },
+      )).rejects.toThrow();
     } finally {
       await deleteApp(app);
     }

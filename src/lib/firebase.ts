@@ -41,7 +41,6 @@ export function getFirebase(): Promise<Firebase> {
 declare global {
   var __numerarioEmulatorsConnected: boolean | undefined;
   var __numerarioStorageEmulatorConnected: boolean | undefined;
-  var __numerarioFunctionsEmulatorConnected: boolean | undefined;
 }
 
 async function initFirebase(): Promise<Firebase> {
@@ -144,19 +143,23 @@ export function getFirebaseFunctions(): Promise<FirebaseFunctionsBundle> {
 }
 
 async function initFirebaseFunctions(): Promise<FirebaseFunctionsBundle> {
-  const [{ initializeApp, getApps, getApp }, functionsFns] = await Promise.all([
-    import("firebase/app"),
-    import("firebase/functions"),
-  ]);
-
+  const { initializeApp, getApps, getApp } = await import("firebase/app");
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  return getFirebaseFunctionsForApp(app);
+}
+
+const functionsEmulators = new WeakSet<import("firebase/functions").Functions>();
+
+/** También admite las apps con nombre que usan las pruebas de integración. */
+export async function getFirebaseFunctionsForApp(app: FirebaseApp): Promise<FirebaseFunctionsBundle> {
+  const functionsFns = await import("firebase/functions");
   const functions = functionsFns.getFunctions(app);
 
   if (
-    process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1" &&
-    !globalThis.__numerarioFunctionsEmulatorConnected
+    (process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1" || app.options.projectId?.startsWith("demo-")) &&
+    !functionsEmulators.has(functions)
   ) {
-    globalThis.__numerarioFunctionsEmulatorConnected = true;
+    functionsEmulators.add(functions);
     functionsFns.connectFunctionsEmulator(functions, "127.0.0.1", 5001);
   }
 

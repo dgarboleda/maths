@@ -37,7 +37,7 @@ export function useTotalStars(
         unsubscribe = firestore.onSnapshot(
           ref,
           (snap) => {
-            if (snap.exists()) {
+            if (snap.exists() && snap.data().schemaVersion === 1) {
               setBalance({ key: `${parentId}/${childId}`, total: (snap.data().total as number | undefined) ?? 0 });
             } else if (!seeding) {
               seeding = true;

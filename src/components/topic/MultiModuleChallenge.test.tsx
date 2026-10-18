@@ -29,6 +29,7 @@ vi.mock("@/lib/firebase", () => ({
   }),
 }));
 vi.mock("@/lib/gameSound", () => ({ playSound: () => {} }));
+vi.mock("@/lib/starLedger", () => ({ awardStars: async () => {} }));
 vi.mock("@/lib/confetti", () => ({ triggerConfetti: () => {} }));
 
 function wrongProblem(id: string): Problem {

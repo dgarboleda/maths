@@ -25,6 +25,7 @@ import { StoryBeatOverlay } from "@/components/world/StoryBeatOverlay";
 import { AvatarPickerDialog } from "@/components/family/AvatarPickerDialog";
 import { useResolvedAvatar } from "@/lib/useResolvedAvatar";
 import { playSound } from "@/lib/gameSound";
+import { reportError } from "@/lib/reportError";
 
 const STATE_LABEL: Record<string, string> = { bloqueado: "Bloqueado", disponible: "Disponible", completado: "Completado" };
 const STATE_CLASS: Record<string, string> = {
@@ -56,6 +57,8 @@ export default function JugarMapaPage() {
   const [requests, setRequests] = useState<RequestDoc[]>([]);
   const [panel, setPanel] = useState<"ninguno" | "tienda">("ninguno");
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [storySaving, setStorySaving] = useState(false);
+  const [storyError, setStoryError] = useState<string | null>(null);
   // Fase 32 (docs/plan-jugabilidad.md §6): `useResolvedAvatar` lee el
   // `avatarId` del hijo una sola vez al montar — este contador fuerza una
   // relectura justo después de elegir uno nuevo, para que el HUD lo
@@ -185,14 +188,22 @@ export default function JugarMapaPage() {
   const storyMoment = currentStoryMoment(world, { seenStoryIds, allNodesComplete });
 
   async function dismissStory(storyId: string) {
-    const next = [...seenStoryIds, storyId];
-    setChild((c) => (c ? { ...c, seenStoryIds: next } : c));
-    if (!parentId) return;
+    if (!parentId || storySaving) return;
+    setStorySaving(true);
+    setStoryError(null);
     try {
       const { db, firestore } = await getFirebase();
-      await firestore.updateDoc(firestore.doc(db, "parents", parentId, "children", params.childId), { seenStoryIds: next });
+      await firestore.updateDoc(firestore.doc(db, "parents", parentId, "children", params.childId), {
+        seenStoryIds: firestore.arrayUnion(storyId),
+      });
+      // Cerrar después de confirmar el guardado: una recarga inmediata no
+      // debe cancelar la escritura y volver a mostrar la misma historia.
+      setChild((current) => current ? { ...current, seenStoryIds: [...new Set([...(current.seenStoryIds ?? []), storyId])] } : current);
     } catch (err) {
-      console.error("No se pudo guardar el progreso de la historia", err);
+      reportError(err, "jugar");
+      setStoryError("No pudimos guardar tu avance. Vuelve a intentarlo.");
+    } finally {
+      setStorySaving(false);
     }
   }
 
@@ -343,7 +354,7 @@ export default function JugarMapaPage() {
         />
       )}
 
-      {storyMoment && <StoryBeatOverlay beats={storyMoment.beats} onClose={() => dismissStory(storyMoment.storyId)} />}
+      {storyMoment && <StoryBeatOverlay key={storyMoment.storyId} beats={storyMoment.beats} pending={storySaving} error={storyError} onClose={() => dismissStory(storyMoment.storyId)} />}
 
       {avatarPickerOpen && (
         <AvatarPickerDialog

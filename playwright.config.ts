@@ -71,7 +71,16 @@ export default defineConfig({
       stderr: "pipe",
     },
     {
-      command: `npx next dev --port ${PORT}`,
+      // No iniciar el navegador hasta que el callable esté realmente cargado.
+      command: "node scripts/esperar-functions.mjs",
+      url: "http://127.0.0.1:5002/",
+      reuseExistingServer: true,
+      timeout: 180_000,
+    },
+    {
+      command: process.env.E2E_PRODUCTION === "1"
+        ? `node node_modules/next/dist/bin/next start --port ${PORT}`
+        : `npx next dev --port ${PORT}`,
       url: baseURL,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

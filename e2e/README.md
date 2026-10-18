@@ -3,12 +3,16 @@
 Las pruebas abren la app real en un navegador y la hacen jugar: registrar un
 padre, crear un perfil de hijo, entrar con su PIN, resolver problemas y pedir
 un canje. No hay mocks del cliente de Firebase — se usan los **emuladores**
-oficiales de Auth y Firestore, con el proyecto `demo-numerario`, que Firebase
+oficiales de Auth, Firestore, Storage y Functions, con el proyecto `demo-numerario`, que Firebase
 reserva para uso local y que nunca toca datos reales.
+
+`acceso-infantil.spec.ts` abre un navegador sin sesión del padre y usa los callables reales de listado y PIN.
 
 ## Ejecutar
 
 ```bash
+npm ci
+npm ci --prefix functions
 npm run e2e            # todo
 npm run e2e -- --ui    # modo interactivo
 npm run e2e -- e2e/accesibilidad.spec.ts
