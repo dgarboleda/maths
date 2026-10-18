@@ -125,6 +125,6 @@ La edición posterior conservará las versiones de los eventos. Antes de increme
 
 ## Publicación coordinada
 
-Se requiere Functions, reglas de Firestore y frontend de la misma revisión, con **protocolo 3**. Usar el despliegue completo existente, que publica Firebase antes del Worker. No se ha desplegado esta entrega a producción.
+Se requiere Functions, reglas de Firestore y frontend de la misma revisión, con **protocolo 3** (protocolo 4 desde el endurecimiento del acceso infantil, ver [operación](operacion.md#acceso-infantil)). Usar el despliegue completo existente, que publica Firebase antes del Worker. No se ha desplegado esta entrega a producción.
 
 La validación técnica comprende tipos, lint, pruebas del motor y contenido, reglas y callables con sesiones reales en emuladores, recorridos de navegador de escritorio/móvil y presupuestos de producción para login, clase, aventura, nivel familiar y editor.

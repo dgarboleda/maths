@@ -58,7 +58,7 @@ async function family<T>(
   }
 }
 
-test("Ada con un id antiguo se abre, permite restablecer PIN bloqueado y se borra sin afectar a otro perfil", async ({
+test("Ada con un id antiguo respeta el bloqueo del PIN, se restablece y se borra sin afectar a otro perfil", async ({
   page,
 }) => {
   const email = await registrarPadre(page);
@@ -79,15 +79,14 @@ test("Ada con un id antiguo se abre, permite restablecer PIN bloqueado y se borr
     });
   });
   await page.reload();
+  // El PIN se comprueba en Functions también en el dispositivo de la
+  // familia, así que el bloqueo vale aquí: ni el PIN correcto entra.
   await page
     .getByRole("button", { name: /Entrar al perfil de\s+Ada\s*$/ })
     .click();
   await page.getByLabel(/PIN de\s+Ada/).fill("1234");
   await page.getByLabel(/PIN de\s+Ada/).press("Enter");
-  await expect(
-    page.getByRole("heading", { name: /¿Qué vamos a descubrir/ }),
-  ).toBeVisible();
-  expect(new URL(page.url()).pathname).toBe(`/jugar/${childId}`);
+  await expect(page.getByText("Demasiados intentos. Espera un momento.")).toBeVisible();
   await page.goto("/panel/ajustes");
   const row = page
     .getByRole("listitem")
@@ -104,8 +103,21 @@ test("Ada con un id antiguo se abre, permite restablecer PIN bloqueado y se borr
     ).data();
     expect(data?.pinLockedUntil).toBeUndefined();
     expect(data?.pinFailCount).toBe(0);
-    await expect(verify(childId, "4321")).resolves.toHaveProperty("data.token");
+    expect(data?.pinHashVersion).toBe(2);
+    // Con la sesión de la familia solo confirma; no emite token infantil.
+    await expect(verify(childId, "4321")).resolves.toHaveProperty("data.ok", true);
   });
+  await page.goto("/perfiles");
+  await page
+    .getByRole("button", { name: /Entrar al perfil de\s+Ada\s*$/ })
+    .click();
+  await page.getByLabel(/PIN de\s+Ada/).fill("4321");
+  await page.getByLabel(/PIN de\s+Ada/).press("Enter");
+  await expect(
+    page.getByRole("heading", { name: /¿Qué vamos a descubrir/ }),
+  ).toBeVisible();
+  expect(new URL(page.url()).pathname).toBe(`/jugar/${childId}`);
+  await page.goto("/panel/ajustes");
   await row.getByRole("button", { name: "Borrar perfil" }).click();
   const deletion = page.getByRole("dialog", { name: /Borrar.*Ada/ });
   await deletion.getByLabel(/Escribe .*Ada/).fill("Ada");

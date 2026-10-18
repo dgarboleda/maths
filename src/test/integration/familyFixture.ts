@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { deleteApp, initializeApp, type FirebaseApp } from "firebase/app";
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import * as firestore from "firebase/firestore";
@@ -13,10 +12,12 @@ export async function createFamily() {
   const { user } = await createUserWithEmailAndPassword(auth, `${crypto.randomUUID()}@example.test`, "password123");
   const childId = crypto.randomUUID();
   const profile = firestore.doc(db, "parents", user.uid, "children", childId);
-  await firestore.setDoc(profile, {
-    name: "Sofía", pinHash: createHash("sha256").update("1234").digest("hex"), birthDate: "2017-01-01",
-  });
-  return { app, auth, db, parentId: user.uid, childId, profile };
+  await firestore.setDoc(profile, { name: "Sofía", birthDate: "2017-01-01" });
+  // Clave del enlace de acceso, como la genera Ajustes.
+  const accessKey = "k".repeat(43);
+  await firestore.setDoc(firestore.doc(db, "parents", user.uid), { deviceAccessKey: accessKey });
+  await call(app, "setChildPin", { parentId: user.uid, childId, pin: "1234" });
+  return { app, auth, db, parentId: user.uid, childId, profile, accessKey };
 }
 
 export async function call<T = unknown>(app: FirebaseApp, name: string, data: unknown): Promise<T> {

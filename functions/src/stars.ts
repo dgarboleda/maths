@@ -2,6 +2,13 @@ import { FieldValue, getFirestore, type Transaction, type DocumentReference } fr
 import { HttpsError, onCall, type CallableRequest } from "firebase-functions/v2/https";
 
 const BALANCE_SCHEMA = 1;
+/** Tope diario de estrellas que una sesión infantil puede pedir por su cuenta
+ * (minijuegos y módulos anteriores, que calculan el premio en el navegador).
+ * Una respuesta rinde como mucho 30 y la economía reduce los repetidos, así
+ * que un día de juego intenso queda muy por debajo; el tope solo corta que se
+ * invoque el callable en bucle. Las lecciones nuevas premian en el servidor
+ * (`recordLearningAction`) y no cuentan aquí. */
+export const CHILD_DAILY_STAR_LIMIT = 1000;
 
 function scope(request: CallableRequest) {
   if (!request.auth) throw new HttpsError("unauthenticated", "Inicia sesión.");
@@ -72,7 +79,9 @@ export const updateStarBalance = onCall(async (request) => {
   return getFirestore().runTransaction(async (tx) => {
     // El id se conserva al reintentar la misma operación: jamás cobra dos veces.
     const entry = child.collection("starLedger").doc(operationId);
-    const previous = await tx.get(entry);
+    const quota = child.collection("starBalance").doc("childDaily");
+    const today = new Date().toISOString().slice(0, 10);
+    const [previous, quotaSnap] = await Promise.all([tx.get(entry), tx.get(quota)]);
     const { balance, total } = await readBalance(tx, child);
     if (previous.exists) {
       if (previous.data()?.delta !== delta || previous.data()?.reason !== reason || previous.data()?.attemptId !== attemptId) {
@@ -81,6 +90,12 @@ export const updateStarBalance = onCall(async (request) => {
       return { total };
     }
     if (delta < 0 && total + delta < 0) throw new HttpsError("failed-precondition", "No hay estrellas suficientes.");
+    if (!isParent) {
+      const awarded = quotaSnap.data()?.day === today ? Number(quotaSnap.data()?.awarded) || 0 : 0;
+      // Sin error: el juego sigue y el premio simplemente no se acredita.
+      if (awarded + delta > CHILD_DAILY_STAR_LIMIT) return { total, limited: true };
+      tx.set(quota, { day: today, awarded: awarded + delta });
+    }
     tx.create(entry, { delta, reason, attemptId, createdAt: FieldValue.serverTimestamp() });
     tx.set(balance, { total: total + delta, schemaVersion: BALANCE_SCHEMA });
     return { total: total + delta };

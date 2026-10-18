@@ -164,9 +164,9 @@ describe("Servicio educativo y reglas reales", () => {
       childApp = await anonymousApp();
     try {
       const { token } = await call<{ token: string }>(
-        family.app,
+        childApp,
         "verifyChildPin",
-        { parentId: family.parentId, childId: family.childId, pin: "1234" },
+        { parentId: family.parentId, childId: family.childId, pin: "1234", accessKey: family.accessKey },
       );
       await signInWithCustomToken(getAuth(childApp), token);
       const db = fs.getFirestore(childApp);

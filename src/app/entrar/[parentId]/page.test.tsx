@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import EntrarPage from "./page";
@@ -40,7 +40,24 @@ vi.mock("@/lib/firebase", () => ({
   getFirebaseFunctions: async () => ({ functions: {}, functionsFns: { httpsCallable } }),
 }));
 
+const KEY = "k".repeat(43);
+
 describe("EntrarPage — sesión propia del hijo", () => {
+  beforeEach(() => {
+    window.location.hash = `#k=${KEY}`;
+  });
+  afterEach(() => {
+    window.location.hash = "";
+    vi.clearAllMocks();
+  });
+
+  test("sin la clave del enlace no pide la lista y explica qué hacer", async () => {
+    window.location.hash = "";
+    render(<EntrarPage />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Este enlace no es válido");
+    expect(listChildrenPublicFn).not.toHaveBeenCalled();
+  });
+
   test("espera el ID token con los claims antes de navegar a /jugar/{childId}", async () => {
     const user = userEvent.setup();
     render(<EntrarPage />);
@@ -52,6 +69,9 @@ describe("EntrarPage — sesión propia del hijo", () => {
     await user.click(screen.getByRole("button", { name: "Entrar" }));
 
     expect(push).toHaveBeenCalledWith("/jugar/hijo-1");
+    // La clave del fragmento acompaña a ambas llamadas.
+    expect(listChildrenPublicFn).toHaveBeenCalledWith({ parentId: "padre-1", accessKey: KEY });
+    expect(verifyChildPinFn).toHaveBeenCalledWith({ parentId: "padre-1", childId: "hijo-1", pin: "1234", accessKey: KEY });
     expect(getIdTokenResult).toHaveBeenCalledTimes(1);
     // El orden es la parte que importa: si `push` se llamara primero, el
     // arreglo no cumpliría su propósito aunque ambos mocks terminen

@@ -16,7 +16,8 @@ export interface ChildProfile {
   deleting?: boolean;
   name: string;
   birthDate: string;
-  pinHash: string;
+  /** HMAC que escribe Functions (`setChildPin`); el navegador no lo usa. */
+  pinHash?: string;
   createdAt: number;
   /** Estado de la evaluación diagnóstica inicial. Ausente en perfiles
    * creados antes de esta función: se trata como "pendiente" pero sin

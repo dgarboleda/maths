@@ -45,6 +45,16 @@ service cloud.firestore {
       return isParent(parentId) || isChild(parentId, childId);
     }
 
+    function validAttempt(data) {
+      return data.keys().hasAll(['skillId', 'itemId', 'correct', 'createdAt'])
+        && data.keys().hasOnly(['skillId', 'itemId', 'correct', 'createdAt', 'hintsUsed'])
+        && data.skillId is string && data.skillId.size() > 0 && data.skillId.size() <= 160
+        && data.itemId is string && data.itemId.size() > 0 && data.itemId.size() <= 64
+        && data.correct is bool
+        && data.createdAt == request.time
+        && (!('hintsUsed' in data) || (data.hintsUsed is int && data.hintsUsed >= 0 && data.hintsUsed <= 50));
+    }
+
     match /parents/{parentId} {
       // El documento del padre no lo lee ningún hijo — nada bajo /jugar/**
       // lo necesita.
@@ -52,7 +62,11 @@ service cloud.firestore {
 
       match /children/{childId} {
         allow read: if isParentOrChild(parentId, childId);
-        allow create, delete: if isParent(parentId);
+        // El hash del PIN es un HMAC con un secreto de Functions
+        // (`setChildPin`): ningún navegador, ni el de la familia, lo escribe.
+        allow create: if isParent(parentId)
+          && !request.resource.data.keys().hasAny(['pinHash', 'pinHashVersion']);
+        allow delete: if isParent(parentId);
         // El hijo solo puede tocar su propio documento para su propio
         // progreso de juego — nunca su nombre, PIN, ni nada que el padre
         // administre. Campos permitidos: `placementStatus` (evaluación
@@ -60,7 +74,8 @@ service cloud.firestore {
         // Fase 32, AvatarPickerDialog.tsx), `seenStoryIds` (historia ya
         // vista, Fase 30, mapa/page.tsx) y `streakDays`/`lastPlayedDay`
         // (racha de días jugados, Fase 35, src/lib/streak.ts).
-        allow update: if isParent(parentId)
+        allow update: if (isParent(parentId)
+              && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pinHash', 'pinHashVersion']))
           || (isChild(parentId, childId)
               && request.resource.data.diff(resource.data).affectedKeys()
                   .hasOnly(['placementStatus', 'avatarId', 'seenStoryIds', 'streakDays', 'lastPlayedDay']));
@@ -88,17 +103,26 @@ service cloud.firestore {
         }
 
         // Bitácora de intentos: se agrega, nunca se corrige ni se borra
-        // desde el dispositivo del hijo.
+        // desde el dispositivo del hijo. Lo que escribe la sesión infantil se
+        // valida porque alimenta la analítica del editor y del panel: campos
+        // conocidos, tipos y hora del servidor (sin fechar intentos a mano).
+        // El acierto lo decide aún el navegador en los módulos anteriores;
+        // la evidencia nueva vive en learningEvidence.
         match /attempts/{attemptId} {
-          allow read, create: if isParentOrChild(parentId, childId);
+          allow read: if isParentOrChild(parentId, childId);
+          allow create: if isParent(parentId)
+            || (isChild(parentId, childId) && validAttempt(request.resource.data));
           allow update, delete: if isParent(parentId);
         }
 
-        // Libro mayor: el hijo lo lee. Solo Functions y la administración
-        // de la familia escriben, nunca el navegador infantil.
+        // Libro mayor: el hijo lo lee y nunca lo escribe. Los premios y
+        // canjes pasan por Functions, que escribe movimiento+saldo en una
+        // transacción. La familia conserva escritura directa (corrección
+        // manual, borrado del perfil, migración de datos antiguos): si
+        // desalinea el agregado, `initializeStarBalance` con `reconcile`
+        // lo recalcula desde el libro mayor.
         match /starLedger/{entryId} {
           allow read: if isParentOrChild(parentId, childId);
-          // Functions valida la sesión y escribe movimiento+saldo atómicamente.
           allow create: if isParent(parentId);
           allow update, delete: if isParent(parentId);
         }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { signOut } from "firebase/auth";
 import { Check, Copy, DatabaseBackup, ImageIcon, KeyRound, Smartphone, Trash2, UserRound, Users } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { useFamily, type ChildDoc } from "@/components/family/FamilyProvider";
 import { getFirebase } from "@/lib/firebase";
-import { hashPin } from "@/lib/pin";
+import { deviceAccessLink, newAccessKey, setChildPin } from "@/lib/pin";
 import { deleteChildProfile } from "@/lib/deleteChild";
 import { ageFromBirthDate } from "@/lib/family/age";
 import { Avatar } from "@/components/world/Avatar";
@@ -129,17 +129,61 @@ export default function AjustesPage() {
 }
 
 /**
- * El enlace lleva el `parentId` en la URL a propósito: no es un secreto que
- * proteja los datos (eso lo hacen firestore.rules/storage.rules vía los
- * claims del custom token, no la URL) — es solo el identificador de la
- * familia para que `/entrar/{parentId}` sepa a quién pedirle la lista de
- * perfiles. Quien lo reciba solo puede avanzar más allá si conoce, además,
- * el PIN de 4 dígitos de un hijo (verificado del lado del servidor, con
- * bloqueo tras varios intentos fallidos — ver `functions/src/index.ts`).
+ * El enlace lleva el `parentId` y una clave aleatoria de la familia
+ * (`parents/{parentId}.deviceAccessKey`, solo legible por ella). Sin la clave,
+ * `/entrar` no muestra los nombres de los hijos ni admite intentos de PIN.
+ * "Generar un enlace nuevo" la rota e invalida los enlaces compartidos antes;
+ * las sesiones ya abiertas en otros dispositivos no se cierran.
  */
 function ChildDeviceLink({ parentId }: { parentId: string }) {
   const [copied, setCopied] = useState(false);
-  const link = typeof window !== "undefined" ? `${window.location.origin}/entrar/${parentId}` : "";
+  const [accessKey, setAccessKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [rotating, setRotating] = useState(false);
+  const link = accessKey && typeof window !== "undefined" ? deviceAccessLink(window.location.origin, parentId, accessKey) : "";
+
+  async function saveKey(key: string) {
+    const {
+      db,
+      firestore: { doc, setDoc },
+    } = await getFirebase();
+    await setDoc(doc(db, "parents", parentId), { deviceAccessKey: key }, { merge: true });
+    setAccessKey(key);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const {
+        db,
+        firestore: { doc, getDoc },
+      } = await getFirebase();
+      const stored = (await getDoc(doc(db, "parents", parentId))).data()?.deviceAccessKey;
+      if (cancelled) return;
+      if (typeof stored === "string" && stored) setAccessKey(stored);
+      else await saveKey(newAccessKey());
+    })().catch((err) => {
+      console.error("No se pudo preparar el enlace", err);
+      if (!cancelled) setError("No se pudo preparar el enlace. Recarga la página.");
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar o cambiar de familia
+  }, [parentId]);
+
+  async function rotateKey() {
+    setRotating(true);
+    setError(null);
+    try {
+      await saveKey(newAccessKey());
+    } catch (err) {
+      console.error("No se pudo generar un enlace nuevo", err);
+      setError("No se pudo generar un enlace nuevo. Intenta de nuevo.");
+    } finally {
+      setRotating(false);
+    }
+  }
 
   async function copyLink() {
     try {
@@ -155,25 +199,45 @@ function ChildDeviceLink({ parentId }: { parentId: string }) {
     <div className="flex flex-col gap-2.5">
       <p className="text-sm text-slate-400">
         Comparte este enlace con el dispositivo de tu hijo para que entre directo a elegir su perfil, sin que abras
-        tu sesión ahí.
+        tu sesión ahí. Trátalo como una llave: quien lo tenga verá los nombres de los perfiles.
       </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          readOnly
-          value={link}
-          onFocus={(e) => e.currentTarget.select()}
-          aria-label="Enlace para entrar desde otro dispositivo"
-          className="family-input min-w-0 flex-1 text-xs"
-        />
-        <button
-          type="button"
-          onClick={copyLink}
-          className="flex min-h-11 items-center gap-1.5 rounded-xl border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
-        >
-          {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
-          {copied ? "¡Copiado!" : "Copiar"}
-        </button>
-      </div>
+      {error && (
+        <p role="alert" className="text-sm font-semibold text-red-300">
+          {error}
+        </p>
+      )}
+      {!link && !error && (
+        <p role="status" className="text-sm text-slate-400">
+          Preparando el enlace…
+        </p>
+      )}
+      {link && (
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            readOnly
+            value={link}
+            onFocus={(e) => e.currentTarget.select()}
+            aria-label="Enlace para entrar desde otro dispositivo"
+            className="family-input min-w-0 flex-1 text-xs"
+          />
+          <button
+            type="button"
+            onClick={copyLink}
+            className="flex min-h-11 items-center gap-1.5 rounded-xl border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
+          >
+            {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+            {copied ? "¡Copiado!" : "Copiar"}
+          </button>
+          <button
+            type="button"
+            onClick={rotateKey}
+            disabled={rotating}
+            className="flex min-h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold text-cyan-300 underline disabled:opacity-60"
+          >
+            {rotating ? "Generando…" : "Generar un enlace nuevo"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -208,16 +272,8 @@ function ResetPinDialog({
     }
     setSubmitting(true);
     try {
-      const pinHash = await hashPin(pin);
-      const {
-        db,
-        firestore: { doc, updateDoc, deleteField },
-      } = await getFirebase();
-      await updateDoc(doc(db, "parents", parentId, "children", child.id), {
-        pinHash,
-        pinFailCount: 0,
-        pinLockedUntil: deleteField(),
-      });
+      // Functions guarda el hash y desbloquea el perfil en la misma operación.
+      await setChildPin(parentId, child.id, pin);
       onClose();
     } catch (err) {
       console.error("No se pudo restablecer el PIN", err);

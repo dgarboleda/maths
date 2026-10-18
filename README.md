@@ -51,7 +51,7 @@ La auditoría bloquea vulnerabilidades altas/críticas en dependencias de ejecuc
 
 - `/panel`: perfiles, progreso, recompensas y ajustes de la familia.
 - `/panel/editor`: niveles y mundo; `/panel/curriculum`: módulos personalizados.
-- `/entrar/{parentId}`: acceso desde otro dispositivo. Functions verifica el PIN, persiste los fallos/bloqueos y emite una sesión limitada al hijo.
+- `/entrar/{parentId}#k={clave}`: acceso desde otro dispositivo con la clave que genera Ajustes. Functions verifica clave y PIN (HMAC con el secreto `PIN_PEPPER`), persiste los fallos/bloqueos y emite una sesión limitada al hijo.
 - `/jugar/{childId}`: espacio educativo con programa y aventura incluidos, sin evaluación obligatoria ni niveles preparados por la familia.
 - `/jugar/{childId}/aprende`: 12 lecciones en tres unidades; `/aprende/{lessonId}`: clase, ejemplos, práctica, comprobación y aplicación. `/practicar` permite entrar a la práctica de un tema.
 - `/jugar/{childId}/aventura`: El apagón, con decisiones de distribución de energía y consecuencias persistentes. `/mapa` mantiene los mundos y actividades adicionales de la familia.
@@ -69,6 +69,8 @@ Necesitas acceso al proyecto Firebase (Auth, Firestore, Storage aprovisionado y 
 ```sh
 export FIREBASE_PROJECT_ID=tu-proyecto
 export MATHS_APP_URL=https://tu-dominio
+# Solo la primera vez: secreto del hash de los PIN (ver docs/operacion.md).
+npx firebase functions:secrets:set PIN_PEPPER --project "$FIREBASE_PROJECT_ID"
 npm run deploy
 npm run verify:deployment
 ```
