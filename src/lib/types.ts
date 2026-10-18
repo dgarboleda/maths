@@ -12,6 +12,8 @@ export type PlacementStatus = "pendiente" | "completo";
 
 /** /parents/{parentId}/children/{childId} */
 export interface ChildProfile {
+  /** Borrado iniciado: se mantiene bloqueado hasta completar su limpieza. */
+  deleting?: boolean;
   name: string;
   birthDate: string;
   pinHash: string;

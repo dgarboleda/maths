@@ -35,16 +35,43 @@ export async function deleteChildProfile(
   parentId: string,
   childId: string,
 ): Promise<void> {
-  const { collection, doc, deleteDoc, getDocs, writeBatch, query, limit, updateDoc } = firestore;
+  const {
+    collection,
+    doc,
+    deleteDoc,
+    getDocFromServer,
+    getDocsFromServer,
+    writeBatch,
+    query,
+    limit,
+    updateDoc,
+  } = firestore;
   const profile = doc(db, "parents", parentId, "children", childId);
+  // Primero comprobar la existencia y TODOS los permisos de lectura en el
+  // servidor. Las reglas antiguas pueden denegar incluso colecciones vacías:
+  // no bloquear el perfil ni borrar progreso si falta publicar alguna regla.
+  const snapshot = await getDocFromServer(profile);
+  for (const sub of CHILD_SUBCOLLECTIONS) {
+    await getDocsFromServer(
+      query(
+        collection(db, "parents", parentId, "children", childId, sub),
+        limit(1),
+      ),
+    );
+  }
   // Cierra escritores infantiles antes de vaciar subcolecciones. Si falla
   // un lote, la familia puede reintentar sin que el niño genere huérfanos.
-  await updateDoc(profile, { deleting: true });
+  if (snapshot.exists()) await updateDoc(profile, { deleting: true });
 
   for (const sub of CHILD_SUBCOLLECTIONS) {
     // Lecturas acotadas: un perfil con años de intentos no se carga entero.
     while (true) {
-      const snap = await getDocs(query(collection(db, "parents", parentId, "children", childId, sub), limit(450)));
+      const snap = await getDocsFromServer(
+        query(
+          collection(db, "parents", parentId, "children", childId, sub),
+          limit(450),
+        ),
+      );
       if (snap.empty) break;
       const batch = writeBatch(db);
       for (const entry of snap.docs) batch.delete(entry.ref);
