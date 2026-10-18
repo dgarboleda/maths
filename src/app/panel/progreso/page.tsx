@@ -3,6 +3,7 @@
 import { Brain, ChartLine, Map as MapIcon, Percent, Puzzle, Target } from "lucide-react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { useChildDashboard } from "@/lib/family/useChildDashboard";
+import { LearningReport } from "@/components/learning/LearningReport";
 import {
   Bar,
   ChildSwitcher,
@@ -46,6 +47,9 @@ export default function ProgresoPage() {
         </div>
         <ChildSwitcher />
       </header>
+
+      <LearningReport key={selectedChild.id} childId={selectedChild.id} childName={selectedChild.name} />
+      <h2 className="text-lg font-bold text-slate-200">Histórico de otras actividades</h2>
 
       {dashboard.loading ? (
         <div className="family-panel rounded-2xl p-5">

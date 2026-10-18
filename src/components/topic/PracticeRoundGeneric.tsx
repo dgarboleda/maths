@@ -2,7 +2,12 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { QuestionWidget } from "./QuestionWidget";
-import { formatAnswer, generateUniqueBatch, isCorrectAnswer, type Problem } from "@/lib/problem";
+import {
+  formatAnswer,
+  generateUniqueBatch,
+  isCorrectAnswer,
+  type Problem,
+} from "@/lib/problem";
 import { getModule } from "@/lib/curriculum";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
@@ -35,7 +40,10 @@ export function PracticeRoundGeneric({
   );
   const [questionNumber, setQuestionNumber] = useState(1);
   const [score, setScore] = useState(0);
-  const [feedback, setFeedback] = useState<{ correct: boolean; answer: number } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    correct: boolean;
+    answer: number;
+  } | null>(null);
   const [finished, setFinished] = useState(false);
   const [hintLevel, setHintLevel] = useState(0);
   const [noHintStreak, setNoHintStreak] = useState(0);
@@ -115,7 +123,11 @@ export function PracticeRoundGeneric({
           <span aria-hidden="true">🏆 </span>¡Práctica completada!
         </div>
         <p className="font-bold">Obtuviste {score} puntos en esta ronda.</p>
-        <button type="button" onClick={restart} className="mt-2 rounded-xl bg-green-600 px-6 py-2 font-bold text-white">
+        <button
+          type="button"
+          onClick={restart}
+          className="mt-2 rounded-xl bg-green-600 px-6 py-2 font-bold text-white"
+        >
           Practicar otra vez
         </button>
       </div>
@@ -152,7 +164,10 @@ export function PracticeRoundGeneric({
           {problem.flavor}
         </p>
       )}
-      <p id={promptId} className="text-2xl font-extrabold text-purple-900 sm:text-3xl">
+      <p
+        id={promptId}
+        className="text-2xl font-extrabold text-purple-900 sm:text-3xl"
+      >
         {problem.prompt}
       </p>
 
@@ -182,17 +197,47 @@ export function PracticeRoundGeneric({
         </div>
       )}
 
-      {!feedback && <QuestionWidget problem={problem} onSubmit={submit} promptId={promptId} />}
+      {!feedback && (
+        <QuestionWidget
+          problem={problem}
+          onSubmit={submit}
+          promptId={promptId}
+        />
+      )}
 
       <div role="status" aria-live="polite">
         {feedback && (
           <div className="space-y-3">
             {feedback.correct ? (
-              <p className="text-lg font-bold text-emerald-700">¡Correcto! 🎉</p>
-            ) : (
-              <p className="text-lg font-bold text-slate-700">
-                Casi — la respuesta era {formatAnswer(problem, feedback.answer)}
+              <p className="text-lg font-bold text-emerald-700">
+                ¡Correcto! 🎉
               </p>
+            ) : (
+              <div className="space-y-3 text-slate-700">
+                <p className="text-lg font-bold">
+                  Revisa el procedimiento y vuelve a intentarlo.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFeedback(null)}
+                  className="min-h-11 rounded-xl bg-amber-100 px-5 py-2 font-bold text-amber-900"
+                >
+                  Intentar de nuevo
+                </button>
+                <details className="rounded-xl bg-white p-4 text-left">
+                  <summary className="cursor-pointer font-bold">
+                    Ver el desarrollo
+                  </summary>
+                  <ol className="mt-3 list-decimal space-y-2 pl-5">
+                    {problem.hints?.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ol>
+                  <p className="mt-3 font-bold">
+                    Respuesta: {formatAnswer(problem, feedback.answer)}
+                  </p>
+                </details>
+              </div>
             )}
             <button
               ref={nextButtonRef}

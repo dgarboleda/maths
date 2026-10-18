@@ -17,7 +17,6 @@ import { PuzzleOverlay } from "@/components/world/PuzzleOverlay";
 import { playSound } from "@/lib/gameSound";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
-import { useRequirePlacement } from "@/lib/useRequirePlacement";
 
 /**
  * Interior de una zona del mundo. Los objetos son los módulos reales del
@@ -37,7 +36,6 @@ export default function ZonaPage() {
   const [streak, setStreak] = useState(0);
   const totalStars = useTotalStars(parentId, params.childId);
   const [soundOn, toggleSound] = useSoundPreference();
-  const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -96,7 +94,7 @@ export default function ZonaPage() {
     );
   }
 
-  if (!child || placementPending) {
+  if (!child) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">

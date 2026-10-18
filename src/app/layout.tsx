@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     default: "Math Quest",
     template: "%s · Math Quest",
   },
-  description: "Matemáticas en espiral, de 3 a 17 años, con recompensas por estrellas.",
+  description: "Clases de matemáticas para adolescentes: comprende las ideas, practica con ayuda y aplica lo aprendido en una aventura.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

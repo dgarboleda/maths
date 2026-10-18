@@ -15,6 +15,7 @@ import {
   WeeklyChart,
 } from "@/components/family/ui";
 import { Avatar } from "@/components/world/Avatar";
+import { LearningReport } from "@/components/learning/LearningReport";
 
 const DAY_MS = 86_400_000;
 
@@ -61,7 +62,7 @@ function buildAlerts(children: ChildDoc[], dashboards: Record<string, ChildDashb
 
 export default function PanelPage() {
   const { user } = useAuth();
-  const { parentId, children, loadingChildren, selectedChildId } = useFamily();
+  const { parentId, children, loadingChildren, selectedChildId, selectedChild } = useFamily();
   const [dashboards, setDashboards] = useState<Record<string, ChildDashboard>>({});
 
   const handleDashboard = useCallback((childId: string, dashboard: ChildDashboard) => {
@@ -96,6 +97,8 @@ export default function PanelPage() {
         </h1>
         <p className="mt-1 text-sm text-slate-400">Esto es lo que ha pasado en Math Quest esta semana.</p>
       </header>
+
+      {selectedChild && <LearningReport key={selectedChild.id} childId={selectedChild.id} childName={selectedChild.name} compact />}
 
       {children.length === 0 ? (
         <EmptyState

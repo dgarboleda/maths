@@ -17,12 +17,12 @@ export function diminishingFactor(repeatsToday: number): number {
 }
 
 /**
- * Usar una pista reduce la recompensa (25% por nivel, piso de 25%) pero
- * nunca la anula del todo — pedir ayuda no debe impedir completar la
- * misión, solo cuesta un poco menos que resolverlo por cuenta propia.
+ * Pedir ayuda forma parte del aprendizaje. La autonomía se registra como
+ * evidencia educativa, separada de la recompensa por completar el trabajo.
  */
 export function hintPenalty(hintsUsed: number): number {
-  return Math.max(1 - 0.25 * hintsUsed, 0.25);
+  void hintsUsed;
+  return 1;
 }
 
 export function starsForAnswer(params: {

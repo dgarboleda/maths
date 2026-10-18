@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { getModule, isMastered, isUnlocked, modulesForStrand, recommendedModule } from "@/lib/curriculum";
+import { MODULES, isMastered, isUnlocked, modulesForStrand, recommendedModule } from "@/lib/curriculum";
 import { generateProblem } from "@/lib/medicion";
 import {
   answerPlacementItem,
@@ -81,48 +81,26 @@ describe("Motor de evaluación de ubicación (lógica pura)", () => {
     expect(state.itemsAsked).toBe(state.tiers.length);
   });
 
-  test("otorga como dominados solo los módulos en o por debajo de la franja alcanzada, y no repite lo ya dominado", () => {
+  test("la evaluación orienta sin acreditar módulos ni modificar logros históricos", () => {
     const perStrand: Record<string, PlacementStrandRecord> = {
       aritmetica: { itemsAsked: 5, itemsCorrect: 4, highestTierPassed: 3, gradeBand: gradeBandForTier(3), weakTiers: [] },
-      algebra: { itemsAsked: 2, itemsCorrect: 0, highestTierPassed: -1, gradeBand: gradeBandForTier(-1), weakTiers: [] },
     };
-    const yaDominado = "aritmetica-d1";
-    const progressBySkill: Record<string, SkillProgress> = {
-      [yaDominado]: { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "practice" },
+    const existing: Record<string, SkillProgress> = {
+      "aritmetica-d1": { recentResults: [], recentAccuracy: 1, masteredAt: 1234, masteredVia: "practice" },
     };
-
-    const otorgados = grantsFromPlacement(perStrand, progressBySkill);
-
-    const esperadosAritmetica = modulesForStrand("aritmetica")
-      .filter((m) => m.tier <= 3 && m.id !== yaDominado)
-      .map((m) => m.id);
-    for (const id of esperadosAritmetica) expect(otorgados).toContain(id);
-    expect(otorgados).not.toContain(yaDominado); // ya lo tenía por práctica real: no se toca
-    expect(otorgados.some((id) => getModule(id)?.strandSlug === "algebra")).toBe(false); // -1 no acredita nada
+    expect(grantsFromPlacement(perStrand, existing)).toEqual([]);
+    expect(existing["aritmetica-d1"].masteredAt).toBe(1234);
+    expect(isUnlocked(existing, "algebra-d4")).toBe(false);
   });
 
-  test("los otorgamientos resuelven prerrequisitos cruzados entre hilos igual que jugando de verdad", () => {
-    // algebra-d4 (grado 4) exige algebra-d3 (grado 3) Y aritmetica-d6 (grado 3).
-    const conAritmeticaHasta2: Record<string, PlacementStrandRecord> = {
-      aritmetica: { itemsAsked: 4, itemsCorrect: 4, highestTierPassed: 2, gradeBand: gradeBandForTier(2), weakTiers: [] },
-      algebra: { itemsAsked: 3, itemsCorrect: 3, highestTierPassed: 3, gradeBand: gradeBandForTier(3), weakTiers: [] },
+  test("un resultado alto de ubicación no desbloquea prerrequisitos sin evidencia específica", () => {
+    const perStrand: Record<string, PlacementStrandRecord> = {
+      aritmetica: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 8, gradeBand: gradeBandForTier(8), weakTiers: [] },
+      algebra: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 9, gradeBand: gradeBandForTier(9), weakTiers: [] },
     };
-    const progresoParcial: Record<string, SkillProgress> = {};
-    for (const id of grantsFromPlacement(conAritmeticaHasta2, {})) {
-      progresoParcial[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
-    }
-    expect(isUnlocked(progresoParcial, "algebra-d4")).toBe(false); // falta aritmetica-d6 (grado 3)
-
-    const conAritmeticaHasta3: Record<string, PlacementStrandRecord> = {
-      ...conAritmeticaHasta2,
-      aritmetica: { itemsAsked: 5, itemsCorrect: 5, highestTierPassed: 3, gradeBand: gradeBandForTier(3), weakTiers: [] },
-    };
-    const progresoCompleto: Record<string, SkillProgress> = {};
-    for (const id of grantsFromPlacement(conAritmeticaHasta3, {})) {
-      progresoCompleto[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
-    }
-    expect(isMastered(progresoCompleto, "aritmetica-d6")).toBe(true);
-    expect(isUnlocked(progresoCompleto, "algebra-d4")).toBe(true);
+    expect(grantsFromPlacement(perStrand, {})).toEqual([]);
+    expect(isMastered({}, "aritmetica-d6")).toBe(false);
+    expect(isUnlocked({}, "algebra-d4")).toBe(false);
   });
 
   test("el resumen general combina los cinco hilos en un puntaje y una franja aproximada", () => {
@@ -210,8 +188,9 @@ describe("Motor de evaluación de ubicación (lógica pura)", () => {
       logica: { itemsAsked: 3, itemsCorrect: 2, highestTierPassed: 1, gradeBand: gradeBandForTier(1), weakTiers: [] },
     };
     const progressBySkill: Record<string, SkillProgress> = {};
-    for (const id of grantsFromPlacement(perStrand, {})) {
-      progressBySkill[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
+    // Evidencia histórica ya existente: la nueva evaluación no la fabrica.
+    for (const mod of MODULES.filter((m) => m.tier <= perStrand[m.strandSlug].highestTierPassed)) {
+      progressBySkill[mod.id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "practice" };
     }
 
     // Confirma la premisa del caso: geometría tiene el menor avance relativo
@@ -233,7 +212,7 @@ describe("Motor de evaluación de ubicación (lógica pura)", () => {
     expect(plan?.module.id).toBe("aritmetica-valor-posicional");
   });
 
-  test("con todo dominado (evaluación perfecta en los cinco hilos), el plan personalizado no revienta: simplemente no hay nada que recomendar", () => {
+  test("con todo dominado por evidencia histórica en los cinco hilos, el plan personalizado no revienta: simplemente no hay nada que recomendar", () => {
     const perStrand: Record<string, PlacementStrandRecord> = Object.fromEntries(
       ["aritmetica", "algebra", "geometria", "medicion", "logica"].map((slug) => {
         const maxTier = modulesForStrand(slug).at(-1)!.tier;
@@ -244,8 +223,9 @@ describe("Motor de evaluación de ubicación (lógica pura)", () => {
       }),
     );
     const progressBySkill: Record<string, SkillProgress> = {};
-    for (const id of grantsFromPlacement(perStrand, {})) {
-      progressBySkill[id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "placement" };
+    // Evidencia histórica ya existente: la nueva evaluación no la fabrica.
+    for (const mod of MODULES.filter((m) => m.tier <= perStrand[m.strandSlug].highestTierPassed)) {
+      progressBySkill[mod.id] = { recentResults: [], recentAccuracy: 1, masteredAt: Date.now(), masteredVia: "practice" };
     }
 
     expect(pickPersonalizedPlan(perStrand, progressBySkill)).toBeNull();

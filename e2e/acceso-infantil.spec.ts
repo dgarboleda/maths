@@ -18,7 +18,12 @@ test("un navegador sin la sesión del padre entra con el callable real y su PIN"
     await expect(child.getByText("PIN incorrecto", { exact: true })).toBeVisible();
     await pin.fill("1234");
     await pin.press("Enter");
-    await expect(child).toHaveURL(/\/jugar\/[^/]+\/evaluacion/);
-    await expect(child.getByRole("heading", { name: /evaluaci|dónde|nivel|comenzar/i }).first()).toBeVisible();
+    await expect(child).toHaveURL(/\/jugar\/[^/]+$/);
+    await expect(child.getByRole("heading", { name: "Hola, Sofía. ¿Qué vamos a descubrir?" })).toBeVisible();
+    await child.getByRole("link", { name: "Comenzar mi primera clase" }).click();
+    await child.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+    await expect(child.getByRole("heading", { name: "Primero, identifica el todo" })).toBeVisible();
+    await child.reload();
+    await expect(child.getByRole("heading", { name: "Primero, identifica el todo" })).toBeVisible();
   } finally { await context.close(); }
 });

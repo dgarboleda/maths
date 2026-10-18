@@ -1,5 +1,5 @@
 import type { ModuleDef } from "./curriculum";
-import { modulesForStrand, isMastered, nextChallenge, recommendedModule } from "./curriculum";
+import { modulesForStrand, nextChallenge, recommendedModule } from "./curriculum";
 import type { PlacementStrandRecord, SkillProgress } from "./types";
 import { getStrand, STRANDS, type StrandDef } from "./strands";
 import { gradeLabel } from "./pisa";
@@ -10,7 +10,8 @@ import { gradeLabel } from "./pisa";
  *  - El patrón basal/techo de pruebas de matemáticas administradas de forma
  *    individual (KeyMath-3, WIAT-III): se arranca en el punto más fácil y se
  *    sube de franja mientras se acierta; dos fallos seguidos cierran el hilo
- *    (techo) y todo lo anterior queda dado por dominado (basal). Arrancar
+ *    (techo). El resultado estima una franja de entrada; no acredita los
+ *    módulos inferiores como dominados. Arrancar
  *    siempre desde abajo (en vez de "adivinar" un punto de entrada por edad)
  *    evita empezar con un ítem demasiado difícil que desmoralice a un niño
  *    del que no se sabe nada todavía.
@@ -160,25 +161,20 @@ export function summarizePlacement(perStrand: Record<string, PlacementStrandReco
 }
 
 /**
- * Módulos a otorgar como "dominados por evaluación": todo lo que quede en o
- * por debajo de la franja alcanzada en cada hilo y que el alumno todavía no
- * tuviera dominado por su cuenta. Al no tocar los módulos ya dominados por
- * práctica real, nunca se pisa un logro genuino con uno "testeado fuera".
+ * Compatibilidad con consumidores históricos: una evaluación de ubicación
+ * ya no otorga maestría. Los logros históricos nunca se borran al guardar
+ * una nueva evaluación.
  */
 export function grantsFromPlacement(
   perStrand: Record<string, PlacementStrandRecord>,
   progressBySkill: Record<string, SkillProgress>,
 ): string[] {
-  const grants: string[] = [];
-  for (const [strandSlug, r] of Object.entries(perStrand)) {
-    if (r.highestTierPassed < 0) continue;
-    for (const mod of modulesForStrand(strandSlug)) {
-      if (mod.tier <= r.highestTierPassed && !isMastered(progressBySkill, mod.id)) {
-        grants.push(mod.id);
-      }
-    }
-  }
-  return grants;
+  // Un ítem representativo de una franja no demuestra dominio de todos sus
+  // módulos. Se conserva la firma para leer evaluaciones históricas; las
+  // nuevas solo recomiendan un punto de entrada, sin otorgar maestría.
+  void perStrand;
+  void progressBySkill;
+  return [];
 }
 
 export const PLACEMENT_STRAND_ORDER = STRANDS.map((s) => s.slug);

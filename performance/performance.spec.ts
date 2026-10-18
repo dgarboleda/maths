@@ -5,7 +5,8 @@ import lighthouse from "lighthouse";
 import budgets from "./budgets.json";
 import { registrarPadre, crearHijo, entrarAlPerfil, idDeHijo, sembrarNivelConTerminal } from "../e2e/utilidades";
 
-test("presupuesto de producción: login, juego y editor con sesión real", async ({ baseURL }, testInfo) => {
+test("presupuesto de producción: login, clase, aventura, nivel y editor con sesión real", async ({ baseURL }, testInfo) => {
+  test.setTimeout(420_000);
   const probe = createServer();
   await new Promise<void>((resolve) => probe.listen(0, "127.0.0.1", resolve));
   const port = (probe.address() as { port: number }).port;
@@ -19,6 +20,7 @@ test("presupuesto de producción: login, juego y editor con sesión real", async
     const page = context.pages()[0];
     async function audit(name: keyof typeof budgets, route: string) {
       const url = new URL(route, baseURL).href;
+      await page.screenshot({ path: testInfo.outputPath(`${name}.png`), fullPage: true });
       const cdp = await context.newCDPSession(page);
       await cdp.send("Network.clearBrowserCache");
       await cdp.detach();
@@ -51,6 +53,16 @@ test("presupuesto de producción: login, juego y editor con sesión real", async
     await crearHijo(page);
     await entrarAlPerfil(page, "Ana", "1234", email);
     const childId = idDeHijo(page);
+    const lessonRoute = `/jugar/${childId}/aprende/fraccion-cantidad`;
+    await page.goto(new URL(lessonRoute, baseURL).href);
+    await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Busca cuánto vale una parte" })).toBeVisible();
+    await audit("aprendizaje", lessonRoute);
+    const adventureRoute = `/jugar/${childId}/aventura`;
+    await page.goto(new URL(adventureRoute, baseURL).href);
+    await page.getByRole("button", { name: /Inspeccionar la central/ }).click();
+    await expect(page.getByText(/Reserva disponible: 120/)).toBeVisible();
+    await audit("aventura", adventureRoute);
     const { levelId } = await sembrarNivelConTerminal(email, "aritmetica-d1");
     const gameRoute = `/jugar/${childId}/nivel/${levelId}`;
     await page.goto(new URL(gameRoute, baseURL).href);
