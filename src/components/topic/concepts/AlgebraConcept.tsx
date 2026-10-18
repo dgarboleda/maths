@@ -190,6 +190,10 @@ function InequalityConcept() {
         lado izquierdo quede más grande que el derecho. Se despeja igual que una ecuación de dos pasos: primero se
         deshace la suma, después la multiplicación.
       </p>
+      <p className="text-sm text-slate-600">
+        Aquí el coeficiente es positivo. Al multiplicar o dividir ambos lados por un número negativo,
+        se invierte el sentido de la desigualdad.
+      </p>
       <div className="grid grid-cols-1 gap-6 rounded-2xl border-2 border-purple-100 bg-purple-50 p-6 text-left md:grid-cols-3">
         <MiniSlider label="Multiplica x por" value={m} setValue={setM} min={1} max={5} />
         <MiniSlider label="Le suma" value={b} setValue={setB} min={0} max={10} />
@@ -233,9 +237,10 @@ function FunctionConcept() {
     <div className="space-y-6 text-center">
       <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">Funciones y tablas 🎛️</h2>
       <p className="text-slate-600">
-        Una función es una máquina: le das un número (x) y siempre te devuelve el mismo resultado (f(x)), calculado
-        con la misma regla. Si solo tienes la tabla, mira cuánto aumenta el resultado cada vez que x aumenta 1: ese
-        es el número que multiplica a x. Lo que falta para llegar al primer valor es lo que se suma.
+        Una función asigna a cada entrada x un único resultado. Aquí exploramos reglas de la forma f(x) = mx + b.
+        En esa familia, el cambio de f(x) cuando x aumenta 1 es el coeficiente m. Para hallar b, resta mx del valor
+        de f(x) en una fila. Una tabla finita por sí sola no determina cualquier función: primero necesitamos
+        conocer la familia de reglas que estamos utilizando.
       </p>
       <SliderPair labelA="Multiplica x por" a={m} setA={setM} labelB="Le suma" b={b} setB={setB} maxA={6} maxB={10} />
       <Formula text={`f(x) = ${m}x ${b >= 0 ? "+" : "−"} ${Math.abs(b)}`} />
@@ -310,8 +315,9 @@ function SquareRootPart() {
   return (
     <>
       <p className="text-slate-600">
-        x² significa x × x. Si x² = c, para despejar x hacemos lo contrario de elevar al cuadrado: sacamos la raíz
-        cuadrada. Geométricamente, x² es el área de un cuadrado de lado x.
+        x² significa x × x. Si c es positivo, la ecuación x² = c tiene dos soluciones reales: √c y −√c,
+        porque ambos números dan c al elevarlos al cuadrado. La raíz √c nombra solo la raíz no negativa.
+        Geométricamente, un lado de un cuadrado debe ser no negativo, por lo que en ese contexto elegimos √c.
       </p>
       <div className="rounded-2xl border-2 border-purple-100 bg-purple-50 p-6">
         <MiniSlider label="x (el lado del cuadrado)" value={root} setValue={setRoot} min={1} max={12} />
@@ -326,7 +332,9 @@ function SquareRootPart() {
       </div>
       <Formula text={`x² = ${square}`} />
       <p className="text-slate-600">
-        Para despejar x, saca la raíz cuadrada de {square}: √{square} = <strong className="text-purple-800">{root}</strong>
+        x² = {square} tiene las soluciones x = <strong className="text-purple-800">{root}</strong> y
+        x = <strong className="text-purple-800">−{root}</strong>. Como longitud del lado usamos {root}.
+        Si c = 0, solo hay x = 0; si c es negativo, no hay solución real.
       </p>
     </>
   );

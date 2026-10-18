@@ -10,7 +10,6 @@ import { STRANDS, getStrand } from "@/lib/strands";
 import {
   answerPlacementItem,
   currentPlacementModule,
-  grantsFromPlacement,
   initStrandPlacement,
   moduleForTier,
   pickPersonalizedPlan,
@@ -154,22 +153,15 @@ export default function EvaluacionPage() {
     setFeedback(null);
   }
 
-  /**
-   * Si esto falla (permisos, red, config de Firebase), NO hay que mostrar
-   * igual la pantalla de resultados: `placementStatus` nunca quedaría en
-   * "completo" y el niño volvería a caer en /evaluacion la próxima vez que
-   * intente jugar — un bucle invisible, porque de cara al niño la evaluación
-   * "funcionó" (sonó la fanfarria). El error queda visible y se puede
-   * reintentar sin rehacer el cuestionario completo (`results` ya está
-   * calculado).
-   */
+  /** El resultado se muestra después de confirmar el guardado. Un error se
+   * puede reintentar sin volver a contestar; esta evaluación es opcional y
+   * no acredita maestría ni condiciona el acceso al juego. */
   async function finishPlacement(results: Record<string, PlacementStrandRecord>) {
     setSaving(true);
     setSaveError(null);
     try {
       if (!parentId) throw new Error("No hay sesión activa.");
       const summary = summarizePlacement(results);
-      const grants = grantsFromPlacement(results, progressBySkill);
       const { db, firestore } = await getFirebase();
       const { collection, doc, writeBatch } = firestore;
       const batch = writeBatch(db);
@@ -183,24 +175,8 @@ export default function EvaluacionPage() {
         perStrand: results,
         overallScore: summary.overallScore,
         overallGradeBand: summary.overallGradeBand,
-        grantedModuleIds: grants,
+        grantedModuleIds: [],
       });
-
-      const mergedProgress = { ...progressBySkill };
-      for (const moduleId of grants) {
-        const existing = progressBySkill[moduleId];
-        const granted: SkillProgress = {
-          recentResults: existing?.recentResults ?? [],
-          recentAccuracy: existing?.recentAccuracy ?? 1,
-          masteredAt: Date.now(),
-          masteredVia: "placement",
-        };
-        mergedProgress[moduleId] = granted;
-        batch.set(
-          doc(db, "parents", parentId, "children", params.childId, "skillsProgress", moduleId),
-          granted,
-        );
-      }
 
       batch.update(doc(db, "parents", parentId, "children", params.childId), {
         placementStatus: "completo",
@@ -212,10 +188,6 @@ export default function EvaluacionPage() {
       await awardBadge(firestore, db, parentId, params.childId, "detective").catch((err) =>
         console.error("No se pudo otorgar la insignia de la evaluación", err),
       );
-      // El plan de la pantalla de resultados (próximo módulo por hilo)
-      // necesita ver los módulos recién otorgados, no el progreso de antes
-      // de rendir la evaluación.
-      setProgressBySkill(mergedProgress);
       playSound("fanfare", soundOn);
       setSavedSummary(summary);
       setPhase("results");
@@ -248,7 +220,7 @@ export default function EvaluacionPage() {
   return (
     <GameShell
       icon="🎯"
-      title="Evaluación inicial"
+      title="Evaluación curricular ampliada"
       subtitle={
         <Link href={`/jugar/${params.childId}`} className="underline">
           ← {child.name}
@@ -375,7 +347,7 @@ function IntroScreen({
         </>
       ) : (
         <>
-          <h2 className="text-2xl font-bold text-purple-900">Llegas a Ciudad Central</h2>
+          <h2 className="text-2xl font-bold text-purple-900">Explora tu punto de partida</h2>
           <p className="italic text-slate-600">
             Una antigua ciudad tecnológica que lleva generaciones casi abandonada.
           </p>
@@ -387,6 +359,7 @@ function IntroScreen({
             Resuelve los patrones que vayan apareciendo — de aritmética, álgebra, geometría, medición y lógica — para
             ver qué pasa. Dura entre 10 y 20 minutos. No es examen: no hay una nota.
           </p>
+          <p className="text-sm text-slate-700">Esta evaluación es opcional. Sus resultados orientan recomendaciones; no acreditan por sí solos el dominio de los temas.</p>
           <button
             type="button"
             onClick={onStart}
@@ -394,6 +367,7 @@ function IntroScreen({
           >
             Activar la terminal ▸
           </button>
+          <Link href={childHref} className="block min-h-11 py-2 text-sm font-bold text-purple-700 underline">Volver a mis clases sin evaluar ahora</Link>
         </>
       )}
     </div>

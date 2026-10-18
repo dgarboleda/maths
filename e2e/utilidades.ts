@@ -110,7 +110,17 @@ export async function entrarAlPerfil(page: Page, nombre: string, pin: string, co
  * evaluación en sí misma (el resto de las pruebas usa `entrarAlPerfil`). */
 export async function entrarAPerfilSinEvaluar(page: Page, nombre: string, pin: string): Promise<void> {
   await confirmarPin(page, nombre, pin);
-  await expect(page).toHaveURL(/\/evaluacion$/);
+  await page.waitForURL(/\/jugar\//);
+  const childId = idDeHijo(page);
+  await page.goto(`/jugar/${childId}/evaluacion`);
+  await expect(page.getByRole("heading", { name: "Evaluación curricular ampliada" })).toBeVisible();
+}
+
+/** Acceso normal de una cuenta nueva: sin evaluación ni mundo sembrados. */
+export async function entrarAlEspacio(page: Page, nombre: string, pin: string): Promise<string> {
+  await confirmarPin(page, nombre, pin);
+  await expect(page.getByRole("heading", { name: `Hola, ${nombre}. ¿Qué vamos a descubrir?` })).toBeVisible();
+  return idDeHijo(page);
 }
 
 /** Atajo: cuenta nueva + hijo nuevo + sesión del hijo abierta. */

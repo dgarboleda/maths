@@ -8,7 +8,6 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, SkillProgress } from "@/lib/types";
 import { useSoundPreference } from "@/lib/useSoundPreference";
-import { useRequirePlacement } from "@/lib/useRequirePlacement";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useLevelDoc } from "@/lib/level/persistence/useLevelDoc";
 import { getWorld } from "@/lib/gameworld/persistence/worldRepository";
@@ -39,7 +38,6 @@ export default function JugarNivelPage() {
   // llega a bloquearse esperando esto: se pasa tal cual, cargue o no.
   const [worldRules, setWorldRules] = useState<WorldRules | null | undefined>(undefined);
   const [soundOn] = useSoundPreference();
-  const placementPending = useRequirePlacement(params.childId, child, router);
   const { level, loading: levelLoading } = useLevelDoc(parentId, params.levelId);
   // Fase 18 movió Ciudad Central (y cualquier otro nivel real) a esta misma
   // ruta genérica, pero el AXIA de `WorldTopBar` (world/WorldHud.tsx) se
@@ -129,7 +127,7 @@ export default function JugarNivelPage() {
     );
   }
 
-  if (!child || placementPending || !progressLoaded || levelLoading) {
+  if (!child || !progressLoaded || levelLoading) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">

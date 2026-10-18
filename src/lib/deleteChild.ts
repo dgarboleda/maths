@@ -15,6 +15,9 @@ const CHILD_SUBCOLLECTIONS = [
   "placements",
   "badges",
   "records",
+  "learningProgress",
+  "learningEvidence",
+  "learningMissions",
 ] as const;
 
 /**

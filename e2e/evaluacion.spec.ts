@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { crearHijo, entrarAPerfilSinEvaluar, idDeHijo, registrarPadre, sembrarEvaluacion, sesionDeHijo } from "./utilidades";
+import { crearHijo, entrarAlEspacio, entrarAPerfilSinEvaluar, idDeHijo, registrarPadre, sembrarEvaluacion, sesionDeHijo } from "./utilidades";
 
 /**
  * Evaluación de ubicación — uno de los recorridos núcleo de la app (ver
- * README §Pruebas): es obligatoria, redirige a ella hasta completarla, y su
- * resultado real decide qué currícula ve el niño. La lógica pura del motor
+ * README §Pruebas): es opcional y orienta sin acreditar dominio ni bloquear las clases. La lógica pura del motor
  * (franjas, otorgamientos, plan personalizado) y la del generador de
  * medición viven en `src/test/unit/evaluacion.test.ts` (Vitest); los
  * detalles de UI de una sola pregunta o del panel de "puntos de mejora" ya
@@ -12,21 +11,15 @@ import { crearHijo, entrarAPerfilSinEvaluar, idDeHijo, registrarPadre, sembrarEv
  * completo de acá.
  */
 test.describe("Evaluación de ubicación en el navegador", () => {
-  test("sin evaluación completa, el niño no puede entrar al mundo: todo redirige a la evaluación", async ({
-    page,
-  }) => {
+  test("una cuenta nueva puede aprender y jugar sin evaluación ni niveles creados", async ({ page }) => {
     await registrarPadre(page);
     const { nombre, pin } = await crearHijo(page);
-    await entrarAPerfilSinEvaluar(page, nombre, pin);
-
-    await expect(page.getByRole("heading", { name: "Evaluación inicial" })).toBeVisible();
-    // Es obligatoria la primera vez: no hay forma de omitirla.
-    await expect(page.getByRole("link", { name: "Omitir por ahora" })).toBeHidden();
-
-    // Ni siquiera navegando directo a la ciudad: el mundo redirige de vuelta.
-    const childId = idDeHijo(page);
-    await page.goto(`/jugar/${childId}`);
-    await expect(page).toHaveURL(/\/evaluacion$/);
+    const childId = await entrarAlEspacio(page, nombre, pin);
+    await expect(page.getByRole("link", { name: "Comenzar mi primera clase" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Todavía no hay ninguna aventura" })).toHaveCount(0);
+    await page.getByRole("link", { name: "Aventura", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "El apagón", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/jugar/${childId}/aventura$`));
   });
 
   test("completar la evaluación real (sin atajos de Firestore) deja jugar sin volver a pedirla", async ({
@@ -108,12 +101,8 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     await expect(contenido.getByRole("alert")).toBeHidden();
 
     await page.getByRole("link", { name: "Empezar a practicar" }).click();
-    // La prueba del bug: si `placementStatus` no quedó en "completo", esto
-    // redirige de vuelta a /evaluacion en bucle en vez de dejarlo pasar. Este
-    // hijo no tiene ningún nivel/mundo sembrado, así que el despachador de
-    // /jugar/{childId} (Fase 18) cae en "Todavía no hay ninguna aventura" —
-    // es justamente lo que confirma que NO volvió a /evaluacion.
-    await expect(page.getByRole("heading", { name: "Todavía no hay ninguna aventura" })).toBeVisible({ timeout: 45_000 });
+    // Regresa al espacio educativo incluido, sin contenido preparado por el adulto.
+    await expect(page.getByRole("heading", { name: `Hola, ${nombre}. ¿Qué vamos a descubrir?` })).toBeVisible({ timeout: 45_000 });
     await expect(page).not.toHaveURL(/\/evaluacion$/);
   });
 

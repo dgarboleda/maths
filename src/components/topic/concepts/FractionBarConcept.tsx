@@ -14,7 +14,7 @@ export function FractionBarConcept({ mode }: { mode: "fraction" | "decimal" | "p
     mode === "fraction"
       ? `${clampedNum}/${denominator}`
       : mode === "decimal"
-        ? `0,${clampedNum}`
+        ? (clampedNum / denominator).toLocaleString("es")
         : `${clampedNum * 10}%`;
 
   const title =
@@ -24,7 +24,7 @@ export function FractionBarConcept({ mode }: { mode: "fraction" | "decimal" | "p
     mode === "fraction"
       ? "Una fracción son partes de un todo. El número de abajo (denominador) dice en cuántas partes iguales se corta; el de arriba (numerador) dice cuántas partes tomas."
       : mode === "decimal"
-        ? "Los decimales son fracciones que siempre parten el todo en 10, 100 o 1000. 0,3 significa 3 de cada 10 partes — lo mismo que 3/10."
+        ? "La escritura decimal representa unidades, décimas, centésimas y otras posiciones. 0,3 significa 3 de cada 10 partes iguales de una unidad — lo mismo que 3/10."
         : "Porcentaje significa 'de cada 100'. 30% es exactamente lo mismo que 30/100 o 0,30 — siempre comparas contra 100 partes.";
 
   return (
@@ -88,7 +88,7 @@ export function FractionBarConcept({ mode }: { mode: "fraction" | "decimal" | "p
 
       {mode !== "fraction" && (
         <p className="text-center text-sm text-slate-500">
-          {clampedNum}/10 = 0,{clampedNum} = {clampedNum * 10}% — son tres formas de escribir lo mismo.
+          {clampedNum}/10 = {(clampedNum / 10).toLocaleString("es")} = {clampedNum * 10}% — son tres formas de escribir lo mismo.
         </p>
       )}
     </div>

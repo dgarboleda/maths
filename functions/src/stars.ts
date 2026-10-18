@@ -20,7 +20,7 @@ function scope(request: CallableRequest) {
 /** El documento de saldo serializa premios, migración y reconciliaciones.
  * El Admin SDK permite leer el libro mayor dentro de la misma transacción.
  * También repara agregados de la versión anterior que perdieron el histórico. */
-async function readBalance(tx: Transaction, child: DocumentReference, force = false) {
+export async function readBalance(tx: Transaction, child: DocumentReference, force = false) {
   const balance = child.collection("starBalance").doc("total");
   const [profile, snapshot] = await Promise.all([tx.get(child), tx.get(balance)]);
   if (!profile.exists) throw new HttpsError("not-found", "El perfil ya no existe.");

@@ -78,7 +78,7 @@ const PROMPT_VALOR_POSICIONAL = /(¿Cuánto vale la cifra \d en el número \d+\?
  *  que esa respuesta llega equivocada a la ronda nueva. `null` = la carrera
  *  ya terminó (no queda ningún enunciado que leer). */
 async function leerProximoEnunciado(page: import("@playwright/test").Page, anterior: string): Promise<string | null> {
-  for (let intento = 0; intento < 60; intento++) {
+  for (let intento = 0; intento < 300; intento++) {
     if (await page.getByText(/¡Misión cumplida!|¡Buen intento!/).isVisible().catch(() => false)) return null;
     try {
       const texto = (await page.getByText(PROMPT_VALOR_POSICIONAL).innerText({ timeout: 300 })).trim();
@@ -89,7 +89,7 @@ async function leerProximoEnunciado(page: import("@playwright/test").Page, anter
     }
     await page.waitForTimeout(50);
   }
-  return null;
+  throw new Error("El Cohete no avanzó al siguiente enunciado ni terminó la carrera.");
 }
 
 test.describe("Racha de días jugados", () => {
@@ -99,12 +99,14 @@ test.describe("Racha de días jugados", () => {
     await sembrarRacha(correo, childId, 1, ayer());
     await sembrarMundoDeEjemplo(correo);
 
-    // El despachador (`/jugar/{childId}`) es la única pantalla que llama a
+    // El espacio educativo (`/jugar/{childId}`) llama a
     // `recordStreak` — visitarlo de verdad, no solo /mapa directo.
     await page.goto(`/jugar/${childId}`);
-    await page.waitForURL(/\/nivel\//);
+    await expect(page.getByRole("heading", { name: /¿Qué vamos a descubrir/ })).toBeVisible();
 
-    await page.goto(`/jugar/${childId}/mapa`);
+    // Navegación del usuario: mantiene viva la escritura de la racha. Un
+    // page.goto recarga el documento y puede interrumpir el guardado.
+    await page.getByRole("link", { name: "Mundos de tu familia y actividades adicionales", exact: true }).click();
     await expect(page.getByText("2 días")).toBeVisible();
   });
 
@@ -183,7 +185,7 @@ test.describe("Marcas personales", () => {
     // tiempo (0 aciertos) y debe mostrarse "Tu marca: 8", no "¡Nueva marca!".
     await page.getByRole("button", { name: "Jugar de nuevo 🔄" }).click();
     await expect(page.getByText("¡Buen intento!")).toBeVisible({ timeout: 35_000 });
-    await expect(page.getByText(/Tu marca/)).toBeVisible();
+    await expect(page.getByText(/Tu marca/).locator("..")).toContainText("8");
     await expect(page.getByText(/Nueva marca/)).toHaveCount(0);
   });
 });

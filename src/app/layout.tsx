@@ -1,28 +1,23 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Quicksand } from "next/font/google";
+import localFont from "next/font/local";
 import { AuthProvider } from "@/lib/AuthProvider";
 import "./globals.css";
 
-/*
- * Solo se cargan las dos familias que la interfaz usa de verdad. Antes se
- * cargaban Geist y Geist Mono aquí y, además, Fredoka y Quicksand desde
- * GameShell: cuatro familias descargadas para renderizar dos, porque el
- * `body` de globals.css pisaba la fuente con Arial.
- *
- * Fredoka (muy redonda, propia de apps para niños pequeños) se reemplazó
- * por Space Grotesk para los títulos: geométrica y directa, más acorde a
- * un público preadolescente sin perder cercanía.
- */
-const quicksand = Quicksand({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+// Archivos incluidos en el repositorio: el arranque y la compilación no
+// dependen del descargador de Google Fonts de Turbopack (fallo e2e #83).
+// Se conservan las familias y pesos de la interfaz. Licencias: ./fonts/.
+const quicksand = localFont({
+  src: "./fonts/quicksand-latin-variable.woff2",
+  weight: "500 700",
+  style: "normal",
   variable: "--font-quicksand",
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+const spaceGrotesk = localFont({
+  src: "./fonts/space-grotesk-latin-variable.woff2",
+  weight: "500 700",
+  style: "normal",
   variable: "--font-space-grotesk",
   display: "swap",
 });
@@ -32,7 +27,7 @@ export const metadata: Metadata = {
     default: "Math Quest",
     template: "%s · Math Quest",
   },
-  description: "Matemáticas en espiral, de 3 a 17 años, con recompensas por estrellas.",
+  description: "Clases de matemáticas para adolescentes: comprende las ideas, practica con ayuda y aplica lo aprendido en una aventura.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -182,7 +182,7 @@ export function generateProblem(difficulty: number): Problem {
         id,
         difficulty,
         kind: "funcion",
-        prompt: `Una tabla sigue siempre la misma regla: ${rows}. ¿Cuánto vale y cuando x = ${n}?`,
+        prompt: `Una tabla sigue una regla de la forma y = mx + b: ${rows}. ¿Cuánto vale y cuando x = ${n}?`,
         answer: m * n + b,
         inputType: "integer",
         hints: funcionTablaHints(m, b, n, m * n + b),

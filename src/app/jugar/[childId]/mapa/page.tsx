@@ -9,7 +9,6 @@ import { getFirebase } from "@/lib/firebase";
 import type { ChildProfile, RedemptionRequest, SkillProgress } from "@/lib/types";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useSoundPreference } from "@/lib/useSoundPreference";
-import { useRequirePlacement } from "@/lib/useRequirePlacement";
 import { listLevels, getLevel } from "@/lib/level/persistence/levelRepository";
 import type { LevelDefinition } from "@/lib/level/schema";
 import { getWorld } from "@/lib/gameworld/persistence/worldRepository";
@@ -67,7 +66,6 @@ export default function JugarMapaPage() {
   const totalStars = useTotalStars(parentId, params.childId);
   const { avatar: resolvedAvatar } = useResolvedAvatar(parentId, params.childId, progressBySkill, avatarRefreshKey);
   const [soundOn, toggleSound] = useSoundPreference();
-  const placementPending = useRequirePlacement(params.childId, child, router);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -167,7 +165,7 @@ export default function JugarMapaPage() {
     };
   }, [parentId, params.childId]);
 
-  if (loading || !user || !parentId || !child || placementPending || !progressLoaded || !levels || !world) {
+  if (loading || !user || !parentId || !child || !progressLoaded || !levels || !world) {
     return (
       <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-slate-300">
@@ -225,6 +223,7 @@ export default function JugarMapaPage() {
       />
 
       <div className="mx-auto max-w-3xl space-y-6">
+        <Link href={`/jugar/${params.childId}`} className="inline-flex min-h-11 items-center text-sm font-bold text-cyan-200 underline underline-offset-4">← Volver a mi espacio de aprendizaje</Link>
         {world.story.logline && <p className="text-center text-sm text-slate-400">{world.story.logline}</p>}
 
         {/* Regla `showWorldMap` (Fase 28, docs/plan-jugabilidad.md §2.5): sigue
