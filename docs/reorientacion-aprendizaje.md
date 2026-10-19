@@ -2,7 +2,7 @@
 
 ## Propósito y alcance de esta entrega
 
-El acceso principal ofrece un programa incluido de 37 lecciones en 7 unidades, con un repaso mixto y una aventura por unidad, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. El país de referencia es **Perú**: cada clase tiene una correspondencia orientativa con el Currículo Nacional de la Educación Básica (ver [Correspondencia con el CNEB](#correspondencia-con-el-cneb-perú)).
+El acceso principal ofrece un programa incluido de 43 lecciones en 7 unidades, con un repaso mixto y una aventura por unidad, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. El país de referencia es **Perú**: cada clase tiene una correspondencia orientativa con el Currículo Nacional de la Educación Básica (ver [Correspondencia con el CNEB](#correspondencia-con-el-cneb-perú)).
 
 La entrega implementa el producto y los instrumentos del piloto. **No se ha realizado una revisión docente independiente ni un estudio con adolescentes.** El estado editorial de las lecciones es `pending-teacher-review`. Las comprobaciones automáticas verifican contratos, ejemplos de cálculo, accesibilidad, persistencia y reglas; no acreditan eficacia educativa ni una equivalencia oficial de grados o PISA.
 
@@ -29,11 +29,11 @@ El currículo se organiza en siete unidades para estudiantes de 12 a 17 años qu
 | Fracciones y representaciones | Unidad y significado; equivalencia y comparación; fracción–decimal–porcentaje; fracción de una cantidad; sumar y restar fracciones; multiplicar y dividir fracciones; operaciones con decimales |
 | Razones y proporcionalidad | Razones parte-parte y parte-total; tasa unitaria; proporcionalidad directa; cambios porcentuales; proporcionalidad inversa |
 | Ecuaciones para resolver situaciones | Igualdad e incógnita; ecuaciones de un paso; ecuaciones de dos pasos; modelación y restricciones |
-| Expresiones, ecuaciones y funciones | Expresiones algebraicas; propiedad distributiva; incógnita en ambos lados; inecuaciones lineales; funciones lineales; ecuaciones cuadráticas |
-| Geometría y medida | Ángulos y polígonos; perímetro y área; longitud y área del círculo; volumen de prismas y cilindros; teorema de Pitágoras; semejanza y escalas |
-| Datos y probabilidad | Media, mediana y moda; probabilidad de un suceso; experimentos compuestos |
+| Expresiones, ecuaciones y funciones | Expresiones algebraicas; propiedad distributiva; incógnita en ambos lados; inecuaciones lineales; funciones lineales; ecuaciones cuadráticas; sistemas de dos ecuaciones; crecimiento exponencial |
+| Geometría y medida | Ángulos y polígonos; perímetro y área; longitud y área del círculo; volumen de prismas y cilindros; teorema de Pitágoras; semejanza y escalas; transformaciones en el plano; razones trigonométricas |
+| Datos y probabilidad | Media, mediana y moda; probabilidad de un suceso; experimentos compuestos; dispersión y diagramas de caja; técnicas de conteo |
 
-Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales, un modelo visual manipulable y bancos de tareas. Hay 82 ejemplos desarrollados y 1184 instancias de actividades (32 por lección), organizadas en familias y formas paralelas; ese conteo no equivale a 1184 competencias ni a 1184 problemas de estructura distinta.
+Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales, un modelo visual manipulable y bancos de tareas. Hay 94 ejemplos desarrollados y 1376 instancias de actividades (32 por lección), organizadas en familias y formas paralelas; ese conteo no equivale a 1376 competencias ni a 1376 problemas de estructura distinta.
 
 **Decisión sobre el catálogo anterior.** Los 67 módulos con generador no se retiran: alimentan los Mundos y niveles que las familias ya construyeron, y la práctica libre. El programa de clases los sustituye como recorrido principal y cada lección enlaza los módulos que cubre (`legacyModuleIds`). Los temas del catálogo anterior que siguen sin clase quedan como práctica: los de primaria (sumas hasta 1000, tablas, valor posicional) no corresponden al público de 12 a 17 años; decimales, notación científica, ángulos, semejanza y ecuaciones cuadráticas ya tienen clase propia.
 
@@ -134,7 +134,9 @@ El servidor valida cada plan con el número de entradas y los rangos de su avent
 | Resuelve problemas de forma, movimiento y localización | Ángulos, perímetro y área, círculo, volumen, Pitágoras y semejanza |
 | Resuelve problemas de gestión de datos e incertidumbre | Media, mediana y moda; probabilidad simple y compuesta |
 
-Las tarjetas de clase muestran el grado orientativo. El resultado de la ubicación indica, por competencia, el último grado cuyas clases (y las de grados anteriores) están todas dominadas o terminadas. Los grados 4.° y 5.° están apenas cubiertos (cuadráticas y probabilidad compuesta): los temas pendientes para 15–17 años son sistemas de ecuaciones, funciones exponenciales, trigonometría, estadística descriptiva ampliada, combinatoria y transformaciones.
+Las tarjetas de clase muestran el grado orientativo. El resultado de la ubicación indica, por competencia, el último grado cuyas clases (y las de grados anteriores) están todas dominadas o terminadas. El ciclo VII (3.° a 5.°) incluye sistemas de dos ecuaciones, transformaciones en el plano y dispersión y diagramas de caja (3.°); cuadráticas, trigonometría y probabilidad compuesta (4.°); crecimiento exponencial y técnicas de conteo (5.°). Siguen fuera del programa, entre otros: funciones cuadráticas como modelo, logaritmos, trigonometría en cualquier ángulo (ley de senos y cosenos), geometría analítica (distancia, pendiente y ecuación de la recta como tema propio), medidas de dispersión con desviación estándar y probabilidad condicional.
+
+Las seis clases de 3.° a 5.° (`functions/src/learning/upperGrades.ts`) siguen el mismo contrato que el resto y tienen su modelo propio: dos rectas que se cortan o son paralelas (con el punto de corte arrastrable), exponencial frente a lineal desde el mismo inicio, triángulo rectángulo cuyo ángulo se arrastra y cuyo tamaño no cambia las razones, puntos con diagrama de caja y un dato extremo arrastrable, cuadrícula de combinaciones y parejas con y sin orden, y un triángulo en el plano que se traslada (arrastrando su imagen), se refleja o rota. Los contextos usan soles.
 
 ## Errores frecuentes en el informe familiar
 

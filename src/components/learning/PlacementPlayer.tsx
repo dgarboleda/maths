@@ -100,7 +100,7 @@ export function PlacementPlayer({ childId }: { childId: string }) {
             <ul className="list-disc space-y-1 pl-5 text-sm text-slate-300">
               <li>No hay pistas ni correcciones durante la prueba: responde lo que sabes hoy.</li>
               <li>Si no sabes cómo resolver una pregunta, elige «Todavía no lo sé»: no es un error, es información.</li>
-              <li>Dura entre 7 y 37 preguntas. No da estrellas ni marca clases como terminadas.</li>
+              <li>Dura entre {LEARNING_UNITS.length} y {LESSONS.length} preguntas. No da estrellas ni marca clases como terminadas.</li>
             </ul>
             <button className={primaryButton} disabled={mutation.blocked} onClick={begin}>
               {state.attempts > 0 ? "Empezar de nuevo" : "Empezar la evaluación"}

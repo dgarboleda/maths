@@ -69,7 +69,13 @@ export type Visual =
   | "volume"
   | "tree"
   | "powers"
-  | "decimal-grid";
+  | "decimal-grid"
+  | "system"
+  | "exponential"
+  | "trig"
+  | "boxplot"
+  | "counting"
+  | "transform";
 export type UnitId =
   | "numeros"
   | "fracciones"
