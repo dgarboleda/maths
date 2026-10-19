@@ -58,7 +58,7 @@ test("presupuesto de producción: login, clase, aventura, nivel y editor con ses
     await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Busca cuánto vale una parte" })).toBeVisible();
     await audit("aprendizaje", lessonRoute);
-    const adventureRoute = `/jugar/${childId}/aventura`;
+    const adventureRoute = `/jugar/${childId}/aventura/apagon`;
     await page.goto(new URL(adventureRoute, baseURL).href);
     await page.getByRole("button", { name: /Inspeccionar la central/ }).click();
     await expect(page.getByText(/Reserva disponible: 120/)).toBeVisible();
