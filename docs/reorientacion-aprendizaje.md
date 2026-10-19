@@ -2,7 +2,7 @@
 
 ## Propósito y alcance de esta entrega
 
-El acceso principal ofrece un programa incluido de 32 lecciones en 7 unidades, con un repaso mixto por unidad, y la aventura **El apagón**, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. La adecuación a un currículo nacional queda pendiente de seleccionar el país y realizar su correspondencia curricular.
+El acceso principal ofrece un programa incluido de 37 lecciones en 7 unidades, con un repaso mixto y una aventura por unidad, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. La adecuación a un currículo nacional queda pendiente de seleccionar el país y realizar su correspondencia curricular.
 
 La entrega implementa el producto y los instrumentos del piloto. **No se ha realizado una revisión docente independiente ni un estudio con adolescentes.** El estado editorial de las lecciones es `pending-teacher-review`. Las comprobaciones automáticas verifican contratos, ejemplos de cálculo, accesibilidad, persistencia y reglas; no acreditan eficacia educativa ni una equivalencia oficial de grados o PISA.
 
@@ -25,17 +25,17 @@ El currículo se organiza en siete unidades para estudiantes de 12 a 17 años qu
 
 | Unidad | Lecciones |
 | --- | --- |
-| Números enteros y operaciones | Enteros en la recta; sumar y restar enteros; multiplicar y dividir enteros; orden de las operaciones; potencias y raíces |
-| Fracciones y representaciones | Unidad y significado; equivalencia y comparación; fracción–decimal–porcentaje; fracción de una cantidad; sumar y restar fracciones; multiplicar y dividir fracciones |
+| Números enteros y operaciones | Enteros en la recta; sumar y restar enteros; multiplicar y dividir enteros; orden de las operaciones; potencias y raíces; notación científica |
+| Fracciones y representaciones | Unidad y significado; equivalencia y comparación; fracción–decimal–porcentaje; fracción de una cantidad; sumar y restar fracciones; multiplicar y dividir fracciones; operaciones con decimales |
 | Razones y proporcionalidad | Razones parte-parte y parte-total; tasa unitaria; proporcionalidad directa; cambios porcentuales; proporcionalidad inversa |
 | Ecuaciones para resolver situaciones | Igualdad e incógnita; ecuaciones de un paso; ecuaciones de dos pasos; modelación y restricciones |
-| Expresiones, ecuaciones y funciones | Expresiones algebraicas; propiedad distributiva; incógnita en ambos lados; inecuaciones lineales; funciones lineales |
-| Geometría y medida | Perímetro y área; longitud y área del círculo; volumen de prismas y cilindros; teorema de Pitágoras |
+| Expresiones, ecuaciones y funciones | Expresiones algebraicas; propiedad distributiva; incógnita en ambos lados; inecuaciones lineales; funciones lineales; ecuaciones cuadráticas |
+| Geometría y medida | Ángulos y polígonos; perímetro y área; longitud y área del círculo; volumen de prismas y cilindros; teorema de Pitágoras; semejanza y escalas |
 | Datos y probabilidad | Media, mediana y moda; probabilidad de un suceso; experimentos compuestos |
 
-Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales, un modelo visual manipulable y bancos de tareas. Hay 72 ejemplos desarrollados y 1024 instancias de actividades (32 por lección), organizadas en familias y formas paralelas; ese conteo no equivale a 1024 competencias ni a 1024 problemas de estructura distinta.
+Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales, un modelo visual manipulable y bancos de tareas. Hay 82 ejemplos desarrollados y 1184 instancias de actividades (32 por lección), organizadas en familias y formas paralelas; ese conteo no equivale a 1184 competencias ni a 1184 problemas de estructura distinta.
 
-**Decisión sobre el catálogo anterior.** Los 67 módulos con generador no se retiran: alimentan los Mundos y niveles que las familias ya construyeron, y la práctica libre. El programa de clases los sustituye como recorrido principal y cada lección enlaza los módulos que cubre (`legacyModuleIds`). Los temas del catálogo anterior que siguen sin clase quedan como práctica: los de primaria (sumas hasta 1000, tablas, valor posicional) no corresponden al público de 12 a 17 años; decimales, notación científica, ángulos, semejanza y ecuaciones cuadráticas requieren clases propias en una entrega posterior.
+**Decisión sobre el catálogo anterior.** Los 67 módulos con generador no se retiran: alimentan los Mundos y niveles que las familias ya construyeron, y la práctica libre. El programa de clases los sustituye como recorrido principal y cada lección enlaza los módulos que cubre (`legacyModuleIds`). Los temas del catálogo anterior que siguen sin clase quedan como práctica: los de primaria (sumas hasta 1000, tablas, valor posicional) no corresponden al público de 12 a 17 años; decimales, notación científica, ángulos, semejanza y ecuaciones cuadráticas ya tienen clase propia.
 
 ### Repaso mixto por unidad
 
@@ -77,7 +77,23 @@ Una ciudad sin energía presenta una central y tres edificios explorables. Al in
 
 Las decisiones tienen consecuencias: sobrecarga desconecta la red; energía insuficiente mantiene un edificio en emergencia; un reparto válido ilumina las conexiones y restablece servicios. El mensaje distingue usar la fracción de la reserva original de usarla sobre el resto. La clase de fracción de una cantidad está disponible desde la aventura.
 
-Se guarda cada prueba, se puede volver a experimentar y el premio de diez estrellas se entrega una sola vez. La misión es evidencia de participación y aplicación asistible, separada de la comprobación autónoma. Esta entrega incluye **una** aventura completa; las otras lecciones aportan situaciones de aplicación, no once capítulos completos adicionales.
+Se guarda cada prueba, se puede volver a experimentar y el premio de diez estrellas se entrega una sola vez. La misión es evidencia de participación y aplicación asistible, separada de la comprobación autónoma.
+
+## Aventuras por unidad
+
+`/jugar/{childId}/aventura` reúne una misión por unidad. Todas comparten el mismo motor (`functions/src/learning/adventures.ts`): investigar la situación, decidir varios valores, probar el plan y recibir una pista específica para el primer requisito que falla. La cámara, el ascensor, el jardín y el huerto admiten más de un plan válido; la receta y el torneo exigen razonar hacia atrás desde las condiciones.
+
+| Unidad | Aventura | Decisión | Error que la pista detecta |
+| --- | --- | --- | --- |
+| Números | La cámara del mercado | Temperaturas de helados, congelador y nevera | Creer que −15 es más frío que −18; restar un negativo |
+| Fracciones | El apagón | Reparto de 120 unidades | Aplicar 1/6 al resto en vez de a la reserva original |
+| Proporcionalidad | La receta del festival | Ingredientes para 10 y bolsas de harina | Escalar sumando en vez de multiplicar |
+| Ecuaciones | El ascensor de carga | Cajas por viaje y viajes | Ignorar la carga fija en 105 + 45c ≤ 600 |
+| Expresiones | El jardín de baldosas | Lado del jardín y baldosas | Contar 4n y olvidar las esquinas (4n + 4) |
+| Geometría | El huerto escolar | Largo y ancho con 36 m de cerca | Confundir semiperímetro con perímetro |
+| Datos | El torneo de lanzamientos | Tres puntuaciones con media y moda 8 | Calcular la media solo con los lanzamientos nuevos |
+
+El servidor valida cada plan con el número de entradas y los rangos de su aventura y guarda el estado en `learningMissions/{aventura}`. El estado guardado de El apagón no cambia de forma. Tras la última clase relacionada, el resumen ofrece jugar la aventura; el informe familiar muestra planes probados y misiones completadas.
 
 ## Arquitectura y datos
 

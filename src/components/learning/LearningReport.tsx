@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ADVENTURES,
   getLesson,
   LEARNING_UNITS,
   learningStatus,
@@ -157,6 +158,40 @@ export function LearningReport({
                           <td className="p-3 text-cyan-200">
                             {review.bestResult?.correct}/{review.bestResult?.total} de forma autónoma
                             {review.completedAt ? " · superado" : ""}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          {!compact &&
+            ADVENTURES.some((adventure) => data.adventures[adventure.id]?.attempts) && (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[30rem] text-left text-sm">
+                  <caption className="mb-2 text-left font-semibold text-white">
+                    Aventuras
+                  </caption>
+                  <thead>
+                    <tr className="border-b border-slate-600 text-slate-300">
+                      <th className="p-3">Misión</th>
+                      <th className="p-3">Planes probados</th>
+                      <th className="p-3">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ADVENTURES.map((adventure) => {
+                      const state = data.adventures[adventure.id];
+                      if (!state?.attempts) return null;
+                      return (
+                        <tr key={adventure.id} className="border-b border-slate-800">
+                          <th scope="row" className="p-3 font-semibold text-white">
+                            {adventure.title}
+                          </th>
+                          <td className="p-3 text-slate-300">{state.attempts}</td>
+                          <td className="p-3 text-cyan-200">
+                            {state.completedAt ? "Completada" : "En curso"}
                           </td>
                         </tr>
                       );

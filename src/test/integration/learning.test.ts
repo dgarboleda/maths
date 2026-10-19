@@ -340,6 +340,57 @@ describe("Servicio educativo y reglas reales", () => {
       await deleteApp(family.app);
     }
   });
+  test("cada aventura de unidad valida su propio plan y premia por separado", async () => {
+    const family = await createFamily();
+    try {
+      const base = {
+        parentId: family.parentId,
+        childId: family.childId,
+        lessonId: "ascensor-carga",
+      };
+      await call(family.app, "recordLearningAction", {
+        ...base,
+        expectedRevision: 0,
+        operationId: crypto.randomUUID(),
+        action: { kind: "inspect" },
+      });
+      // El plan del apagón (3 valores) no encaja con las 2 decisiones del ascensor.
+      await expect(
+        call(family.app, "recordLearningAction", {
+          ...base,
+          expectedRevision: 1,
+          operationId: crypto.randomUUID(),
+          action: { kind: "dispatch", allocation: [90, 20, 10] },
+        }),
+      ).rejects.toMatchObject({ code: "functions/invalid-argument" });
+      const result = await call<{ progress: AdventureState; stars: number }>(
+        family.app,
+        "recordLearningAction",
+        {
+          ...base,
+          expectedRevision: 1,
+          operationId: crypto.randomUUID(),
+          action: { kind: "dispatch", allocation: [10, 4] },
+        },
+      );
+      expect(result.progress.completedAt).toBeGreaterThan(0);
+      expect(result.stars).toBe(10);
+      const saved = await fs.getDoc(
+        fs.doc(
+          family.db,
+          "parents",
+          family.parentId,
+          "children",
+          family.childId,
+          "learningMissions",
+          "ascensor-carga",
+        ),
+      );
+      expect(saved.data()?.allocation).toEqual([10, 4]);
+    } finally {
+      await deleteApp(family.app);
+    }
+  });
   test("el borrado del perfil también elimina la nueva evidencia educativa", async () => {
     const family = await createFamily();
     try {

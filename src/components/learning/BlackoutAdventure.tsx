@@ -7,7 +7,7 @@ import {
   useLearningAction,
   useLearningData,
 } from "@/lib/learning/useLearningData";
-import type { AdventureState } from "@/lib/learning/domain";
+import { initialAdventure, type AdventureState } from "@/lib/learning/domain";
 import {
   LearningLoading,
   LearningLoadError,
@@ -55,10 +55,9 @@ export function BlackoutAdventure({ childId }: { childId: string }) {
     mutation.confirmed?.lessonId === "apagon"
       ? (mutation.confirmed.progress as AdventureState)
       : undefined;
+  const saved = data.adventures.apagon ?? initialAdventure("apagon");
   const state =
-    confirmed && confirmed.revision > data.adventure.revision
-      ? confirmed
-      : data.adventure;
+    confirmed && confirmed.revision > saved.revision ? confirmed : saved;
   return (
     <LearningShell
       childId={childId}
@@ -85,7 +84,7 @@ function AdventureGame({
   mutation: ReturnType<typeof useLearningAction>;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
-  const [allocation, setAllocation] = useState<[number, number, number]>(() => [
+  const [allocation, setAllocation] = useState<number[]>(() => [
     ...state.allocation,
   ]);
   const planned = allocation.reduce((sum, value) => sum + value, 0);
@@ -257,12 +256,7 @@ function AdventureGame({
                       onChange={(event) => {
                         const value = Number(event.target.value);
                         setAllocation(
-                          (old) =>
-                            old.map((n, at) => (at === i ? value : n)) as [
-                              number,
-                              number,
-                              number,
-                            ],
+                          (old) => old.map((n, at) => (at === i ? value : n)),
                         );
                         setSelected(i);
                       }}

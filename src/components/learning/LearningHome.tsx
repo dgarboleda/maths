@@ -437,8 +437,8 @@ export function LearningHome({
                 href: "/aventura",
                 icon: Compass,
                 title: "La ciudad necesita tus ideas",
-                body: "En El apagón, tus decisiones matemáticas devuelven la energía a la ciudad.",
-                action: "Explorar El apagón",
+                body: "Siete misiones, una por unidad: tus decisiones matemáticas devuelven la energía, salvan el mercado y diseñan la plaza.",
+                action: "Explorar las aventuras",
               },
             ].map(({ href, icon: Icon, title: label, body, action }) => (
               <Link

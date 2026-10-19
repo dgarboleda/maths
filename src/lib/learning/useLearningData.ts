@@ -7,7 +7,6 @@ import { getFirebase, getFirebaseFunctions } from "@/lib/firebase";
 import type { ChildProfile } from "@/lib/types";
 import {
   getLesson,
-  initialAdventure,
   migrateProgress,
   type AdventureAction,
   type AdventureState,
@@ -22,7 +21,8 @@ interface Snapshot {
   progress: Record<string, LearningProgress>;
   /** Repasos mixtos por unidad (documentos `repaso-{unidad}`). */
   reviews: Record<string, MixedReviewState>;
-  adventure: AdventureState;
+  /** Estado de cada aventura jugada (`learningMissions/{aventura}`). */
+  adventures: Record<string, AdventureState>;
   loaded: string[];
   error: string | null;
 }
@@ -32,7 +32,7 @@ function empty(key: string): Snapshot {
     child: null,
     progress: {},
     reviews: {},
-    adventure: initialAdventure(),
+    adventures: {},
     loaded: [],
     error: null,
   };
@@ -113,12 +113,12 @@ export function useLearningData(childId: string) {
         );
         subscriptions.push(
           onSnapshot(
-            doc(db, ...path, "learningMissions", "apagon"),
+            collection(db, ...path, "learningMissions"),
             (snap) =>
               receive("adventure", {
-                adventure: snap.exists()
-                  ? (snap.data() as AdventureState)
-                  : initialAdventure(),
+                adventures: Object.fromEntries(
+                  snap.docs.map((item) => [item.id, item.data() as AdventureState]),
+                ),
               }),
             failed,
           ),
