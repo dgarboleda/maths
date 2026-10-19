@@ -47,7 +47,6 @@ export type Visual =
   | "quantity"
   | "ratio"
   | "rate"
-  | "proportion"
   | "change"
   | "balance"
   | "equation"
@@ -55,7 +54,19 @@ export type Visual =
   | "area"
   | "data"
   | "probability"
-  | "linear";
+  | "linear"
+  | "direct"
+  | "inverse"
+  | "parabola"
+  | "inequality"
+  | "angles"
+  | "pythagoras"
+  | "circle"
+  | "similarity"
+  | "volume"
+  | "tree"
+  | "powers"
+  | "decimal-grid";
 export type UnitId =
   | "numeros"
   | "fracciones"

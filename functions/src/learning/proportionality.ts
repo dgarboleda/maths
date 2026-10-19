@@ -586,7 +586,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
       "Necesitas ampliar la red de sensores. Un modelo proporcional ayuda a prever el consumo cuando aumenta la cantidad instalada.",
     prerequisites: ["tasa-unitaria"],
     legacyModuleIds: ["algebra-d5", "algebra-d9"],
-    visual: "proportion",
+    visual: "direct",
     vocabulary: [
       {
         term: "Proporcionalidad directa",
