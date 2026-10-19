@@ -81,19 +81,19 @@ Las preguntas de elección conceptual se responden en su formato habitual.
 preferencia) y conserva la evidencia de la pregunta; recargar conserva el
 avance y vuelve a sortear el juego.
 
-El estanque usa turnos y botones accesibles, sin obstáculos ni reloj. Los
-cinco juegos de reflejos (serpiente, carrera, laberinto, invasores y bloques)
-conservan su **mecánica real** dentro de las clases, pero solo una decisión
-deliberada envía una respuesta: comer un número, disparar a una columna,
+Los seis juegos de reflejos (estanque, serpiente, carrera, laberinto,
+invasores y bloques) conservan su **mecánica real** dentro de las clases, pero solo una decisión
+deliberada envía una respuesta: llegar a un nenúfar, comer un número, disparar a una columna,
 cruzar una puerta después de pulsar una flecha o romper el bloque correcto.
-Los fallos de reflejos —chocar, que alcance el fantasma, que la oleada
+Los fallos de reflejos —chocar con el obstáculo o con el borde, que alcance el fantasma, que la oleada
 aterrice, perder la pelota, llegar a una puerta sin decidir o un rebote contra
 un bloque incorrecto— no se registran, no restan vidas y la partida sigue con
 el mismo ejercicio (`src/lib/minigames/lessonArcade.tsx`). En los bloques, qué
 bloque toca la pelota depende del rebote, así que solo el correcto cuenta y
 ese juego no registra errores. Las vidas, estrellas y marcas solo existen en
-niveles y mundos. El cohete
-empieza sin límite de tiempo y permite activar un reto de 30 segundos. Se puede
+niveles y mundos.
+
+El cohete empieza sin límite de tiempo y permite activar un reto de 30 segundos. Se puede
 pausar; el reloj se detiene durante el guardado, al ocultar la pestaña y al
 revisar un error. Cada error pausa la partida hasta que el estudiante decide
 reanudar, para leer la orientación y pedir pistas antes de reintentar el mismo

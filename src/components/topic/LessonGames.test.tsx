@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { axe } from "jest-axe";
 import { SnakeGeneric } from "./SnakeGeneric";
@@ -30,36 +30,45 @@ function exercise(overrides: Partial<LessonExercise> = {}): LessonExercise {
   };
 }
 
-test("Frogger envía el valor elegido una sola vez y solo celebra al recibir el resultado guardado", async () => {
+test("Estanque con obstáculo: llegar al nenúfar envía su valor una vez y solo celebra lo guardado", async () => {
+  vi.useFakeTimers();
   let complete!: (saved: boolean) => void;
   const onResponse = vi.fn(() => new Promise<boolean>((resolve) => { complete = resolve; }));
   const data = exercise({ onResponse });
   const legacy = vi.fn();
   const view = render(<FroggerGeneric moduleId="" soundOn={false} onAnswer={legacy} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
-  const choice = screen.getByRole("button", { name: "Saltar al nenúfar -2" });
-  fireEvent.click(choice);
-  fireEvent.click(choice);
+  key("ArrowUp"); // al carril del obstáculo
+  key("ArrowUp"); // al estanque, en la columna central: -2
+  key("ArrowUp");
   expect(onResponse).toHaveBeenCalledExactlyOnceWith(-2);
   expect(screen.queryByText("¡Cruzaste el estanque!")).not.toBeInTheDocument();
   await act(async () => { complete(true); });
   view.rerender(<FroggerGeneric moduleId="" soundOn={false} onAnswer={legacy} exercise={{ ...data, solved: true, disabled: true }} />);
   expect(screen.getByText("¡Cruzaste el estanque!")).toBeInTheDocument();
   expect(legacy).not.toHaveBeenCalled();
-  expect(screen.queryByText(/Estrellas/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Estrellas|Vidas/)).not.toBeInTheDocument();
 });
 
-test("Frogger pausa las respuestas y una escritura fallida permite reintentar la misma pregunta", async () => {
+test("Estanque: la pausa congela el juego, chocar no cuenta y un guardado fallido permite reintentar", async () => {
+  vi.useFakeTimers();
   const data = exercise({ paused: true, onResponse: vi.fn(async () => false) });
   const view = render(<FroggerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   expect(screen.getByRole("button", { name: "¡Empezar!" })).toBeDisabled();
   view.rerender(<FroggerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: false }} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
-  const button = screen.getByRole("button", { name: "Saltar al nenúfar -2" });
-  fireEvent.click(button);
-  await waitFor(() => expect(data.onResponse).toHaveBeenCalledTimes(1));
-  fireEvent.click(button);
-  await waitFor(() => expect(data.onResponse).toHaveBeenCalledTimes(2));
+  key("ArrowUp");
+  tick(2_100); // el obstáculo va y vuelve hasta la rana
+  expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+  key("ArrowUp");
+  key("ArrowUp");
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledTimes(1);
+  key("ArrowUp");
+  key("ArrowUp");
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledTimes(2);
   expect(screen.getByText(data.problem.prompt)).toBeInTheDocument();
 });
 

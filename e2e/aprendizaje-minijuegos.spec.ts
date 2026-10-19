@@ -28,6 +28,23 @@ async function conceptThenNumeric(page: Page, lessonId: string, game: Game) {
   return lesson.practice[1];
 }
 
+/** Estanque con su mecánica real: lleva la rana a la columna del nenúfar con
+ *  ese valor (o se queda si ya está encima) y salta dos filas. */
+async function cross(page: Page, label: string) {
+  const cells = (await page.locator("main div.grid.max-w-sm").first().locator(":scope > div").allTextContents()).map((c) => c.trim());
+  const frog = cells.findIndex((c) => c.includes("🐸"));
+  const found = cells.indexOf(label);
+  const target = found < 0 ? frog : found;
+  for (let col = frog; col !== target; col += Math.sign(target - col))
+    await page.keyboard.press(target > col ? "ArrowRight" : "ArrowLeft");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("ArrowUp");
+}
+
+async function pondLabels(page: Page) {
+  return (await page.locator("main div.grid.max-w-sm").first().locator(":scope > div").allTextContents()).map((c) => c.trim());
+}
+
 function savedAnswer(page: Page) {
   return page.waitForResponse((response) =>
     response.url().endsWith("/recordLearningAction") &&
@@ -46,20 +63,26 @@ test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar d
   await page.getByRole("button", { name: "Siguiente actividad", exact: true }).click();
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
   const q = lesson.practice[1];
-  const right = page.getByRole("button", { name: `Saltar al nenúfar ${q.answer}`, exact: true });
+  await expect(page.getByText(/Vidas/)).toHaveCount(0);
+  // En pausa el teclado no mueve la rana ni envía respuestas.
+  let answers = 0;
+  page.on("request", (request) => {
+    if (request.url().endsWith("/recordLearningAction") && request.postDataJSON()?.data?.action?.kind === "answer") answers++;
+  });
   await page.getByRole("button", { name: "Pausar partida" }).click();
-  await expect(right).toBeDisabled();
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("ArrowUp");
+  await page.waitForTimeout(700);
+  expect(answers).toBe(0);
   await page.getByRole("button", { name: "Reanudar partida" }).click();
-  const alternatives = page.getByRole("button", { name: /^Saltar al nenúfar / });
-  const wrongName = (await alternatives.allTextContents()).find((label) => Number(label.replace("🌿", "").trim()) !== q.answer)!;
-  const wrong = Number(wrongName.replace("🌿", "").trim());
+  const wrongLabel = (await pondLabels(page)).find((label) => label !== "🐸" && Number(label) !== q.answer)!;
+  const wrong = Number(wrongLabel);
   const answer = savedAnswer(page);
-  await page.getByRole("button", { name: `Saltar al nenúfar ${wrong}`, exact: true }).click();
+  await cross(page, wrongLabel);
   const incorrect = (await (await answer).json()).result.progress;
   expect(incorrect.responses[`practice:${q.id}`]).toMatchObject({ response: String(wrong), correct: false, attempts: 1 });
   expect(incorrect.checkPassedAt).toBeNull();
   await expect(page.getByText(/La partida está en pausa/)).toBeVisible();
-  await expect(right).toBeDisabled();
   await page.getByRole("button", { name: "Pedir una pista", exact: true }).click();
   await expect(page.getByText(q.hints[0], { exact: true })).toBeVisible();
   await page.reload();
@@ -69,7 +92,7 @@ test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar d
   await page.screenshot({ path: test.info().outputPath("estanque.png"), fullPage: true });
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   const corrected = savedAnswer(page);
-  await right.click();
+  await cross(page, String(q.answer));
   const progress = (await (await corrected).json()).result.progress;
   expect(progress.responses[`practice:${q.id}`]).toMatchObject({ response: String(q.answer), correct: true, attempts: 2, hintsUsed: 1 });
   expect(progress.checkPassedAt).toBeNull();
