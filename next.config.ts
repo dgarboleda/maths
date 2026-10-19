@@ -25,6 +25,9 @@ const firebaseBrowserAliases = {
 
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_RELEASE: sourceRelease(), NEXT_PUBLIC_APP_VERSION: version },
+  // El indicador de desarrollo tapa Inicio en la barra móvil a 320 px.
+  // Los emuladores prueban la misma navegación que producción, sin esa capa.
+  devIndicators: process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1" ? false : undefined,
   /*
    * En desarrollo, Next solo sirve sus recursos internos al host con el que
    * arrancó (localhost). Las pruebas E2E abren la app en 127.0.0.1 —el

@@ -1,0 +1,95 @@
+.shell {
+  color-scheme: dark;
+  background-image: radial-gradient(
+    ellipse at 85% 0%,
+    rgb(76 29 149 / 14%),
+    transparent 48%
+  );
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+}
+
+.shell :focus-visible {
+  outline-color: #67e8f9;
+}
+
+.shell h1 {
+  overflow-wrap: anywhere;
+}
+
+.shell :is(a, button, input, select, textarea, summary) {
+  scroll-margin-bottom: calc(7rem + env(safe-area-inset-bottom));
+}
+
+.navigation {
+  position: fixed;
+  z-index: 40;
+  inset: auto 0 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.6rem 0.75rem calc(0.6rem + env(safe-area-inset-bottom));
+  border-top: 1px solid #334155;
+  background: #0f172a;
+}
+
+.navItem {
+  display: flex;
+  min-height: 3.25rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  border-radius: 0.75rem;
+  padding: 0.45rem 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgb(34 211 238 / 13%), transparent 60%),
+    #0f172a;
+}
+
+.unitCard {
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 4%), transparent 70%), #0f172a;
+}
+
+.unitCard:hover {
+  border-color: #94a3b8;
+}
+
+.unitHeading {
+  scroll-margin-top: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .shell {
+    padding-bottom: 4rem;
+  }
+
+  .shell :is(a, button, input, select, textarea, summary) {
+    scroll-margin-bottom: 1rem;
+  }
+
+  .navigation {
+    position: static;
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .navItem {
+    min-height: 2.75rem;
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.875rem;
+  }
+}

@@ -5,9 +5,11 @@ import { useEffect } from "react";
 import {
   ArrowRight,
   BookOpen,
+  Check,
   Compass,
+  Gamepad2,
   Lightbulb,
-  PenLine,
+  RotateCcw,
 } from "lucide-react";
 import {
   getLesson,
@@ -28,6 +30,25 @@ import {
   primaryButton,
   secondaryButton,
 } from "./LearningShell";
+import styles from "./learning.module.css";
+
+const unitStyles = {
+  fracciones: {
+    accent: "text-cyan-200",
+    surface: "border-cyan-300/20 bg-cyan-300/10",
+    symbol: "¾",
+  },
+  proporcionalidad: {
+    accent: "text-amber-200",
+    surface: "border-amber-300/20 bg-amber-300/10",
+    symbol: "a : b",
+  },
+  algebra: {
+    accent: "text-violet-200",
+    surface: "border-violet-300/20 bg-violet-300/10",
+    symbol: "x + y",
+  },
+};
 
 export function LearningHome({
   childId,
@@ -62,6 +83,16 @@ export function LearningHome({
     (lesson) => !data.progress[lesson.id]?.completedAt,
   );
   const next = getLesson(active?.lessonId ?? "") ?? unfinished ?? LESSONS[0];
+  const completed = LESSONS.filter(
+    (lesson) => data.progress[lesson.id]?.completedAt,
+  ).length;
+  const nextActionLabel = active
+    ? "Continuar aprendiendo"
+    : data.progress[next.id]
+      ? "Volver a esta clase"
+      : completed > 0
+        ? "Comenzar mi siguiente clase"
+        : "Comenzar mi primera clase";
   const due = LESSONS.find((lesson) => {
     const p = data.progress[lesson.id];
     return p?.reviewDueAt && p.reviewDueAt <= now;
@@ -78,164 +109,340 @@ export function LearningHome({
       title={title}
       eyebrow={view === "home" ? "Tu espacio de matemáticas" : "Tu biblioteca"}
     >
-      <div className="space-y-8">
+      <div className="space-y-8 sm:space-y-10">
         {view === "home" ? (
-          <>
-            <section className="grid gap-6 rounded-3xl border border-cyan-300/25 bg-gradient-to-br from-cyan-950/70 to-slate-900 p-6 sm:p-8 lg:grid-cols-[1.3fr_1fr]">
-              <div>
-                <p className="text-sm font-bold text-cyan-200">
-                  Tu siguiente paso
-                </p>
-                <h2 className="mt-2 text-2xl font-bold text-white">
-                  {next.title}
-                </h2>
-                <p className="mt-3 max-w-xl text-slate-300">{next.objective}</p>
-                <p className="mt-3 text-sm text-slate-400">
-                  {active
-                    ? `Retoma: ${STAGE_LABELS[active.stage]}`
-                    : "Clase breve · ejemplos · práctica · aplicación"}
-                  . Puedes parar y continuar después.
-                </p>
-                <Link
-                  href={`${base}/aprende/${next.id}`}
-                  className={`${primaryButton} mt-5`}
-                >
-                  {active
-                    ? "Continuar aprendiendo"
-                    : "Comenzar mi primera clase"}
-                  <ArrowRight size={17} aria-hidden="true" />
-                </Link>
-              </div>
-              <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-5">
-                <Lightbulb
-                  size={24}
-                  className="text-amber-300"
+          <section
+            aria-label="Tu siguiente paso"
+            className={`${styles.hero} grid gap-7 rounded-3xl border border-cyan-300/25 p-5 sm:p-8 lg:grid-cols-[1.4fr_1fr]`}
+          >
+            <div className="flex flex-col items-start">
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-bold text-cyan-200">
+                <span
+                  className="size-1.5 rounded-full bg-cyan-300"
                   aria-hidden="true"
                 />
-                <h3 className="mt-3 font-bold text-white">
-                  Comprende. Prueba. Transforma.
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                  Recibe una explicación, practica a tu ritmo y usa tus ideas
-                  para resolver lo que ocurre en la ciudad. Pedir ayuda forma
-                  parte de aprender.
-                </p>
+                {active
+                  ? "Tu clase te espera"
+                  : completed === LESSONS.length
+                    ? "Sigue explorando"
+                    : "Tu siguiente paso"}
+              </span>
+              <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-slate-400">
+                {LEARNING_UNITS.find((unit) => unit.id === next.unitId)?.title}
+              </p>
+              <h2 className="mt-2 max-w-xl font-display text-2xl font-bold leading-tight text-white sm:text-3xl">
+                {next.title}
+              </h2>
+              <p className="mt-3 max-w-xl leading-relaxed text-slate-300">
+                {next.objective}
+              </p>
+              <Link
+                href={`${base}/aprende/${next.id}`}
+                className={`${primaryButton} mt-6 w-full sm:w-auto`}
+              >
+                {nextActionLabel}
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+              <p className="mt-3 text-xs leading-relaxed text-slate-400">
+                {active ? `Retoma: ${STAGE_LABELS[active.stage]}. ` : ""}
+                Tu avance se guarda. Puedes parar y volver después.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5 sm:p-6">
+              <h3 className="text-sm font-bold text-white">
+                Una idea, paso a paso
+              </h3>
+              <ol className="mt-5 space-y-5">
+                {[
+                  {
+                    icon: BookOpen,
+                    title: "Entiende la idea",
+                    body: "Explicaciones visuales y ejemplos razonados.",
+                  },
+                  {
+                    icon: Gamepad2,
+                    title: "Ponla en juego",
+                    body: "Practica con pistas, a tu ritmo.",
+                  },
+                  {
+                    icon: Lightbulb,
+                    title: "Úsala en una situación real",
+                    body: "Comprueba lo aprendido y aplícalo.",
+                  },
+                ].map(({ icon: Icon, title: label, body }, index) => (
+                  <li key={label} className="flex gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-cyan-300/10 text-cyan-200">
+                      <Icon size={19} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold text-slate-100">
+                        <span className="mr-2 text-cyan-200">0{index + 1}</span>
+                        {label}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                        {body}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <div className="mt-6 border-t border-white/10 pt-4">
+                <div className="mb-2 flex justify-between gap-3 text-xs text-slate-300">
+                  <span>Clases terminadas</span>
+                  <strong>
+                    {completed} de {LESSONS.length}
+                  </strong>
+                </div>
+                <progress
+                  aria-label="Clases terminadas"
+                  value={completed}
+                  max={LESSONS.length}
+                  className="block h-1.5 w-full overflow-hidden rounded-full accent-cyan-300"
+                />
               </div>
-            </section>
-            <div className="grid gap-4 md:grid-cols-3">
-              {[
-                {
-                  href: "/aprende",
-                  icon: BookOpen,
-                  title: "Aprender",
-                  body: "Doce clases con ideas visuales y ejemplos que explican cada paso.",
-                },
-                {
-                  href: "/practicar",
-                  icon: PenLine,
-                  title: "Practicar",
-                  body: "Practica escribiendo, cruza el estanque o impulsa el cohete con ejercicios de tu clase y ayudas.",
-                },
-                {
-                  href: "/aventura",
-                  icon: Compass,
-                  title: "El apagón",
-                  body: "Explora la central y devuelve la energía a la ciudad con tus decisiones.",
-                },
-              ].map(({ href, icon: Icon, title: label, body }) => (
+            </div>
+          </section>
+        ) : (
+          <div className="space-y-5">
+            <p className="max-w-3xl leading-relaxed text-slate-300">
+              {view === "learn"
+                ? "Comprende una idea, descubre cómo se resuelve y prueba por tu cuenta. Elige un tema; puedes volver a sus bases cuando lo necesites."
+                : "Elige una idea y practica con ayuda. Siete minijuegos se alternan en las actividades compatibles; también puedes escribir tu respuesta. Pedir una pista forma parte de aprender."}
+            </p>
+            <nav
+              aria-label="Unidades de aprendizaje"
+              className="flex flex-wrap gap-2"
+            >
+              {LEARNING_UNITS.map((unit, index) => (
                 <Link
-                  key={href}
-                  href={`${base}${href}`}
-                  className="group rounded-2xl border border-slate-700 bg-slate-900 p-5 hover:border-cyan-300"
+                  key={unit.id}
+                  href={`#unit-${unit.id}`}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-slate-400"
                 >
-                  <Icon
-                    size={23}
-                    className="text-cyan-300"
-                    aria-hidden="true"
-                  />
-                  <h2 className="mt-3 text-lg font-bold">{label}</h2>
-                  <p className="mt-2 text-sm text-slate-300">{body}</p>
-                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-cyan-200">
-                    Entrar
-                    <ArrowRight size={15} aria-hidden="true" />
+                  <span className={unitStyles[unit.id].accent}>
+                    0{index + 1}
                   </span>
+                  {unit.id === "fracciones"
+                    ? "Fracciones"
+                    : unit.id === "proporcionalidad"
+                      ? "Proporcionalidad"
+                      : "Álgebra"}
                 </Link>
               ))}
-            </div>
-            {due && (
-              <section className="rounded-2xl border border-amber-400/30 bg-amber-950/20 p-5">
+            </nav>
+          </div>
+        )}
+
+        {due && (
+          <section
+            aria-label="Repaso disponible"
+            className="flex flex-col items-start gap-4 rounded-2xl border border-amber-300/25 bg-amber-300/5 p-5 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex gap-3">
+              <RotateCcw
+                className="mt-1 shrink-0 text-amber-200"
+                size={21}
+                aria-hidden="true"
+              />
+              <div>
                 <h2 className="font-bold text-amber-200">
                   Una idea para recuperar hoy
                 </h2>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-300">
                   Vuelve a {due.title.toLowerCase()} con preguntas diferentes.
-                  El repaso comprueba qué recuerdas sin repetir toda la clase.
+                  Descubre qué recuerdas sin repetir toda la clase.
                 </p>
-                <Link
-                  className={`${secondaryButton} mt-4`}
-                  href={`${base}/aprende/${due.id}?modo=review`}
-                >
-                  Hacer un repaso
-                </Link>
-              </section>
-            )}
-          </>
-        ) : (
-          <p className="max-w-3xl text-slate-300">
-            {view === "learn"
-              ? "Cada clase conecta el significado, los ejemplos y la práctica. Puedes comenzar por la idea que necesitas y consultar sus bases cuando haga falta."
-              : "Elige un tema para practicar con explicaciones y ayudas. Las comprobaciones autónomas y los repasos se muestran por separado."}
-          </p>
-        )}
-        {LEARNING_UNITS.map((unit) => (
-          <section
-            key={unit.id}
-            aria-labelledby={`unit-${unit.id}`}
-            className="space-y-4"
-          >
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-cyan-300">
-                {unit.id === "fracciones"
-                  ? "01"
-                  : unit.id === "proporcionalidad"
-                    ? "02"
-                    : "03"}{" "}
-                / Tu recorrido
-              </p>
-              <h2 id={`unit-${unit.id}`} className="mt-1 text-xl font-bold">
-                {unit.title}
-              </h2>
-              <p className="mt-1 text-sm text-slate-400">{unit.description}</p>
+              </div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {LESSONS.filter((lesson) => lesson.unitId === unit.id).map(
-                (lesson) => (
-                  <LessonCard
-                    key={lesson.id}
-                    childId={childId}
-                    lessonId={lesson.id}
-                    progress={data.progress[lesson.id]}
-                    practice={view === "practice"}
-                  />
-                ),
-              )}
+            <Link
+              className={`${secondaryButton} w-full shrink-0 sm:w-auto`}
+              href={`${base}/aprende/${due.id}?modo=review`}
+            >
+              Hacer un repaso
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          </section>
+        )}
+
+        {view === "home" ? (
+          <section aria-labelledby="learning-units">
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  Explora a tu ritmo
+                </p>
+                <h2
+                  id="learning-units"
+                  className="mt-1 font-display text-2xl font-bold"
+                >
+                  Tu recorrido de aprendizaje
+                </h2>
+              </div>
+              <Link
+                className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-cyan-200"
+                href={`${base}/aprende`}
+              >
+                Ver todas las clases
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {LEARNING_UNITS.map((unit, index) => {
+                const lessons = LESSONS.filter(
+                  (lesson) => lesson.unitId === unit.id,
+                );
+                const finished = lessons.filter(
+                  (lesson) => data.progress[lesson.id]?.completedAt,
+                ).length;
+                const theme = unitStyles[unit.id];
+                return (
+                  <Link
+                    key={unit.id}
+                    href={`${base}/aprende#unit-${unit.id}`}
+                    className={`${styles.unitCard} group flex flex-col rounded-2xl border border-slate-700 p-5 transition-colors sm:p-6`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span
+                        className={`rounded-lg border px-2.5 py-1 text-xs font-bold ${theme.surface} ${theme.accent}`}
+                      >
+                        UNIDAD 0{index + 1}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={`font-display text-3xl ${theme.accent}`}
+                      >
+                        {theme.symbol}
+                      </span>
+                    </div>
+                    <h3 className="mt-5 text-lg font-bold leading-snug text-white">
+                      {unit.title}
+                    </h3>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-400">
+                      {unit.description}
+                    </p>
+                    <p className="mt-5 text-xs text-slate-300">
+                      {finished} de {lessons.length} clases terminadas
+                    </p>
+                    <progress
+                      aria-label={`Clases terminadas de ${unit.title}`}
+                      value={finished}
+                      max={lessons.length}
+                      className="mt-2 block h-1 w-full overflow-hidden rounded-full accent-cyan-300"
+                    />
+                    <span
+                      className={`mt-5 flex items-center justify-between text-sm font-bold ${theme.accent}`}
+                    >
+                      Explorar unidad
+                      <ArrowRight size={17} aria-hidden="true" />
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
           </section>
-        ))}
-        <footer className="flex flex-wrap gap-4 border-t border-slate-800 pt-5 text-sm text-slate-400">
-          <Link
-            href={`${base}/mapa`}
-            className="min-h-11 py-2 underline underline-offset-4"
-          >
-            Mundos de tu familia y actividades adicionales
-          </Link>
-          <Link
-            href={`${base}/evaluacion`}
-            className="min-h-11 py-2 underline underline-offset-4"
-          >
-            Evaluación curricular ampliada · opcional
-          </Link>
-        </footer>
+        ) : (
+          LEARNING_UNITS.map((unit, unitIndex) => (
+            <section
+              key={unit.id}
+              aria-labelledby={`unit-${unit.id}`}
+              className="space-y-4"
+            >
+              <div className="flex items-start gap-4">
+                <span
+                  aria-hidden="true"
+                  className={`grid size-11 shrink-0 place-items-center rounded-xl border text-sm font-bold ${unitStyles[unit.id].surface} ${unitStyles[unit.id].accent}`}
+                >
+                  0{unitIndex + 1}
+                </span>
+                <div>
+                  <h2
+                    id={`unit-${unit.id}`}
+                    className={`${styles.unitHeading} text-xl font-bold`}
+                  >
+                    {unit.title}
+                  </h2>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-400">
+                    {unit.description}
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {LESSONS.filter((lesson) => lesson.unitId === unit.id).map(
+                  (lesson, index) => (
+                    <LessonCard
+                      key={lesson.id}
+                      childId={childId}
+                      lessonId={lesson.id}
+                      index={index}
+                      progress={data.progress[lesson.id]}
+                      practice={view === "practice"}
+                    />
+                  ),
+                )}
+              </div>
+            </section>
+          ))
+        )}
+
+        {view === "home" && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              {
+                href: "/practicar",
+                icon: Gamepad2,
+                title: "Practica a tu manera",
+                body: "Siete minijuegos, respuestas escritas y pistas para seguir probando.",
+                action: "Elegir un tema",
+              },
+              {
+                href: "/aventura",
+                icon: Compass,
+                title: "La ciudad necesita tus ideas",
+                body: "En El apagón, tus decisiones matemáticas devuelven la energía a la ciudad.",
+                action: "Explorar El apagón",
+              },
+            ].map(({ href, icon: Icon, title: label, body, action }) => (
+              <Link
+                key={href}
+                href={`${base}${href}`}
+                className="group flex items-start gap-4 rounded-2xl border border-slate-700 bg-slate-900/60 p-5 transition-colors hover:border-cyan-300/60"
+              >
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-violet-300/10 text-violet-200">
+                  <Icon size={22} aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 className="font-bold text-white">{label}</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                    {body}
+                  </p>
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-cyan-200">
+                    {action}
+                    <ArrowRight size={16} aria-hidden="true" />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+        <details className="border-t border-slate-800 pt-5 text-sm text-slate-400">
+          <summary className="w-fit cursor-pointer py-3 font-semibold text-slate-300">
+            Más actividades para explorar
+          </summary>
+          <div className="mt-2 flex flex-col items-start gap-2">
+            <Link
+              href={`${base}/mapa`}
+              className="inline-flex min-h-11 items-center py-2 underline underline-offset-4"
+            >
+              Mundos de tu familia y actividades adicionales
+            </Link>
+            <Link
+              href={`${base}/evaluacion`}
+              className="inline-flex min-h-11 items-center py-2 underline underline-offset-4"
+            >
+              Evaluación curricular ampliada · opcional
+            </Link>
+          </div>
+        </details>
       </div>
     </LearningShell>
   );
@@ -244,34 +451,49 @@ export function LearningHome({
 function LessonCard({
   childId,
   lessonId,
+  index,
   progress,
   practice,
 }: {
   childId: string;
   lessonId: string;
+  index: number;
   progress?: LearningProgress;
   practice: boolean;
 }) {
   const lesson = getLesson(lessonId)!;
+  const theme = unitStyles[lesson.unitId];
   return (
     <Link
       href={`/jugar/${childId}/aprende/${lesson.id}${practice ? "?modo=practice" : ""}`}
-      className="flex min-h-32 flex-col rounded-2xl border border-slate-700 bg-slate-900 p-5 transition-colors hover:border-cyan-300"
+      className={`${styles.unitCard} flex flex-col rounded-2xl border border-slate-700 p-5 transition-colors sm:p-6`}
     >
-      <span className="text-xs font-semibold text-cyan-200">
-        {learningStatus(progress)}
-      </span>
-      <h3 className="mt-2 font-bold text-white">{lesson.title}</h3>
-      <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-300">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className={`text-xs font-bold ${theme.accent}`}>
+          CLASE {String(index + 1).padStart(2, "0")}
+        </span>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${progress?.completedAt ? "bg-emerald-300/10 text-emerald-200" : "bg-white/5 text-slate-300"}`}
+        >
+          {progress?.completedAt && <Check size={13} aria-hidden="true" />}
+          {learningStatus(progress)}
+        </span>
+      </div>
+      <h3 className="mt-4 text-lg font-bold leading-snug text-white">
+        {lesson.title}
+      </h3>
+      <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-400">
         {lesson.objective}
       </p>
-      <span className="mt-4 text-sm font-semibold text-cyan-200">
+      <span
+        className={`mt-5 flex items-center justify-between gap-2 border-t border-white/10 pt-4 text-sm font-semibold ${theme.accent}`}
+      >
         {practice
           ? "Practicar este tema"
           : progress
             ? "Abrir mi clase"
-            : "Conocer esta idea"}{" "}
-        →
+            : "Conocer esta idea"}
+        <ArrowRight size={17} aria-hidden="true" />
       </span>
     </Link>
   );
