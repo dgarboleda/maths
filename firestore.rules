@@ -45,6 +45,19 @@ service cloud.firestore {
       return isParent(parentId) || isChild(parentId, childId);
     }
 
+    function validRedemptionRequest(data, parentId, childId) {
+      let balance = /databases/$(database)/documents/parents/$(parentId)/children/$(childId)/starBalance/total;
+      return data.keys().hasOnly(['starsSpent', 'rewardLabel', 'status', 'createdAt', 'resolvedAt'])
+        && data.keys().hasAll(['starsSpent', 'rewardLabel', 'status', 'createdAt', 'resolvedAt'])
+        && data.starsSpent is int && data.starsSpent > 0
+        && data.rewardLabel is string && data.rewardLabel.size() > 0 && data.rewardLabel.size() <= 120
+        && data.status == 'pendiente'
+        && data.createdAt == request.time
+        && data.resolvedAt == null
+        && exists(balance)
+        && data.starsSpent <= get(balance).data.get('total', 0);
+    }
+
     function validAttempt(data) {
       return data.keys().hasAll(['skillId', 'itemId', 'correct', 'createdAt'])
         && data.keys().hasOnly(['skillId', 'itemId', 'correct', 'createdAt', 'hintsUsed'])
@@ -134,8 +147,13 @@ service cloud.firestore {
         }
 
         // El hijo pide un canje; solo el padre lo aprueba/rechaza/borra.
+        // La sesión infantil solo puede pedir: una solicitud pendiente, con
+        // un importe entero que no supere su saldo y la hora del servidor.
+        // Nunca la crea ya aprobada ni con campos de resolución.
         match /redemptionRequests/{requestId} {
-          allow read, create: if isParentOrChild(parentId, childId);
+          allow read: if isParentOrChild(parentId, childId);
+          allow create: if isParent(parentId)
+            || (isChild(parentId, childId) && validRedemptionRequest(request.resource.data, parentId, childId));
           allow update, delete: if isParent(parentId);
         }
 
