@@ -309,7 +309,7 @@ export function RunnerGeneric({
               ))}
             </div>
 
-            <TouchDPad onMove={onTouchMove} />
+            <TouchDPad inline onMove={onTouchMove} />
           </div>
         )}
 

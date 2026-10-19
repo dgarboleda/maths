@@ -313,7 +313,7 @@ export function InvadersGeneric({
               Disparar (espacio)
             </button>
 
-            <HorizontalPad onLeft={moveLeft} onRight={moveRight} onAction={handleShoot} />
+            <HorizontalPad inline onLeft={moveLeft} onRight={moveRight} onAction={handleShoot} />
           </div>
         )}
 

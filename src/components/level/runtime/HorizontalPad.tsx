@@ -27,14 +27,22 @@ export function HorizontalPad({
   onRight,
   onAction,
   actionLabel = "Disparar",
+  inline = false,
 }: {
   onLeft: () => void;
   onRight: () => void;
   /** Sin `onAction`, no se pinta el botón de acción (p. ej. Breakout no dispara). */
   onAction?: () => void;
   actionLabel?: string;
+  /** En flujo, debajo del tablero (minijuegos), en vez de flotar encima. */
+  inline?: boolean;
 }) {
   const timerRef = useRef<number | null>(null);
+  // La repetición usa siempre el manejador más reciente (ver TouchDPad).
+  const handlersRef = useRef({ onLeft, onRight });
+  useEffect(() => {
+    handlersRef.current = { onLeft, onRight };
+  });
 
   function stop() {
     if (timerRef.current !== null) {
@@ -42,22 +50,29 @@ export function HorizontalPad({
       timerRef.current = null;
     }
   }
-  function startRepeating(fn: () => void) {
+  function startRepeating(side: "onLeft" | "onRight") {
     stop();
-    fn();
-    timerRef.current = window.setInterval(fn, REPEAT_MS);
+    handlersRef.current[side]();
+    timerRef.current = window.setInterval(() => handlersRef.current[side](), REPEAT_MS);
   }
 
   useEffect(() => stop, []);
 
   return (
-    <div aria-label="Control horizontal" className="pointer-events-none absolute inset-x-4 bottom-4 z-30 flex items-center justify-between lg:hidden">
+    <div
+      aria-label="Control horizontal"
+      className={
+        inline
+          ? "flex items-center justify-between gap-4 lg:hidden"
+          : "pointer-events-none absolute inset-x-4 bottom-4 z-30 flex items-center justify-between lg:hidden"
+      }
+    >
       <div className="flex gap-2">
         <button
           type="button"
           aria-label="Mover a la izquierda"
           className={BUTTON_CLASS}
-          onPointerDown={() => startRepeating(onLeft)}
+          onPointerDown={() => startRepeating("onLeft")}
           onPointerUp={stop}
           onPointerLeave={stop}
           onPointerCancel={stop}
@@ -68,7 +83,7 @@ export function HorizontalPad({
           type="button"
           aria-label="Mover a la derecha"
           className={BUTTON_CLASS}
-          onPointerDown={() => startRepeating(onRight)}
+          onPointerDown={() => startRepeating("onRight")}
           onPointerUp={stop}
           onPointerLeave={stop}
           onPointerCancel={stop}

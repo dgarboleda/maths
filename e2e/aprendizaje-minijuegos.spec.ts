@@ -31,8 +31,10 @@ async function conceptThenNumeric(page: Page, lessonId: string, game: Game) {
 /** Estanque con su mecánica real: lleva la rana a la columna del nenúfar con
  *  ese valor (o se queda si ya está encima) y salta dos filas. */
 async function cross(page: Page, label: string) {
-  const cells = (await page.locator("main div.grid.max-w-sm").first().locator(":scope > div").allTextContents()).map((c) => c.trim());
-  const frog = cells.findIndex((c) => c.includes("🐸"));
+  const raw = (await page.locator("main div.grid.max-w-sm").first().locator(":scope > div").allTextContents()).map((c) => c.trim());
+  const frog = raw.findIndex((c) => c.includes("🐸"));
+  // La casilla de la rana muestra también su número.
+  const cells = raw.map((c) => c.replace("🐸", "").trim());
   const found = cells.indexOf(label);
   const target = found < 0 ? frog : found;
   for (let col = frog; col !== target; col += Math.sign(target - col))
@@ -42,7 +44,7 @@ async function cross(page: Page, label: string) {
 }
 
 async function pondLabels(page: Page) {
-  return (await page.locator("main div.grid.max-w-sm").first().locator(":scope > div").allTextContents()).map((c) => c.trim());
+  return (await page.locator("main div.grid.max-w-sm").first().locator(":scope > div").allTextContents()).map((c) => c.replace("🐸", "").trim());
 }
 
 function savedAnswer(page: Page) {
@@ -75,7 +77,7 @@ test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar d
   await page.waitForTimeout(700);
   expect(answers).toBe(0);
   await page.getByRole("button", { name: "Reanudar partida" }).click();
-  const wrongLabel = (await pondLabels(page)).find((label) => label !== "🐸" && Number(label) !== q.answer)!;
+  const wrongLabel = (await pondLabels(page)).find((label) => label !== "" && Number(label) !== q.answer)!;
   const wrong = Number(wrongLabel);
   const answer = savedAnswer(page);
   await cross(page, wrongLabel);
@@ -170,4 +172,25 @@ test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; s
   expect(saved.progress.checkPassedAt).toBeNull();
   expect(saved.stars).toBe(0);
   await expect(page.getByRole("heading", { name: "¡Invasión repelida!" })).toBeVisible();
+});
+
+test("Estanque en móvil: el D-pad táctil queda debajo del tablero y permite responder", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "móvil", "El D-pad solo se muestra en pantallas táctiles pequeñas.");
+  const q = await conceptThenNumeric(page, "fraccion-cantidad", "frogger");
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  const board = page.locator("main div.grid.max-w-sm").first();
+  const pad = page.getByLabel("Control de movimiento");
+  const [boardBox, padBox] = [await board.boundingBox(), await pad.boundingBox()];
+  expect(padBox!.y).toBeGreaterThanOrEqual(boardBox!.y + boardBox!.height);
+  const raw = (await board.locator(":scope > div").allTextContents()).map((c) => c.trim());
+  const frog = raw.findIndex((c) => c.includes("🐸"));
+  const target = raw.map((c) => c.replace("🐸", "").trim()).indexOf(String(q.answer));
+  for (let col = frog; col !== target; col += Math.sign(target - col))
+    await page.getByRole("button", { name: target > col ? "Mover a la derecha" : "Mover a la izquierda" }).click();
+  const answer = savedAnswer(page);
+  await page.getByRole("button", { name: "Mover arriba" }).click();
+  await page.getByRole("button", { name: "Mover arriba" }).click();
+  const saved = (await (await answer).json()).result.progress;
+  expect(saved.responses[`practice:${q.id}`]).toMatchObject({ response: String(q.answer), correct: true });
+  await expect(page.getByRole("heading", { name: "¡Cruzaste el estanque!" })).toBeVisible();
 });
