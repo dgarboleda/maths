@@ -106,6 +106,7 @@ test.describe("Racha de días jugados", () => {
 
     // Navegación del usuario: mantiene viva la escritura de la racha. Un
     // page.goto recarga el documento y puede interrumpir el guardado.
+    await page.getByText("Más actividades para explorar", { exact: true }).click();
     await page.getByRole("link", { name: "Mundos de tu familia y actividades adicionales", exact: true }).click();
     await expect(page.getByText("2 días")).toBeVisible();
   });

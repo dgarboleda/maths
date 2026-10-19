@@ -114,6 +114,10 @@ test("clase, ejemplos, práctica con reintento, comprobación y aplicación con 
       exact: true,
     }),
   ).toBeVisible();
+  await page.goto(`/jugar/${childId}`);
+  await expect(
+    page.getByRole("progressbar", { name: "Clases terminadas", exact: true }),
+  ).toHaveAttribute("value", "1");
   await page.goto("/panel/progreso");
   await expect(
     page.getByRole("region", { name: "Aprendizaje de Alex" }),

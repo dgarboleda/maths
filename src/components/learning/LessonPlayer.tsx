@@ -98,7 +98,14 @@ export function LessonPlayer({
       title={lesson.title}
       eyebrow="Una idea que puedes comprender y usar"
     >
-      <p className="max-w-3xl text-slate-300">
+      <Link
+        href={`/jugar/${childId}/aprende`}
+        className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-cyan-200 underline underline-offset-4"
+      >
+        <BookOpen size={16} aria-hidden="true" />
+        Todas las clases
+      </Link>
+      <p className="max-w-3xl leading-relaxed text-slate-300">
         Al terminar podrás:{" "}
         {lesson.objective.charAt(0).toLowerCase() + lesson.objective.slice(1)}
       </p>
@@ -126,24 +133,27 @@ export function LessonPlayer({
                     ? "Resolverás problemas diferentes después de varios días, para comprobar qué recuerdas."
                     : "El repaso diferido aún no está disponible. Puedes seguir practicando y volver en la fecha indicada."}
               </p>
-              <button
-                className={primaryButton}
-                disabled={mutation.blocked || !requestedAvailable}
-                onClick={async () => {
-                  if (await run({ kind: "begin", stage: requestedStage }))
-                    setLaunched(true);
-                }}
-              >
-                Comenzar {requestedStage === "practice" ? "práctica" : "repaso"}
-              </button>
-              <button
-                type="button"
-                className={`${secondaryButton} ml-2`}
-                disabled={mutation.blocked}
-                onClick={() => setLaunched(true)}
-              >
-                Continuar mi clase
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  className={primaryButton}
+                  disabled={mutation.blocked || !requestedAvailable}
+                  onClick={async () => {
+                    if (await run({ kind: "begin", stage: requestedStage }))
+                      setLaunched(true);
+                  }}
+                >
+                  Comenzar{" "}
+                  {requestedStage === "practice" ? "práctica" : "repaso"}
+                </button>
+                <button
+                  type="button"
+                  className={secondaryButton}
+                  disabled={mutation.blocked}
+                  onClick={() => setLaunched(true)}
+                >
+                  Continuar mi clase
+                </button>
+              </div>
             </section>
           ) : (
             <>
@@ -171,7 +181,7 @@ export function LessonPlayer({
                     (paragraph) => (
                       <p
                         key={paragraph}
-                        className="leading-relaxed text-slate-200"
+                        className="max-w-prose text-pretty leading-relaxed text-slate-200"
                       >
                         {paragraph}
                       </p>
@@ -260,7 +270,7 @@ export function LessonPlayer({
             </>
           )}
         </div>
-        <aside className="space-y-5">
+        <aside className="space-y-5 self-start lg:sticky lg:top-6">
           <section
             aria-label="Herramientas de la clase"
             className="space-y-3 rounded-2xl border border-slate-700 bg-slate-900 p-4"
@@ -271,7 +281,7 @@ export function LessonPlayer({
             </p>
             {(
               ["class", "examples", "guided", "practice", "check"] as const
-            ).map((stage) => (
+            ).map((stage, index) => (
               <button
                 key={stage}
                 type="button"
@@ -280,8 +290,14 @@ export function LessonPlayer({
                 onClick={async () => {
                   if (await run({ kind: "begin", stage })) setLaunched(true);
                 }}
-                className={`${secondaryButton} w-full justify-start`}
+                className={`${progress.stage === stage ? primaryButton : secondaryButton} w-full justify-start text-left`}
               >
+                <span
+                  aria-hidden="true"
+                  className="mr-1 font-mono text-xs"
+                >
+                  0{index + 1}
+                </span>
                 {STAGE_LABELS[stage]}
                 {stage === "check" ? " lo que sé" : ""}
               </button>

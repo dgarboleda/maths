@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, BookOpen, Compass, Home, PenLine } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Compass,
+  Home,
+  PenLine,
+  Sparkles,
+} from "lucide-react";
+import styles from "./learning.module.css";
 
 export const primaryButton =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition-colors hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-50";
@@ -33,26 +41,32 @@ export function LearningShell({
     <main
       id="contenido"
       tabIndex={-1}
-      className="min-h-screen bg-slate-950 px-4 pb-16 text-slate-100 sm:px-8"
+      className={`${styles.shell} min-h-screen min-w-0 bg-slate-950 px-4 text-slate-100 sm:px-8`}
     >
       <div className="mx-auto max-w-6xl">
-        <header className="border-b border-slate-800 py-5">
+        <header className="border-b border-white/10 py-4 sm:py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
               href={base}
-              className="font-display text-lg font-bold tracking-wide text-white"
+              className="inline-flex min-h-11 items-center gap-3 font-display text-lg font-bold tracking-wide text-white"
             >
-              MATHS <span className="text-cyan-300">/</span> Tu próxima idea
+              <span className="grid size-10 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300/10 text-cyan-200">
+                <Sparkles size={21} aria-hidden="true" />
+              </span>
+              MATHS
+              <span className="hidden border-l border-slate-700 pl-3 font-sans text-sm font-medium tracking-normal text-slate-400 sm:inline">
+                Tu próxima idea
+              </span>
             </Link>
             <Link
               href="/perfiles"
-              className="inline-flex min-h-11 items-center gap-1 text-sm text-slate-300 underline underline-offset-4"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
             >
               <ArrowLeft size={16} aria-hidden="true" />
               Perfiles
             </Link>
           </div>
-          <nav aria-label="Tu espacio" className="mt-4 flex flex-wrap gap-2">
+          <nav aria-label="Tu espacio" className={styles.navigation}>
             {items.map(({ href, text, icon: Icon }) => {
               const active =
                 href === base ? pathname === base : pathname.startsWith(href);
@@ -61,9 +75,9 @@ export function LearningShell({
                   key={href}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold ${active ? "bg-cyan-300 text-slate-950" : "bg-slate-900 text-slate-300 hover:bg-slate-800"}`}
+                  className={`${styles.navItem} ${active ? "bg-cyan-300/15 text-cyan-200 ring-1 ring-inset ring-cyan-300/30" : "text-slate-400 hover:bg-white/5 hover:text-slate-100"}`}
                 >
-                  <Icon size={16} aria-hidden="true" />
+                  <Icon size={19} aria-hidden="true" />
                   {text}
                 </Link>
               );
@@ -76,7 +90,7 @@ export function LearningShell({
               {eyebrow}
             </p>
           )}
-          <h1 className="font-display text-3xl font-bold leading-tight text-white sm:text-4xl">
+          <h1 className="max-w-4xl text-balance font-display text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
             {title}
           </h1>
           <div className="mt-6">{children}</div>
