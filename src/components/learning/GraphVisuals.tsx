@@ -10,6 +10,48 @@ export const num = (x: number) =>
 export interface Scale {
   sx: (x: number) => number;
   sy: (y: number) => number;
+  /** Inversas: de coordenadas del SVG a coordenadas matemáticas. */
+  ix: (px: number) => number;
+  iy: (py: number) => number;
+}
+
+/** Ajusta un valor arrastrado al paso y al rango de su control deslizante. */
+export const snap = (v: number, min: number, max: number, step = 1) =>
+  Math.min(max, Math.max(min, Math.round(v / step) * step));
+
+/** Punto que se arrastra con puntero (ratón, lápiz o dedo). Entrega la
+ *  posición en coordenadas del SVG. Es un atajo visual: el control
+ *  deslizante equivalente sigue siendo la vía accesible por teclado, por eso
+ *  el punto no recibe foco ni se anuncia. */
+export function Handle({
+  x,
+  y,
+  onDrag,
+  className = "fill-amber-300",
+  r = 6,
+}: {
+  x: number;
+  y: number;
+  onDrag: (px: number, py: number) => void;
+  className?: string;
+  r?: number;
+}) {
+  const move = (e: React.PointerEvent<SVGGElement>) => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    const m = e.currentTarget.ownerSVGElement?.getScreenCTM();
+    if (!m) return;
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    onDrag(p.x, p.y);
+  };
+  return (
+    <g aria-hidden="true" data-handle="" className="cursor-grab touch-none active:cursor-grabbing"
+      onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); move(e); }}
+      onPointerMove={move}
+      onPointerUp={(e) => e.currentTarget.releasePointerCapture(e.pointerId)}>
+      <circle cx={x} cy={y} r={r + 10} fill="transparent" />
+      <circle cx={x} cy={y} r={r} strokeWidth={2} className={`${className} stroke-slate-950`} />
+    </g>
+  );
 }
 
 const W = 320,
@@ -34,7 +76,9 @@ export function Plane({
   children: (scale: Scale) => ReactNode;
 }) {
   const sx = (x: number) => PAD + ((x - x0) / (x1 - x0)) * (W - 2 * PAD),
-    sy = (y: number) => H - PAD - ((y - y0) / (y1 - y0)) * (H - 2 * PAD);
+    sy = (y: number) => H - PAD - ((y - y0) / (y1 - y0)) * (H - 2 * PAD),
+    ix = (px: number) => x0 + ((px - PAD) / (W - 2 * PAD)) * (x1 - x0),
+    iy = (py: number) => y0 + ((H - PAD - py) / (H - 2 * PAD)) * (y1 - y0);
   const ticks = (a: number, b: number, step: number) =>
     Array.from(
       { length: Math.floor((b - a) / step) + 1 },
@@ -75,7 +119,7 @@ export function Plane({
       {y0 <= 0 && y1 >= 0 && (
         <line x1={PAD} x2={W - PAD} y1={sy(0)} y2={sy(0)} className="stroke-slate-400" />
       )}
-      <g clipPath={`url(#${clipId})`}>{children({ sx, sy })}</g>
+      <g clipPath={`url(#${clipId})`}>{children({ sx, sy, ix, iy })}</g>
     </svg>
   );
 }
@@ -158,7 +202,10 @@ export function LinearVisual({ id }: { id: string }) {
             <path d={`M${s.sx(1)},${s.sy(f(1))} H${s.sx(2)} V${s.sy(f(2))}`} className="fill-none stroke-amber-300" strokeWidth={2} strokeDasharray="4 3" />
             <text x={s.sx(1.5)} y={s.sy(f(1)) + (slope >= 0 ? 12 : -5)} textAnchor="middle" className="fill-amber-200 text-[10px]">+1</text>
             <text x={s.sx(2) + 4} y={(s.sy(f(1)) + s.sy(f(2))) / 2 + 3} className="fill-amber-200 text-[10px]">{slope >= 0 ? "+" : ""}{num(slope)}</text>
-            <circle cx={s.sx(0)} cy={s.sy(intercept)} r={4.5} className="fill-rose-300" />
+            <Handle x={s.sx(0)} y={s.sy(intercept)} className="fill-rose-300"
+              onDrag={(_, py) => setIntercept(snap(s.iy(py), -5, 10))} />
+            <Handle x={s.sx(1)} y={s.sy(f(1))}
+              onDrag={(_, py) => setSlope(snap(s.iy(py) - intercept, -4, 6))} />
           </>
         )}
       </Plane>
@@ -176,7 +223,7 @@ export function LinearVisual({ id }: { id: string }) {
         </tbody>
       </table>
       <p className="text-sm text-slate-300">
-        El punto rosa es el valor inicial; el triángulo ámbar muestra la pendiente: cada vez que x aumenta 1, y cambia {num(slope)}.
+        El punto rosa es el valor inicial; el triángulo ámbar muestra la pendiente: cada vez que x aumenta 1, y cambia {num(slope)}. Arrastra cualquiera de los dos puntos para cambiar la recta.
       </p>
     </>
   );
@@ -204,9 +251,11 @@ export function ProportionVisual({ id, initial }: { id: string; initial: "direct
         {(s) => (
           <>
             <path d={curve(f, [direct ? 0 : 0.3, 8], s)} className="fill-none stroke-cyan-300" strokeWidth={2.5} />
-            {xs.map((x) => (
-              <circle key={x} cx={s.sx(x)} cy={s.sy(f(x))} r={3.5} className="fill-amber-300" />
+            {xs.filter((x) => x !== 2).map((x) => (
+              <circle key={x} cx={s.sx(x)} cy={s.sy(f(x))} r={3.5} className="fill-amber-300/70" />
             ))}
+            <Handle x={s.sx(2)} y={s.sy(f(2))}
+              onDrag={(_, py) => setK(direct ? snap(s.iy(py) / 2, 1, 8) : snap(s.iy(py) * 2, 6, 48, 6))} />
           </>
         )}
       </Plane>
@@ -228,7 +277,8 @@ export function ProportionVisual({ id, initial }: { id: string; initial: "direct
       <p className="text-sm text-slate-300">
         {direct
           ? "Directa: una recta que sale del origen. Si x se multiplica por 2, y también; el cociente y ÷ x no cambia."
-          : "Inversa: una curva que baja sin tocar los ejes. Si x se multiplica por 2, y se divide entre 2; el producto x · y no cambia."}
+          : "Inversa: una curva que baja sin tocar los ejes. Si x se multiplica por 2, y se divide entre 2; el producto x · y no cambia."}{" "}
+        Arrastra el punto de x = 2 y observa cómo se mueven los demás.
       </p>
     </>
   );
@@ -257,9 +307,8 @@ export function ParabolaVisual({ id }: { id: string }) {
           <>
             <path d={curve(f, [-6, 6], s)} className="fill-none stroke-cyan-300" strokeWidth={2.5} />
             <line x1={s.sx(vx)} x2={s.sx(vx)} y1={s.sy(-12)} y2={s.sy(16)} className="stroke-slate-600" strokeDasharray="3 3" />
-            {[p, q].map((r, i) => (
-              <circle key={i} cx={s.sx(r)} cy={s.sy(0)} r={5} className="fill-amber-300" />
-            ))}
+            <Handle x={s.sx(p)} y={s.sy(0)} onDrag={(px) => setP(snap(s.ix(px), -5, 5))} />
+            <Handle x={s.sx(q)} y={s.sy(0)} className="fill-rose-300" onDrag={(px) => setQ(snap(s.ix(px), -5, 5))} />
           </>
         )}
       </Plane>
@@ -268,7 +317,7 @@ export function ParabolaVisual({ id }: { id: string }) {
         x² {sum === 0 ? "" : `${sign(-sum)}x `}{prod === 0 ? "" : sign(prod)} se factoriza así.
       </p>
       <p className="text-sm text-slate-300">
-        En las raíces y = 0: uno de los factores vale 0. La parábola es simétrica respecto de x = {num(vx)}, a mitad de camino entre las raíces.
+        Arrastra las raíces sobre el eje x. En las raíces y = 0: uno de los factores vale 0. La parábola es simétrica respecto de x = {num(vx)}, a mitad de camino entre las raíces.
       </p>
     </>
   );
@@ -284,7 +333,8 @@ export function InequalityVisual({ id }: { id: string }) {
     o === "<" ? x < v : o === "≤" ? x <= v : o === ">" ? x > v : x >= v;
   const closed = op === "≤" || op === "≥",
     right = op === ">" || op === "≥";
-  const sx = (x: number) => 20 + ((x + 10) / 20) * 280;
+  const sx = (x: number) => 20 + ((x + 10) / 20) * 280,
+    ix = (px: number) => ((px - 20) / 280) * 20 - 10;
   const ok = holds(test, op, bound);
   return (
     <>
@@ -304,7 +354,11 @@ export function InequalityVisual({ id }: { id: string }) {
         <line x1={sx(bound)} x2={right ? 300 : 20} y1={30} y2={30} className="stroke-cyan-300" strokeWidth={5} />
         <circle cx={sx(bound)} cy={30} r={6} strokeWidth={2.5}
           className={closed ? "fill-cyan-300 stroke-cyan-300" : "fill-slate-950 stroke-cyan-300"} />
-        <path d={`M${sx(test)},10 l-5,-7 h10 z`} className={ok ? "fill-emerald-300" : "fill-rose-300"} />
+        <Handle x={sx(bound)} y={30} r={3} className="fill-transparent"
+          onDrag={(px) => setBound(snap(ix(px), -8, 8))} />
+        <path d={`M${sx(test)},16 l-6,-10 h12 z`} className={ok ? "fill-emerald-300" : "fill-rose-300"} />
+        <Handle x={sx(test)} y={10} r={3} className="fill-transparent"
+          onDrag={(px) => setTest(snap(ix(px), -10, 10))} />
       </svg>
       <Slider id={`${id}-t`} label="Prueba un valor" value={test} min={-10} max={10} onChange={setTest} />
       <p className="text-sm">
@@ -312,7 +366,7 @@ export function InequalityVisual({ id }: { id: string }) {
         ¿{num(-test)} {flip[op]} {num(-bound)}? <strong>{holds(-test, flip[op], -bound) ? "Sí" : "No"}</strong>.
       </p>
       <p className="text-sm text-slate-300">
-        Al multiplicar ambos lados por −1 el orden se invierte: x {op} {num(bound)} equivale a −x {flip[op]} {num(-bound)}. Las dos respuestas siempre coinciden.
+        Arrastra el círculo o el triángulo sobre la recta. Al multiplicar ambos lados por −1 el orden se invierte: x {op} {num(bound)} equivale a −x {flip[op]} {num(-bound)}. Las dos respuestas siempre coinciden.
       </p>
     </>
   );

@@ -76,7 +76,7 @@ Las representaciones interactivas incluyen barras de fracción y equivalencia, r
 | Notación científica | Escala logarítmica de 10⁻⁶ a 10⁹ m | Cada paso multiplica por 10 |
 | Operaciones con decimales | Cuadrícula 10 × 10 | Décima × décima = centésima |
 
-Todos tienen etiqueta textual que se actualiza con cada cambio, controles nativos operables con teclado y pruebas con axe (componentes y navegador, también en móvil).
+Todos tienen etiqueta textual que se actualiza con cada cambio, controles nativos operables con teclado y pruebas con axe (componentes y navegador, también en móvil). Los puntos clave (valor inicial y pendiente, raíces, límite de la desigualdad, extremo del ángulo, catetos, radio, vértice de la copia, posición en la escala) se arrastran con ratón, lápiz o dedo, y la cuadrícula decimal se pinta arrastrando; el arrastre es un atajo visual y el control deslizante equivalente sigue siendo la vía accesible.
 
 ## Evidencias y criterios provisionales
 

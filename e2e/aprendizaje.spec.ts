@@ -259,3 +259,35 @@ test("los gráficos dinámicos de la clase responden, son accesibles y caben en 
     expect(results.violations).toEqual([]);
   }
 });
+
+test("los puntos de los gráficos se arrastran con el puntero y actualizan el modelo", async ({
+  page,
+}) => {
+  const childId = await learner(page);
+  const drag = async (handle: ReturnType<Page["locator"]>, dx: number, dy: number) => {
+    await handle.scrollIntoViewIfNeeded();
+    const box = (await handle.boundingBox())!;
+    const x = box.x + box.width / 2,
+      y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + dx / 2, y + dy / 2);
+    await page.mouse.move(x + dx, y + dy);
+    await page.mouse.up();
+  };
+  await page.goto(`/jugar/${childId}/aprende/funciones-lineales`);
+  await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+  const explore = page.getByRole("region", { name: "Explora la idea" });
+  await expect(explore.getByLabel("Valor inicial (x = 0)")).toHaveValue("2");
+  // El punto rosa (valor inicial) sube: el control deslizante lo acompaña.
+  await drag(explore.locator("[data-handle]").first(), 0, -40);
+  await expect(explore.getByLabel("Valor inicial (x = 0)")).not.toHaveValue("2");
+  await expect(explore.getByRole("img", { name: /corta el eje y en 2 / })).toHaveCount(0);
+
+  await page.goto(`/jugar/${childId}/aprende/ecuaciones-cuadraticas`);
+  await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+  await expect(explore.getByLabel("Primera raíz p")).toHaveValue("-1");
+  await drag(explore.locator("[data-handle]").first(), -60, 0);
+  await expect(explore.getByLabel("Primera raíz p")).not.toHaveValue("-1");
+  await expect(explore.getByRole("img", { name: /corta el eje x en −1 / })).toHaveCount(0);
+});

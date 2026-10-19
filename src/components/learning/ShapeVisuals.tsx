@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { num, Slider, Toggle } from "./GraphVisuals";
+import { Handle, num, Slider, snap, Toggle } from "./GraphVisuals";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
 /** viewBox ajustado a los puntos con margen, para figuras que cambian de forma. */
@@ -50,13 +50,18 @@ export function AnglesVisual({ id }: { id: string }) {
         <path d={arc(180, 180 + a, 30)} className="fill-none stroke-cyan-300" strokeWidth={3} />
         <path d={arc(a, 180, 24)} className="fill-none stroke-amber-300" strokeWidth={3} />
         <path d={arc(180 + a, 360, 24)} className="fill-none stroke-amber-300" strokeWidth={3} />
+        <Handle x={at(a, L)[0]} y={at(a, L)[1]}
+          onDrag={(px, py) => {
+            const deg = (Math.atan2(cy - py, px - cx) * 180) / Math.PI;
+            setA(snap(deg < 0 ? deg + 180 : deg, 15, 165));
+          }} />
         {label(a / 2, `${a}°`, "fill-cyan-200")}
         {label(180 + a / 2, `${a}°`, "fill-cyan-200")}
         {label((a + 180) / 2, `${180 - a}°`, "fill-amber-200")}
         {label((a + 540) / 2, `${180 - a}°`, "fill-amber-200")}
       </svg>
       <p className="text-sm">
-        Opuestos por el vértice: iguales ({a}° y {a}°). Vecinos: suplementarios, {a}° + {180 - a}° = 180°.
+        Arrastra el extremo de la recta. Opuestos por el vértice: iguales ({a}° y {a}°). Vecinos: suplementarios, {a}° + {180 - a}° = 180°.
         {a < 90 && ` El complementario de ${a}° sería ${90 - a}°.`}
       </p>
       <Slider id={`${id}-ta`} label="Ángulo A del triángulo" value={ta} min={20} max={130} onChange={(v) => { setTa(v); setTb((b) => Math.min(b, 160 - v)); }} />
@@ -79,7 +84,7 @@ export function PythagorasVisual({ id }: { id: string }) {
   const [a, setA] = useState(3);
   const [b, setB] = useState(4);
   const c = Math.hypot(a, b),
-    u = 14;
+    u = 11;
   // Coordenadas de pantalla (y hacia abajo): ángulo recto en el origen.
   const O: [number, number] = [0, 0],
     A: [number, number] = [a * u, 0],
@@ -93,12 +98,16 @@ export function PythagorasVisual({ id }: { id: string }) {
     <>
       <Slider id={`${id}-a`} label="Cateto a" value={a} min={1} max={8} onChange={setA} />
       <Slider id={`${id}-b`} label="Cateto b" value={b} min={1} max={8} onChange={setB} />
-      <svg role="img" viewBox={fit([...sqA, ...sqB, ...sqC], 8)} className="max-h-72 w-full max-w-md rounded-xl bg-slate-950"
+      {/* Marco fijo, calculado para los catetos máximos (8 y 8): así el punto
+          arrastrado no se desplaza bajo el puntero al cambiar la figura. */}
+      <svg role="img" viewBox={`${-8 * u - 6} ${-16 * u - 6} ${24 * u + 12} ${24 * u + 12}`} className="max-h-80 w-full max-w-md rounded-xl bg-slate-950"
         aria-label={`Triángulo rectángulo de catetos ${a} y ${b}. Los cuadrados de los catetos, ${a * a} y ${b * b}, suman ${a * a + b * b}, el cuadrado de la hipotenusa.`}>
         <polygon points={poly(sqA)} className="fill-cyan-300/25 stroke-cyan-300" strokeWidth={1.5} />
         <polygon points={poly(sqB)} className="fill-amber-300/25 stroke-amber-300" strokeWidth={1.5} />
         <polygon points={poly(sqC)} className="fill-rose-300/20 stroke-rose-300" strokeWidth={1.5} />
         <polygon points={poly([O, A, B])} className="fill-slate-200 stroke-slate-200" />
+        <Handle x={A[0]} y={A[1]} className="fill-cyan-300" r={5} onDrag={(px) => setA(snap(px / u, 1, 8))} />
+        <Handle x={B[0]} y={B[1]} className="fill-amber-300" r={5} onDrag={(_, py) => setB(snap(-py / u, 1, 8))} />
         <text x={center(sqA)[0]} y={center(sqA)[1]} textAnchor="middle" className="fill-cyan-100 text-[12px] font-bold">{a * a}</text>
         <text x={center(sqB)[0]} y={center(sqB)[1]} textAnchor="middle" className="fill-amber-100 text-[12px] font-bold">{b * b}</text>
         <text x={center(sqC)[0]} y={center(sqC)[1]} textAnchor="middle" className="fill-rose-100 text-[12px] font-bold">{a * a + b * b}</text>
@@ -107,7 +116,7 @@ export function PythagorasVisual({ id }: { id: string }) {
         a² + b² = c² → {a * a} + {b * b} = {a * a + b * b} → c = √{a * a + b * b} = <strong>{num(c)}</strong>
       </p>
       <p className="text-sm text-slate-300">
-        El área del cuadrado rosa (sobre la hipotenusa) siempre es la suma de las otras dos. Prueba 3 y 4, o 6 y 8: la hipotenusa sale entera.
+        Arrastra los extremos de los catetos. El área del cuadrado rosa (sobre la hipotenusa) siempre es la suma de las otras dos. Prueba 3 y 4, o 6 y 8: la hipotenusa sale entera.
       </p>
     </>
   );
@@ -126,6 +135,7 @@ export function CircleVisual({ id }: { id: string }) {
         <rect x={60} y={60 - r * u} width={r * u} height={r * u} className="fill-amber-300/25 stroke-amber-300" />
         <line x1={60} y1={60} x2={60 + r * u} y2={60} className="stroke-rose-300" strokeWidth={2} />
         <text x={60 + (r * u) / 2} y={74} textAnchor="middle" className="fill-rose-200 text-[10px]">r</text>
+        <Handle x={60 + r * u} y={60} className="fill-rose-300" r={5} onDrag={(px) => setR(snap((px - 60) / u, 1, 5))} />
         <line x1={10} x2={10 + C * u} y1={140} y2={140} className="stroke-cyan-300" strokeWidth={4} />
         {[0, 1, 2, 3].map((i) => (
           <line key={i} x1={10 + i * 2 * r * u} x2={10 + i * 2 * r * u} y1={130} y2={150} className="stroke-slate-300" />
@@ -136,7 +146,7 @@ export function CircleVisual({ id }: { id: string }) {
         Longitud = 2 · π · {r} ≈ <strong>{num(C)}</strong> · Área = π · {r}² ≈ <strong>{num(Math.PI * r * r)}</strong>
       </p>
       <p className="text-sm text-slate-300">
-        El borde mide unos 3,14 diámetros. El área cabe en unos 3,14 cuadrados ámbar de lado r: por eso es π · r².
+        Arrastra el extremo del radio. El borde mide unos 3,14 diámetros. El área cabe en unos 3,14 cuadrados ámbar de lado r: por eso es π · r².
       </p>
     </>
   );
@@ -154,6 +164,8 @@ export function SimilarityVisual({ id }: { id: string }) {
         aria-label={`Triángulo de lados 3, 4 y 5 ampliado por ${num(k)}: lados ${num(3 * k)}, ${num(4 * k)} y ${num(5 * k)}; su área pasa de 6 a ${num(6 * k * k)}.`}>
         <polygon points={poly(tri(k))} className="fill-cyan-300/15 stroke-cyan-300" strokeWidth={2} />
         <polygon points={poly(tri(1))} className="fill-amber-300/40 stroke-amber-300" strokeWidth={2} />
+        <Handle x={tri(k)[1][0]} y={tri(k)[1][1]} className="fill-cyan-300"
+          onDrag={(px) => setK(snap((px - O[0]) / (4 * u), 1, 3, 0.5))} />
       </svg>
       <table className="w-full text-left text-sm">
         <caption className="sr-only">Medidas del original y de la copia</caption>
@@ -165,7 +177,7 @@ export function SimilarityVisual({ id }: { id: string }) {
         </tbody>
       </table>
       <p className="text-sm text-slate-300">
-        Los ángulos no cambian. Las longitudes se multiplican por k, pero el área por k²: con k = 2 caben 4 triángulos ámbar en la copia.
+        Arrastra el vértice de la copia. Los ángulos no cambian. Las longitudes se multiplican por k, pero el área por k²: con k = 2 caben 4 triángulos ámbar en la copia.
       </p>
     </>
   );
@@ -324,10 +336,16 @@ export function PowersVisual({ id }: { id: string }) {
         {refs.map((r) => (
           <text key={r.text} x={pos(r.e)} y={18} textAnchor="middle" className="fill-slate-500 text-[8px]">{r.text}</text>
         ))}
-        <circle cx={pos(n + Math.log10(a))} cy={36} r={6} className="fill-cyan-300" />
+        <Handle x={pos(n + Math.log10(a))} y={36} className="fill-cyan-300"
+          onDrag={(px) => {
+            const e = Math.min(8.99, Math.max(lo, lo + ((px - 15) / 290) * (hi - lo))),
+              whole = Math.floor(e);
+            setN(whole);
+            setA(snap(10 ** (e - whole), 1, 9.9, 0.1));
+          }} />
       </svg>
       <p className="text-sm text-slate-300">
-        Cada paso de la escala multiplica por 10. Sube n en 1 y la coma se desplaza un lugar a la derecha; bájalo y se desplaza a la izquierda. Con n negativo el número es menor que 1.
+        Arrastra el punto por la escala. Cada paso de la escala multiplica por 10. Sube n en 1 y la coma se desplaza un lugar a la derecha; bájalo y se desplaza a la izquierda. Con n negativo el número es menor que 1.
       </p>
     </>
   );
@@ -336,12 +354,20 @@ export function PowersVisual({ id }: { id: string }) {
 export function DecimalGridVisual({ id }: { id: string }) {
   const [a, setA] = useState(3);
   const [b, setB] = useState(4);
+  // Arrastrar sobre la cuadrícula elige columnas (primer factor) y filas (segundo).
+  const paint = (e: React.PointerEvent<HTMLDivElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    setA(snap(Math.ceil(((e.clientX - box.left) / box.width) * 10), 1, 9));
+    setB(snap(Math.ceil(((e.clientY - box.top) / box.height) * 10), 1, 9));
+  };
   return (
     <>
       <Slider id={`${id}-a`} label="Primer factor (décimas)" value={a} min={1} max={9} onChange={setA} />
       <Slider id={`${id}-b`} label="Segundo factor (décimas)" value={b} min={1} max={9} onChange={setB} />
       <div role="img" aria-label={`Cuadrado de 10 por 10: ${a} columnas por ${b} filas se cruzan en ${a * b} centésimas.`}
-        className="grid w-fit grid-cols-10 gap-px rounded bg-slate-600 p-px">
+        className="grid w-fit cursor-crosshair touch-none grid-cols-10 gap-px rounded bg-slate-600 p-px"
+        onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); paint(e); }}
+        onPointerMove={(e) => e.currentTarget.hasPointerCapture(e.pointerId) && paint(e)}>
         {Array.from({ length: 100 }, (_, i) => {
           const col = i % 10 < a,
             row = Math.floor(i / 10) < b;
@@ -355,7 +381,7 @@ export function DecimalGridVisual({ id }: { id: string }) {
         0,{a} × 0,{b} = {a * b}/100 = <strong>{num((a * b) / 100)}</strong>
       </p>
       <p className="text-sm text-slate-300">
-        Todo el cuadrado es 1. Tomar 0,{a} de 0,{b} deja {a * b} de las 100 casillas: cada décima por décima es una centésima, por eso el producto tiene dos decimales y es menor que ambos factores.
+        Arrastra sobre la cuadrícula para elegir columnas y filas. Todo el cuadrado es 1. Tomar 0,{a} de 0,{b} deja {a * b} de las 100 casillas: cada décima por décima es una centésima, por eso el producto tiene dos decimales y es menor que ambos factores.
       </p>
     </>
   );
