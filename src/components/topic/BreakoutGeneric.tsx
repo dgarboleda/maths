@@ -23,6 +23,7 @@ const BLOCK_H = 10;
 const ROW_Y = [8, 22];
 const PADDLE_WIDTH = 24;
 const PADDLE_Y = 90;
+const PADDLE_H = 3;
 const PADDLE_STEP = 12;
 const START_COL = 1; // columna donde arrancan la pelota y la paleta, alineadas
 const BALL_START_X = START_COL * BLOCK_W + (BLOCK_W - BALL_SIZE) / 2;
@@ -243,7 +244,7 @@ export function BreakoutGeneric({
       const dtSec = dtMs / 1000;
       let ball = stepBall(ballRef.current, dtSec, FIELD_WIDTH, BALL_SIZE);
 
-      if (hitsPaddle(ball, BALL_SIZE, paddleX, PADDLE_WIDTH, PADDLE_Y)) {
+      if (hitsPaddle(ball, BALL_SIZE, paddleX, PADDLE_WIDTH, PADDLE_Y, PADDLE_H)) {
         ball = {
           ...ball,
           y: PADDLE_Y - BALL_SIZE,
@@ -374,7 +375,7 @@ export function BreakoutGeneric({
               />
               <div
                 className={`${reducedMotion ? "" : "transition-all duration-150"} absolute rounded-md bg-violet-400`}
-                style={{ left: `${paddleX}%`, top: `${PADDLE_Y}%`, width: `${PADDLE_WIDTH}%`, height: "3%" }}
+                style={{ left: `${paddleX}%`, top: `${PADDLE_Y}%`, width: `${PADDLE_WIDTH}%`, height: `${PADDLE_H}%` }}
               />
             </div>
 

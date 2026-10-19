@@ -55,11 +55,13 @@ export function stepBall(ball: Ball, dtSec: number, fieldWidth: number, ballSize
   return { x, y, vx, vy };
 }
 
-/** La pelota está cayendo y su rango horizontal se solapa con la paleta, a
- *  la altura de la paleta o más abajo. */
-export function hitsPaddle(ball: Ball, ballSize: number, paddleX: number, paddleWidth: number, paddleY: number): boolean {
+/** La pelota está cayendo y se solapa con la paleta: su rango horizontal y
+ *  también el vertical. Sin el límite inferior, una pelota que ya rebasó la
+ *  paleta y se desliza en diagonal por debajo volvería a "rebotar". */
+export function hitsPaddle(ball: Ball, ballSize: number, paddleX: number, paddleWidth: number, paddleY: number, paddleHeight = 3): boolean {
   if (ball.vy <= 0) return false;
   if (ball.y + ballSize < paddleY) return false;
+  if (ball.y > paddleY + paddleHeight) return false;
   return ball.x + ballSize > paddleX && ball.x < paddleX + paddleWidth;
 }
 
