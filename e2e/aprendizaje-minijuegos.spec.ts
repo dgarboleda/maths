@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { getLesson } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 
-type Game = "frogger" | "cohete" | "snake" | "runner" | "numberpac" | "invaders" | "breakout";
+type Game = "frogger" | "cohete" | "snake" | "runner" | "numberpac" | "invaders" | "breakout" | "topos" | "cajas";
 
 async function practice(page: Page, lessonId: string, game: Game) {
   // La app sortea el juego de cada ejercicio; aquí se fija para que la
@@ -193,4 +193,42 @@ test("Estanque en móvil: el D-pad táctil queda debajo del tablero y permite re
   const saved = (await (await answer).json()).result.progress;
   expect(saved.responses[`practice:${q.id}`]).toMatchObject({ response: String(q.answer), correct: true });
   await expect(page.getByRole("heading", { name: "¡Cruzaste el estanque!" })).toBeVisible();
+});
+
+test("Topos: tocar el topo envía la respuesta y que se escondan no cuenta", async ({ page }) => {
+  const q = await conceptThenNumeric(page, "fracciones-unidad", "topos");
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  await expect(page.getByText(/Vidas/)).toHaveCount(0);
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  // Cada topo sale de una cola que recorre todas las opciones: 1/3 acaba saliendo.
+  const mole = page.getByRole("button", { name: "Topo con 1/3", exact: true });
+  await expect(mole).toBeVisible({ timeout: 10_000 });
+  const answer = savedAnswer(page);
+  await mole.click();
+  const saved = (await (await answer).json()).result;
+  expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
+  expect(saved.stars).toBe(0);
+  await expect(page.getByRole("heading", { name: "¡Atrapaste al topo!" })).toBeVisible();
+});
+
+test("Cajas: por turnos, la caja empujada hasta el camión es la respuesta", async ({ page }, testInfo) => {
+  const q = await conceptThenNumeric(page, "fracciones-unidad", "cajas");
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  // El tablero es decorativo (aria-hidden): se lee la fila de cajas (fila 3 de 5 columnas).
+  const cells = await page.locator("main div.grid.max-w-sm").first().locator(":scope > div").allTextContents();
+  const target = cells.slice(15, 20).map((c) => c.trim()).indexOf("1/3");
+  expect(target).toBeGreaterThanOrEqual(0);
+  const mobile = testInfo.project.name === "móvil";
+  const press = (dir: "Left" | "Right" | "Up") =>
+    mobile
+      ? page.getByRole("button", { name: { Left: "Mover a la izquierda", Right: "Mover a la derecha", Up: "Mover arriba" }[dir] }).click()
+      : page.keyboard.press(`Arrow${dir}`);
+  for (let col = 2; col !== target; col += Math.sign(target - col)) await press(target > col ? "Right" : "Left");
+  for (let i = 0; i < 3; i++) await press("Up");
+  const answer = savedAnswer(page);
+  await press("Up");
+  const saved = (await (await answer).json()).result;
+  expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
+  await expect(page.getByRole("heading", { name: "¡Caja entregada!" })).toBeVisible();
 });

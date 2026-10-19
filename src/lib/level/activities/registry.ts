@@ -69,6 +69,16 @@ export const ACTIVITIES: ActivityDef[] = [
     label: "Bloques numéricos",
     hint: "Romper el bloque con el resultado correcto sin dejar caer la pelota — Fase 41, docs/plan-minijuegos-retro.md.",
   },
+  {
+    id: "topos",
+    label: "Topos numéricos",
+    hint: "Tocar el topo que lleva el resultado correcto antes de que se esconda — Fase 42, docs/plan-minijuegos-retro.md.",
+  },
+  {
+    id: "cajas",
+    label: "Caja numérica",
+    hint: "Empujar hasta el camión la caja con el resultado correcto, por turnos y sin reloj — Fase 43, docs/plan-minijuegos-retro.md.",
+  },
 ];
 
 export const DEFAULT_ACTIVITY_ID = "puzzle";

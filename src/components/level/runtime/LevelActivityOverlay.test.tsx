@@ -98,6 +98,15 @@ describe("LevelActivityOverlay — despacho por activityId", () => {
     expect(screen.getByText(/Bloques numéricos/)).toBeInTheDocument();
     expect(screen.queryByText("¡Iniciar misión!")).not.toBeInTheDocument();
   });
+
+  test.each([
+    ["topos", /Topos numéricos/],
+    ["cajas", /Caja numérica/],
+  ])('"%s" renderiza su minijuego, no otra actividad', (activityId, title) => {
+    render(<LevelActivityOverlay {...baseProps(activityId)} />);
+    expect(screen.getByText(title)).toBeInTheDocument();
+    expect(screen.queryByText("¡Iniciar misión!")).not.toBeInTheDocument();
+  });
 });
 
 describe("LevelActivityOverlay — protección de Play Test (sandbox)", () => {
