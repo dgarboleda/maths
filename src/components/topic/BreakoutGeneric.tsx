@@ -248,8 +248,8 @@ export function BreakoutGeneric({
           ...ball,
           y: PADDLE_Y - BALL_SIZE,
           vy: -currentSpeed,
-          // En la clase la paleta apunta: todos los bloques son alcanzables.
-          ...(lesson ? { vx: paddleBounceVx(ball.x, BALL_SIZE, paddleX, PADDLE_WIDTH, currentSpeed) } : {}),
+          // La paleta apunta: así todos los bloques son alcanzables.
+          vx: paddleBounceVx(ball.x, BALL_SIZE, paddleX, PADDLE_WIDTH, currentSpeed),
         };
       }
 
@@ -313,7 +313,7 @@ export function BreakoutGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-orange-300">Usa las flechas (o los botones) para mover la paleta.{lesson && " Golpea con un borde de la paleta para dirigir la pelota. En esta clase solo cuenta romper el bloque correcto; los demás rebotes y perder la pelota no cuentan."}</p>
+            <p className="text-xs text-orange-300">Usa las flechas (o los botones) para mover la paleta; golpea con un borde para dirigir la pelota.{lesson && " En esta clase solo cuenta romper el bloque correcto; los demás rebotes y perder la pelota no cuentan."}</p>
           </div>
         )}
 

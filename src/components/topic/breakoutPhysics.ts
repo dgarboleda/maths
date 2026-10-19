@@ -9,12 +9,10 @@
  * que el resto del runtime del Mundo (`RuntimeCanvas.tsx`) — nada de
  * píxeles reales, así que es responsive gratis.
  *
- * Simplificación deliberada de v1: el rebote nunca cambia `vx` (ni contra
- * paredes, paleta o bloques) — solo invierte `vy` o `vx` según el eje que
- * chocó. Sin ángulo de "puntería" al pegarle con un borde de la paleta: un
- * rebote predecible es más justo para un niño que uno con física de ángulo
- * real, y mantiene la trayectoria determinística (valioso también para
- * testear sin adivinar temporización exacta).
+ * Paredes y bloques solo invierten `vy` o `vx` según el eje que chocó. La
+ * paleta, en cambio, fija `vx` según dónde golpea la pelota
+ * (`paddleBounceVx`): sin esa "puntería" la pelota subía siempre por la
+ * misma columna y los bloques de las demás eran inalcanzables.
  */
 
 export interface Ball {
@@ -71,11 +69,10 @@ export function findHitBlock<T extends Rect>(ball: Ball, ballSize: number, block
   return blocks.find((b) => rectsOverlap(ballRect, b));
 }
 
-/** Ángulo de "puntería" del modo clase: la velocidad horizontal depende de
- *  dónde golpea la pelota en la paleta (centro = vertical, bordes = ±80% de
- *  la velocidad). Sin esto la pelota sube siempre por la misma columna y un
- *  bloque fuera de ella sería inalcanzable. Los niveles conservan el rebote
- *  vertical de v1. */
+/** Ángulo de "puntería": la velocidad horizontal depende de dónde golpea la
+ *  pelota en la paleta (centro = casi vertical, bordes = ±80% de la
+ *  velocidad). Sin esto la pelota sube siempre por la misma columna y un
+ *  bloque fuera de ella sería inalcanzable. */
 export function paddleBounceVx(ballX: number, ballSize: number, paddleX: number, paddleWidth: number, speed: number): number {
   const half = paddleWidth / 2;
   const offset = (ballX + ballSize / 2 - (paddleX + half)) / half;

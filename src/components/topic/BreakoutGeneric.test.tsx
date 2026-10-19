@@ -13,10 +13,9 @@ import * as problemModule from "@/lib/problem";
  * pelota recorra una distancia — se corta apenas ocurre el evento que el
  * test espera.
  *
- * La pelota y la paleta arrancan alineadas en la misma columna con
- * velocidad horizontal cero (`vx=0`, nunca cambia): sin mover la paleta,
- * la pelota rebota en línea recta entre la paleta y el bloque de esa
- * columna, indefinidamente — determinístico, sin depender de puntería.
+ * La pelota y la paleta arrancan alineadas en la misma columna y la pelota
+ * sale en vertical: sin mover la paleta, el primer golpe es contra el bloque
+ * de esa columna y vuelve casi recta (golpe cerca del centro de la paleta).
  * Mover la paleta (flechas) la saca de esa columna a propósito para el
  * test de "la pelota cae".
  */
@@ -124,9 +123,8 @@ describe("BreakoutGeneric", () => {
     const { container } = render(<BreakoutGeneric moduleId="test-module" soundOn={false} onAnswer={vi.fn(async () => 0)} onWin={onWin} />);
     fireEvent.click(screen.getByText("¡Empezar!"));
 
-    // Saca la paleta de la columna donde arranca la pelota (vx=0: nunca
-    // cambia de columna) antes de que la pelota complete su primer rebote
-    // de vuelta hacia abajo.
+    // Saca la paleta de la columna donde arranca la pelota antes de que
+    // complete su primer rebote de vuelta hacia abajo.
     for (let i = 0; i < 5; i++) await fireKey("ArrowRight");
 
     await advanceUntil(() => !container.textContent?.includes("Vidas: 3"));
@@ -169,5 +167,17 @@ describe("BreakoutGeneric", () => {
     expect(onGameOver).toHaveBeenCalledWith(3);
     expect(onAnswer.mock.calls.every(([correct]) => correct === true)).toBe(true);
     expect(screen.getByText("¡Muro derribado!")).toBeInTheDocument();
+  });
+
+  test("golpear con el borde de la paleta desvía la pelota hacia otras columnas", async () => {
+    vi.useFakeTimers();
+    mockAllWrong();
+    const { container } = render(<BreakoutGeneric moduleId="test-module" soundOn={false} onAnswer={vi.fn(async () => 0)} />);
+    fireEvent.click(screen.getByText("¡Empezar!"));
+    await fireKey("ArrowLeft"); // la pelota caerá sobre el borde derecho de la paleta
+    const ball = container.querySelector<HTMLElement>(".bg-yellow-300")!;
+    const startX = parseFloat(ball.style.left);
+    for (let i = 0; i < 60; i++) await act(async () => { vi.advanceTimersByTime(50); });
+    expect(Math.abs(parseFloat(ball.style.left) - startX)).toBeGreaterThan(10);
   });
 });
