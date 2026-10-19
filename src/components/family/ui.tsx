@@ -136,7 +136,7 @@ export function StatusPill({ status }: { status: WorldStatus }) {
   const map: Record<WorldStatus, { text: string; cls: string }> = {
     completado: { text: "Completado", cls: "bg-emerald-500/15 text-emerald-300" },
     "en-curso": { text: "En curso", cls: "bg-cyan-500/15 text-cyan-300" },
-    bloqueado: { text: "Bloqueado", cls: "bg-slate-800 text-slate-500" },
+    bloqueado: { text: "Bloqueado", cls: "bg-slate-800 text-slate-400" },
   };
   const it = map[status];
   return (

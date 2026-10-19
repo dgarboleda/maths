@@ -14,7 +14,15 @@ import type {
   AdventureState,
   LearningAction,
   LearningProgress,
+  PlacementAction,
+  PlacementState,
 } from "./learning/types";
+import { answerOutcome, findQuestion, type AnswerOutcome } from "./learning/diagnosis";
+import {
+  applyPlacementAction,
+  placementCurrent,
+  PLACEMENT_ID,
+} from "./learning/placement";
 import {
   applyMixedReviewAction,
   unitForReviewId,
@@ -22,6 +30,59 @@ import {
 } from "./learning/mixed";
 import type { MixedReviewState } from "./learning/types";
 import { readBalance } from "./stars";
+
+const QUESTION_ID = /^[a-z][a-z0-9-]{0,40}$/;
+function validPlacementAction(action: unknown): action is PlacementAction {
+  if (!action || typeof action !== "object") return false;
+  const a = action as Record<string, unknown>;
+  return (
+    a.kind === "begin" ||
+    (a.kind === "skip" && typeof a.questionId === "string" && QUESTION_ID.test(a.questionId)) ||
+    (a.kind === "answer" &&
+      typeof a.questionId === "string" &&
+      QUESTION_ID.test(a.questionId) &&
+      typeof a.response === "string" &&
+      a.response.trim().length > 0 &&
+      a.response.length <= 64)
+  );
+}
+
+/** Diagnóstico de una respuesta para guardarlo con el evento: la pregunta
+ *  real (con su clase de origen en repasos y ubicación), si fue correcta y
+ *  qué error previsto coincide. */
+function outcomeOf(
+  lessonId: string,
+  action: { kind: string; questionId?: string; response?: string },
+  previous: unknown,
+  next: unknown,
+): AnswerOutcome | null {
+  if (action.kind !== "answer" || !action.response || !action.questionId) return null;
+  if (lessonId === PLACEMENT_ID) {
+    const current = placementCurrent(previous as PlacementState);
+    const item = (previous as PlacementState).items.at(-1);
+    const real = item && getLesson(item.lessonId);
+    const found = real && findQuestion(real, item.questionId);
+    return current && found
+      ? answerOutcome(real.id, found.question, "placement", undefined, action.response)
+      : null;
+  }
+  if (unitForReviewId(lessonId)) {
+    const state = previous as MixedReviewState;
+    const item = state.items[state.index];
+    const real = item && getLesson(item.lessonId);
+    const found = real && findQuestion(real, item.questionId);
+    return found
+      ? answerOutcome(real.id, found.question, "mixed",
+          (next as MixedReviewState).responses[action.questionId], action.response)
+      : null;
+  }
+  const lesson = getLesson(lessonId);
+  const found = lesson && findQuestion(lesson, action.questionId);
+  if (!found) return null;
+  const state = next as LearningProgress;
+  return answerOutcome(lessonId, found.question, state.stage,
+    state.responses[`${state.stage}:${action.questionId}`], action.response);
+}
 
 const stages = [
   "diagnostic",
@@ -105,8 +166,13 @@ export const recordLearningAction = onCall(
       );
     const adventure = getAdventure(lessonId);
     const reviewUnit = unitForReviewId(lessonId);
-    const lesson = adventure || reviewUnit ? undefined : getLesson(lessonId);
-    if ((!adventure && !reviewUnit && !lesson) || !validAction(action, adventure))
+    const placement = lessonId === PLACEMENT_ID;
+    const lesson = adventure || reviewUnit || placement ? undefined : getLesson(lessonId);
+    if (
+      placement
+        ? !validPlacementAction(action)
+        : (!adventure && !reviewUnit && !lesson) || !validAction(action, adventure)
+    )
       throw new HttpsError(
         "invalid-argument",
         "La lección o la acción no es válida.",
@@ -158,6 +224,7 @@ export const recordLearningAction = onCall(
           | LearningProgress
           | AdventureState
           | MixedReviewState
+          | PlacementState
           | undefined;
         if ((previous?.revision ?? 0) !== expectedRevision)
           throw new HttpsError(
@@ -165,7 +232,13 @@ export const recordLearningAction = onCall(
             "El avance cambió en otra pestaña. Actualiza la página para continuar.",
           );
         const now = Date.now();
-        const next = adventure
+        const next = placement
+          ? applyPlacementAction(
+              previous as PlacementState | undefined,
+              action as PlacementAction,
+              now,
+            )
+          : adventure
           ? applyAdventureAction(
               previous as AdventureState | undefined,
               action as AdventureAction,
@@ -188,8 +261,12 @@ export const recordLearningAction = onCall(
               action as LearningAction,
               now,
             );
+        // La ubicación no premia: mide desde dónde empezar.
+        const done = (state: typeof previous) =>
+          state && "completedAt" in state ? state.completedAt : null;
         const stars =
-          !previous?.completedAt && next.completedAt ? (adventure ? 10 : 5) : 0;
+          !placement && !done(previous) && done(next) ? (adventure ? 10 : 5) : 0;
+        const outcome = outcomeOf(lessonId, action, previous, next);
         // Todas las lecturas deben preceder las escrituras en la transacción.
         const balance = stars ? await readBalance(tx, child) : null;
         tx.set(progress, next);
@@ -199,6 +276,7 @@ export const recordLearningAction = onCall(
           fingerprint,
           stars,
           contentVersion: lesson?.version ?? 1,
+          ...(outcome ? { outcome } : {}),
           createdAt: FieldValue.serverTimestamp(),
         });
         if (balance) {

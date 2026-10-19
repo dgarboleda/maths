@@ -9,6 +9,7 @@ import {
   mixedReviewId,
 } from "@/lib/learning/domain";
 import { useLearningData } from "@/lib/learning/useLearningData";
+import { MisconceptionPanel } from "./MisconceptionPanel";
 
 export function LearningReport({
   childId,
@@ -82,7 +83,7 @@ export function LearningReport({
             </p>
           )}
           {!compact && (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Avance por clase">
               <table className="w-full min-w-[38rem] text-left text-sm">
                 <caption className="sr-only">
                   Evidencias por lección del programa
@@ -133,7 +134,7 @@ export function LearningReport({
           )}
           {!compact &&
             LEARNING_UNITS.some((unit) => data.reviews[mixedReviewId(unit.id)]?.lastResult) && (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Repasos mixtos por unidad">
                 <table className="w-full min-w-[30rem] text-left text-sm">
                   <caption className="mb-2 text-left font-semibold text-white">
                     Repasos mixtos por unidad
@@ -168,7 +169,7 @@ export function LearningReport({
             )}
           {!compact &&
             ADVENTURES.some((adventure) => data.adventures[adventure.id]?.attempts) && (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Aventuras">
                 <table className="w-full min-w-[30rem] text-left text-sm">
                   <caption className="mb-2 text-left font-semibold text-white">
                     Aventuras
@@ -200,6 +201,17 @@ export function LearningReport({
                 </table>
               </div>
             )}
+          {!compact && data.placement?.result && (
+            <p className="rounded-xl bg-slate-950 p-4 text-sm text-slate-300">
+              <strong className="text-white">Evaluación de ubicación:</strong>{" "}
+              {data.placement.result.mastered.length} de {LESSONS.length} clases dominadas al empezar
+              ({new Date(data.placement.result.at).toLocaleDateString("es-PE")}). Esas clases quedan opcionales; no
+              cuentan como terminadas ni dan estrellas.
+            </p>
+          )}
+          {!compact && (
+            <MisconceptionPanel parentId={data.parentId} childId={childId} childName={childName} />
+          )}
           <p className="text-xs leading-relaxed text-slate-400">
             Una comprobación exige al menos 4 de 5 respuestas autónomas e
             incluye comprensión y aplicación. El repaso usa otras preguntas,

@@ -27,7 +27,8 @@
     "functions:build": "npm --prefix functions run build",
     "verify:deployment": "node scripts/verify-deployment.mjs",
     "deploy:all": "npm run deploy",
-    "deploy:frontend": "npm run build && opennextjs-cloudflare deploy"
+    "deploy:frontend": "npm run build && opennextjs-cloudflare deploy",
+    "analisis:items": "node scripts/analisis-items.mjs"
   },
   "dependencies": {
     "firebase": "^12.18.0",
