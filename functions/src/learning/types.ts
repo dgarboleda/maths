@@ -227,3 +227,23 @@ export type PlacementAction =
   | { kind: "begin" }
   | { kind: "answer"; questionId: string; response: string }
   | { kind: "skip"; questionId: string };
+
+/** Repaso espaciado global: cola diaria que mezcla clases de todas las
+ *  unidades según cuándo toca volver a cada una (cajas de Leitner). */
+export interface DailyReviewState {
+  contentVersion: number;
+  revision: number;
+  /** Por clase: caja (0–4), próxima fecha, último repaso y repasos hechos. */
+  schedule: Record<string, { box: number; dueAt: number; lastAt: number; seen: number }>;
+  stage: "idle" | "active" | "summary";
+  items: { lessonId: string; questionId: string }[];
+  index: number;
+  responses: Record<string, ResponseEvidence>;
+  sessions: number;
+  lastResult: { correct: number; total: number; at: number } | null;
+  /** Día (America/Lima, AAAA-MM-DD) de la última sesión premiada. */
+  rewardDay: string | null;
+  /** Inicio de la sesión actual: una clase sube como mucho una caja por sesión. */
+  startedAt: number;
+  updatedAt: number;
+}

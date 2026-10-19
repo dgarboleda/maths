@@ -15,6 +15,7 @@ import {
   type MixedReviewState,
   type PlacementAction,
   type PlacementState,
+  type DailyReviewState,
 } from "./domain";
 
 interface Snapshot {
@@ -25,6 +26,8 @@ interface Snapshot {
   reviews: Record<string, MixedReviewState>;
   /** Evaluación de ubicación (`learningProgress/ubicacion`). */
   placement: PlacementState | null;
+  /** Repaso espaciado diario (`learningProgress/diario`). */
+  daily: DailyReviewState | null;
   /** Estado de cada aventura jugada (`learningMissions/{aventura}`). */
   adventures: Record<string, AdventureState>;
   loaded: string[];
@@ -37,6 +40,7 @@ function empty(key: string): Snapshot {
     progress: {},
     reviews: {},
     placement: null,
+    daily: null,
     adventures: {},
     loaded: [],
     error: null,
@@ -106,8 +110,10 @@ export function useLearningData(childId: string) {
                 ),
                 placement:
                   (snap.docs.find((item) => item.id === "ubicacion")?.data() as PlacementState | undefined) ?? null,
+                daily:
+                  (snap.docs.find((item) => item.id === "diario")?.data() as DailyReviewState | undefined) ?? null,
                 progress: Object.fromEntries(
-                  snap.docs.filter((item) => !item.id.startsWith("repaso-") && item.id !== "ubicacion").map((item) => {
+                  snap.docs.filter((item) => !item.id.startsWith("repaso-") && item.id !== "ubicacion" && item.id !== "diario").map((item) => {
                     const saved = item.data() as LearningProgress;
                     const lesson = getLesson(item.id);
                     // Misma migración que aplica el servidor en la próxima acción.
@@ -164,7 +170,7 @@ export function useLearningAction(
     parentId: string;
     childId: string;
     lessonId: string;
-    progress: LearningProgress | AdventureState | MixedReviewState | PlacementState;
+    progress: LearningProgress | AdventureState | MixedReviewState | PlacementState | DailyReviewState;
   } | null>(null);
   const pending = useRef<Request | null>(null);
   const inFlight = useRef(false);
@@ -178,7 +184,7 @@ export function useLearningAction(
       const { functions, functionsFns } = await getFirebaseFunctions();
       const result = await functionsFns.httpsCallable<
         Request,
-        { progress: LearningProgress | AdventureState | MixedReviewState | PlacementState }
+        { progress: LearningProgress | AdventureState | MixedReviewState | PlacementState | DailyReviewState }
       >(
         functions,
         "recordLearningAction",

@@ -28,7 +28,14 @@ import {
   unitForReviewId,
   unitLessons,
 } from "./learning/mixed";
-import type { MixedReviewState } from "./learning/types";
+import type { DailyReviewState, MixedReviewState } from "./learning/types";
+import {
+  applyDailyAction,
+  dailyEligible,
+  dailyQuestions,
+  DAILY_ID,
+  type DailyLessonInfo,
+} from "./learning/daily";
 import { readBalance } from "./stars";
 
 const QUESTION_ID = /^[a-z][a-z0-9-]{0,40}$/;
@@ -64,6 +71,16 @@ function outcomeOf(
     const found = real && findQuestion(real, item.questionId);
     return current && found
       ? answerOutcome(real.id, found.question, "placement", undefined, action.response)
+      : null;
+  }
+  if (lessonId === DAILY_ID) {
+    const state = previous as DailyReviewState;
+    const item = state.items[state.index];
+    const real = item && getLesson(item.lessonId);
+    const found = real && findQuestion(real, item.questionId);
+    return found && dailyQuestions(state)[state.index]
+      ? answerOutcome(real.id, found.question, "daily",
+          (next as DailyReviewState).responses[action.questionId], action.response)
       : null;
   }
   if (unitForReviewId(lessonId)) {
@@ -167,11 +184,12 @@ export const recordLearningAction = onCall(
     const adventure = getAdventure(lessonId);
     const reviewUnit = unitForReviewId(lessonId);
     const placement = lessonId === PLACEMENT_ID;
-    const lesson = adventure || reviewUnit || placement ? undefined : getLesson(lessonId);
+    const daily = lessonId === DAILY_ID;
+    const lesson = adventure || reviewUnit || placement || daily ? undefined : getLesson(lessonId);
     if (
       placement
         ? !validPlacementAction(action)
-        : (!adventure && !reviewUnit && !lesson) || !validAction(action, adventure)
+        : (!adventure && !reviewUnit && !daily && !lesson) || !validAction(action, adventure)
     )
       throw new HttpsError(
         "invalid-argument",
@@ -192,11 +210,13 @@ export const recordLearningAction = onCall(
     const event = child.collection("learningEvidence").doc(operationId);
     try {
       return await db.runTransaction(async (tx) => {
-        const [profile, snapshot, previousEvent, ...unitProgress] =
+        const [profile, snapshot, previousEvent, allProgress, ...unitProgress] =
           await Promise.all([
             tx.get(child),
             tx.get(progress),
             tx.get(event),
+            // El repaso diario decide qué repasar con el avance real del perfil.
+            daily ? tx.get(child.collection("learningProgress")) : null,
             // El repaso mixto solo mezcla clases que el estudiante ya terminó.
             ...(reviewUnit
               ? unitLessons(reviewUnit).map((l) =>
@@ -225,6 +245,7 @@ export const recordLearningAction = onCall(
           | AdventureState
           | MixedReviewState
           | PlacementState
+          | DailyReviewState
           | undefined;
         if ((previous?.revision ?? 0) !== expectedRevision)
           throw new HttpsError(
@@ -232,7 +253,30 @@ export const recordLearningAction = onCall(
             "El avance cambió en otra pestaña. Actualiza la página para continuar.",
           );
         const now = Date.now();
-        const next = placement
+        let dailyInput: { eligible: string[]; support: Set<string> } | null = null;
+        if (daily && allProgress) {
+          const info: Record<string, DailyLessonInfo> = {};
+          let mastered: string[] = [];
+          for (const doc of allProgress.docs) {
+            const data = doc.data();
+            if (doc.id === PLACEMENT_ID) mastered = (data as PlacementState).result?.mastered ?? [];
+            else if (getLesson(doc.id))
+              info[doc.id] = { completedAt: data.completedAt ?? null, needsSupport: Boolean(data.needsSupport) };
+          }
+          dailyInput = {
+            eligible: dailyEligible(info, mastered),
+            support: new Set(Object.keys(info).filter((id) => info[id].needsSupport)),
+          };
+        }
+        const next = dailyInput
+          ? applyDailyAction(
+              previous as DailyReviewState | undefined,
+              action as LearningAction,
+              dailyInput.eligible,
+              dailyInput.support,
+              now,
+            )
+          : placement
           ? applyPlacementAction(
               previous as PlacementState | undefined,
               action as PlacementAction,
@@ -264,8 +308,14 @@ export const recordLearningAction = onCall(
         // La ubicación no premia: mide desde dónde empezar.
         const done = (state: typeof previous) =>
           state && "completedAt" in state ? state.completedAt : null;
-        const stars =
-          !placement && !done(previous) && done(next) ? (adventure ? 10 : 5) : 0;
+        // Repaso diario: un pequeño premio por la primera sesión terminada del día.
+        const dailyReward =
+          daily &&
+          (next as DailyReviewState).rewardDay !== null &&
+          (next as DailyReviewState).rewardDay !== (previous as DailyReviewState | undefined)?.rewardDay;
+        const stars = daily
+          ? dailyReward ? 2 : 0
+          : !placement && !done(previous) && done(next) ? (adventure ? 10 : 5) : 0;
         const outcome = outcomeOf(lessonId, action, previous, next);
         // Todas las lecturas deben preceder las escrituras en la transacción.
         const balance = stars ? await readBalance(tx, child) : null;

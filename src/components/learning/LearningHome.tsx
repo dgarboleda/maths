@@ -18,6 +18,10 @@ import {
   LESSONS,
   mixedReviewId,
   MIXED_REVIEW_MIN_LESSONS,
+  dailyDue,
+  dailyEligible,
+  initialDaily,
+  limaDay,
   PERU_MAP,
   recommendedLesson,
   STAGE_LABELS,
@@ -109,6 +113,9 @@ export function LearningHome({
     .filter((p) => getLesson(p.lessonId) && p.stage !== "summary")
     .sort((a, b) => b.updatedAt - a.updatedAt)[0];
   const placed = data.placement?.result ?? null;
+  const reviewable = dailyEligible(data.progress, placed?.mastered ?? []);
+  const dueToday = dailyDue(data.daily ?? initialDaily(), reviewable, now).length;
+  const reviewedToday = data.daily?.rewardDay === limaDay(now);
   const unfinished = recommendedLesson(
     new Set(LESSONS.filter((l) => data.progress[l.id]?.completedAt).map((l) => l.id)),
     placed,
@@ -178,6 +185,18 @@ export function LearningHome({
                 {active ? `Retoma: ${STAGE_LABELS[active.stage]}. ` : ""}
                 Tu avance se guarda. Puedes parar y volver después.
               </p>
+              {reviewable.length > 0 && (
+                <Link
+                  href={`${base}/aprende/diario`}
+                  className={`${secondaryButton} mt-4 w-full sm:w-auto`}
+                >
+                  {reviewedToday
+                    ? "Repaso de hoy hecho ✓ · repasar más"
+                    : dueToday > 0
+                      ? `Repasar hoy · ${dueToday} ${dueToday === 1 ? "idea" : "ideas"}`
+                      : "Repasar hoy · adelantar un repaso"}
+                </Link>
+              )}
               {placed ? (
                 <Link
                   href={`${base}/aprende/ubicacion`}

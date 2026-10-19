@@ -1,6 +1,7 @@
 import { LessonPlayer } from "@/components/learning/LessonPlayer";
 import { MixedReviewPlayer } from "@/components/learning/MixedReviewPlayer";
 import { PlacementPlayer } from "@/components/learning/PlacementPlayer";
+import { DailyReviewPlayer } from "@/components/learning/DailyReviewPlayer";
 
 export default async function LessonPage({
   params,
@@ -13,6 +14,8 @@ export default async function LessonPage({
     params,
     searchParams,
   ]);
+  if (lessonId === "diario")
+    return <DailyReviewPlayer key={childId} childId={childId} />;
   if (lessonId === "ubicacion")
     return <PlacementPlayer key={childId} childId={childId} />;
   if (lessonId.startsWith("repaso-"))

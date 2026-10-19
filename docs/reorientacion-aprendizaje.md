@@ -99,6 +99,18 @@ Todos tienen etiqueta textual que se actualiza con cada cambio, controles nativo
 
 La evaluación curricular ampliada anterior sigue disponible por decisión explícita. Ya no condiciona el acceso ni otorga dominio de módulos inferiores basándose en una respuesta representativa. Sus resultados y logros históricos se conservan.
 
+## Repaso espaciado
+
+Una cola diaria que cruza unidades para combatir el olvido (efecto de espaciado e intercalado). Entrada en el inicio («Repasar hoy») y ruta `/jugar/{perfil}/aprende/diario`.
+
+- **Qué entra:** clases terminadas y clases dominadas en la evaluación de ubicación. Lo decide el servidor con el avance guardado; el navegador no puede proponer clases.
+- **Prioridad:** 1) clases vencidas (caja más baja y vencimiento más antiguo primero), 2) clases con indicio de apoyo, 3) las vistas hace más tiempo. Hasta 6 problemas, como mucho 2 por clase, alternando unidades.
+- **Preguntas:** del repaso, el mixto y la segunda comprobación de cada clase; rotan entre sesiones.
+- **Agenda (Leitner):** cajas con intervalos de 1, 3, 7, 14 y 30 días. Acertar sin pistas sube una caja (como mucho una por clase y sesión); una pista o un error la devuelve a la primera. El desarrollo no se revela durante la sesión: aparece en el resumen.
+- **Estrellas:** 2 por la primera sesión terminada de cada día (hora de Lima, UTC−5). Repasar más no da más estrellas.
+- **Datos:** `learningProgress/diario` (agenda por clase: caja, vencimiento, última vez, veces vista; sesiones y último resultado). Cada respuesta deja su diagnóstico en `learningEvidence` con `stage: "daily"` y la clase real, por lo que alimenta el panel de errores frecuentes y el análisis de preguntas.
+- **Informe familiar:** bloque «Repaso espaciado» con sesiones, último resultado y clases afianzadas (caja ≥ 3), en progreso (1–2) y por reforzar (0).
+
 ## El apagón
 
 Una ciudad sin energía presenta una central y tres edificios explorables. Al inspeccionar se conocen las condiciones: reserva original de 120, hospital 3/4, radio 1/6 y taller al menos 10 unidades. El estudiante visita los edificios, planifica suministros con controles accesibles y prueba la red.

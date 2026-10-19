@@ -9,3 +9,4 @@ export * from "../../../functions/src/learning/placement";
 export * from "../../../functions/src/learning/peru";
 export * from "../../../functions/src/learning/diagnosis";
 export * from "../../../functions/src/learning/itemAnalysis";
+export * from "../../../functions/src/learning/daily";

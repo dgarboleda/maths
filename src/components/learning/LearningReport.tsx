@@ -2,6 +2,7 @@
 
 import {
   ADVENTURES,
+  dailyStrength,
   getLesson,
   LEARNING_UNITS,
   learningStatus,
@@ -209,6 +210,25 @@ export function LearningReport({
               cuentan como terminadas ni dan estrellas.
             </p>
           )}
+          {!compact && data.daily && data.daily.sessions > 0 && (() => {
+            const strength = dailyStrength(data.daily);
+            return (
+              <div className="rounded-xl bg-slate-950 p-4 text-sm text-slate-300">
+                <p>
+                  <strong className="text-white">Repaso espaciado:</strong> {data.daily.sessions}{" "}
+                  {data.daily.sessions === 1 ? "sesión" : "sesiones"}
+                  {data.daily.lastResult &&
+                    ` · última: ${data.daily.lastResult.correct} de ${data.daily.lastResult.total} sin ayuda (${new Date(data.daily.lastResult.at).toLocaleDateString("es-PE")})`}
+                  .
+                </p>
+                <p className="mt-1">
+                  Ideas afianzadas (vuelven en 14 días o más): <strong className="text-emerald-200">{strength.strong}</strong> · en
+                  proceso: <strong className="text-cyan-200">{strength.growing}</strong> · por reforzar:{" "}
+                  <strong className="text-amber-200">{strength.weak}</strong>.
+                </p>
+              </div>
+            );
+          })()}
           {!compact && (
             <MisconceptionPanel parentId={data.parentId} childId={childId} childName={childName} />
           )}
