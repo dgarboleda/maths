@@ -96,6 +96,9 @@ export function SnakeGeneric({
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
   const goal = lesson ? 1 : GOAL;
   const [reflexMiss, setReflexMiss] = useState(false);
+  // Clase: quieta hasta la primera flecha (tras empezar, chocar o responder).
+  const [awaitingInput, setAwaitingInput] = useState(true);
+  const waiting = lesson && awaitingInput;
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
@@ -140,6 +143,7 @@ export function SnakeGeneric({
   function reflexReset() {
     playSound("wrong", soundOn);
     setReflexMiss(true);
+    setAwaitingInput(true);
     dirRef.current = INITIAL_DIR;
     accRef.current = 0;
     setSnake(INITIAL_SNAKE);
@@ -150,6 +154,7 @@ export function SnakeGeneric({
     if (frozen) return;
     playSound("click", soundOn);
     setReflexMiss(false);
+    setAwaitingInput(true);
     dirRef.current = INITIAL_DIR;
     accRef.current = 0;
     busyRef.current = false;
@@ -171,6 +176,7 @@ export function SnakeGeneric({
         await exercise.onResponse(eaten.value);
       } finally {
         busyRef.current = false;
+        setAwaitingInput(true);
         spawnRound(newSnake);
       }
       return;
@@ -220,13 +226,14 @@ export function SnakeGeneric({
       accRef.current -= tickMs;
       step();
     },
-    { running: phase === "playing" && !frozen && !solved },
+    { running: phase === "playing" && !frozen && !solved && !waiting },
   );
 
   function trySetDirection(next: Cell) {
     const cur = dirRef.current;
     if (snake.length > 1 && next.x === -cur.x && next.y === -cur.y) return; // sin giro de 180°
     dirRef.current = next;
+    setAwaitingInput(false);
   }
 
   useArrowKeys(
@@ -276,7 +283,7 @@ export function SnakeGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-emerald-300">Usa las flechas del teclado (o los botones) para moverte.{lesson && " En esta clase, chocar no cuenta como respuesta."}</p>
+            <p className="text-xs text-emerald-300">Usa las flechas del teclado (o los botones) para moverte.{lesson && " En esta clase la serpiente espera tu primera flecha, y chocar no cuenta como respuesta."}</p>
           </div>
         )}
 
@@ -297,7 +304,7 @@ export function SnakeGeneric({
               />
             </div>
 
-            {lesson ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-emerald-700 bg-emerald-950/80 p-3 text-sm">
+            {lesson ? <ReflexNotice show={reflexMiss} waiting={waiting} /> : <div className="flex items-center justify-between rounded-xl border border-emerald-700 bg-emerald-950/80 p-3 text-sm">
               <span>
                 Aciertos: <strong className="text-emerald-300">{correctCount}</strong>/{GOAL}
               </span>
