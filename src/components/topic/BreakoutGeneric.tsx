@@ -379,7 +379,7 @@ export function BreakoutGeneric({
               />
             </div>
 
-            <HorizontalPad onLeft={moveLeft} onRight={moveRight} />
+            <HorizontalPad inline onLeft={moveLeft} onRight={moveRight} />
           </div>
         )}
 

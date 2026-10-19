@@ -423,7 +423,7 @@ export function NumberPacGeneric({
               </div>
             </div>
 
-            <TouchDPad onMove={onTouchMove} />
+            <TouchDPad inline onMove={onTouchMove} />
           </div>
         )}
 

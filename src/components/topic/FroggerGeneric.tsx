@@ -334,7 +334,7 @@ export function FroggerGeneric({
             </div>
 
             <p aria-hidden="true" className="text-xs font-bold uppercase tracking-widest text-sky-300">
-              {inObstacleRow ? "¡Esquiva el obstáculo!" : "Elige el nenúfar correcto"}
+              {inObstacleRow ? "¡Esquiva el obstáculo!" : "Ponte bajo el nenúfar correcto y salta hacia arriba"}
             </p>
 
             <div
@@ -353,12 +353,15 @@ export function FroggerGeneric({
                       : "bg-lime-800/60 text-lime-100"
                   }`}
                 >
-                  {frogX === col ? "🐸" : inObstacleRow ? "" : candidates[col] === undefined ? "" : lessonLabel(exercise, candidates[col])}
+                  {frogX === col && <span aria-hidden="true">🐸</span>}
+                  {!inObstacleRow && candidates[col] !== undefined && (
+                    <span className={frogX === col ? "ml-0.5 text-xs" : ""}>{lessonLabel(exercise, candidates[col])}</span>
+                  )}
                 </div>
               ))}
             </div>
 
-            <TouchDPad onMove={onTouchMove} />
+            <TouchDPad inline onMove={onTouchMove} />
           </div>
         )}
 
