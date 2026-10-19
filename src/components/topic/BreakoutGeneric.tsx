@@ -23,6 +23,7 @@ const BLOCK_H = 10;
 const ROW_Y = [8, 22];
 const PADDLE_WIDTH = 24;
 const PADDLE_Y = 90;
+const PADDLE_H = 3;
 const PADDLE_STEP = 12;
 const START_COL = 1; // columna donde arrancan la pelota y la paleta, alineadas
 const BALL_START_X = START_COL * BLOCK_W + (BLOCK_W - BALL_SIZE) / 2;
@@ -243,13 +244,13 @@ export function BreakoutGeneric({
       const dtSec = dtMs / 1000;
       let ball = stepBall(ballRef.current, dtSec, FIELD_WIDTH, BALL_SIZE);
 
-      if (hitsPaddle(ball, BALL_SIZE, paddleX, PADDLE_WIDTH, PADDLE_Y)) {
+      if (hitsPaddle(ball, BALL_SIZE, paddleX, PADDLE_WIDTH, PADDLE_Y, PADDLE_H)) {
         ball = {
           ...ball,
           y: PADDLE_Y - BALL_SIZE,
           vy: -currentSpeed,
-          // En la clase la paleta apunta: todos los bloques son alcanzables.
-          ...(lesson ? { vx: paddleBounceVx(ball.x, BALL_SIZE, paddleX, PADDLE_WIDTH, currentSpeed) } : {}),
+          // La paleta apunta: así todos los bloques son alcanzables.
+          vx: paddleBounceVx(ball.x, BALL_SIZE, paddleX, PADDLE_WIDTH, currentSpeed),
         };
       }
 
@@ -313,7 +314,7 @@ export function BreakoutGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-orange-300">Usa las flechas (o los botones) para mover la paleta.{lesson && " Golpea con un borde de la paleta para dirigir la pelota. En esta clase solo cuenta romper el bloque correcto; los demás rebotes y perder la pelota no cuentan."}</p>
+            <p className="text-xs text-orange-300">Usa las flechas (o los botones) para mover la paleta; golpea con un borde para dirigir la pelota.{lesson && " En esta clase solo cuenta romper el bloque correcto; los demás rebotes y perder la pelota no cuentan."}</p>
           </div>
         )}
 
@@ -374,7 +375,7 @@ export function BreakoutGeneric({
               />
               <div
                 className={`${reducedMotion ? "" : "transition-all duration-150"} absolute rounded-md bg-violet-400`}
-                style={{ left: `${paddleX}%`, top: `${PADDLE_Y}%`, width: `${PADDLE_WIDTH}%`, height: "3%" }}
+                style={{ left: `${paddleX}%`, top: `${PADDLE_Y}%`, width: `${PADDLE_WIDTH}%`, height: `${PADDLE_H}%` }}
               />
             </div>
 

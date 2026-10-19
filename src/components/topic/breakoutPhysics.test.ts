@@ -64,6 +64,11 @@ describe("hitsPaddle", () => {
   test("pelota cayendo pero todavía por encima de la paleta: no impacta", () => {
     expect(hitsPaddle({ x: 30, y: 50, vx: 0, vy: 10 }, 4, paddle.x, paddle.width, paddle.y)).toBe(false);
   });
+
+  test("pelota que ya rebasó la paleta y entra en su rango por debajo: no impacta", () => {
+    expect(hitsPaddle({ x: 30, y: 95, vx: 20, vy: 10 }, 4, paddle.x, paddle.width, paddle.y)).toBe(false);
+    expect(hitsPaddle({ x: 30, y: 92, vx: 20, vy: 10 }, 4, paddle.x, paddle.width, paddle.y)).toBe(true);
+  });
 });
 
 describe("findHitBlock", () => {
