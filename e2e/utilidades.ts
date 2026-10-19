@@ -4,6 +4,7 @@ import { connectAuthEmulator, getAuth, signInWithEmailAndPassword } from "fireba
 import { collection, connectFirestoreEmulator, doc, getDocs, getFirestore, setDoc, writeBatch } from "firebase/firestore";
 import * as firestoreFns from "firebase/firestore";
 import { STRANDS } from "../src/lib/strands";
+import { getLesson, initialProgress } from "../src/lib/learning/domain";
 import { ciudadCentralAsLevel } from "../src/lib/level/legacy/ciudadCentral";
 import { buildSalaConTerminal } from "../src/lib/level/templates/salaConTerminal";
 import { insertLevel } from "../src/lib/level/persistence/levelRepository";
@@ -513,7 +514,6 @@ export async function sembrarClasesTerminadas(correo: string, childId: string, l
     const auth = getAuth(app);
     connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
     const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
-    const { getLesson, initialProgress } = await import("../src/lib/learning/domain");
     const now = Date.now();
     for (const lessonId of lessonIds) {
       const progress = {

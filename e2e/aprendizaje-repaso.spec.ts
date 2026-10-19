@@ -35,7 +35,7 @@ test("repaso mixto: alterna problemas de las clases terminadas, registra la prim
   }
   await expect(page.getByText(/5 de 6 respuestas autónomas\. Sesión superada/)).toBeVisible();
   await page.reload();
-  await expect(page.getByText(/5 de 6 respuestas autónomas/)).toBeVisible();
+  await expect(page.getByText(/^5 de 6 respuestas autónomas\./)).toBeVisible();
   await expect(page.getByRole("button", { name: "Empezar otra sesión" })).toBeVisible();
   await page.goto(`${base}/aprende`);
   await expect(page.getByText("Mejor sesión: 5 de 6 de forma autónoma · superado")).toBeVisible();
