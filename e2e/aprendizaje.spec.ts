@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { getLesson, type Question } from "../src/lib/learning/domain";
+import { getLesson, placementQuestion, type Question } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 
 async function learner(page: Page) {
@@ -290,4 +290,48 @@ test("los puntos de los gráficos se arrastran con el puntero y actualizan el mo
   await drag(explore.locator("[data-handle]").first(), -60, 0);
   await expect(explore.getByLabel("Primera raíz p")).not.toHaveValue("-1");
   await expect(explore.getByRole("img", { name: /corta el eje x en −1 / })).toHaveCount(0);
+});
+
+test("la evaluación de ubicación recomienda por dónde empezar y la familia ve los errores frecuentes", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const childId = await learner(page);
+  await page.getByRole("link", { name: "¿Ya sabes algo? Encuentra tu punto de partida" }).click();
+  await page.getByRole("button", { name: "Empezar la evaluación" }).click();
+  const first = getLesson("enteros-recta")!;
+  const question = placementQuestion(first);
+  await expect(page.getByText(question.prompt, { exact: true })).toBeVisible();
+  if (question.choices)
+    await page.getByRole("radio", { name: question.choices.find((c) => c.id === question.answer)!.label, exact: true }).check();
+  else await page.getByRole("textbox", { name: /Tu respuesta/ }).fill(String(question.answer));
+  await page.getByRole("button", { name: "Responder" }).click();
+  // Acertar avanza a la segunda clase de números; "Todavía no lo sé" cierra
+  // esa unidad y pasa a la primera clase de cada una de las 6 restantes.
+  for (let n = 2; n <= 8; n++) {
+    await expect(page.getByRole("heading", { name: new RegExp(`^Pregunta ${n} ·`) })).toBeVisible();
+    await page.getByRole("button", { name: "Todavía no lo sé" }).click();
+  }
+  await expect(page.getByRole("heading", { name: "Tu punto de partida" })).toBeVisible();
+  await expect(page.getByRole("link", { name: `Empezar por: ${getLesson("enteros-suma-resta")!.title}` })).toBeVisible();
+  await expect(page.getByRole("table", { name: /Currículo Nacional de Perú/ })).toBeVisible();
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  await page.goto(`/jugar/${childId}`);
+  await expect(page.getByRole("link", { name: /Tu ubicación: 1 clase que ya dominas/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: getLesson("enteros-suma-resta")!.title, level: 2 })).toBeVisible();
+
+  // Un error previsto en la práctica aparece en el informe de la familia.
+  const lesson = getLesson("perimetro-area")!;
+  const target = lesson.practice[0];
+  await page.goto(`/jugar/${childId}/aprende/${lesson.id}?modo=practice`);
+  await page.getByRole("button", { name: "Comenzar práctica" }).click();
+  const wrong = target.choices
+    ? target.choices.find((c) => c.id !== target.answer && !c.feedback?.startsWith("Revisa esa"))!.id
+    : String(target.errors![0].value);
+  await answer(page, target, wrong);
+  await page.goto("/panel/progreso");
+  const panel = page.getByRole("region", { name: "Errores frecuentes" });
+  await expect(panel.getByText(/Perímetro y área · 1 vez/)).toBeVisible();
+  await expect(panel.getByText("Persiste: conviene practicar esta idea.")).toBeVisible();
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
 });

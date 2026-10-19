@@ -8,7 +8,15 @@ import type {
   LearningAction,
   LearningProgress,
 } from "@/lib/learning/domain";
-import { getLesson, initialMixedReview, mixedQuestions, type MixedReviewState } from "@/lib/learning/domain";
+import {
+  getLesson,
+  initialMixedReview,
+  mixedQuestions,
+  placementQuestion,
+  summarizeMisconceptions,
+  type MixedReviewState,
+  type PlacementState,
+} from "@/lib/learning/domain";
 
 describe("Servicio educativo y reglas reales", () => {
   test("solo la sesión del perfil autorizado puede registrar evidencia", async () => {
@@ -391,6 +399,105 @@ describe("Servicio educativo y reglas reales", () => {
       await deleteApp(family.app);
     }
   });
+  test("cada respuesta guarda su diagnóstico y la familia puede leerlo para el informe", async () => {
+    const family = await createFamily();
+    try {
+      const lesson = getLesson("perimetro-area")!;
+      const question = lesson.practice.find((q) => q.errors?.length)!;
+      const base = { parentId: family.parentId, childId: family.childId, lessonId: lesson.id };
+      await call(family.app, "recordLearningAction", {
+        ...base, expectedRevision: 0, operationId: crypto.randomUUID(),
+        action: { kind: "begin", stage: "practice" },
+      });
+      // Llega a la pregunta con errores previstos avanzando por la práctica.
+      let revision = 1;
+      for (const q of lesson.practice) {
+        if (q === question) break;
+        await call(family.app, "recordLearningAction", {
+          ...base, expectedRevision: revision++, operationId: crypto.randomUUID(),
+          action: { kind: "answer", questionId: q.id, response: String(q.answer) },
+        });
+        await call(family.app, "recordLearningAction", {
+          ...base, expectedRevision: revision++, operationId: crypto.randomUUID(), action: { kind: "next" },
+        });
+      }
+      const operationId = crypto.randomUUID();
+      await call(family.app, "recordLearningAction", {
+        ...base, expectedRevision: revision, operationId,
+        action: { kind: "answer", questionId: question.id, response: String(question.errors![0].value) },
+      });
+      const evidence = fs.collection(family.db, "parents", family.parentId, "children", family.childId, "learningEvidence");
+      const saved = (await fs.getDoc(fs.doc(evidence, operationId))).data();
+      expect(saved?.outcome).toMatchObject({
+        lessonId: lesson.id, questionId: question.id, task: question.task, stage: "practice",
+        correct: false, attempt: 1, error: `e:${question.errors![0].value}`,
+      });
+      // La familia lee los eventos y el informe reconoce el error previsto.
+      const events = (await fs.getDocs(evidence)).docs.map((d) => ({
+        lessonId: d.data().lessonId, action: d.data().action, outcome: d.data().outcome,
+        at: d.data().createdAt?.toMillis?.() ?? 0,
+      }));
+      const { misconceptions } = summarizeMisconceptions(events, getLesson);
+      expect(misconceptions[0]).toMatchObject({ lessonId: lesson.id, count: 1, resolved: false });
+    } finally {
+      await deleteApp(family.app);
+    }
+  });
+
+  test("la evaluación de ubicación avanza por unidades en el servidor y no premia", async () => {
+    const family = await createFamily();
+    try {
+      const base = { parentId: family.parentId, childId: family.childId, lessonId: "ubicacion" };
+      let state = (await call<{ progress: PlacementState; stars: number }>(family.app, "recordLearningAction", {
+        ...base, expectedRevision: 0, operationId: crypto.randomUUID(), action: { kind: "begin" },
+      })).progress;
+      expect(state.items).toHaveLength(1);
+      // La pregunta mostrada no revela de qué banco viene y no acepta otra.
+      await expect(
+        call(family.app, "recordLearningAction", {
+          ...base, expectedRevision: 1, operationId: crypto.randomUUID(),
+          action: { kind: "answer", questionId: "u7", response: "1" },
+        }),
+      ).rejects.toMatchObject({ code: "functions/failed-precondition" });
+      await expect(
+        call(family.app, "recordLearningAction", {
+          ...base, expectedRevision: 1, operationId: crypto.randomUUID(),
+          action: { kind: "hint", questionId: "u1" },
+        }),
+      ).rejects.toMatchObject({ code: "functions/invalid-argument" });
+      // Acierta la primera clase (respuesta evaluada en el servidor) y salta el resto.
+      const first = getLesson(state.items[0].lessonId)!;
+      let stars = 0;
+      const answered = await call<{ progress: PlacementState; stars: number }>(family.app, "recordLearningAction", {
+        ...base, expectedRevision: state.revision, operationId: crypto.randomUUID(),
+        action: { kind: "answer", questionId: "u1", response: String(placementQuestion(first).answer) },
+      });
+      state = answered.progress;
+      stars += answered.stars;
+      while (state.stage === "active") {
+        const r = await call<{ progress: PlacementState; stars: number }>(family.app, "recordLearningAction", {
+          ...base, expectedRevision: state.revision, operationId: crypto.randomUUID(),
+          action: { kind: "skip", questionId: `u${state.items.length}` },
+        });
+        state = r.progress;
+        stars += r.stars;
+      }
+      expect(stars).toBe(0);
+      expect(state.result?.mastered).toEqual([first.id]);
+      const saved = await fs.getDoc(
+        fs.doc(family.db, "parents", family.parentId, "children", family.childId, "learningProgress", "ubicacion"),
+      );
+      expect((saved.data() as PlacementState).result?.mastered).toEqual([first.id]);
+      // No marca la clase como terminada.
+      const lessonDoc = await fs.getDoc(
+        fs.doc(family.db, "parents", family.parentId, "children", family.childId, "learningProgress", first.id),
+      );
+      expect(lessonDoc.exists()).toBe(false);
+    } finally {
+      await deleteApp(family.app);
+    }
+  });
+
   test("el borrado del perfil también elimina la nueva evidencia educativa", async () => {
     const family = await createFamily();
     try {

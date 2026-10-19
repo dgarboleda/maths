@@ -19,6 +19,8 @@ No lo rotes sin plan: los hashes v2 dejarían de coincidir y habría que restabl
 
 **Migración:** los enlaces anteriores (sin clave) dejan de funcionar y muestran que hay que pedir uno nuevo. Al publicar, avisa a las familias de que vuelvan a compartir el enlace desde Ajustes. El contrato de los callables cambió: Functions y Worker anuncian el **protocolo 4** y deben desplegarse desde la misma revisión.
 
+**Ubicación, diagnóstico de errores y CNEB (protocolo 8):** Functions acepta la evaluación de ubicación (`lessonId: "ubicacion"`, acciones `begin`, `answer` y `skip`) y guarda el diagnóstico de cada respuesta en `learningEvidence`. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 8. El análisis de preguntas se ejecuta aparte: `npm run functions:build && FIREBASE_PROJECT_ID=<proyecto> npm run analisis:items -- --desde AAAA-MM-DD` con credenciales de administración (`gcloud auth application-default login`); el informe queda en `informes/` (ignorado por Git) y solo contiene agregados.
+
 **Aventuras por unidad y 37 lecciones (protocolo 7):** Functions acepta los identificadores de las siete aventuras y valida cada plan con las entradas de su definición; el frontend sin ese Functions no puede guardar las aventuras nuevas. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 7.
 
 **Currículo de 32 lecciones y repaso mixto (protocolo 6):** Functions valida ahora los identificadores `repaso-{unidad}` y lee el avance de las clases de la unidad para decidir qué mezclar; el frontend sin ese Functions no puede abrir el repaso ni las clases nuevas. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 6.

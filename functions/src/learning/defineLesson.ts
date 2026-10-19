@@ -52,7 +52,7 @@ export function defineLesson(draft: Draft): Lesson {
   const arrange = (q: Question) => arrangeChoices(q, content.id);
   const bank = (variant: number, prefix: string, indexes: number[]) => {
     const items = questions(variant);
-    return indexes.map((index, i) => arrange({ ...items[index], id: `${prefix}-${i + 1}` }));
+    return indexes.map((index, i) => arrange({ ...items[index], id: `${prefix}-${i + 1}`, task: index }));
   };
   return {
     ...content,
@@ -75,6 +75,6 @@ export function defineLesson(draft: Draft): Lesson {
     // transferencia de la forma 0, que la guiada no usa): solo el repaso
     // mixto de la unidad los muestra.
     mixed: [...bank(5, "x", [1, 3, 6]), ...bank(0, "y", [5])],
-    application: arrange({ ...application, id: "m-1" }),
+    application: arrange({ ...application, id: "m-1", task: 7 }),
   };
 }

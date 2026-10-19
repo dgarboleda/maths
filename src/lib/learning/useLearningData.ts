@@ -13,6 +13,8 @@ import {
   type LearningAction,
   type LearningProgress,
   type MixedReviewState,
+  type PlacementAction,
+  type PlacementState,
 } from "./domain";
 
 interface Snapshot {
@@ -21,6 +23,8 @@ interface Snapshot {
   progress: Record<string, LearningProgress>;
   /** Repasos mixtos por unidad (documentos `repaso-{unidad}`). */
   reviews: Record<string, MixedReviewState>;
+  /** Evaluación de ubicación (`learningProgress/ubicacion`). */
+  placement: PlacementState | null;
   /** Estado de cada aventura jugada (`learningMissions/{aventura}`). */
   adventures: Record<string, AdventureState>;
   loaded: string[];
@@ -32,6 +36,7 @@ function empty(key: string): Snapshot {
     child: null,
     progress: {},
     reviews: {},
+    placement: null,
     adventures: {},
     loaded: [],
     error: null,
@@ -99,8 +104,10 @@ export function useLearningData(childId: string) {
                     .filter((item) => item.id.startsWith("repaso-"))
                     .map((item) => [item.id, item.data() as MixedReviewState]),
                 ),
+                placement:
+                  (snap.docs.find((item) => item.id === "ubicacion")?.data() as PlacementState | undefined) ?? null,
                 progress: Object.fromEntries(
-                  snap.docs.filter((item) => !item.id.startsWith("repaso-")).map((item) => {
+                  snap.docs.filter((item) => !item.id.startsWith("repaso-") && item.id !== "ubicacion").map((item) => {
                     const saved = item.data() as LearningProgress;
                     const lesson = getLesson(item.id);
                     // Misma migración que aplica el servidor en la próxima acción.
@@ -145,7 +152,7 @@ interface Request {
   lessonId: string;
   expectedRevision: number;
   operationId: string;
-  action: LearningAction | AdventureAction;
+  action: LearningAction | AdventureAction | PlacementAction;
 }
 export function useLearningAction(
   parentId: string | undefined,
@@ -157,7 +164,7 @@ export function useLearningAction(
     parentId: string;
     childId: string;
     lessonId: string;
-    progress: LearningProgress | AdventureState | MixedReviewState;
+    progress: LearningProgress | AdventureState | MixedReviewState | PlacementState;
   } | null>(null);
   const pending = useRef<Request | null>(null);
   const inFlight = useRef(false);
@@ -171,7 +178,7 @@ export function useLearningAction(
       const { functions, functionsFns } = await getFirebaseFunctions();
       const result = await functionsFns.httpsCallable<
         Request,
-        { progress: LearningProgress | AdventureState | MixedReviewState }
+        { progress: LearningProgress | AdventureState | MixedReviewState | PlacementState }
       >(
         functions,
         "recordLearningAction",
@@ -199,7 +206,7 @@ export function useLearningAction(
   async function run(
     lessonId: string,
     revision: number,
-    action: LearningAction | AdventureAction,
+    action: LearningAction | AdventureAction | PlacementAction,
   ): Promise<boolean> {
     if (!parentId || pending.current || inFlight.current) return false;
     return send({

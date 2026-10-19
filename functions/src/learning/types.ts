@@ -34,6 +34,9 @@ export interface Question {
   explanation: string;
   solution: string[];
   errors?: { value: number | string; feedback: string }[];
+  /** Tarea de la plantilla (q0…q6; 7 = aplicación). Las formas paralelas de
+   *  una misma tarea comparten número: permite comparar su dificultad. */
+  task?: number;
 }
 export interface Example {
   prompt: string;
@@ -191,3 +194,30 @@ export interface MixedReviewState {
   completedAt: number | null;
   updatedAt: number;
 }
+
+/** Evaluación de ubicación sobre el programa: una pregunta por clase, en
+ *  orden, unidad por unidad; el primer fallo de una unidad marca dónde
+ *  empezar en ella. No da estrellas ni marca clases como terminadas. */
+export interface PlacementState {
+  contentVersion: number;
+  revision: number;
+  stage: "idle" | "active" | "done";
+  /** Preguntas planteadas en esta sesión; la última sin respuesta es la actual. */
+  items: { lessonId: string; questionId: string; correct: boolean | null }[];
+  /** Sesiones empezadas. */
+  attempts: number;
+  result: PlacementResult | null;
+  updatedAt: number;
+}
+export interface PlacementResult {
+  /** Clases respondidas bien sin ayuda: se pueden saltar. */
+  mastered: string[];
+  /** Por unidad, la clase donde conviene empezar (null = unidad dominada). */
+  start: Partial<Record<UnitId, string | null>>;
+  answered: number;
+  at: number;
+}
+export type PlacementAction =
+  | { kind: "begin" }
+  | { kind: "answer"; questionId: string; response: string }
+  | { kind: "skip"; questionId: string };

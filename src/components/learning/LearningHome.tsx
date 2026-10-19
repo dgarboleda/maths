@@ -18,6 +18,8 @@ import {
   LESSONS,
   mixedReviewId,
   MIXED_REVIEW_MIN_LESSONS,
+  PERU_MAP,
+  recommendedLesson,
   STAGE_LABELS,
   type LearningProgress,
   type MixedReviewState,
@@ -106,8 +108,10 @@ export function LearningHome({
   const active = Object.values(data.progress)
     .filter((p) => getLesson(p.lessonId) && p.stage !== "summary")
     .sort((a, b) => b.updatedAt - a.updatedAt)[0];
-  const unfinished = LESSONS.find(
-    (lesson) => !data.progress[lesson.id]?.completedAt,
+  const placed = data.placement?.result ?? null;
+  const unfinished = recommendedLesson(
+    new Set(LESSONS.filter((l) => data.progress[l.id]?.completedAt).map((l) => l.id)),
+    placed,
   );
   const next = getLesson(active?.lessonId ?? "") ?? unfinished ?? LESSONS[0];
   const completed = LESSONS.filter(
@@ -174,6 +178,23 @@ export function LearningHome({
                 {active ? `Retoma: ${STAGE_LABELS[active.stage]}. ` : ""}
                 Tu avance se guarda. Puedes parar y volver después.
               </p>
+              {placed ? (
+                <Link
+                  href={`${base}/aprende/ubicacion`}
+                  className="mt-4 text-sm font-semibold text-cyan-200 underline underline-offset-4"
+                >
+                  Tu ubicación: {placed.mastered.length} {placed.mastered.length === 1 ? "clase que ya dominas" : "clases que ya dominas"} · ver resultado
+                </Link>
+              ) : (
+                completed === 0 && (
+                  <Link
+                    href={`${base}/aprende/ubicacion`}
+                    className={`${secondaryButton} mt-4 w-full sm:w-auto`}
+                  >
+                    ¿Ya sabes algo? Encuentra tu punto de partida
+                  </Link>
+                )
+              )}
             </div>
             <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5 sm:p-6">
               <h3 className="text-sm font-bold text-white">
@@ -403,6 +424,7 @@ export function LearningHome({
                       index={index}
                       progress={data.progress[lesson.id]}
                       practice={view === "practice"}
+                      placed={Boolean(placed?.mastered.includes(lesson.id))}
                     />
                   ),
                 )}
@@ -493,14 +515,17 @@ function LessonCard({
   index,
   progress,
   practice,
+  placed,
 }: {
   childId: string;
   lessonId: string;
   index: number;
   progress?: LearningProgress;
   practice: boolean;
+  placed: boolean;
 }) {
   const lesson = getLesson(lessonId)!;
+  const peru = PERU_MAP[lesson.id];
   const theme = unitStyles[lesson.unitId];
   return (
     <Link
@@ -515,9 +540,14 @@ function LessonCard({
           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${progress?.completedAt ? "bg-emerald-300/10 text-emerald-200" : "bg-white/5 text-slate-300"}`}
         >
           {progress?.completedAt && <Check size={13} aria-hidden="true" />}
-          {learningStatus(progress)}
+          {!progress && placed ? "Dominada en tu ubicación" : learningStatus(progress)}
         </span>
       </div>
+      {peru && (
+        <p className="mt-2 text-xs text-slate-400">
+          Perú · {peru.grade}.° de secundaria (orientativo)
+        </p>
+      )}
       <h3 className="mt-4 text-lg font-bold leading-snug text-white">
         {lesson.title}
       </h3>

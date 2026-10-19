@@ -2,13 +2,13 @@
 
 ## Propósito y alcance de esta entrega
 
-El acceso principal ofrece un programa incluido de 37 lecciones en 7 unidades, con un repaso mixto y una aventura por unidad, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. La adecuación a un currículo nacional queda pendiente de seleccionar el país y realizar su correspondencia curricular.
+El acceso principal ofrece un programa incluido de 37 lecciones en 7 unidades, con un repaso mixto y una aventura por unidad, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. El país de referencia es **Perú**: cada clase tiene una correspondencia orientativa con el Currículo Nacional de la Educación Básica (ver [Correspondencia con el CNEB](#correspondencia-con-el-cneb-perú)).
 
 La entrega implementa el producto y los instrumentos del piloto. **No se ha realizado una revisión docente independiente ni un estudio con adolescentes.** El estado editorial de las lecciones es `pending-teacher-review`. Las comprobaciones automáticas verifican contratos, ejemplos de cálculo, accesibilidad, persistencia y reglas; no acreditan eficacia educativa ni una equivalencia oficial de grados o PISA.
 
 ## Recorrido del estudiante
 
-1. Entra a `/jugar/{childId}` y encuentra Continuar, Aprender, Practicar y Aventura.
+1. Entra a `/jugar/{childId}` y encuentra Continuar, Aprender, Practicar y Aventura. Antes de su primera clase puede hacer la evaluación de ubicación (opcional) para saber qué clases saltar.
 2. Abre una clase. Tres preguntas breves exploran sus bases; puede ir directamente a la explicación o demostrar lo que ya sabe en la comprobación.
 3. Recorre tres ideas con representación, significado y notación; manipula un modelo visual y consulta vocabulario.
 4. Sigue dos ejemplos cuyos pasos explican **por qué** se hace cada transformación.
@@ -88,6 +88,15 @@ Todos tienen etiqueta textual que se actualiza con cada cambio, controles nativo
 - Un fallo posterior conserva las fechas y logros históricos, y recomienda refuerzo. No bloquea una aventura ni borra progreso.
 - Estos umbrales son hipótesis del piloto, no una prueba estandarizada. Deben calibrarse mediante revisión y observación.
 
+## Evaluación de ubicación
+
+`/jugar/{childId}/aprende/ubicacion` estima el punto de partida sobre las 37 clases. Recorre las unidades en orden y, dentro de cada una, plantea una pregunta por clase: el procedimiento central de la forma B de su comprobación (tarea q1), sin pistas, sin desarrollo y sin corrección durante la prueba. Mientras acierta, avanza a la clase siguiente; en el primer fallo, o si elige «Todavía no lo sé», esa clase pasa a ser el inicio de la unidad y la prueba salta a la unidad siguiente. Dura entre 7 preguntas (una por unidad) y 37.
+
+- El servidor evalúa cada respuesta y guarda el estado en `learningProgress/ubicacion`. La pregunta se muestra con un identificador propio (`u1`, `u2`…).
+- El resultado marca clases **dominadas en la ubicación**: quedan opcionales y la recomendación de inicio las salta, pero no cuentan como terminadas, no dan estrellas ni habilitan el repaso mixto (que exige clases recorridas).
+- Puede repetirse; el resultado anterior se conserva hasta terminar la nueva sesión. El informe familiar lo muestra con su fecha.
+- Limitación: una pregunta por clase es una estimación rápida, sensible a un descuido. Se eligió por duración; la calibración con datos del piloto (ver [Análisis de preguntas](#análisis-de-preguntas)) debe confirmar si conviene una segunda pregunta antes de cerrar una unidad.
+
 La evaluación curricular ampliada anterior sigue disponible por decisión explícita. Ya no condiciona el acceso ni otorga dominio de módulos inferiores basándose en una respuesta representativa. Sus resultados y logros históricos se conservan.
 
 ## El apagón
@@ -114,13 +123,37 @@ Se guarda cada prueba, se puede volver a experimentar y el premio de diez estrel
 
 El servidor valida cada plan con el número de entradas y los rangos de su aventura y guarda el estado en `learningMissions/{aventura}`. El estado guardado de El apagón no cambia de forma. Tras la última clase relacionada, el resumen ofrece jugar la aventura; el informe familiar muestra planes probados y misiones completadas.
 
+## Correspondencia con el CNEB (Perú)
+
+`functions/src/learning/peru.ts` asigna a cada clase una de las cuatro competencias del área de Matemática del CNEB (MINEDU, 2016) y el grado de secundaria donde suele trabajarse según el Programa curricular de Educación Secundaria (ciclo VI: 1.° y 2.°; ciclo VII: 3.° a 5.°). Es una **propuesta orientativa pendiente de validación docente**: no certifica un grado.
+
+| Competencia | Clases |
+| --- | --- |
+| Resuelve problemas de cantidad | Enteros, orden de operaciones, potencias, notación científica, fracciones, decimales y porcentajes aplicados |
+| Resuelve problemas de regularidad, equivalencia y cambio | Razones, tasa, proporcionalidad directa e inversa, ecuaciones, expresiones, inecuaciones, funciones lineales y cuadráticas |
+| Resuelve problemas de forma, movimiento y localización | Ángulos, perímetro y área, círculo, volumen, Pitágoras y semejanza |
+| Resuelve problemas de gestión de datos e incertidumbre | Media, mediana y moda; probabilidad simple y compuesta |
+
+Las tarjetas de clase muestran el grado orientativo. El resultado de la ubicación indica, por competencia, el último grado cuyas clases (y las de grados anteriores) están todas dominadas o terminadas. Los grados 4.° y 5.° están apenas cubiertos (cuadráticas y probabilidad compuesta): los temas pendientes para 15–17 años son sistemas de ecuaciones, funciones exponenciales, trigonometría, estadística descriptiva ampliada, combinatoria y transformaciones.
+
+## Errores frecuentes en el informe familiar
+
+Cada respuesta registra en su evento (`learningEvidence/{op}.outcome`) la pregunta real de la clase (también en repasos mixtos y ubicación), la tarea de la plantilla, la etapa, si fue correcta, el número de intento, las pistas pedidas y el **error previsto** que coincide (`e:<valor>` para un valor de `errors`, `c:<opción>` para una alternativa incorrecta). Los eventos anteriores a este registro se diagnostican reconstruyendo la pregunta de la clase.
+
+`/panel/progreso` analiza las últimas 400 acciones del perfil y agrupa el mismo error entre formas paralelas (las explicaciones solo cambian en los números). Cada tarjeta muestra el enunciado, la respuesta, la explicación que vio el estudiante, cuántas veces ocurrió y si después resolvió bien la misma tarea al primer intento sin pistas («superado») o persiste, con enlace a la práctica. Las respuestas incorrectas que no coinciden con un error previsto se cuentan aparte. Es diagnóstico formativo, no una nota.
+
+## Análisis de preguntas
+
+`npm run analisis:items` (requiere `npm run functions:build` y credenciales de administración del proyecto) lee los eventos de todas las familias y genera en `informes/` un Markdown y un CSV **solo con agregados**: por pregunta, primeras respuestas (una por perfil), proporción correcta al primer intento, uso de pistas, cobertura de los errores previstos, respuestas incorrectas no previstas más repetidas y mediana del tiempo de respuesta; y por etapa, la proporción de aciertos. Con al menos 10 primeras respuestas marca alertas: «muy fácil» (> 95 %), «muy difícil» (< 30 %), «mucha ayuda» (> 50 % con pistas), «errores no previstos» y la respuesta no prevista frecuente, candidata a nuevo error en `errors`. Sirve para calibrar los umbrales provisionales (4/5, 5/6) y la ubicación con datos del piloto. Para volúmenes grandes conviene exportar a BigQuery; la lectura actual recorre la colección completa.
+
 ## Arquitectura y datos
 
 - `functions/src/learning/`: catálogo, contratos, validación numérica y motor educativo puros, compartidos con Next mediante `src/lib/learning/domain.ts`. No importan Firebase, React ni APIs de Node.
 - `functions/src/learning.ts`: callable `recordLearningAction`. Verifica sesión y perfil, evalúa respuestas, controla revisión y confirma evidencia, agregado y recompensa en una transacción.
 - `src/components/learning/`: inicio, biblioteca, clase, modelos, aventura e informe familiar.
 - `learningProgress/{lessonId}`: versión de contenido, posición, respuestas actuales, apoyos, comprobaciones y fechas de repaso.
-- `learningEvidence/{operationId}`: acciones inmutables para el cliente, versión y premio. Conserva el historial aunque se reinicie una ronda.
+- `learningEvidence/{operationId}`: acciones inmutables para el cliente, versión, premio y, en las respuestas, su diagnóstico (`outcome`). Conserva el historial aunque se reinicie una ronda.
+- `learningProgress/ubicacion`: evaluación de ubicación (preguntas planteadas, resultado y sesiones).
 - `learningMissions/apagon`: inspección, suministros probados, consecuencias y logro.
 
 El navegador lee solo datos de su perfil. Ningún cliente, incluido el de la familia, puede escribir los nuevos agregados o fabricar eventos directamente por Firestore. Functions valida y actualiza. La familia puede borrar los documentos al eliminar el perfil; el borrado incluye las tres colecciones.
