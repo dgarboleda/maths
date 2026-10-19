@@ -62,6 +62,11 @@ async function nuevaFamiliaConDosHijos() {
     birthDate: "2017-01-01",
     createdAt: Date.now(),
   });
+  // Saldo de 20 estrellas: tope de las solicitudes de canje del hijo.
+  await firestoreFns.setDoc(firestoreFns.doc(db, "parents", parentId, "children", childId, "starBalance", "total"), {
+    total: 20,
+    schemaVersion: 1,
+  });
   await signOut(auth);
 
   const uid = `child:${parentId}:${childId}`;
@@ -107,6 +112,27 @@ describe("firestore.rules — sesión propia del hijo (custom token)", () => {
         firestoreFns.doc(db, "parents", parentId, "children", childId, "starBalance", "total"),
         { total: 99999 },
       )).rejects.toThrow();
+    } finally {
+      await deleteApp(app);
+    }
+  });
+
+  test("solo pide canjes pendientes, enteros, dentro de su saldo y con la hora del servidor", async () => {
+    const { app, db, parentId, childId } = await nuevaFamiliaConDosHijos();
+    try {
+      const requests = firestoreFns.collection(db, "parents", parentId, "children", childId, "redemptionRequests");
+      const valid = { starsSpent: 15, rewardLabel: "Una hora de juego", status: "pendiente", createdAt: firestoreFns.serverTimestamp(), resolvedAt: null };
+      const created = await firestoreFns.addDoc(requests, valid);
+      await expect(firestoreFns.updateDoc(created, { status: "aprobado" })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(requests, { ...valid, status: "aprobado" })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(requests, { ...valid, starsSpent: 21 })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(requests, { ...valid, starsSpent: -5 })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(requests, { ...valid, starsSpent: 2.5 })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(requests, { ...valid, rewardLabel: "" })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(requests, { ...valid, rewardLabel: "x".repeat(121) })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(requests, { ...valid, createdAt: firestoreFns.Timestamp.fromMillis(0) })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(requests, { ...valid, resolvedAt: firestoreFns.serverTimestamp() })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(requests, { ...valid, note: "extra" })).rejects.toThrow();
     } finally {
       await deleteApp(app);
     }

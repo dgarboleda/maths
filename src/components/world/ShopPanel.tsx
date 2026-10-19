@@ -156,6 +156,7 @@ function RedeemForm({
         ¿Qué quieres canjear?
         <input
           value={rewardLabel}
+          maxLength={120}
           onChange={(e) => setRewardLabel(e.target.value)}
           placeholder="Ej. 800 Robux"
           className="rounded-xl border-2 border-indigo-500/30 bg-slate-900 px-3 py-2 font-normal text-slate-100 placeholder:text-slate-500 focus:border-violet-400"
