@@ -2,7 +2,7 @@
 
 ## Propósito y alcance de esta entrega
 
-El acceso principal ofrece un programa incluido de 12 lecciones y la aventura **El apagón**, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. La adecuación a un currículo nacional queda pendiente de seleccionar el país y realizar su correspondencia curricular.
+El acceso principal ofrece un programa incluido de 32 lecciones en 7 unidades, con un repaso mixto por unidad, y la aventura **El apagón**, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. La adecuación a un currículo nacional queda pendiente de seleccionar el país y realizar su correspondencia curricular.
 
 La entrega implementa el producto y los instrumentos del piloto. **No se ha realizado una revisión docente independiente ni un estudio con adolescentes.** El estado editorial de las lecciones es `pending-teacher-review`. Las comprobaciones automáticas verifican contratos, ejemplos de cálculo, accesibilidad, persistencia y reglas; no acreditan eficacia educativa ni una equivalencia oficial de grados o PISA.
 
@@ -19,15 +19,31 @@ La entrega implementa el producto y los instrumentos del piloto. **No se ha real
 
 Las ayudas durante una comprobación, incluida la consulta de la explicación, se registran como apoyo. La práctica guiada y la aplicación con solución disponible no acreditan autonomía. La primera respuesta incorrecta de una comprobación no se sustituye por un acierto posterior. Los minijuegos existentes siguen como actividades adicionales; sus métricas no se convierten en la nueva evidencia de aprendizaje.
 
-## Programa inicial
+## Programa
+
+El currículo se organiza en siete unidades para estudiantes de 12 a 17 años que necesitan consolidar fundamentos, de los números enteros a la probabilidad. Cada clase declara sus bases (prerrequisitos), que siempre aparecen antes en el catálogo; se ofrecen como enlaces, sin candados.
 
 | Unidad | Lecciones |
 | --- | --- |
-| Fracciones y representaciones | Unidad y significado; equivalencia y comparación; fracción–decimal–porcentaje; fracción de una cantidad |
-| Razones y proporcionalidad | Razones parte-parte y parte-total; tasa unitaria; proporcionalidad directa; cambios porcentuales |
-| Álgebra inicial | Igualdad e incógnita; ecuaciones de un paso; ecuaciones de dos pasos; modelación y restricciones |
+| Números enteros y operaciones | Enteros en la recta; sumar y restar enteros; multiplicar y dividir enteros; orden de las operaciones; potencias y raíces |
+| Fracciones y representaciones | Unidad y significado; equivalencia y comparación; fracción–decimal–porcentaje; fracción de una cantidad; sumar y restar fracciones; multiplicar y dividir fracciones |
+| Razones y proporcionalidad | Razones parte-parte y parte-total; tasa unitaria; proporcionalidad directa; cambios porcentuales; proporcionalidad inversa |
+| Ecuaciones para resolver situaciones | Igualdad e incógnita; ecuaciones de un paso; ecuaciones de dos pasos; modelación y restricciones |
+| Expresiones, ecuaciones y funciones | Expresiones algebraicas; propiedad distributiva; incógnita en ambos lados; inecuaciones lineales; funciones lineales |
+| Geometría y medida | Perímetro y área; longitud y área del círculo; volumen de prismas y cilindros; teorema de Pitágoras |
+| Datos y probabilidad | Media, mediana y moda; probabilidad de un suceso; experimentos compuestos |
 
-Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales y bancos de tareas. Hay 32 ejemplos desarrollados y 336 instancias de actividades, organizadas en familias y formas paralelas; ese conteo no equivale a 336 competencias ni a 336 problemas de estructura distinta.
+Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales, un modelo visual manipulable y bancos de tareas. Hay 72 ejemplos desarrollados y 1024 instancias de actividades (32 por lección), organizadas en familias y formas paralelas; ese conteo no equivale a 1024 competencias ni a 1024 problemas de estructura distinta.
+
+**Decisión sobre el catálogo anterior.** Los 67 módulos con generador no se retiran: alimentan los Mundos y niveles que las familias ya construyeron, y la práctica libre. El programa de clases los sustituye como recorrido principal y cada lección enlaza los módulos que cubre (`legacyModuleIds`). Los temas del catálogo anterior que siguen sin clase quedan como práctica: los de primaria (sumas hasta 1000, tablas, valor posicional) no corresponden al público de 12 a 17 años; decimales, notación científica, ángulos, semejanza y ecuaciones cuadráticas requieren clases propias en una entrega posterior.
+
+### Repaso mixto por unidad
+
+Cuando el estudiante termina al menos dos clases de una unidad, se habilita su **repaso mixto** (`/jugar/{childId}/aprende/repaso-{unidad}`). Cada sesión plantea seis problemas que alternan las clases terminadas: dos seguidos nunca son de la misma clase, así que hay que reconocer qué idea usar antes de aplicarla (práctica intercalada). Cada lección aporta un banco propio de cuatro problemas que no aparece en ninguna otra etapa, y cada sesión rota los problemas.
+
+- Se registra la primera respuesta; las pistas y la consulta de la explicación cuentan como apoyo; el desarrollo se muestra al terminar.
+- Se supera con al menos 5 de 6 respuestas autónomas. La primera sesión superada otorga cinco estrellas una sola vez.
+- El servidor comprueba qué clases están terminadas (no lo decide el navegador) y guarda la sesión en `learningProgress/repaso-{unidad}`. El informe familiar muestra las sesiones y el mejor resultado por unidad.
 
 ### Diseño de los bancos (contenido v2)
 
@@ -87,7 +103,7 @@ de los nueve minijuegos: **Estanque** (Frogger), **Cohete**, **Serpiente
 numérica**, **Autopista de resultados**, **Laberinto de números**, **Invasión
 numérica**, **Bloques numéricos**, **Topos numéricos** (se responde tocando el
 topo, sin cruceta) o **Caja numérica** (Sokoban por turnos, sin reloj). El
-estudiante no tiene que elegir. Las doce
+estudiante no tiene que elegir. Todas las
 clases ofrecen ejercicios numéricos para todos. Cada pregunta conserva su
 enunciado, respuesta, pistas y desarrollo del catálogo educativo compartido.
 Las preguntas de elección conceptual se responden en su formato habitual.

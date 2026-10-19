@@ -13,12 +13,15 @@ import {
   type AdventureState,
   type LearningAction,
   type LearningProgress,
+  type MixedReviewState,
 } from "./domain";
 
 interface Snapshot {
   key: string;
   child: ChildProfile | null;
   progress: Record<string, LearningProgress>;
+  /** Repasos mixtos por unidad (documentos `repaso-{unidad}`). */
+  reviews: Record<string, MixedReviewState>;
   adventure: AdventureState;
   loaded: string[];
   error: string | null;
@@ -28,6 +31,7 @@ function empty(key: string): Snapshot {
     key,
     child: null,
     progress: {},
+    reviews: {},
     adventure: initialAdventure(),
     loaded: [],
     error: null,
@@ -90,8 +94,13 @@ export function useLearningData(childId: string) {
             collection(db, ...path, "learningProgress"),
             (snap) =>
               receive("progress", {
+                reviews: Object.fromEntries(
+                  snap.docs
+                    .filter((item) => item.id.startsWith("repaso-"))
+                    .map((item) => [item.id, item.data() as MixedReviewState]),
+                ),
                 progress: Object.fromEntries(
-                  snap.docs.map((item) => {
+                  snap.docs.filter((item) => !item.id.startsWith("repaso-")).map((item) => {
                     const saved = item.data() as LearningProgress;
                     const lesson = getLesson(item.id);
                     // Misma migración que aplica el servidor en la próxima acción.
@@ -148,7 +157,7 @@ export function useLearningAction(
     parentId: string;
     childId: string;
     lessonId: string;
-    progress: LearningProgress | AdventureState;
+    progress: LearningProgress | AdventureState | MixedReviewState;
   } | null>(null);
   const pending = useRef<Request | null>(null);
   const inFlight = useRef(false);
@@ -162,7 +171,7 @@ export function useLearningAction(
       const { functions, functionsFns } = await getFirebaseFunctions();
       const result = await functionsFns.httpsCallable<
         Request,
-        { progress: LearningProgress | AdventureState }
+        { progress: LearningProgress | AdventureState | MixedReviewState }
       >(
         functions,
         "recordLearningAction",

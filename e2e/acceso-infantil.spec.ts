@@ -22,8 +22,8 @@ test("un navegador sin la sesión del padre entra con el callable real y su PIN"
     await expect(child.getByRole("heading", { name: "Hola, Sofía. ¿Qué vamos a descubrir?" })).toBeVisible();
     await child.getByRole("link", { name: "Comenzar mi primera clase" }).click();
     await child.getByRole("button", { name: "Ir a la clase", exact: true }).click();
-    await expect(child.getByRole("heading", { name: "Primero, identifica el todo" })).toBeVisible();
+    await expect(child.getByRole("heading", { name: "El cero separa dos sentidos" })).toBeVisible();
     await child.reload();
-    await expect(child.getByRole("heading", { name: "Primero, identifica el todo" })).toBeVisible();
+    await expect(child.getByRole("heading", { name: "El cero separa dos sentidos" })).toBeVisible();
   } finally { await context.close(); }
 });

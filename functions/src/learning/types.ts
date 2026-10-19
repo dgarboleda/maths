@@ -50,11 +50,24 @@ export type Visual =
   | "proportion"
   | "change"
   | "balance"
-  | "equation";
+  | "equation"
+  | "integers"
+  | "area"
+  | "data"
+  | "probability"
+  | "linear";
+export type UnitId =
+  | "numeros"
+  | "fracciones"
+  | "proporcionalidad"
+  | "algebra"
+  | "expresiones"
+  | "geometria"
+  | "datos";
 export interface Lesson {
   id: string;
   version: number;
-  unitId: "fracciones" | "proporcionalidad" | "algebra";
+  unitId: UnitId;
   title: string;
   objective: string;
   purpose: string;
@@ -69,6 +82,8 @@ export interface Lesson {
   practice: Question[];
   checks: [Question[], Question[]];
   review: Question[];
+  /** Banco propio del repaso mixto de la unidad (forma 5, nunca vista). */
+  mixed: Question[];
   application: Question;
   outcome: string;
   commonErrors: string[];
@@ -145,3 +160,22 @@ export interface AdventureState {
 export type AdventureAction =
   | { kind: "inspect" }
   | { kind: "dispatch"; allocation: [number, number, number] };
+
+/** Repaso intercalado de una unidad: mezcla problemas de las clases ya
+ *  terminadas para que el estudiante tenga que elegir la estrategia. */
+export interface MixedReviewState {
+  unitId: UnitId;
+  contentVersion: number;
+  revision: number;
+  /** Sesiones empezadas; decide qué problemas y en qué orden. */
+  round: number;
+  stage: "idle" | "active" | "summary";
+  items: { lessonId: string; questionId: string }[];
+  index: number;
+  responses: Record<string, ResponseEvidence>;
+  lastResult: CheckResult | null;
+  bestResult: CheckResult | null;
+  /** Primera sesión superada (premio único). */
+  completedAt: number | null;
+  updatedAt: number;
+}

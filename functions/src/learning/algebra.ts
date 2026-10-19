@@ -2,6 +2,8 @@ import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
 
+const sg = (x: number) => (x < 0 ? `−${-x}` : `${x}`);
+
 export const ALGEBRA_LESSONS: Lesson[] = [
   defineLesson({
     id: "igualdad-incognita",
@@ -467,16 +469,16 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         ),
         n(
           "q3",
-          `Resuelve x + ${c3} = ${r3}.`,
+          `Resuelve x + ${c3} = ${sg(r3)}.`,
           r3 - c3,
           [
-            `Resta ${c3} a ambos lados: x = ${r3} − ${c3} = ${r3 - c3}.`,
-            `Comprueba: ${r3 - c3} + ${c3} = ${r3}.`,
+            `Resta ${c3} a ambos lados: x = ${sg(r3)} − ${c3} = ${sg(r3 - c3)}.`,
+            `Comprueba: ${sg(r3 - c3)} + ${c3} = ${sg(r3)}.`,
           ],
           [
             "No descartes una solución negativa.",
-            `Resta ${c3} al valor ${r3}.`,
-            `El resultado es ${r3 - c3}.`,
+            `Resta ${c3} al valor ${sg(r3)}.`,
+            `El resultado es ${sg(r3 - c3)}.`,
           ],
           {
             errors: [

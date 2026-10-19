@@ -16,8 +16,12 @@ import {
   learningStatus,
   LEARNING_UNITS,
   LESSONS,
+  mixedReviewId,
+  MIXED_REVIEW_MIN_LESSONS,
   STAGE_LABELS,
   type LearningProgress,
+  type MixedReviewState,
+  type UnitId,
 } from "@/lib/learning/domain";
 import { useLearningData } from "@/lib/learning/useLearningData";
 import { useLearningClock } from "@/lib/learning/useLearningClock";
@@ -32,7 +36,15 @@ import {
 } from "./LearningShell";
 import styles from "./learning.module.css";
 
-const unitStyles = {
+export const unitStyles: Record<
+  UnitId,
+  { accent: string; surface: string; symbol: string }
+> = {
+  numeros: {
+    accent: "text-emerald-200",
+    surface: "border-emerald-300/20 bg-emerald-300/10",
+    symbol: "±",
+  },
   fracciones: {
     accent: "text-cyan-200",
     surface: "border-cyan-300/20 bg-cyan-300/10",
@@ -47,6 +59,21 @@ const unitStyles = {
     accent: "text-violet-200",
     surface: "border-violet-300/20 bg-violet-300/10",
     symbol: "x + y",
+  },
+  expresiones: {
+    accent: "text-fuchsia-200",
+    surface: "border-fuchsia-300/20 bg-fuchsia-300/10",
+    symbol: "f(x)",
+  },
+  geometria: {
+    accent: "text-sky-200",
+    surface: "border-sky-300/20 bg-sky-300/10",
+    symbol: "△",
+  },
+  datos: {
+    accent: "text-rose-200",
+    surface: "border-rose-300/20 bg-rose-300/10",
+    symbol: "x̄",
   },
 };
 
@@ -207,7 +234,7 @@ export function LearningHome({
             <p className="max-w-3xl leading-relaxed text-slate-300">
               {view === "learn"
                 ? "Comprende una idea, descubre cómo se resuelve y prueba por tu cuenta. Elige un tema; puedes volver a sus bases cuando lo necesites."
-                : "Elige una idea y practica con ayuda. Siete minijuegos se alternan en las actividades compatibles; también puedes escribir tu respuesta. Pedir una pista forma parte de aprender."}
+                : "Elige una idea y practica con ayuda. Nueve minijuegos se alternan en las actividades compatibles; también puedes escribir tu respuesta. Pedir una pista forma parte de aprender."}
             </p>
             <nav
               aria-label="Unidades de aprendizaje"
@@ -286,7 +313,7 @@ export function LearningHome({
                 <ArrowRight size={16} aria-hidden="true" />
               </Link>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {LEARNING_UNITS.map((unit, index) => {
                 const lessons = LESSONS.filter(
                   (lesson) => lesson.unitId === unit.id,
@@ -305,7 +332,7 @@ export function LearningHome({
                       <span
                         className={`rounded-lg border px-2.5 py-1 text-xs font-bold ${theme.surface} ${theme.accent}`}
                       >
-                        UNIDAD 0{index + 1}
+                        UNIDAD {String(index + 1).padStart(2, "0")}
                       </span>
                       <span
                         aria-hidden="true"
@@ -352,7 +379,7 @@ export function LearningHome({
                   aria-hidden="true"
                   className={`grid size-11 shrink-0 place-items-center rounded-xl border text-sm font-bold ${unitStyles[unit.id].surface} ${unitStyles[unit.id].accent}`}
                 >
-                  0{unitIndex + 1}
+                  {String(unitIndex + 1).padStart(2, "0")}
                 </span>
                 <div>
                   <h2
@@ -380,6 +407,18 @@ export function LearningHome({
                   ),
                 )}
               </div>
+              <MixedReviewCard
+                childId={childId}
+                unitId={unit.id}
+                completed={
+                  LESSONS.filter(
+                    (lesson) =>
+                      lesson.unitId === unit.id &&
+                      data.progress[lesson.id]?.completedAt,
+                  ).length
+                }
+                review={data.reviews[mixedReviewId(unit.id)]}
+              />
             </section>
           ))
         )}
@@ -391,7 +430,7 @@ export function LearningHome({
                 href: "/practicar",
                 icon: Gamepad2,
                 title: "Practica a tu manera",
-                body: "Siete minijuegos, respuestas escritas y pistas para seguir probando.",
+                body: "Nueve minijuegos, respuestas escritas y pistas para seguir probando.",
                 action: "Elegir un tema",
               },
               {
@@ -496,5 +535,54 @@ function LessonCard({
         <ArrowRight size={17} aria-hidden="true" />
       </span>
     </Link>
+  );
+}
+
+function MixedReviewCard({
+  childId,
+  unitId,
+  completed,
+  review,
+}: {
+  childId: string;
+  unitId: UnitId;
+  completed: number;
+  review?: MixedReviewState;
+}) {
+  const theme = unitStyles[unitId];
+  const ready = completed >= MIXED_REVIEW_MIN_LESSONS;
+  const body = (
+    <>
+      <span className={`grid size-10 shrink-0 place-items-center rounded-xl border ${theme.surface} ${theme.accent}`}>
+        <RotateCcw size={18} aria-hidden="true" />
+      </span>
+      <div className="flex-1">
+        <h3 className="font-bold text-white">Repaso mixto de la unidad</h3>
+        <p className="mt-1 text-sm leading-relaxed text-slate-400">
+          {ready
+            ? "Problemas de tus clases terminadas, mezclados: primero decide qué idea usar."
+            : `Se habilita al terminar ${MIXED_REVIEW_MIN_LESSONS} clases de esta unidad (llevas ${completed}).`}
+        </p>
+        {review?.bestResult && (
+          <p className="mt-2 text-xs text-slate-300">
+            Mejor sesión: {review.bestResult.correct} de {review.bestResult.total} de forma autónoma
+            {review.completedAt ? " · superado" : ""}
+          </p>
+        )}
+      </div>
+      {ready && <ArrowRight className={theme.accent} size={18} aria-hidden="true" />}
+    </>
+  );
+  return ready ? (
+    <Link
+      href={`/jugar/${childId}/aprende/${mixedReviewId(unitId)}`}
+      className="flex items-start gap-4 rounded-2xl border border-dashed border-slate-600 bg-slate-900/60 p-5 transition-colors hover:border-cyan-300/60"
+    >
+      {body}
+    </Link>
+  ) : (
+    <div className="flex items-start gap-4 rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 p-5">
+      {body}
+    </div>
   );
 }

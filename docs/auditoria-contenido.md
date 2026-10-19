@@ -2,7 +2,7 @@
 
 Fecha: 18 de octubre de 2026. Alcance: los 67 módulos de código de `src/lib/curriculum.ts`. Los módulos personalizados de cada familia requieren su propia revisión.
 
-Este inventario documenta cobertura y prioridades. **La revisión docente independiente está pendiente en todos los módulos y en las 12 lecciones nuevas**; no certifica corrección completa ni alineación oficial por grado o PISA.
+Este inventario documenta cobertura y prioridades. **La revisión docente independiente está pendiente en todos los módulos y en las 32 lecciones del programa**; no certifica corrección completa ni alineación oficial por grado o PISA.
 
 Correcciones verificadas en esta entrega: diez décimos equivalen a 1 y a 100%; x² = c positivo tiene dos soluciones reales, distinguidas de la longitud no negativa; la extrapolación de tablas declara la familia y = mx + b; las inecuaciones explican el cambio de sentido al multiplicar o dividir por un número negativo. Los ejemplos ahora desarrollan pasos y muestran las etiquetas de opciones, en vez de índices internos.
 
@@ -78,4 +78,4 @@ Los generadores anteriores mantienen sus pruebas de contrato (300 muestras por m
 | `logica-d9` | Pensar hacia atrás | Clase estructurada añadida: `modelar-ecuaciones`. Revisar y calibrar. | Pendiente |
 | `logica-d10` | Optimización | Completar secuencia de clase, ejemplos autorales, errores frecuentes, transferencia y repaso. | Pendiente |
 
-La secuencia de expansión posterior al programa inicial cubrirá geometría y medida, funciones, datos y probabilidad. Cada ampliación debe cumplir el estándar editorial y registrar la revisión con la [plantilla docente](revision-docente-plantilla.md).
+El programa ya cubre números enteros, operaciones con fracciones, proporcionalidad inversa, expresiones, ecuaciones completas, inecuaciones, funciones lineales, geometría y medida, y datos y probabilidad. Quedan sin clase: decimales, notación científica, ángulos, semejanza y ecuaciones cuadráticas. Cada ampliación debe cumplir el estándar editorial y registrar la revisión con la [plantilla docente](revision-docente-plantilla.md).

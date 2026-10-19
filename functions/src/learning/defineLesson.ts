@@ -12,6 +12,7 @@ type Draft = Omit<
   | "practice"
   | "checks"
   | "review"
+  | "mixed"
   | "application"
 > & {
   /** Seis formas paralelas (v = 0…5) de siete tareas:
@@ -70,6 +71,10 @@ export function defineLesson(draft: Draft): Lesson {
     // repaso diferido recupera la transferencia cercana (q5).
     checks: [bank(2, "a", [0, 1, 2, 4, 6]), bank(3, "b", [0, 1, 2, 4, 6])],
     review: bank(4, "r", [0, 2, 3, 5]),
+    // Problemas que no aparecen en ningún otro banco (forma 5, y la
+    // transferencia de la forma 0, que la guiada no usa): solo el repaso
+    // mixto de la unidad los muestra.
+    mixed: [...bank(5, "x", [1, 3, 6]), ...bank(0, "y", [5])],
     application: arrange({ ...application, id: "m-1" }),
   };
 }

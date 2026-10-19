@@ -28,7 +28,174 @@ function Bar({
     </div>
   );
 }
+function NumberLineVisual({ id }: { id: string }) {
+  const [start, setStart] = useState(-3);
+  const [move, setMove] = useState(5);
+  const end = start + move;
+  const ticks = Array.from({ length: 21 }, (_, i) => i - 10);
+  return (
+    <>
+      <label htmlFor={`${id}-start`} className="block text-sm">
+        Punto de partida: <strong>{start}</strong>
+      </label>
+      <input id={`${id}-start`} type="range" min={-10} max={10} value={start}
+        onChange={(e) => setStart(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
+      <label htmlFor={`${id}-move`} className="block text-sm">
+        Sumar (positivo: derecha; negativo: izquierda): <strong>{move}</strong>
+      </label>
+      <input id={`${id}-move`} type="range" min={-10} max={10} value={move}
+        onChange={(e) => setMove(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
+      <div role="img" aria-label={`Recta numérica: de ${start} se avanza ${move} y se llega a ${end}`}
+        className="grid grid-cols-[repeat(21,minmax(0,1fr))] gap-px rounded-lg bg-slate-950 p-2 text-center text-[10px]">
+        {ticks.map((t) => (
+          <span key={t} aria-hidden="true"
+            className={`rounded py-1 ${t === start ? "bg-slate-500 text-white" : t === end ? "bg-cyan-300 font-bold text-slate-950" : t === 0 ? "text-white" : "text-slate-400"}`}>
+            {t}
+          </span>
+        ))}
+      </div>
+      <p className="text-xl font-bold text-white">
+        {start} + ({move}) = {end}
+        {Math.abs(end) > 10 && " (fuera de la recta dibujada)"}
+      </p>
+      <p className="text-sm text-slate-300">
+        Restar un número equivale a sumar su opuesto: {start} − ({-move}) = {end}.
+      </p>
+    </>
+  );
+}
+
+function AreaVisual({ id }: { id: string }) {
+  const [width, setWidth] = useState(6);
+  const [height, setHeight] = useState(4);
+  return (
+    <>
+      <label htmlFor={`${id}-w`} className="block text-sm">Base: <strong>{width} cm</strong></label>
+      <input id={`${id}-w`} type="range" min={1} max={12} value={width}
+        onChange={(e) => setWidth(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
+      <label htmlFor={`${id}-h`} className="block text-sm">Altura: <strong>{height} cm</strong></label>
+      <input id={`${id}-h`} type="range" min={1} max={8} value={height}
+        onChange={(e) => setHeight(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
+      <div role="img" aria-label={`Rectángulo de ${width} por ${height} cuadrados de 1 cm²`}
+        className="grid w-fit gap-px rounded bg-cyan-300/40 p-px"
+        style={{ gridTemplateColumns: `repeat(${width}, 1.25rem)` }}>
+        {Array.from({ length: width * height }, (_, i) => (
+          <span key={i} aria-hidden="true" className="size-5 bg-slate-800" />
+        ))}
+      </div>
+      <p className="font-mono text-sm">
+        Área = {width} × {height} = <strong>{width * height} cm²</strong> (cuadrados que cubren).<br />
+        Perímetro = 2 × ({width} + {height}) = <strong>{2 * (width + height)} cm</strong> (borde que rodea).<br />
+        Triángulo con la misma base y altura: {width} × {height} ÷ 2 = {(width * height) / 2} cm².
+      </p>
+    </>
+  );
+}
+
+function DataVisual({ id }: { id: string }) {
+  const [extra, setExtra] = useState(9);
+  const values = [3, 4, 4, 5, 6, extra].sort((a, b) => a - b);
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const median = (values[2] + values[3]) / 2;
+  return (
+    <>
+      <label htmlFor={`${id}-x`} className="block text-sm">
+        Cambia el último dato: <strong>{extra}</strong>
+      </label>
+      <input id={`${id}-x`} type="range" min={0} max={30} value={extra}
+        onChange={(e) => setExtra(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
+      <p className="font-mono text-lg">Datos ordenados: {values.join(", ")}</p>
+      <p className="text-sm">
+        Media = suma ÷ cantidad = {values.reduce((a, b) => a + b, 0)} ÷ 6 = <strong>{mean.toLocaleString("es", { maximumFractionDigits: 2 })}</strong>.<br />
+        Mediana = promedio de los dos centrales = <strong>{median.toLocaleString("es")}</strong>.<br />
+        Moda = <strong>4</strong> · Rango = {values[5]} − {values[0]} = <strong>{values[5] - values[0]}</strong>.
+      </p>
+      <p className="text-sm text-slate-300">
+        Lleva el dato a 30: la media cambia mucho y la mediana casi nada. Por eso la mediana resiste los valores extremos.
+      </p>
+    </>
+  );
+}
+
+function ProbabilityVisual({ id }: { id: string }) {
+  const [red, setRed] = useState(3);
+  const [blue, setBlue] = useState(5);
+  const total = red + blue;
+  return (
+    <>
+      <label htmlFor={`${id}-r`} className="block text-sm">Fichas rojas: <strong>{red}</strong></label>
+      <input id={`${id}-r`} type="range" min={0} max={10} value={red}
+        onChange={(e) => setRed(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
+      <label htmlFor={`${id}-b`} className="block text-sm">Fichas azules: <strong>{blue}</strong></label>
+      <input id={`${id}-b`} type="range" min={0} max={10} value={blue}
+        onChange={(e) => setBlue(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
+      <div role="img" aria-label={`${red} fichas rojas y ${blue} azules`} className="flex flex-wrap gap-1">
+        {Array.from({ length: total }, (_, i) => (
+          <span key={i} aria-hidden="true" className={`size-5 rounded-full ${i < red ? "bg-rose-400" : "bg-sky-400"}`} />
+        ))}
+      </div>
+      <p className="font-mono text-sm">
+        {total === 0
+          ? "La bolsa está vacía: no hay casos posibles."
+          : <>P(roja) = casos favorables ÷ casos posibles = {red}/{total} = {(red / total).toLocaleString("es", { maximumFractionDigits: 3 })}<br />P(no roja) = 1 − {red}/{total} = {blue}/{total}</>}
+      </p>
+    </>
+  );
+}
+
+function LinearVisual({ id }: { id: string }) {
+  const [slope, setSlope] = useState(3);
+  const [intercept, setIntercept] = useState(2);
+  return (
+    <>
+      <label htmlFor={`${id}-m`} className="block text-sm">Cambio por unidad (pendiente): <strong>{slope}</strong></label>
+      <input id={`${id}-m`} type="range" min={-4} max={6} value={slope}
+        onChange={(e) => setSlope(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
+      <label htmlFor={`${id}-b`} className="block text-sm">Valor inicial (x = 0): <strong>{intercept}</strong></label>
+      <input id={`${id}-b`} type="range" min={-5} max={10} value={intercept}
+        onChange={(e) => setIntercept(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
+      <p className="font-mono text-lg">y = {slope}x {intercept < 0 ? "−" : "+"} {Math.abs(intercept)}</p>
+      <table className="w-full text-left text-sm">
+        <caption className="sr-only">Tabla de la función lineal</caption>
+        <thead><tr><th className="p-2">x</th><th className="p-2">y</th><th className="p-2">Cambio de y</th></tr></thead>
+        <tbody>
+          {[0, 1, 2, 3].map((x) => (
+            <tr key={x} className="border-t border-slate-700">
+              <td className="p-2">{x}</td>
+              <td className="p-2">{slope * x + intercept}</td>
+              <td className="p-2">{x === 0 ? "—" : `+${slope}`.replace("+-", "−")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-sm text-slate-300">Cada vez que x aumenta 1, y cambia {slope}: esa es la pendiente.</p>
+    </>
+  );
+}
+
+const OWN_VISUALS: Partial<Record<Visual, (props: { id: string }) => React.JSX.Element>> = {
+  integers: NumberLineVisual,
+  area: AreaVisual,
+  data: DataVisual,
+  probability: ProbabilityVisual,
+  linear: LinearVisual,
+};
+
 export function LearningVisual({ kind }: { kind: Visual }) {
+  const Own = OWN_VISUALS[kind];
+  const ownId = useId();
+  if (Own)
+    return (
+      <section aria-label="Explora la idea" className="space-y-4 rounded-2xl border border-cyan-300/25 bg-cyan-950/20 p-5">
+        <h3 className="text-base font-bold text-cyan-200">Explora: cambia un valor y observa qué se conserva</h3>
+        <Own id={ownId} />
+        <p className="text-sm text-slate-300">Antes de mover el control, predice qué sucederá. Después explica el cambio con tus palabras.</p>
+      </section>
+    );
+  return <ClassicVisual kind={kind} />;
+}
+
+function ClassicVisual({ kind }: { kind: Visual }) {
   const [parts, setParts] = useState(kind === "percent" ? 100 : 4);
   const [taken, setTaken] = useState(kind === "percent" ? 75 : 3);
   const [factor, setFactor] = useState(2);

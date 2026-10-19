@@ -13,6 +13,12 @@ import type {
   LearningAction,
   LearningProgress,
 } from "./learning/types";
+import {
+  applyMixedReviewAction,
+  unitForReviewId,
+  unitLessons,
+} from "./learning/mixed";
+import type { MixedReviewState } from "./learning/types";
 import { readBalance } from "./stars";
 
 const stages = [
@@ -101,8 +107,9 @@ export const recordLearningAction = onCall(
         "Este perfil pertenece a otra sesión.",
       );
     const adventure = lessonId === "apagon";
-    const lesson = adventure ? undefined : getLesson(lessonId);
-    if ((!adventure && !lesson) || !validAction(action, adventure))
+    const reviewUnit = unitForReviewId(lessonId);
+    const lesson = adventure || reviewUnit ? undefined : getLesson(lessonId);
+    if ((!adventure && !reviewUnit && !lesson) || !validAction(action, adventure))
       throw new HttpsError(
         "invalid-argument",
         "La lección o la acción no es válida.",
@@ -122,11 +129,18 @@ export const recordLearningAction = onCall(
     const event = child.collection("learningEvidence").doc(operationId);
     try {
       return await db.runTransaction(async (tx) => {
-        const [profile, snapshot, previousEvent] = await Promise.all([
-          tx.get(child),
-          tx.get(progress),
-          tx.get(event),
-        ]);
+        const [profile, snapshot, previousEvent, ...unitProgress] =
+          await Promise.all([
+            tx.get(child),
+            tx.get(progress),
+            tx.get(event),
+            // El repaso mixto solo mezcla clases que el estudiante ya terminó.
+            ...(reviewUnit
+              ? unitLessons(reviewUnit).map((l) =>
+                  tx.get(child.collection("learningProgress").doc(l.id)),
+                )
+              : []),
+          ]);
         if (!profile.exists || profile.data()?.deleting)
           throw new HttpsError(
             "failed-precondition",
@@ -146,6 +160,7 @@ export const recordLearningAction = onCall(
         const previous = snapshot.data() as
           | LearningProgress
           | AdventureState
+          | MixedReviewState
           | undefined;
         if ((previous?.revision ?? 0) !== expectedRevision)
           throw new HttpsError(
@@ -159,7 +174,17 @@ export const recordLearningAction = onCall(
               action as AdventureAction,
               now,
             )
-          : applyLearningAction(
+          : reviewUnit
+            ? applyMixedReviewAction(
+                reviewUnit,
+                previous as MixedReviewState | undefined,
+                action as LearningAction,
+                unitProgress
+                  .filter((doc) => doc.exists && doc.data()?.completedAt)
+                  .map((doc) => doc.id),
+                now,
+              )
+            : applyLearningAction(
               lesson!,
               previous as LearningProgress | undefined,
               action as LearningAction,

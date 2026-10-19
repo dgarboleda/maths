@@ -753,10 +753,10 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         ),
         n(
           "q3",
-          `Una tarifa sigue y = ${k}x + ${fixed}. ¿Cuánto vale y cuando x = 0?`,
+          `Una tarifa sigue y = ${k}x${fixed ? ` + ${fixed}` : ""}. ¿Cuánto vale y cuando x = 0?`,
           fixed,
           [
-            `${k} × 0 + ${fixed} = ${fixed}.`,
+            fixed ? `${k} × 0 + ${fixed} = ${fixed}.` : `${k} × 0 = 0.`,
             fixed === 0
               ? "Sin término fijo, x = 0 da y = 0: compatible con proporcionalidad."
               : `Hay un término fijo de ${fixed}: la relación no es proporcional.`,

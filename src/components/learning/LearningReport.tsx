@@ -1,6 +1,12 @@
 "use client";
 
-import { getLesson, learningStatus, LESSONS } from "@/lib/learning/domain";
+import {
+  getLesson,
+  LEARNING_UNITS,
+  learningStatus,
+  LESSONS,
+  mixedReviewId,
+} from "@/lib/learning/domain";
 import { useLearningData } from "@/lib/learning/useLearningData";
 
 export function LearningReport({
@@ -78,7 +84,7 @@ export function LearningReport({
             <div className="overflow-x-auto">
               <table className="w-full min-w-[38rem] text-left text-sm">
                 <caption className="sr-only">
-                  Evidencias por lección del programa inicial
+                  Evidencias por lección del programa
                 </caption>
                 <thead>
                   <tr className="border-b border-slate-600 text-slate-300">
@@ -124,10 +130,45 @@ export function LearningReport({
               </table>
             </div>
           )}
+          {!compact &&
+            LEARNING_UNITS.some((unit) => data.reviews[mixedReviewId(unit.id)]?.lastResult) && (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[30rem] text-left text-sm">
+                  <caption className="mb-2 text-left font-semibold text-white">
+                    Repasos mixtos por unidad
+                  </caption>
+                  <thead>
+                    <tr className="border-b border-slate-600 text-slate-300">
+                      <th className="p-3">Unidad</th>
+                      <th className="p-3">Sesiones</th>
+                      <th className="p-3">Mejor resultado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {LEARNING_UNITS.map((unit) => {
+                      const review = data.reviews[mixedReviewId(unit.id)];
+                      if (!review?.lastResult) return null;
+                      return (
+                        <tr key={unit.id} className="border-b border-slate-800">
+                          <th scope="row" className="p-3 font-semibold text-white">
+                            {unit.title}
+                          </th>
+                          <td className="p-3 text-slate-300">{review.round}</td>
+                          <td className="p-3 text-cyan-200">
+                            {review.bestResult?.correct}/{review.bestResult?.total} de forma autónoma
+                            {review.completedAt ? " · superado" : ""}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           <p className="text-xs leading-relaxed text-slate-400">
             Una comprobación exige al menos 4 de 5 respuestas autónomas e
             incluye comprensión y aplicación. El repaso usa otras preguntas,
-            desde tres días después. Estos criterios corresponden al programa
+            desde tres días después. El repaso mixto mezcla problemas de varias clases de una unidad y se supera con 5 de 6. Estos criterios corresponden al programa
             inicial y se ajustarán mediante revisión pedagógica.
           </p>
         </>
