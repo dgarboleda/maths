@@ -195,3 +195,15 @@ test.each([
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   expect(await axe(container)).toHaveNoViolations();
 });
+
+test("Bloques en la clase: golpear con el borde de la paleta desvía la pelota hacia otras columnas", () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const { container } = render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  key("ArrowLeft"); // la pelota caerá sobre el borde derecho de la paleta
+  const ball = container.querySelector<HTMLElement>(".bg-yellow-300")!;
+  const startX = parseFloat(ball.style.left);
+  tick(3_000);
+  expect(Math.abs(parseFloat(ball.style.left) - startX)).toBeGreaterThan(10);
+});

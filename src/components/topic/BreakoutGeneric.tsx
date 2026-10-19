@@ -10,7 +10,7 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
-import { findHitBlock, hitsPaddle, stepBall, type Ball } from "./breakoutPhysics";
+import { findHitBlock, hitsPaddle, paddleBounceVx, stepBall, type Ball } from "./breakoutPhysics";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
 
@@ -244,7 +244,13 @@ export function BreakoutGeneric({
       let ball = stepBall(ballRef.current, dtSec, FIELD_WIDTH, BALL_SIZE);
 
       if (hitsPaddle(ball, BALL_SIZE, paddleX, PADDLE_WIDTH, PADDLE_Y)) {
-        ball = { ...ball, y: PADDLE_Y - BALL_SIZE, vy: -currentSpeed };
+        ball = {
+          ...ball,
+          y: PADDLE_Y - BALL_SIZE,
+          vy: -currentSpeed,
+          // En la clase la paleta apunta: todos los bloques son alcanzables.
+          ...(lesson ? { vx: paddleBounceVx(ball.x, BALL_SIZE, paddleX, PADDLE_WIDTH, currentSpeed) } : {}),
+        };
       }
 
       if (ball.y > 100) {
@@ -307,7 +313,7 @@ export function BreakoutGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-orange-300">Usa las flechas (o los botones) para mover la paleta.{lesson && " En esta clase solo cuenta romper el bloque correcto; los demás rebotes y perder la pelota no cuentan."}</p>
+            <p className="text-xs text-orange-300">Usa las flechas (o los botones) para mover la paleta.{lesson && " Golpea con un borde de la paleta para dirigir la pelota. En esta clase solo cuenta romper el bloque correcto; los demás rebotes y perder la pelota no cuentan."}</p>
           </div>
         )}
 

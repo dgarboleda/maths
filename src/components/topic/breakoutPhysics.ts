@@ -70,3 +70,14 @@ export function findHitBlock<T extends Rect>(ball: Ball, ballSize: number, block
   const ballRect: Rect = { x: ball.x, y: ball.y, w: ballSize, h: ballSize };
   return blocks.find((b) => rectsOverlap(ballRect, b));
 }
+
+/** Ángulo de "puntería" del modo clase: la velocidad horizontal depende de
+ *  dónde golpea la pelota en la paleta (centro = vertical, bordes = ±80% de
+ *  la velocidad). Sin esto la pelota sube siempre por la misma columna y un
+ *  bloque fuera de ella sería inalcanzable. Los niveles conservan el rebote
+ *  vertical de v1. */
+export function paddleBounceVx(ballX: number, ballSize: number, paddleX: number, paddleWidth: number, speed: number): number {
+  const half = paddleWidth / 2;
+  const offset = (ballX + ballSize / 2 - (paddleX + half)) / half;
+  return Math.max(-1, Math.min(1, offset)) * speed * 0.8;
+}
