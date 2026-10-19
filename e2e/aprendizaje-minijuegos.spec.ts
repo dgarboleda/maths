@@ -129,14 +129,22 @@ test("Cohete: fracción exacta, sin reloj por defecto y recuperación de respues
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test("Invasión por turnos: el disparo envía la respuesta al servidor y no acredita dominio", async ({ page }) => {
+test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; sin estrellas ni dominio", async ({ page }) => {
   const q = await conceptThenNumeric(page, "fracciones-unidad", "invaders");
-  await page.getByRole("button", { name: "¡Defender!", exact: true }).click();
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  await expect(page.getByText(/Vidas/)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  // La formación es decorativa (aria-hidden): se lee para saber dónde apuntar.
+  const columns = await page.locator("main div.grid.px-2").first().locator(":scope > div").allTextContents();
+  const target = columns.findIndex((label) => label.trim() === "1/3");
+  expect(target).toBeGreaterThanOrEqual(0);
+  for (let col = 2; col !== target; col += Math.sign(target - col))
+    await page.keyboard.press(target > col ? "ArrowRight" : "ArrowLeft");
   const answer = savedAnswer(page);
-  await page.getByRole("button", { name: "Disparar a 1/3", exact: true }).click();
-  const progress = (await (await answer).json()).result.progress;
-  expect(progress.responses[`practice:${q.id}`]).toMatchObject({ response: String(1 / 3), correct: true, attempts: 1 });
-  expect(progress.checkPassedAt).toBeNull();
+  await page.keyboard.press("Space");
+  const saved = (await (await answer).json()).result;
+  expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
+  expect(saved.progress.checkPassedAt).toBeNull();
+  expect(saved.stars).toBe(0);
   await expect(page.getByRole("heading", { name: "¡Invasión repelida!" })).toBeVisible();
 });

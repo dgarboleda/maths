@@ -83,10 +83,16 @@ avance y vuelve a sortear el juego.
 
 El estanque usa turnos y botones accesibles, sin obstáculos ni reloj. Los
 cinco juegos de reflejos (serpiente, carrera, laberinto, invasores y bloques)
-conservan su tema pero, dentro de las clases, también funcionan por turnos
-(`LessonChoiceGame`): sin reloj, persecución, choques ni física, para que un
-fallo refleje las matemáticas y no los reflejos. Sus versiones completas siguen
-en los niveles y mundos. El cohete
+conservan su **mecánica real** dentro de las clases, pero solo una decisión
+deliberada envía una respuesta: comer un número, disparar a una columna,
+cruzar una puerta después de pulsar una flecha o romper el bloque correcto.
+Los fallos de reflejos —chocar, que alcance el fantasma, que la oleada
+aterrice, perder la pelota, llegar a una puerta sin decidir o un rebote contra
+un bloque incorrecto— no se registran, no restan vidas y la partida sigue con
+el mismo ejercicio (`src/lib/minigames/lessonArcade.tsx`). En los bloques, qué
+bloque toca la pelota depende del rebote, así que solo el correcto cuenta y
+ese juego no registra errores. Las vidas, estrellas y marcas solo existen en
+niveles y mundos. El cohete
 empieza sin límite de tiempo y permite activar un reto de 30 segundos. Se puede
 pausar; el reloj se detiene durante el guardado, al ocultar la pestaña y al
 revisar un error. Cada error pausa la partida hasta que el estudiante decide

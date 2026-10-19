@@ -10,6 +10,8 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
+import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
@@ -45,6 +47,7 @@ export function InvadersGeneric({
   onWin,
   bestScore,
   onGameOver,
+  exercise,
 }: {
   moduleId: string;
   soundOn: boolean;
@@ -54,8 +57,14 @@ export function InvadersGeneric({
   bestScore?: number | null;
   /** Se llama al agotar las vidas o al ganar, con las oleadas acertadas. */
   onGameOver?: (correctCount: number) => void;
+  /** Modo clase: misma oleada; solo disparar envía una respuesta y que la
+   *  oleada aterrice no cuenta (vuelve a empezar arriba). */
+  exercise?: LessonExercise;
 }) {
-  const mod = getModule(moduleId)!;
+  const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
+  const { lesson, frozen, solved } = lessonArcadeState(exercise);
+  const goal = lesson ? 1 : GOAL;
+  const [reflexMiss, setReflexMiss] = useState(false);
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
@@ -63,7 +72,8 @@ export function InvadersGeneric({
   const [shipCol, setShipCol] = useState(CENTER_COL);
   const [waveRow, setWaveRow] = useState(0);
   const [lives, setLives] = useState(LIVES_START);
-  const [problem, setProblem] = useState<Problem>(() => mod.generateProblem());
+  const [legacyProblem, setProblem] = useState<Problem>(newProblem);
+  const problem = exercise?.problem ?? legacyProblem;
   const [candidates, setCandidates] = useState<number[]>([]);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
@@ -76,10 +86,10 @@ export function InvadersGeneric({
   const waveTickMs = scaleWithWave(WAVE_TICK_BASE_MS, WAVE_TICK_STEP_MS, wave, WAVE_TICK_FLOOR_MS);
 
   function spawnWave() {
-    const nextProblem = mod.generateProblem();
+    const nextProblem = newProblem();
     const spread = Math.max(8, COLS * 2);
     setProblem(nextProblem);
-    setCandidates(choiceSet(nextProblem.answer, spread, COLS));
+    setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, COLS));
     setWaveRow(0);
     waveAccRef.current = 0;
   }
@@ -96,7 +106,9 @@ export function InvadersGeneric({
   }
 
   function start() {
+    if (frozen) return;
     playSound("click", soundOn);
+    setReflexMiss(false);
     setShipCol(CENTER_COL);
     setLives(LIVES_START);
     setCorrectCount(0);
@@ -135,9 +147,25 @@ export function InvadersGeneric({
     busyRef.current = false;
   }
 
+  async function shootLesson(value: number) {
+    busyRef.current = true;
+    setReflexMiss(false);
+    try {
+      // Se envía la columna disparada: el resultado lo decide el servidor.
+      await exercise!.onResponse(value);
+    } finally {
+      spawnWave();
+      busyRef.current = false;
+    }
+  }
+
   function handleShoot() {
-    if (busyRef.current || phase !== "playing") return;
+    if (busyRef.current || frozen || phase !== "playing") return;
     playSound("click", soundOn);
+    if (lesson) {
+      if (candidates[shipCol] !== undefined) void shootLesson(candidates[shipCol]);
+      return;
+    }
     const correct = candidates[shipCol] === problem.answer;
     resolveWave(correct);
   }
@@ -150,26 +178,34 @@ export function InvadersGeneric({
       waveAccRef.current -= waveTickMs;
       const nextRow = waveRow + 1;
       if (nextRow >= ROWS - 1) {
-        resolveWave(false); // llegó abajo sin que la dispararan a tiempo
+        if (lesson) {
+          // Aterrizó sin disparo: fallo de reflejos, la oleada vuelve arriba.
+          playSound("wrong", soundOn);
+          setReflexMiss(true);
+          spawnWave();
+        } else resolveWave(false); // llegó abajo sin que la dispararan a tiempo
       } else {
         setWaveRow(nextRow);
       }
     },
-    { running: phase === "playing" },
+    { running: phase === "playing" && !frozen && !solved },
   );
 
   function moveLeft() {
-    if (busyRef.current) return;
+    if (busyRef.current || frozen) return;
     setShipCol((c) => Math.max(0, c - 1));
   }
   function moveRight() {
-    if (busyRef.current) return;
+    if (busyRef.current || frozen) return;
     setShipCol((c) => Math.min(COLS - 1, c + 1));
   }
 
-  useArrowKeys({ left: moveLeft, right: moveRight, action: handleShoot }, { enabled: phase === "playing" });
+  useArrowKeys({ left: moveLeft, right: moveRight, action: handleShoot }, { enabled: phase === "playing" && !frozen && !solved });
 
-  const goalProgressPct = Math.min(100, (correctCount / GOAL) * 100);
+  const shownPhase = solved ? "over" : phase;
+  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownWin = lesson ? solved : win;
+  const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
   const wavePct = Math.min(100, (waveRow / (ROWS - 1)) * 100);
 
   return (
@@ -186,7 +222,7 @@ export function InvadersGeneric({
         </h2>
         <p className="mb-6 text-sm text-red-200">¡Apunta y dispara al resultado correcto antes de que aterrice!</p>
 
-        {phase === "start" && (
+        {shownPhase === "start" && (
           <div className="space-y-6 py-8">
             <div aria-hidden="true" className="animate-bounce text-6xl">
               👾
@@ -194,23 +230,24 @@ export function InvadersGeneric({
             <button
               type="button"
               onClick={start}
+              disabled={frozen}
               className="rounded-2xl border-2 border-white bg-gradient-to-r from-red-400 to-indigo-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-red-300">Usa las flechas (o los botones) para moverte, y espacio para disparar.</p>
+            <p className="text-xs text-red-300">Usa las flechas (o los botones) para moverte, y espacio para disparar.{lesson && " En esta clase, que la oleada aterrice no cuenta como respuesta."}</p>
           </div>
         )}
 
-        {phase === "playing" && (
+        {shownPhase === "playing" && (
           <div className="space-y-4">
             <div
               role="progressbar"
               aria-label="Oleadas acertadas"
               aria-valuemin={0}
-              aria-valuemax={GOAL}
-              aria-valuenow={correctCount}
-              aria-valuetext={`${correctCount} de ${GOAL} oleadas acertadas`}
+              aria-valuemax={goal}
+              aria-valuenow={shownCount}
+              aria-valuetext={`${shownCount} de ${goal} oleadas acertadas`}
               className="h-3 w-full overflow-hidden rounded-full bg-red-950"
             >
               <div
@@ -219,14 +256,14 @@ export function InvadersGeneric({
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-red-700 bg-red-950/80 p-3 text-sm">
+            {lesson ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-red-700 bg-red-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
               </span>
               <span>
                 <span aria-hidden="true">⭐ </span>Estrellas: <strong className="text-indigo-300">{starsThisRound}</strong>
               </span>
-            </div>
+            </div>}
 
             <div className="rounded-2xl border-2 border-indigo-400 bg-red-900/30 p-3">
               {problem.flavor && (
@@ -254,7 +291,7 @@ export function InvadersGeneric({
                       shipCol === i ? "bg-indigo-600 text-white" : "bg-slate-800 text-indigo-200"
                     }`}
                   >
-                    {v}
+                    {lessonLabel(exercise, v)}
                   </div>
                 ))}
               </div>
@@ -270,6 +307,7 @@ export function InvadersGeneric({
             <button
               type="button"
               onClick={handleShoot}
+              disabled={frozen}
               className="mx-auto hidden rounded-2xl bg-gradient-to-r from-red-500 to-indigo-600 px-8 py-3 font-bold text-white shadow-lg lg:block"
             >
               Disparar (espacio)
@@ -279,21 +317,21 @@ export function InvadersGeneric({
           </div>
         )}
 
-        {phase === "over" && (
+        {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
             <div aria-hidden="true" className="text-6xl">
-              {win ? "🏆" : "💥"}
+              {shownWin ? "🏆" : "💥"}
             </div>
-            <h3 className="text-3xl font-bold text-indigo-200">{win ? "¡Invasión repelida!" : "¡Buen intento!"}</h3>
+            <h3 className="text-3xl font-bold text-indigo-200">{shownWin ? "¡Invasión repelida!" : "¡Buen intento!"}</h3>
             <div className="mx-auto max-w-xs space-y-2 rounded-xl border border-red-700 bg-red-950 p-4 text-left">
               <div className="flex justify-between">
                 <span>Oleadas acertadas:</span>
-                <strong className="text-indigo-300">{correctCount}</strong>
+                <strong className="text-indigo-300">{shownCount}</strong>
               </div>
-              <div className="flex justify-between">
+              {!lesson && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-red-300">+{starsThisRound} ★</strong>
-              </div>
+              </div>}
               {bestScore != null && (
                 <div className="flex justify-between border-t border-red-800 pt-2">
                   <span>Tu marca:</span>
@@ -301,9 +339,9 @@ export function InvadersGeneric({
                 </div>
               )}
             </div>
-            <button type="button" onClick={start} className="rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white hover:bg-indigo-500">
+            {!lesson && <button type="button" onClick={start} className="rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white hover:bg-indigo-500">
               Jugar de nuevo 🔄
-            </button>
+            </button>}
           </div>
         )}
       </div>

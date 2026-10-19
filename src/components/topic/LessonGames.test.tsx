@@ -1,14 +1,23 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { axe } from "jest-axe";
-import { FroggerGeneric } from "./FroggerGeneric";
+import { SnakeGeneric } from "./SnakeGeneric";
+import { RunnerGeneric } from "./RunnerGeneric";
+import { NumberPacGeneric } from "./NumberPacGeneric";
+import { InvadersGeneric } from "./InvadersGeneric";
+import { BreakoutGeneric } from "./BreakoutGeneric";
+import { REFLEX_MISS } from "@/lib/minigames/lessonArcade";import { FroggerGeneric } from "./FroggerGeneric";
 import { CoheteGeneric } from "./CoheteGeneric";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { LESSON_GAME_THEMES, LessonChoiceGame, type LessonChoiceGameId } from "@/components/learning/LessonChoiceGame";
 
 vi.mock("@/lib/curriculum", () => ({ getModule: () => { throw new Error("La clase no usa generadores antiguos"); } }));
 vi.mock("@/lib/gameSound", () => ({ playSound: vi.fn() }));
 vi.mock("@/lib/confetti", () => ({ triggerConfetti: vi.fn() }));
+// Celdas libres en orden de lectura: la posición de cada opción es fija.
+vi.mock("@/lib/problem", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/problem")>()),
+  shuffle: <T,>(items: T[]) => items,
+}));
 afterEach(() => vi.useRealTimers());
 
 function exercise(overrides: Partial<LessonExercise> = {}): LessonExercise {
@@ -78,28 +87,102 @@ test("Cohete empieza sin límite; pausar o guardar detiene el reloj opcional sin
   expect(screen.queryByText(/Estrellas/)).not.toBeInTheDocument();
 });
 
-test.each(Object.entries(LESSON_GAME_THEMES))("%s por turnos: envía el valor una vez, respeta la pausa y celebra lo guardado", async (game, theme) => {
-  let complete!: (saved: boolean) => void;
-  const onResponse = vi.fn(() => new Promise<boolean>((resolve) => { complete = resolve; }));
-  const data = exercise({ onResponse, paused: true });
-  const id = game as LessonChoiceGameId;
-  const view = render(<LessonChoiceGame game={id} exercise={data} />);
-  expect(screen.getByRole("button", { name: theme.start })).toBeDisabled();
-  view.rerender(<LessonChoiceGame game={id} exercise={{ ...data, paused: false }} />);
-  fireEvent.click(screen.getByRole("button", { name: theme.start }));
-  const choice = screen.getByRole("button", { name: `${theme.action} -2` });
-  fireEvent.click(choice);
-  fireEvent.click(choice);
-  expect(onResponse).toHaveBeenCalledExactlyOnceWith(-2);
-  expect(screen.queryByText(theme.success)).not.toBeInTheDocument();
-  await act(async () => { complete(true); });
-  view.rerender(<LessonChoiceGame game={id} exercise={{ ...data, paused: false, solved: true, disabled: true }} />);
-  expect(screen.getByText(theme.success)).toBeInTheDocument();
+
+function key(code: string) {
+  act(() => { window.dispatchEvent(new KeyboardEvent("keydown", { code })); });
+}
+/** En pasos cortos, cada uno con su render: los juegos leen estado de React. */
+function tick(ms: number) {
+  for (let t = 0; t < ms; t += 50) act(() => { vi.advanceTimersByTime(50); });
+}
+// Opciones de la clase en orden: [-4, -3, -2, -1, 0]; la respuesta es -2.
+
+test("Serpiente: chocar no envía respuesta ni termina; comer envía el valor", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const legacy = vi.fn();
+  const view = render(<SnakeGeneric moduleId="" soundOn={false} onAnswer={legacy} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  tick(450 * 6); // avanza a la derecha hasta el borde
+  expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
+  expect(screen.getByText(data.problem.prompt)).toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+  key("ArrowUp"); // columna 3 hasta la fila 0, donde está -1
+  tick(450 * 4);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-1);
+  view.rerender(<SnakeGeneric moduleId="" soundOn={false} onAnswer={legacy} exercise={{ ...data, solved: true }} />);
+  expect(screen.getByText("¡Lograste la meta!")).toBeInTheDocument();
+  expect(legacy).not.toHaveBeenCalled();
   expect(screen.queryByText(/Estrellas/)).not.toBeInTheDocument();
 });
 
-test.each(Object.keys(LESSON_GAME_THEMES))("%s por turnos no tiene problemas de accesibilidad", async (game) => {
-  const { container } = render(<LessonChoiceGame game={game as LessonChoiceGameId} exercise={exercise()} />);
-  fireEvent.click(screen.getByRole("button", { name: LESSON_GAME_THEMES[game as LessonChoiceGameId].start }));
+test("Serpiente: en pausa no se mueve ni responde", () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const view = render(<SnakeGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  view.rerender(<SnakeGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
+  key("ArrowUp");
+  tick(10_000);
+  expect(screen.queryByText(REFLEX_MISS)).not.toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+});
+
+test("Carrera: una puerta sin decidir carril no cuenta; tras elegir, envía ese carril", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  tick(2600);
+  expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+  key("ArrowDown"); // del carril 1 al 2, donde está -2
+  tick(2600);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
+});
+
+test("Laberinto: comer un número envía su valor", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  render(<NumberPacGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  tick(400); // de (0,0) a (1,0), donde está -4
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-4);
+  expect(screen.queryByText(/Vidas/)).not.toBeInTheDocument();
+});
+
+test("Invasión: aterrizar no cuenta; disparar envía la columna apuntada", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  render(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  tick(900 * 5);
+  expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+  key("Space"); // columna central: -2
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
+});
+
+test("Bloques: un rebote contra un bloque incorrecto o perder la pelota no cuentan", () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  tick(5_000);
+  expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+  expect(screen.queryByText(/Vidas/)).not.toBeInTheDocument();
+});
+
+test.each([
+  ["Serpiente", SnakeGeneric], ["Carrera", RunnerGeneric], ["Laberinto", NumberPacGeneric],
+  ["Invasión", InvadersGeneric], ["Bloques", BreakoutGeneric],
+] as const)("%s en modo clase no tiene problemas de accesibilidad", async (_name, Game) => {
+  const { container } = render(<Game moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={exercise()} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   expect(await axe(container)).toHaveNoViolations();
 });

@@ -11,6 +11,8 @@ import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import { findHitBlock, hitsPaddle, stepBall, type Ball } from "./breakoutPhysics";
+import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
 
 const FIELD_WIDTH = 100; // unidades porcentuales, no píxeles — ver breakoutPhysics.ts
 const BALL_SIZE = 4;
@@ -48,6 +50,7 @@ function buildBlocks(values: number[]): Block[] {
   let i = 0;
   for (let row = 0; row < BLOCK_ROWS; row++) {
     for (let col = 0; col < BLOCK_COLS; col++) {
+      if (i >= values.length) return blocks; // la clase trae menos opciones
       blocks.push({ id: `${row}-${col}`, x: col * BLOCK_W, y: ROW_Y[row], w: BLOCK_W, h: BLOCK_H, value: values[i] });
       i++;
     }
@@ -85,6 +88,7 @@ export function BreakoutGeneric({
   onWin,
   bestScore,
   onGameOver,
+  exercise,
 }: {
   moduleId: string;
   soundOn: boolean;
@@ -94,8 +98,15 @@ export function BreakoutGeneric({
   bestScore?: number | null;
   /** Se llama al agotar las vidas o al ganar, con los bloques acertados. */
   onGameOver?: (correctCount: number) => void;
+  /** Modo clase: misma física. Qué bloque toca la pelota depende del rebote,
+   *  no de una decisión: solo romper el correcto envía la respuesta; romper
+   *  otro o perder la pelota no cuenta. */
+  exercise?: LessonExercise;
 }) {
-  const mod = getModule(moduleId)!;
+  const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
+  const { lesson, frozen, solved } = lessonArcadeState(exercise);
+  const goal = lesson ? 1 : GOAL;
+  const [reflexMiss, setReflexMiss] = useState(false);
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
@@ -103,7 +114,8 @@ export function BreakoutGeneric({
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [paddleX, setPaddleX] = useState(PADDLE_START_X);
   const [lives, setLives] = useState(LIVES_START);
-  const [problem, setProblem] = useState<Problem>(() => mod.generateProblem());
+  const [legacyProblem, setProblem] = useState<Problem>(newProblem);
+  const problem = exercise?.problem ?? legacyProblem;
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
@@ -132,9 +144,9 @@ export function BreakoutGeneric({
   }
 
   function spawnRound() {
-    const nextProblem = mod.generateProblem();
+    const nextProblem = newProblem();
     const spread = Math.max(8, BLOCK_ROWS * BLOCK_COLS * 2);
-    const values = choiceSet(nextProblem.answer, spread, BLOCK_ROWS * BLOCK_COLS);
+    const values = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, BLOCK_ROWS * BLOCK_COLS);
     setProblem(nextProblem);
     setBlocks(buildBlocks(values));
   }
@@ -151,7 +163,9 @@ export function BreakoutGeneric({
   }
 
   function start() {
+    if (frozen) return;
     playSound("click", soundOn);
+    setReflexMiss(false);
     busyRef.current = false;
     setPaddleX(PADDLE_START_X);
     setLives(LIVES_START);
@@ -165,6 +179,25 @@ export function BreakoutGeneric({
 
   async function resolveBlock(block: Block) {
     const correct = block.value === problem.answer;
+    if (exercise) {
+      if (!correct) {
+        // Rebote, no decisión: el bloque se rompe sin registrar nada.
+        playSound("wrong", soundOn);
+        setBlocks((prev) => prev.filter((b) => b.id !== block.id));
+        setReflexMiss(true);
+        return;
+      }
+      busyRef.current = true;
+      setReflexMiss(false);
+      try {
+        await exercise.onResponse(block.value);
+      } finally {
+        spawnRound();
+        resetBall();
+        busyRef.current = false;
+      }
+      return;
+    }
     if (correct) {
       busyRef.current = true;
       playSound("correct", soundOn);
@@ -189,6 +222,12 @@ export function BreakoutGeneric({
 
   function handleFall() {
     playSound("wrong", soundOn);
+    if (lesson) {
+      // Perder la pelota es un fallo de reflejos: sin vidas ni respuesta.
+      setReflexMiss(true);
+      resetBall();
+      return;
+    }
     const remaining = lives - 1;
     setLives(remaining);
     if (remaining <= 0) {
@@ -224,7 +263,7 @@ export function BreakoutGeneric({
       ballRef.current = ball;
       syncBallDom();
     },
-    { running: phase === "playing" },
+    { running: phase === "playing" && !frozen && !solved },
   );
 
   function moveLeft() {
@@ -234,9 +273,12 @@ export function BreakoutGeneric({
     setPaddleX((x) => Math.min(FIELD_WIDTH - PADDLE_WIDTH, x + PADDLE_STEP));
   }
 
-  useArrowKeys({ left: moveLeft, right: moveRight }, { enabled: phase === "playing" });
+  useArrowKeys({ left: moveLeft, right: moveRight }, { enabled: phase === "playing" && !frozen && !solved });
 
-  const goalProgressPct = Math.min(100, (correctCount / GOAL) * 100);
+  const shownPhase = solved ? "over" : phase;
+  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownWin = lesson ? solved : win;
+  const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-6 text-white shadow-2xl">
@@ -252,7 +294,7 @@ export function BreakoutGeneric({
         </h2>
         <p className="mb-6 text-sm text-orange-200">¡Rompe el bloque con el resultado correcto sin dejar caer la pelota!</p>
 
-        {phase === "start" && (
+        {shownPhase === "start" && (
           <div className="space-y-6 py-8">
             <div aria-hidden="true" className="animate-bounce text-6xl">
               🧱
@@ -260,23 +302,24 @@ export function BreakoutGeneric({
             <button
               type="button"
               onClick={start}
+              disabled={frozen}
               className="rounded-2xl border-2 border-white bg-gradient-to-r from-orange-400 to-violet-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-orange-300">Usa las flechas (o los botones) para mover la paleta.</p>
+            <p className="text-xs text-orange-300">Usa las flechas (o los botones) para mover la paleta.{lesson && " En esta clase solo cuenta romper el bloque correcto; los demás rebotes y perder la pelota no cuentan."}</p>
           </div>
         )}
 
-        {phase === "playing" && (
+        {shownPhase === "playing" && (
           <div className="space-y-4">
             <div
               role="progressbar"
               aria-label="Bloques acertados"
               aria-valuemin={0}
-              aria-valuemax={GOAL}
-              aria-valuenow={correctCount}
-              aria-valuetext={`${correctCount} de ${GOAL} bloques acertados`}
+              aria-valuemax={goal}
+              aria-valuenow={shownCount}
+              aria-valuetext={`${shownCount} de ${goal} bloques acertados`}
               className="h-3 w-full overflow-hidden rounded-full bg-orange-950"
             >
               <div
@@ -285,14 +328,14 @@ export function BreakoutGeneric({
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-orange-700 bg-orange-950/80 p-3 text-sm">
+            {lesson ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-orange-700 bg-orange-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
               </span>
               <span>
                 <span aria-hidden="true">⭐ </span>Estrellas: <strong className="text-violet-300">{starsThisRound}</strong>
               </span>
-            </div>
+            </div>}
 
             <div className="rounded-2xl border-2 border-violet-400 bg-orange-900/30 p-3">
               {problem.flavor && (
@@ -315,7 +358,7 @@ export function BreakoutGeneric({
                   className="absolute flex items-center justify-center rounded-sm border border-orange-950 bg-slate-800 text-xs font-bold text-orange-200"
                   style={{ left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` }}
                 >
-                  {b.value}
+                  {lessonLabel(exercise, b.value)}
                 </div>
               ))}
               <div
@@ -333,21 +376,21 @@ export function BreakoutGeneric({
           </div>
         )}
 
-        {phase === "over" && (
+        {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
             <div aria-hidden="true" className="text-6xl">
-              {win ? "🏆" : "🕳️"}
+              {shownWin ? "🏆" : "🕳️"}
             </div>
-            <h3 className="text-3xl font-bold text-violet-200">{win ? "¡Muro derribado!" : "¡Buen intento!"}</h3>
+            <h3 className="text-3xl font-bold text-violet-200">{shownWin ? "¡Muro derribado!" : "¡Buen intento!"}</h3>
             <div className="mx-auto max-w-xs space-y-2 rounded-xl border border-orange-700 bg-orange-950 p-4 text-left">
               <div className="flex justify-between">
                 <span>Bloques acertados:</span>
-                <strong className="text-violet-300">{correctCount}</strong>
+                <strong className="text-violet-300">{shownCount}</strong>
               </div>
-              <div className="flex justify-between">
+              {!lesson && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-orange-300">+{starsThisRound} ★</strong>
-              </div>
+              </div>}
               {bestScore != null && (
                 <div className="flex justify-between border-t border-orange-800 pt-2">
                   <span>Tu marca:</span>
@@ -355,9 +398,9 @@ export function BreakoutGeneric({
                 </div>
               )}
             </div>
-            <button type="button" onClick={start} className="rounded-xl bg-violet-600 px-8 py-3 font-bold text-white hover:bg-violet-500">
+            {!lesson && <button type="button" onClick={start} className="rounded-xl bg-violet-600 px-8 py-3 font-bold text-white hover:bg-violet-500">
               Jugar de nuevo 🔄
-            </button>
+            </button>}
           </div>
         )}
       </div>

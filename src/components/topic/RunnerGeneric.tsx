@@ -10,6 +10,8 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
+import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
 
 const LANES = 3;
 const CENTER_LANE = 1;
@@ -42,6 +44,7 @@ export function RunnerGeneric({
   onWin,
   bestScore,
   onGameOver,
+  exercise,
 }: {
   moduleId: string;
   soundOn: boolean;
@@ -51,15 +54,24 @@ export function RunnerGeneric({
   bestScore?: number | null;
   /** Se llama al agotar las vidas o al ganar, con las puertas cruzadas. */
   onGameOver?: (correctCount: number) => void;
+  /** Modo clase: misma carrera; la puerta envía el carril solo si se eligió
+   *  carril durante esa puerta. Llegar sin decidir no cuenta. */
+  exercise?: LessonExercise;
 }) {
-  const mod = getModule(moduleId)!;
+  const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
+  const { lesson, frozen, solved } = lessonArcadeState(exercise);
+  const goal = lesson ? 1 : GOAL;
+  const [reflexMiss, setReflexMiss] = useState(false);
+  // Hubo una decisión de carril durante la puerta actual (modo clase).
+  const decidedRef = useRef(false);
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
   const [phase, setPhase] = useState<Phase>("start");
   const [lane, setLane] = useState(CENTER_LANE);
   const [lives, setLives] = useState(LIVES_START);
-  const [problem, setProblem] = useState<Problem>(() => mod.generateProblem());
+  const [legacyProblem, setProblem] = useState<Problem>(newProblem);
+  const problem = exercise?.problem ?? legacyProblem;
   const [candidates, setCandidates] = useState<number[]>([]);
   const [remainingMs, setRemainingMs] = useState(GATE_TIME_BASE_MS);
   const [gateTotalMs, setGateTotalMs] = useState(GATE_TIME_BASE_MS);
@@ -82,10 +94,11 @@ export function RunnerGeneric({
   const busyRef = useRef(false); // true mientras se espera onAnswer
 
   function spawnGate(countForWave: number) {
-    const nextProblem = mod.generateProblem();
+    const nextProblem = newProblem();
     const spread = Math.max(8, LANES * 2);
     setProblem(nextProblem);
-    setCandidates(choiceSet(nextProblem.answer, spread, LANES));
+    setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, LANES));
+    decidedRef.current = false;
     const wave = waveIndex(countForWave, 1);
     const total = scaleWithWave(GATE_TIME_BASE_MS, GATE_TIME_STEP_MS, wave, GATE_TIME_FLOOR_MS);
     setGateTotalMs(total);
@@ -105,7 +118,9 @@ export function RunnerGeneric({
   }
 
   function start() {
+    if (frozen) return;
     playSound("click", soundOn);
+    setReflexMiss(false);
     setLane(CENTER_LANE);
     setLives(LIVES_START);
     setCorrectCount(0);
@@ -118,6 +133,24 @@ export function RunnerGeneric({
 
   async function resolveGate() {
     busyRef.current = true;
+    if (exercise) {
+      if (!decidedRef.current) {
+        // Llegó la puerta sin elegir carril: es un fallo de reflejos.
+        playSound("wrong", soundOn);
+        setReflexMiss(true);
+        spawnGate(0);
+        busyRef.current = false;
+        return;
+      }
+      setReflexMiss(false);
+      try {
+        await exercise.onResponse(candidates[lane]);
+      } finally {
+        spawnGate(0);
+        busyRef.current = false;
+      }
+      return;
+    }
     const correct = candidates[lane] === problem.answer;
     playSound(correct ? "correct" : "wrong", soundOn);
     const stars = await onAnswer(correct);
@@ -155,26 +188,32 @@ export function RunnerGeneric({
         setRemainingMs(remainingRef.current);
       }
     },
-    { running: phase === "playing" },
+    { running: phase === "playing" && !frozen && !solved },
   );
 
+  const laneCount = lesson ? candidates.length || LANES : LANES;
   function moveLaneUp() {
-    if (busyRef.current) return;
+    if (busyRef.current || frozen) return;
+    decidedRef.current = true;
     setLane((l) => Math.max(0, l - 1));
   }
   function moveLaneDown() {
-    if (busyRef.current) return;
-    setLane((l) => Math.min(LANES - 1, l + 1));
+    if (busyRef.current || frozen) return;
+    decidedRef.current = true;
+    setLane((l) => Math.min(laneCount - 1, l + 1));
   }
 
-  useArrowKeys({ up: moveLaneUp, down: moveLaneDown }, { enabled: phase === "playing" });
+  useArrowKeys({ up: moveLaneUp, down: moveLaneDown }, { enabled: phase === "playing" && !frozen && !solved });
 
   function onTouchMove(dx: number, dy: number) {
     if (dy < 0 || dx < 0) moveLaneUp();
     else if (dy > 0 || dx > 0) moveLaneDown();
   }
 
-  const goalProgressPct = Math.min(100, (correctCount / GOAL) * 100);
+  const shownPhase = solved ? "over" : phase;
+  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownWin = lesson ? solved : win;
+  const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
   const gateApproachPct = Math.min(100, ((gateTotalMs - remainingMs) / gateTotalMs) * 100);
 
   return (
@@ -191,7 +230,7 @@ export function RunnerGeneric({
         </h2>
         <p className="mb-6 text-sm text-amber-200">¡Cambia de carril para cruzar la puerta con el resultado correcto!</p>
 
-        {phase === "start" && (
+        {shownPhase === "start" && (
           <div className="space-y-6 py-8">
             <div aria-hidden="true" className="animate-bounce text-6xl">
               🏃
@@ -199,23 +238,24 @@ export function RunnerGeneric({
             <button
               type="button"
               onClick={start}
+              disabled={frozen}
               className="rounded-2xl border-2 border-white bg-gradient-to-r from-amber-400 to-orange-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-amber-300">Usa las flechas arriba/abajo (o los botones) para cambiar de carril.</p>
+            <p className="text-xs text-amber-300">Usa las flechas arriba/abajo (o los botones) para cambiar de carril.{lesson && " En esta clase, la puerta solo cuenta como respuesta si pulsaste una flecha antes de llegar a ella."}</p>
           </div>
         )}
 
-        {phase === "playing" && (
+        {shownPhase === "playing" && (
           <div className="space-y-4">
             <div
               role="progressbar"
               aria-label="Puertas cruzadas"
               aria-valuemin={0}
-              aria-valuemax={GOAL}
-              aria-valuenow={correctCount}
-              aria-valuetext={`${correctCount} de ${GOAL} puertas cruzadas`}
+              aria-valuemax={goal}
+              aria-valuenow={shownCount}
+              aria-valuetext={`${shownCount} de ${goal} puertas cruzadas`}
               className="h-3 w-full overflow-hidden rounded-full bg-amber-950"
             >
               <div
@@ -224,14 +264,14 @@ export function RunnerGeneric({
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-amber-700 bg-amber-950/80 p-3 text-sm">
+            {lesson ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-amber-700 bg-amber-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
               </span>
               <span>
                 <span aria-hidden="true">⭐ </span>Estrellas: <strong className="text-amber-300">{starsThisRound}</strong>
               </span>
-            </div>
+            </div>}
 
             <div className="rounded-2xl border-2 border-orange-400 bg-amber-900/40 p-3">
               {problem.flavor && (
@@ -256,7 +296,7 @@ export function RunnerGeneric({
             </div>
 
             <div aria-hidden="true" className="mx-auto flex w-full max-w-sm flex-col gap-1">
-              {Array.from({ length: LANES }, (_, row) => (
+              {Array.from({ length: laneCount }, (_, row) => (
                 <div
                   key={row}
                   className={`${reducedMotion ? "" : "transition-colors duration-150"} flex h-12 items-center justify-between rounded-lg border px-4 font-bold ${
@@ -264,7 +304,7 @@ export function RunnerGeneric({
                   }`}
                 >
                   <span>{lane === row ? "🏃" : ""}</span>
-                  <span className="text-lg">{candidates[row]}</span>
+                  <span className="text-lg">{candidates[row] === undefined ? "" : lessonLabel(exercise, candidates[row])}</span>
                 </div>
               ))}
             </div>
@@ -273,21 +313,21 @@ export function RunnerGeneric({
           </div>
         )}
 
-        {phase === "over" && (
+        {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
             <div aria-hidden="true" className="text-6xl">
-              {win ? "🏁" : "🛑"}
+              {shownWin ? "🏁" : "🛑"}
             </div>
-            <h3 className="text-3xl font-bold text-orange-200">{win ? "¡Llegaste a la meta!" : "¡Buen intento!"}</h3>
+            <h3 className="text-3xl font-bold text-orange-200">{shownWin ? "¡Llegaste a la meta!" : "¡Buen intento!"}</h3>
             <div className="mx-auto max-w-xs space-y-2 rounded-xl border border-amber-700 bg-amber-950 p-4 text-left">
               <div className="flex justify-between">
                 <span>Puertas cruzadas:</span>
-                <strong className="text-amber-300">{correctCount}</strong>
+                <strong className="text-amber-300">{shownCount}</strong>
               </div>
-              <div className="flex justify-between">
+              {!lesson && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-orange-300">+{starsThisRound} ★</strong>
-              </div>
+              </div>}
               {bestScore != null && (
                 <div className="flex justify-between border-t border-amber-800 pt-2">
                   <span>Tu marca:</span>
@@ -295,9 +335,9 @@ export function RunnerGeneric({
                 </div>
               )}
             </div>
-            <button type="button" onClick={start} className="rounded-xl bg-orange-600 px-8 py-3 font-bold text-white hover:bg-orange-500">
+            {!lesson && <button type="button" onClick={start} className="rounded-xl bg-orange-600 px-8 py-3 font-bold text-white hover:bg-orange-500">
               Jugar de nuevo 🔄
-            </button>
+            </button>}
           </div>
         )}
       </div>
