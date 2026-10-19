@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { LESSONS, isAnswerCorrect } from "@/lib/learning/domain";
+import { getLesson, LESSONS, isAnswerCorrect } from "@/lib/learning/domain";
 import { lessonProblem, pickPracticeGame, PRACTICE_GAMES } from "./lessonExercise";
 
 describe("ejercicios de clase en los minijuegos", () => {
@@ -23,7 +23,7 @@ describe("ejercicios de clase en los minijuegos", () => {
     }
   });
   test.each([-12, 0, 0.375, 1 / 3])("admite signos, cero y fracciones (%s) sin generar opciones infinitamente", (answer) => {
-    const base = LESSONS[0].practice.find((q) => typeof q.answer === "number")!;
+    const base = getLesson("fracciones-unidad")!.practice.find((q) => typeof q.answer === "number")!;
     const problem = lessonProblem({ ...base, answer, errors: [{ value: answer + 2, feedback: "Revisa la unidad." }] });
     expect(problem?.choices).toContain(answer);
     expect(problem?.choices).toContain(answer + 2);
@@ -31,7 +31,7 @@ describe("ejercicios de clase en los minijuegos", () => {
     expect(problem?.choices?.every(Number.isFinite)).toBe(true);
   });
   test("una pregunta sobre fracciones conserva una representación fraccionaria legible", () => {
-    const question = LESSONS[0].practice[1];
+    const question = getLesson("fracciones-unidad")!.practice[1];
     const problem = lessonProblem(question)!;
     expect(question.answer).toBe(1 / 3);
     expect(problem.choiceLabels?.[problem.choices!.indexOf(1 / 3)]).toBe("1/3");

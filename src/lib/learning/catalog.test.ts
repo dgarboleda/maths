@@ -10,8 +10,8 @@ import {
 
 describe("Contrato editorial del programa inicial", () => {
   test("doce clases completas, sin prerrequisitos ausentes ni ciclos", () => {
-    expect(LESSONS).toHaveLength(12);
-    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(12);
+    expect(LESSONS.length).toBeGreaterThanOrEqual(24);
+    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(LESSONS.length);
     const visit = (id: string, path: string[] = []) => {
       expect(path).not.toContain(id);
       const l = getLesson(id);
@@ -19,7 +19,12 @@ describe("Contrato editorial del programa inicial", () => {
       l!.prerequisites.forEach((p) => visit(p, [...path, id]));
     };
     for (const unit of LEARNING_UNITS)
-      expect(LESSONS.filter((l) => l.unitId === unit.id)).toHaveLength(4);
+      expect(LESSONS.filter((l) => l.unitId === unit.id).length, unit.id).toBeGreaterThanOrEqual(2);
+    // Cada clase pertenece a una unidad existente y sus bases van antes en el catálogo.
+    LESSONS.forEach((l, i) => {
+      expect(LEARNING_UNITS.some((u) => u.id === l.unitId)).toBe(true);
+      l.prerequisites.forEach((p) => expect(LESSONS.findIndex((o) => o.id === p), `${l.id} ← ${p}`).toBeLessThan(i));
+    });
     for (const l of LESSONS) {
       visit(l.id);
       expect(l.sections).toHaveLength(3);
@@ -41,14 +46,15 @@ describe("Contrato editorial del programa inicial", () => {
         l.practice,
         ...l.checks,
         l.review,
+        l.mixed,
         [l.application],
       ]) {
-        expect(new Set(bank.map((q) => q.id)).size).toBe(bank.length);
+        expect(new Set(bank.map((q) => q.id)).size, l.id).toBe(bank.length);
         bank.forEach((q) => {
           expect(q.prompt.length).toBeGreaterThan(10);
           expect(q.solution.length).toBeGreaterThan(0);
           expect(q.hints).toHaveLength(3);
-          expect(isAnswerCorrect(q, String(q.answer))).toBe(true);
+          expect(isAnswerCorrect(q, String(q.answer)), `${l.id} ${q.id}`).toBe(true);
           if (q.choices) {
             expect(new Set(q.choices.map((o) => o.label)).size).toBe(
               q.choices.length,
@@ -57,11 +63,11 @@ describe("Contrato editorial del programa inicial", () => {
           } else expect(Number.isFinite(q.answer)).toBe(true);
           // Un error previsto nunca puede coincidir con la respuesta correcta.
           for (const error of q.errors ?? [])
-            expect(isAnswerCorrect(q, String(error.value))).toBe(false);
+            expect(isAnswerCorrect(q, String(error.value)), `${l.id} ${q.id} error ${error.value}`).toBe(false);
           // Cada alternativa incorrecta explica su propio error.
           for (const option of q.choices ?? [])
             if (option.id !== q.answer && bank !== l.diagnostic)
-              expect(option.feedback).not.toMatch(/^Revisa esa afirmación/);
+              expect(option.feedback, `${l.id} ${q.id}`).not.toMatch(/^Revisa esa afirmación/);
         });
       }
       // La aplicación es una tarea propia, distinta de los bancos.

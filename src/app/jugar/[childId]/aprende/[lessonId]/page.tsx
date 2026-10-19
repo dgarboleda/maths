@@ -1,4 +1,5 @@
 import { LessonPlayer } from "@/components/learning/LessonPlayer";
+import { MixedReviewPlayer } from "@/components/learning/MixedReviewPlayer";
 
 export default async function LessonPage({
   params,
@@ -11,6 +12,8 @@ export default async function LessonPage({
     params,
     searchParams,
   ]);
+  if (lessonId.startsWith("repaso-"))
+    return <MixedReviewPlayer key={`${childId}/${lessonId}`} childId={childId} reviewId={lessonId} />;
   return (
     <LessonPlayer
       key={`${childId}/${lessonId}/${modo ?? ""}`}

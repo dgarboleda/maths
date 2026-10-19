@@ -486,3 +486,54 @@ export function resolverEnunciado(prompt: string): number | null {
       return b === 0 ? null : a / b;
   }
 }
+
+/** Valor de Firestore en el formato de la API REST. */
+function valorRest(value: unknown): Record<string, unknown> {
+  if (value === null || value === undefined) return { nullValue: null };
+  if (typeof value === "boolean") return { booleanValue: value };
+  if (typeof value === "number")
+    return Number.isInteger(value) ? { integerValue: String(value) } : { doubleValue: value };
+  if (typeof value === "string") return { stringValue: value };
+  if (Array.isArray(value)) return { arrayValue: { values: value.map(valorRest) } };
+  return {
+    mapValue: {
+      fields: Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, valorRest(v)])),
+    },
+  };
+}
+
+/**
+ * Marca clases como terminadas. El avance educativo solo lo escribe
+ * Functions (las reglas lo impiden al navegador), así que se siembra con la
+ * credencial de administración del emulador, como haría el servidor.
+ */
+export async function sembrarClasesTerminadas(correo: string, childId: string, lessonIds: string[]): Promise<void> {
+  const app = initializeApp({ apiKey: "demo-api-key", projectId: "demo-numerario" }, `clases-${crypto.randomUUID()}`);
+  try {
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const { user } = await signInWithEmailAndPassword(auth, correo, CLAVE_PADRE);
+    const { getLesson, initialProgress } = await import("../src/lib/learning/domain");
+    const now = Date.now();
+    for (const lessonId of lessonIds) {
+      const progress = {
+        ...initialProgress(getLesson(lessonId)!),
+        revision: 1,
+        stage: "summary",
+        classCompleted: true,
+        examplesCompleted: true,
+        completedAt: now,
+        updatedAt: now,
+      };
+      const url = `http://127.0.0.1:8080/v1/projects/demo-numerario/databases/(default)/documents/parents/${user.uid}/children/${childId}/learningProgress/${lessonId}`;
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
+        body: JSON.stringify({ fields: Object.fromEntries(Object.entries(progress).map(([k, v]) => [k, valorRest(v)])) }),
+      });
+      if (!res.ok) throw new Error(`No se pudo sembrar ${lessonId}: ${res.status} ${await res.text()}`);
+    }
+  } finally {
+    await deleteApp(app);
+  }
+}

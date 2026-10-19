@@ -350,7 +350,7 @@ export function LessonPlayer({
   );
 }
 
-function QuestionActivity({
+export function QuestionActivity({
   lesson,
   question,
   progress,

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { LESSONS } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 
 async function accessible(page: Page) {
@@ -45,9 +46,9 @@ test("la portada orienta, las unidades abren sus clases y se puede retomar el av
 
   await page.locator(`a[href="${base}/aprende#unit-algebra"]`).click();
   await expect(
-    page.getByRole("heading", { name: "Álgebra para resolver situaciones" }),
+    page.getByRole("heading", { name: "Ecuaciones para resolver situaciones" }),
   ).toBeInViewport();
-  await expect(page.locator(`a[href^="${base}/aprende/"]`)).toHaveCount(12);
+  await expect(page.locator(`a[href^="${base}/aprende/"]`)).toHaveCount(LESSONS.length);
   await accessible(page);
   if (testInfo.project.name === "móvil") {
     const lastLesson = page.locator(`a[href^="${base}/aprende/"]`).last();
@@ -74,10 +75,10 @@ test("la portada orienta, las unidades abren sus clases y se puede retomar el av
   await expect(
     page.getByRole("heading", { name: "Practicar y ganar confianza" }),
   ).toBeVisible();
-  await expect(page.getByText(/Siete minijuegos se alternan/)).toBeVisible();
+  await expect(page.getByText(/Nueve minijuegos se alternan/)).toBeVisible();
   await expect(
     page.locator(`a[href^="${base}/aprende/"][href$="?modo=practice"]`),
-  ).toHaveCount(12);
+  ).toHaveCount(LESSONS.length);
   await accessible(page);
 
   await page.getByRole("link", { name: "Inicio", exact: true }).click();

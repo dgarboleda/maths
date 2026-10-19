@@ -8,7 +8,7 @@ import type {
   LearningAction,
   LearningProgress,
 } from "@/lib/learning/domain";
-import { getLesson } from "@/lib/learning/domain";
+import { getLesson, initialMixedReview, mixedQuestions, type MixedReviewState } from "@/lib/learning/domain";
 
 describe("Servicio educativo y reglas reales", () => {
   test("solo la sesión del perfil autorizado puede registrar evidencia", async () => {
@@ -380,6 +380,51 @@ describe("Servicio educativo y reglas reales", () => {
             )
           ).empty,
         ).toBe(true);
+    } finally {
+      await deleteApp(family.app);
+    }
+  });
+
+  test("el repaso mixto solo mezcla clases terminadas según el servidor y premia una vez", async () => {
+    const family = await createFamily();
+    try {
+      const revisions: Record<string, number> = {};
+      const send = async <T,>(lessonId: string, action: LearningAction) => {
+        const result = await call<{ progress: T & { revision: number }; stars: number }>(family.app, "recordLearningAction", {
+          parentId: family.parentId,
+          childId: family.childId,
+          lessonId,
+          expectedRevision: revisions[lessonId] ?? 0,
+          operationId: crypto.randomUUID(),
+          action,
+        });
+        revisions[lessonId] = result.progress.revision;
+        return result;
+      };
+      const complete = async (lessonId: string) => {
+        await send(lessonId, { kind: "begin", stage: "application" });
+        await send(lessonId, { kind: "reveal", questionId: "m-1" });
+        await send(lessonId, { kind: "next" });
+      };
+      await complete("enteros-recta");
+      // Con una sola clase terminada, el servidor rechaza la sesión.
+      await expect(send("repaso-numeros", { kind: "begin", stage: "review" })).rejects.toThrow(/al menos dos clases/);
+      await complete("enteros-suma-resta");
+      let state = (await send<MixedReviewState>("repaso-numeros", { kind: "begin", stage: "review" })).progress;
+      expect(new Set(state.items.map((i) => i.lessonId))).toEqual(new Set(["enteros-recta", "enteros-suma-resta"]));
+      let stars = 0;
+      for (const { question } of mixedQuestions({ ...initialMixedReview("numeros"), ...state })) {
+        await send("repaso-numeros", { kind: "answer", questionId: question.id, response: String(question.answer) });
+        const next = await send<MixedReviewState>("repaso-numeros", { kind: "next" });
+        stars += next.stars;
+        state = next.progress;
+      }
+      expect(state.lastResult).toMatchObject({ correct: 6, passed: true });
+      expect(stars).toBe(5);
+      // El navegador no puede fabricar un repaso superado.
+      await expect(
+        fs.setDoc(fs.doc(family.db, "parents", family.parentId, "children", family.childId, "learningProgress", "repaso-datos"), { completedAt: 1 }),
+      ).rejects.toThrow();
     } finally {
       await deleteApp(family.app);
     }
