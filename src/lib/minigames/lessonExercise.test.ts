@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { LESSONS, isAnswerCorrect } from "@/lib/learning/domain";
-import { lessonProblem } from "./lessonExercise";
+import { lessonProblem, pickPracticeGame, PRACTICE_GAMES } from "./lessonExercise";
 
 describe("ejercicios de clase en los minijuegos", () => {
   test("cada clase ofrece práctica numérica y conserva sus preguntas conceptuales", () => {
@@ -35,5 +35,24 @@ describe("ejercicios de clase en los minijuegos", () => {
     const problem = lessonProblem(question)!;
     expect(question.answer).toBe(1 / 3);
     expect(problem.choiceLabels?.[problem.choices!.indexOf(1 / 3)]).toBe("1/3");
+  });
+});
+
+describe("pickPracticeGame", () => {
+  test("reparte entre todos los juegos según el azar", () => {
+    const n = PRACTICE_GAMES.length;
+    expect(PRACTICE_GAMES.map((_, i) => pickPracticeGame(() => (i + 0.5) / n))).toEqual([...PRACTICE_GAMES]);
+    expect(pickPracticeGame(() => 0)).toBe("frogger");
+    expect(pickPracticeGame(() => 0.999999)).toBe("breakout");
+  });
+
+  test("las e2e pueden fijar el juego", () => {
+    const scope = globalThis as { __MATHS_TEST_PRACTICE_GAME__?: string };
+    scope.__MATHS_TEST_PRACTICE_GAME__ = "cohete";
+    try {
+      expect(pickPracticeGame(() => 0)).toBe("cohete");
+    } finally {
+      delete scope.__MATHS_TEST_PRACTICE_GAME__;
+    }
   });
 });

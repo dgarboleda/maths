@@ -37,8 +37,8 @@ import {
 import { LearningVisual } from "./LearningVisual";
 import {
   lessonProblem,
+  pickPracticeGame,
   type LessonExercise,
-  type PracticeMode,
 } from "@/lib/minigames/lessonExercise";
 
 const LessonArcade = dynamic(
@@ -60,7 +60,6 @@ export function LessonPlayer({
   const now = useLearningClock();
   const mutation = useLearningAction(data.parentId, childId);
   const [launched, setLaunched] = useState(false);
-  const [practiceMode, setPracticeMode] = useState<PracticeMode>("write");
   const lesson = getLesson(lessonId);
   const saved = data.progress[lessonId];
   const confirmed =
@@ -246,8 +245,6 @@ export function LessonPlayer({
                   evidence={evidence}
                   disabled={mutation.blocked}
                   run={run}
-                  practiceMode={practiceMode}
-                  setPracticeMode={setPracticeMode}
                 />
               )}
               {progress.stage === "summary" && (
@@ -344,8 +341,6 @@ function QuestionActivity({
   evidence,
   disabled,
   run,
-  practiceMode,
-  setPracticeMode,
 }: {
   lesson: Lesson;
   question: Question;
@@ -353,8 +348,6 @@ function QuestionActivity({
   evidence?: ResponseEvidence;
   disabled: boolean;
   run: (action: LearningAction) => Promise<boolean>;
-  practiceMode: PracticeMode;
-  setPracticeMode: (mode: PracticeMode) => void;
 }) {
   const [response, setResponse] = useState(evidence?.response ?? "");
   const [explanationOpen, setExplanationOpen] = useState(false);
@@ -362,8 +355,13 @@ function QuestionActivity({
   const [manuallyPaused, setManuallyPaused] = useState(false);
   const [acknowledgedAttempts, setAcknowledgedAttempts] = useState(0);
   const [timed, setTimed] = useState(false);
+  // El componente se monta por ejercicio (key), así que el sorteo es estable
+  // mientras dura la pregunta y cambia en la siguiente.
+  const [game] = useState(pickPracticeGame);
+  // Vía accesible: quien no pueda o no quiera jugar responde por escrito.
+  const [writing, setWriting] = useState(false);
   const problem = useMemo(() => lessonProblem(question), [question]);
-  const arcade = progress.stage === "practice" && practiceMode !== "write" && problem !== null;
+  const arcade = progress.stage === "practice" && !writing && problem !== null;
   const errorPaused = Boolean(evidence && !evidence.correct && evidence.attempts > acknowledgedAttempts);
   const paused = manuallyPaused || errorPaused;
   const assessment = ["diagnostic", "check", "review"].includes(progress.stage);
@@ -491,35 +489,15 @@ function QuestionActivity({
               ? "Completar un paso"
               : "Resolver"}
       </p>
-      {progress.stage === "practice" && (
-        <fieldset disabled={disabled} className="space-y-3 rounded-xl border border-cyan-300/25 bg-slate-950 p-4">
-          <legend className="px-1 font-bold text-cyan-200">Elige cómo practicar</legend>
-          <div className="flex flex-wrap gap-3">
-            {([
-              ["write", "Escribir"], ["frogger", "Estanque"], ["cohete", "Cohete"],
-            ] as const).map(([mode, label]) => (
-              <label key={mode} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-slate-600 px-3 py-2 text-sm text-white">
-                <input type="radio" name="practice-mode" value={mode}
-                  checked={practiceMode === mode}
-                  onChange={() => {
-                    setPracticeMode(mode);
-                    setManuallyPaused(false);
-                  }} />
-                {label}
-              </label>
-            ))}
-          </div>
-          <p className="text-xs leading-relaxed text-slate-300">
-            Los juegos practican las mismas matemáticas de esta clase. Puedes cambiar de modalidad y conservar tus respuestas y ayudas.
-            La comprobación vendrá después.
-          </p>
-          {practiceMode !== "write" && !problem && (
-            <p className="text-sm text-cyan-100">
-              Esta actividad trabaja una explicación o una decisión conceptual.
-              Respóndela aquí; el juego continúa en el siguiente ejercicio numérico.
-            </p>
-          )}
-        </fieldset>
+      {progress.stage === "practice" && problem && writing && (
+        <button
+          type="button"
+          className="min-h-11 text-sm font-bold text-cyan-200 underline"
+          disabled={disabled}
+          onClick={() => setWriting(false)}
+        >
+          Volver al juego
+        </button>
       )}
       {progress.stage === "diagnostic" && (
         <div className="rounded-xl bg-cyan-950/40 p-4 text-sm text-cyan-100">
@@ -564,7 +542,7 @@ function QuestionActivity({
               >
                 {paused ? "Reanudar partida" : "Pausar partida"}
               </button>
-              {practiceMode === "cohete" && (
+              {game === "cohete" && (
                 <label className="flex min-h-11 items-center gap-2 text-sm text-slate-200">
                   <input type="checkbox" checked={timed} disabled={disabled}
                     onChange={(event) => setTimed(event.target.checked)} />
@@ -580,7 +558,18 @@ function QuestionActivity({
                 : "Partida en pausa. Puedes pensar o consultar las ayudas antes de continuar."}
             </p>
           )}
-          <LessonArcade mode={practiceMode} exercise={exercise} />
+          <LessonArcade mode={game} exercise={exercise} />
+          <button
+            type="button"
+            className="min-h-11 text-sm font-bold text-cyan-200 underline"
+            disabled={disabled}
+            onClick={() => {
+              setWriting(true);
+              setManuallyPaused(false);
+            }}
+          >
+            Prefiero escribir la respuesta
+          </button>
         </div>
       ) : answerForm}
       <div aria-live="polite" aria-atomic="true">

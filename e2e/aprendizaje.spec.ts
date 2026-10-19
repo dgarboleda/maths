@@ -19,7 +19,15 @@ async function answer(
   const radio = question.choices?.find((option) => option.id === value);
   if (radio)
     await page.getByRole("radio", { name: radio.label, exact: true }).check();
-  else await page.getByRole("textbox", { name: /Tu respuesta/ }).fill(value);
+  else {
+    // En la práctica la app sortea un juego; este recorrido responde por la
+    // vía escrita, siempre disponible.
+    const textbox = page.getByRole("textbox", { name: /Tu respuesta/ });
+    const write = page.getByRole("button", { name: "Prefiero escribir la respuesta", exact: true });
+    await expect(textbox.or(write).first()).toBeVisible();
+    if (await write.isVisible()) await write.click();
+    await textbox.fill(value);
+  }
   await page
     .getByRole("button", {
       name: /^(Comprobar mi respuesta|Registrar mi respuesta)$/,
@@ -32,6 +40,8 @@ async function advance(page: Page) {
   });
   await expect(next).toBeEnabled();
   await next.click();
+  // Esperar a que se monte la actividad siguiente antes de responderla.
+  await expect(next).toHaveCount(0);
 }
 
 test("clase, ejemplos, práctica con reintento, comprobación y aplicación con progreso real", async ({

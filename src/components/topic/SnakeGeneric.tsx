@@ -10,6 +10,8 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
+import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
 
 const GRID_SIZE = 8;
 // Más bajo que el GOAL=8 del Cohete (30s contrarreloj): cada acierto acá
@@ -76,6 +78,7 @@ export function SnakeGeneric({
   onWin,
   bestScore,
   onGameOver,
+  exercise,
 }: {
   moduleId: string;
   soundOn: boolean;
@@ -85,14 +88,21 @@ export function SnakeGeneric({
   bestScore?: number | null;
   /** Se llama al chocar o al ganar, con las respuestas acertadas de la partida. */
   onGameOver?: (correctCount: number) => void;
+  /** Modo clase: misma mecánica; solo comer un número envía una respuesta y
+   *  chocar no cuenta (ver `lessonArcade.tsx`). */
+  exercise?: LessonExercise;
 }) {
-  const mod = getModule(moduleId)!;
+  const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
+  const { lesson, frozen, solved } = lessonArcadeState(exercise);
+  const goal = lesson ? 1 : GOAL;
+  const [reflexMiss, setReflexMiss] = useState(false);
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
   const [phase, setPhase] = useState<Phase>("start");
   const [snake, setSnake] = useState<Cell[]>(INITIAL_SNAKE);
-  const [problem, setProblem] = useState<Problem>(() => mod.generateProblem());
+  const [legacyProblem, setProblem] = useState<Problem>(newProblem);
+  const problem = exercise?.problem ?? legacyProblem;
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
@@ -107,9 +117,9 @@ export function SnakeGeneric({
   const candidateCount = Math.round(scaleWithWave(CANDIDATES_BASE, CANDIDATES_STEP, wave, CANDIDATES_MAX));
 
   function spawnRound(currentSnake: Cell[]) {
-    const nextProblem = mod.generateProblem();
+    const nextProblem = newProblem();
     const spread = Math.max(8, candidateCount * 2);
-    const values = choiceSet(nextProblem.answer, spread, candidateCount);
+    const values = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, candidateCount);
     const cells = pickFreeCells(currentSnake, values.length);
     setProblem(nextProblem);
     setCandidates(cells.map((cell, i) => ({ ...cell, value: values[i] })));
@@ -126,8 +136,20 @@ export function SnakeGeneric({
     }
   }
 
+  /** Choque en modo clase: no es una respuesta; vuelve a empezar el recorrido. */
+  function reflexReset() {
+    playSound("wrong", soundOn);
+    setReflexMiss(true);
+    dirRef.current = INITIAL_DIR;
+    accRef.current = 0;
+    setSnake(INITIAL_SNAKE);
+    spawnRound(INITIAL_SNAKE);
+  }
+
   function start() {
+    if (frozen) return;
     playSound("click", soundOn);
+    setReflexMiss(false);
     dirRef.current = INITIAL_DIR;
     accRef.current = 0;
     busyRef.current = false;
@@ -142,6 +164,17 @@ export function SnakeGeneric({
   async function resolveEaten(eaten: Candidate, newSnake: Cell[]) {
     busyRef.current = true;
     setCandidates([]); // nada más para comer hasta que se resuelva esta ronda
+    setReflexMiss(false);
+    if (exercise) {
+      try {
+        // Se envía el valor comido: el resultado lo decide el servidor.
+        await exercise.onResponse(eaten.value);
+      } finally {
+        busyRef.current = false;
+        spawnRound(newSnake);
+      }
+      return;
+    }
     const correct = eaten.value === problem.answer;
     playSound(correct ? "correct" : "wrong", soundOn);
     const stars = await onAnswer(correct);
@@ -163,14 +196,16 @@ export function SnakeGeneric({
     const head = snake[0];
     const newHead = { x: head.x + dirRef.current.x, y: head.y + dirRef.current.y };
     if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
-      endGame(false, correctCount);
+      if (lesson) reflexReset();
+      else endGame(false, correctCount);
       return;
     }
     const eaten = candidates.find((c) => c.x === newHead.x && c.y === newHead.y);
     const grow = eaten ? eaten.value === problem.answer : false;
     const bodyToCheck = grow ? snake : snake.slice(0, -1);
     if (bodyToCheck.some((seg) => seg.x === newHead.x && seg.y === newHead.y)) {
-      endGame(false, correctCount);
+      if (lesson) reflexReset();
+      else endGame(false, correctCount);
       return;
     }
     const newSnake = grow ? [newHead, ...snake] : [newHead, ...snake.slice(0, -1)];
@@ -185,7 +220,7 @@ export function SnakeGeneric({
       accRef.current -= tickMs;
       step();
     },
-    { running: phase === "playing" },
+    { running: phase === "playing" && !frozen && !solved },
   );
 
   function trySetDirection(next: Cell) {
@@ -201,7 +236,7 @@ export function SnakeGeneric({
       left: () => trySetDirection({ x: -1, y: 0 }),
       right: () => trySetDirection({ x: 1, y: 0 }),
     },
-    { enabled: phase === "playing" },
+    { enabled: phase === "playing" && !frozen && !solved },
   );
 
   function onTouchMove(dx: number, dy: number) {
@@ -209,7 +244,10 @@ export function SnakeGeneric({
     else if (dy !== 0) trySetDirection({ x: 0, y: Math.sign(dy) });
   }
 
-  const progressPct = Math.min(100, (correctCount / GOAL) * 100);
+  const shownPhase = solved ? "over" : phase;
+  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownWin = lesson ? solved : win;
+  const progressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border-4 border-emerald-500 bg-slate-950 p-6 text-white shadow-2xl">
@@ -225,7 +263,7 @@ export function SnakeGeneric({
         </h2>
         <p className="mb-6 text-sm text-emerald-200">¡Guía la serpiente hasta el número que resuelve la operación!</p>
 
-        {phase === "start" && (
+        {shownPhase === "start" && (
           <div className="space-y-6 py-8">
             <div aria-hidden="true" className="animate-bounce text-6xl">
               🐍
@@ -233,23 +271,24 @@ export function SnakeGeneric({
             <button
               type="button"
               onClick={start}
+              disabled={frozen}
               className="rounded-2xl border-2 border-white bg-gradient-to-r from-emerald-400 to-teal-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-emerald-300">Usa las flechas del teclado (o los botones) para moverte.</p>
+            <p className="text-xs text-emerald-300">Usa las flechas del teclado (o los botones) para moverte.{lesson && " En esta clase, chocar no cuenta como respuesta."}</p>
           </div>
         )}
 
-        {phase === "playing" && (
+        {shownPhase === "playing" && (
           <div className="space-y-4">
             <div
               role="progressbar"
               aria-label="Avance de la serpiente"
               aria-valuemin={0}
-              aria-valuemax={GOAL}
-              aria-valuenow={correctCount}
-              aria-valuetext={`${correctCount} de ${GOAL} respuestas correctas`}
+              aria-valuemax={goal}
+              aria-valuenow={shownCount}
+              aria-valuetext={`${shownCount} de ${goal} respuestas correctas`}
               className="h-3 w-full overflow-hidden rounded-full bg-emerald-950"
             >
               <div
@@ -258,14 +297,14 @@ export function SnakeGeneric({
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-emerald-700 bg-emerald-950/80 p-3 text-sm">
+            {lesson ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-emerald-700 bg-emerald-950/80 p-3 text-sm">
               <span>
                 Aciertos: <strong className="text-emerald-300">{correctCount}</strong>/{GOAL}
               </span>
               <span>
                 <span aria-hidden="true">⭐ </span>Estrellas: <strong className="text-teal-300">{starsThisRound}</strong>
               </span>
-            </div>
+            </div>}
 
             <div className="rounded-2xl border-2 border-emerald-400 bg-emerald-900/40 p-3">
               {problem.flavor && (
@@ -296,7 +335,7 @@ export function SnakeGeneric({
                   className="m-[4%] flex items-center justify-center rounded-md bg-slate-800 text-xs font-bold text-teal-200"
                   style={{ gridColumn: c.x + 1, gridRow: c.y + 1 }}
                 >
-                  {c.value}
+                  {lessonLabel(exercise, c.value)}
                 </div>
               ))}
             </div>
@@ -305,21 +344,21 @@ export function SnakeGeneric({
           </div>
         )}
 
-        {phase === "over" && (
+        {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
             <div aria-hidden="true" className="text-6xl">
-              {win ? "🐍🏆" : "💥"}
+              {shownWin ? "🐍🏆" : "💥"}
             </div>
-            <h3 className="text-3xl font-bold text-teal-200">{win ? "¡Lograste la meta!" : "¡Buen intento!"}</h3>
+            <h3 className="text-3xl font-bold text-teal-200">{shownWin ? "¡Lograste la meta!" : "¡Buen intento!"}</h3>
             <div className="mx-auto max-w-xs space-y-2 rounded-xl border border-emerald-700 bg-emerald-950 p-4 text-left">
               <div className="flex justify-between">
                 <span>Respuestas acertadas:</span>
-                <strong className="text-emerald-300">{correctCount}</strong>
+                <strong className="text-emerald-300">{shownCount}</strong>
               </div>
-              <div className="flex justify-between">
+              {!lesson && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-teal-300">+{starsThisRound} ★</strong>
-              </div>
+              </div>}
               {bestScore != null && (
                 <div className="flex justify-between border-t border-emerald-800 pt-2">
                   <span>Tu marca:</span>
@@ -327,9 +366,9 @@ export function SnakeGeneric({
                 </div>
               )}
             </div>
-            <button type="button" onClick={start} className="rounded-xl bg-teal-600 px-8 py-3 font-bold text-white hover:bg-teal-500">
+            {!lesson && <button type="button" onClick={start} className="rounded-xl bg-teal-600 px-8 py-3 font-bold text-white hover:bg-teal-500">
               Jugar de nuevo 🔄
-            </button>
+            </button>}
           </div>
         )}
       </div>

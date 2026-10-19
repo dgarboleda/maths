@@ -10,6 +10,8 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
+import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
 
 const GRID_SIZE = 5;
 const GOAL = 3; // pellets correctos para ganar
@@ -82,6 +84,7 @@ export function NumberPacGeneric({
   onWin,
   bestScore,
   onGameOver,
+  exercise,
 }: {
   moduleId: string;
   soundOn: boolean;
@@ -91,8 +94,14 @@ export function NumberPacGeneric({
   bestScore?: number | null;
   /** Se llama al agotar las vidas o al ganar, con los pellets acertados. */
   onGameOver?: (correctCount: number) => void;
+  /** Modo clase: mismo laberinto y fantasma; solo comer un número envía una
+   *  respuesta y que te alcance el fantasma no cuenta. */
+  exercise?: LessonExercise;
 }) {
-  const mod = getModule(moduleId)!;
+  const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
+  const { lesson, frozen, solved } = lessonArcadeState(exercise);
+  const goal = lesson ? 1 : GOAL;
+  const [reflexMiss, setReflexMiss] = useState(false);
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
@@ -100,7 +109,8 @@ export function NumberPacGeneric({
   const [player, setPlayer] = useState<Cell>(START_CELL);
   const [ghost, setGhost] = useState<Cell>(GHOST_START);
   const [lives, setLives] = useState(LIVES_START);
-  const [problem, setProblem] = useState<Problem>(() => mod.generateProblem());
+  const [legacyProblem, setProblem] = useState<Problem>(newProblem);
+  const problem = exercise?.problem ?? legacyProblem;
   const [pellets, setPellets] = useState<Candidate[]>([]);
   const [powerPellet, setPowerPellet] = useState<Cell | null>(null);
   const [invulnerable, setInvulnerable] = useState(false);
@@ -120,9 +130,9 @@ export function NumberPacGeneric({
   const pelletCount = Math.round(scaleWithWave(PELLET_COUNT_BASE, PELLET_COUNT_STEP, wave, PELLET_COUNT_MAX));
 
   function spawnRound(currentPlayer: Cell, currentGhost: Cell) {
-    const nextProblem = mod.generateProblem();
+    const nextProblem = newProblem();
     const spread = Math.max(8, pelletCount * 2);
-    const values = choiceSet(nextProblem.answer, spread, pelletCount);
+    const values = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, pelletCount);
     const cells = pickFreeCells([currentPlayer, currentGhost], values.length + 1);
     setProblem(nextProblem);
     setPellets(cells.slice(0, values.length).map((c, i) => ({ ...c, value: values[i] })));
@@ -141,7 +151,9 @@ export function NumberPacGeneric({
   }
 
   function start() {
+    if (frozen) return;
     playSound("click", soundOn);
+    setReflexMiss(false);
     dirRef.current = { x: 1, y: 0 };
     ghostDirRef.current = GHOST_INITIAL_DIR;
     playerAccRef.current = 0;
@@ -162,6 +174,12 @@ export function NumberPacGeneric({
   function handleGhostHit() {
     if (invulnRemainingRef.current > 0) return;
     playSound("wrong", soundOn);
+    if (lesson) {
+      // Fallo de reflejos: sin vidas ni respuesta, solo el respiro de siempre.
+      setReflexMiss(true);
+      setPlayer(START_CELL);
+      return;
+    }
     const remaining = lives - 1;
     setLives(remaining);
     if (remaining <= 0) {
@@ -174,6 +192,16 @@ export function NumberPacGeneric({
   async function resolvePellet(eaten: Candidate, atCell: Cell, ghostAt: Cell) {
     busyRef.current = true;
     setPellets([]);
+    setReflexMiss(false);
+    if (exercise) {
+      try {
+        await exercise.onResponse(eaten.value);
+      } finally {
+        spawnRound(atCell, ghostAt);
+        busyRef.current = false;
+      }
+      return;
+    }
     const correct = eaten.value === problem.answer;
     playSound(correct ? "correct" : "wrong", soundOn);
     const stars = await onAnswer(correct);
@@ -255,7 +283,7 @@ export function NumberPacGeneric({
         stepGhost();
       }
     },
-    { running: phase === "playing" },
+    { running: phase === "playing" && !frozen && !solved },
   );
 
   function trySetDirection(next: Cell) {
@@ -269,7 +297,7 @@ export function NumberPacGeneric({
       left: () => trySetDirection({ x: -1, y: 0 }),
       right: () => trySetDirection({ x: 1, y: 0 }),
     },
-    { enabled: phase === "playing" },
+    { enabled: phase === "playing" && !frozen && !solved },
   );
 
   function onTouchMove(dx: number, dy: number) {
@@ -277,7 +305,10 @@ export function NumberPacGeneric({
     else if (dy !== 0) trySetDirection({ x: 0, y: Math.sign(dy) });
   }
 
-  const progressPct = Math.min(100, (correctCount / GOAL) * 100);
+  const shownPhase = solved ? "over" : phase;
+  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownWin = lesson ? solved : win;
+  const progressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border-4 border-yellow-500 bg-slate-950 p-6 text-white shadow-2xl">
@@ -293,7 +324,7 @@ export function NumberPacGeneric({
         </h2>
         <p className="mb-6 text-sm text-yellow-200">¡Recoge el número que resuelve la operación y esquiva al fantasma!</p>
 
-        {phase === "start" && (
+        {shownPhase === "start" && (
           <div className="space-y-6 py-8">
             <div aria-hidden="true" className="animate-bounce text-6xl">
               🟡
@@ -301,23 +332,24 @@ export function NumberPacGeneric({
             <button
               type="button"
               onClick={start}
+              disabled={frozen}
               className="rounded-2xl border-2 border-white bg-gradient-to-r from-yellow-400 to-fuchsia-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-yellow-300">Usa las flechas del teclado (o los botones) para moverte.</p>
+            <p className="text-xs text-yellow-300">Usa las flechas del teclado (o los botones) para moverte.{lesson && " En esta clase, que te alcance el fantasma no cuenta como respuesta."}</p>
           </div>
         )}
 
-        {phase === "playing" && (
+        {shownPhase === "playing" && (
           <div className="space-y-4">
             <div
               role="progressbar"
               aria-label="Pellets acertados"
               aria-valuemin={0}
-              aria-valuemax={GOAL}
-              aria-valuenow={correctCount}
-              aria-valuetext={`${correctCount} de ${GOAL} pellets acertados`}
+              aria-valuemax={goal}
+              aria-valuenow={shownCount}
+              aria-valuetext={`${shownCount} de ${goal} pellets acertados`}
               className="h-3 w-full overflow-hidden rounded-full bg-yellow-950"
             >
               <div
@@ -327,17 +359,17 @@ export function NumberPacGeneric({
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-yellow-700 bg-yellow-950/80 p-3 text-sm">
-              <span aria-live="polite">
+              {lesson ? <ReflexNotice show={reflexMiss} /> : <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
-              </span>
+              </span>}
               {invulnerable && (
                 <span role="status" className="font-bold text-fuchsia-300">
                   <span aria-hidden="true">⭐ </span>Invulnerable
                 </span>
               )}
-              <span>
+              {!lesson && <span>
                 <span aria-hidden="true">⭐ </span>Estrellas: <strong className="text-yellow-300">{starsThisRound}</strong>
-              </span>
+              </span>}
             </div>
 
             <div className="rounded-2xl border-2 border-fuchsia-400 bg-yellow-900/30 p-3">
@@ -362,7 +394,7 @@ export function NumberPacGeneric({
                   className="m-[6%] flex items-center justify-center rounded-md bg-slate-800 text-xs font-bold text-fuchsia-200"
                   style={{ gridColumn: p.x + 1, gridRow: p.y + 1 }}
                 >
-                  {p.value}
+                  {lessonLabel(exercise, p.value)}
                 </div>
               ))}
               {powerPellet && (
@@ -395,21 +427,21 @@ export function NumberPacGeneric({
           </div>
         )}
 
-        {phase === "over" && (
+        {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
             <div aria-hidden="true" className="text-6xl">
-              {win ? "🏆" : "👻"}
+              {shownWin ? "🏆" : "👻"}
             </div>
-            <h3 className="text-3xl font-bold text-fuchsia-200">{win ? "¡Laberinto resuelto!" : "¡Buen intento!"}</h3>
+            <h3 className="text-3xl font-bold text-fuchsia-200">{shownWin ? "¡Laberinto resuelto!" : "¡Buen intento!"}</h3>
             <div className="mx-auto max-w-xs space-y-2 rounded-xl border border-yellow-700 bg-yellow-950 p-4 text-left">
               <div className="flex justify-between">
                 <span>Pellets acertados:</span>
-                <strong className="text-yellow-300">{correctCount}</strong>
+                <strong className="text-yellow-300">{shownCount}</strong>
               </div>
-              <div className="flex justify-between">
+              {!lesson && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-fuchsia-300">+{starsThisRound} ★</strong>
-              </div>
+              </div>}
               {bestScore != null && (
                 <div className="flex justify-between border-t border-yellow-800 pt-2">
                   <span>Tu marca:</span>
@@ -417,9 +449,9 @@ export function NumberPacGeneric({
                 </div>
               )}
             </div>
-            <button type="button" onClick={start} className="rounded-xl bg-fuchsia-600 px-8 py-3 font-bold text-white hover:bg-fuchsia-500">
+            {!lesson && <button type="button" onClick={start} className="rounded-xl bg-fuchsia-600 px-8 py-3 font-bold text-white hover:bg-fuchsia-500">
               Jugar de nuevo 🔄
-            </button>
+            </button>}
           </div>
         )}
       </div>

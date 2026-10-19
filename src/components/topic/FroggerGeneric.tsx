@@ -11,6 +11,7 @@ import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
@@ -65,6 +66,8 @@ export function FroggerGeneric({
   bestScore?: number | null;
   /** Se llama al agotar las vidas o al ganar, con los estanques cruzados. */
   onGameOver?: (correctCount: number) => void;
+  /** Modo clase: mismo estanque con obstáculo; llegar al nenúfar envía su
+   *  valor y chocar no cuenta (ver `lessonArcade.tsx`). */
   exercise?: LessonExercise;
 }) {
   const generateProblem = () =>
@@ -89,6 +92,7 @@ export function FroggerGeneric({
   const shownCount = exercise ? Number(exercise.solved) : correctCount;
   const shownWin = exercise ? exercise.solved : win;
   const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused);
+  const [reflexMiss, setReflexMiss] = useState(false);
 
   const obstacleDirRef = useRef(1);
   const accRef = useRef(0);
@@ -101,7 +105,7 @@ export function FroggerGeneric({
     const nextProblem = generateProblem();
     const spread = Math.max(8, COLS * 2);
     setProblem(nextProblem);
-    setCandidates(exercise ? nextProblem.choices! : choiceSet(nextProblem.answer, spread, COLS));
+    setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, COLS));
   }
 
   function endGame(didWin: boolean, finalCount: number) {
@@ -116,7 +120,9 @@ export function FroggerGeneric({
   }
 
   function start() {
+    if (controlsDisabled) return;
     playSound("click", soundOn);
+    setReflexMiss(false);
     setRow(startRow);
     setFrogX(CENTER_COL);
     setObstacleX(CENTER_COL);
@@ -135,10 +141,9 @@ export function FroggerGeneric({
     if (busyRef.current || controlsDisabled) return;
     busyRef.current = true;
     if (exercise) {
+      setReflexMiss(false);
       try {
-        setFrogX(chosenX);
-        setRow(0);
-        // Se envía el valor elegido: ni el resultado ni premios se deciden aquí.
+        // Se envía el valor del nenúfar: ni el resultado ni premios se deciden aquí.
         await exercise.onResponse(candidates[chosenX]);
         setRow(startRow);
       } finally {
@@ -170,6 +175,13 @@ export function FroggerGeneric({
 
   function handleHit() {
     playSound("wrong", soundOn);
+    if (exercise) {
+      // Chocar es un fallo de reflejos: sin vidas ni respuesta, vuelve a la orilla.
+      setReflexMiss(true);
+      setFrogX(CENTER_COL);
+      setRow(startRow);
+      return;
+    }
     const remaining = lives - 1;
     setLives(remaining);
     setFrogX(CENTER_COL);
@@ -231,12 +243,12 @@ export function FroggerGeneric({
       setObstacleX(next);
       if (next === frogX) handleHit();
     },
-    { running: !exercise && phase === "playing" },
+    { running: shownPhase === "playing" && !controlsDisabled },
   );
 
   useArrowKeys(
     { up: handleUp, down: handleDown, left: handleLeft, right: handleRight },
-    { enabled: !exercise && phase === "playing" },
+    { enabled: shownPhase === "playing" && !controlsDisabled },
   );
 
   function onTouchMove(dx: number, dy: number) {
@@ -247,7 +259,7 @@ export function FroggerGeneric({
   }
 
   const progressPct = Math.min(100, (shownCount / goal) * 100);
-  const inObstacleRow = !exercise && isObstacleRow(row);
+  const inObstacleRow = isObstacleRow(row);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border-4 border-sky-500 bg-slate-950 p-6 text-white shadow-2xl">
@@ -262,12 +274,12 @@ export function FroggerGeneric({
           🐸 Estanque de operaciones
         </h2>
         <p className="mb-6 text-sm text-sky-200">
-          {exercise ? "Piensa y elige un nenúfar para cruzar. En esta clase el estanque funciona por turnos, sin obstáculos ni reloj." : "¡Cruza saltando al nenúfar con el resultado correcto!"}
+          ¡Cruza saltando al nenúfar con el resultado correcto!
         </p>
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className={`${exercise ? "" : "animate-bounce"} text-6xl`}>
+            <div aria-hidden="true" className="animate-bounce text-6xl">
               🐸
             </div>
             <button
@@ -279,7 +291,7 @@ export function FroggerGeneric({
               ¡Empezar!
             </button>
             <p className="text-xs text-sky-300">
-              {exercise ? "Selecciona tu respuesta con los botones, usando el teclado o la pantalla táctil." : "Usa las flechas del teclado (o los botones) para saltar."}
+              Usa las flechas del teclado (o los botones) para saltar.{exercise && " En esta clase, chocar con el obstáculo no cuenta como respuesta."}
             </p>
           </div>
         )}
@@ -301,7 +313,7 @@ export function FroggerGeneric({
               />
             </div>
 
-            {!exercise && <div className="flex items-center justify-between rounded-xl border border-sky-700 bg-sky-950/80 p-3 text-sm">
+            {exercise ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-sky-700 bg-sky-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
               </span>
@@ -325,7 +337,7 @@ export function FroggerGeneric({
               {inObstacleRow ? "¡Esquiva el obstáculo!" : "Elige el nenúfar correcto"}
             </p>
 
-            {!exercise && <div
+            <div
               aria-hidden="true"
               className="mx-auto grid w-full max-w-sm gap-1 overflow-hidden rounded-2xl border-2 border-sky-700 bg-slate-900 p-2"
               style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
@@ -341,33 +353,12 @@ export function FroggerGeneric({
                       : "bg-lime-800/60 text-lime-100"
                   }`}
                 >
-                  {frogX === col ? "🐸" : inObstacleRow ? "" : candidates[col]}
+                  {frogX === col ? "🐸" : inObstacleRow ? "" : candidates[col] === undefined ? "" : lessonLabel(exercise, candidates[col])}
                 </div>
               ))}
-            </div>}
+            </div>
 
-            {exercise ? (
-              <div className="space-y-4 rounded-2xl border border-sky-500 bg-gradient-to-b from-sky-900 to-slate-900 p-3">
-                <div aria-hidden="true" className="relative h-12 rounded-xl bg-sky-950">
-                  <span className="absolute text-4xl transition-all duration-500 motion-reduce:transition-none"
-                    style={{ left: `${(frogX / (COLS - 1)) * 75}%`, bottom: row === 0 ? "12px" : "0px" }}>🐸</span>
-                </div>
-                <div role="group" aria-label="Nenúfares: elige tu respuesta" className="flex flex-wrap justify-center gap-3">
-                {candidates.map((value, col) => (
-                  <button
-                    key={value}
-                    type="button"
-                    disabled={controlsDisabled}
-                    onClick={() => void resolveCheckpoint(col)}
-                    className="min-h-14 min-w-14 rounded-2xl border-2 border-lime-300 bg-lime-900 px-3 py-4 font-bold text-lime-100 focus-visible:outline-2 focus-visible:outline-white disabled:opacity-50"
-                    aria-label={`Saltar al nenúfar ${exercise.problem.choiceLabels?.[col] ?? value}`}
-                  >
-                    <span aria-hidden="true">🌿 </span>{exercise.problem.choiceLabels?.[col] ?? value}
-                  </button>
-                ))}
-                </div>
-              </div>
-            ) : <TouchDPad onMove={onTouchMove} />}
+            <TouchDPad onMove={onTouchMove} />
           </div>
         )}
 

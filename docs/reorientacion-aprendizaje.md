@@ -70,16 +70,30 @@ Las métricas educativas nuevas se muestran primero en `/panel/progreso`; la act
 
 ## Minijuegos dentro de las clases
 
-En la etapa **Práctica** se puede elegir **Escribir**, **Estanque** (Frogger)
-o **Cohete**. Las doce clases ofrecen ejercicios numéricos para ambos juegos.
-Cada pregunta conserva su enunciado, respuesta, pistas y desarrollo del catálogo
-educativo compartido. Las preguntas de elección conceptual se responden en su
-formato habitual y la modalidad elegida continúa en el siguiente ejercicio
-numérico. Cambiar de modalidad conserva la evidencia de la pregunta; recargar
-conserva el avance y vuelve a la modalidad escrita.
+En la etapa **Práctica** la aplicación sortea, en cada ejercicio numérico, uno
+de los siete minijuegos: **Estanque** (Frogger), **Cohete**, **Serpiente
+numérica**, **Autopista de resultados**, **Laberinto de números**, **Invasión
+numérica** o **Bloques numéricos**. El estudiante no tiene que elegir. Las doce
+clases ofrecen ejercicios numéricos para todos. Cada pregunta conserva su
+enunciado, respuesta, pistas y desarrollo del catálogo educativo compartido.
+Las preguntas de elección conceptual se responden en su formato habitual.
+«Prefiero escribir la respuesta» ofrece siempre la vía escrita (accesibilidad o
+preferencia) y conserva la evidencia de la pregunta; recargar conserva el
+avance y vuelve a sortear el juego.
 
-El estanque usa turnos y botones accesibles, sin obstáculos ni reloj. El cohete
-empieza sin límite de tiempo y permite activar un reto de 30 segundos. Se puede
+Los seis juegos de reflejos (estanque, serpiente, carrera, laberinto,
+invasores y bloques) conservan su **mecánica real** dentro de las clases, pero solo una decisión
+deliberada envía una respuesta: llegar a un nenúfar, comer un número, disparar a una columna,
+cruzar una puerta después de pulsar una flecha o romper el bloque correcto.
+Los fallos de reflejos —chocar con el obstáculo o con el borde, que alcance el fantasma, que la oleada
+aterrice, perder la pelota, llegar a una puerta sin decidir o un rebote contra
+un bloque incorrecto— no se registran, no restan vidas y la partida sigue con
+el mismo ejercicio (`src/lib/minigames/lessonArcade.tsx`). En los bloques, qué
+bloque toca la pelota depende del rebote, así que solo el correcto cuenta y
+ese juego no registra errores. Las vidas, estrellas y marcas solo existen en
+niveles y mundos.
+
+El cohete empieza sin límite de tiempo y permite activar un reto de 30 segundos. Se puede
 pausar; el reloj se detiene durante el guardado, al ocultar la pestaña y al
 revisar un error. Cada error pausa la partida hasta que el estudiante decide
 reanudar, para leer la orientación y pedir pistas antes de reintentar el mismo

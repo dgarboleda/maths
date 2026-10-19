@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { findHitBlock, hitsPaddle, rectsOverlap, stepBall } from "./breakoutPhysics";
+import { findHitBlock, hitsPaddle, paddleBounceVx, rectsOverlap, stepBall } from "./breakoutPhysics";
 
 describe("rectsOverlap", () => {
   test("dos rectángulos que se solapan devuelven true", () => {
@@ -90,5 +90,17 @@ describe("findHitBlock", () => {
     ];
     const hit = findHitBlock({ x: 33, y: 2, vx: 0, vy: 0 }, 4, overlapping);
     expect(hit?.id).toBe("x");
+  });
+});
+
+describe("paddleBounceVx", () => {
+  test("el centro de la paleta devuelve la pelota en vertical", () => {
+    expect(paddleBounceVx(48, 4, 38, 24, 45)).toBe(0);
+  });
+  test("los bordes la desvían hacia su lado, con un tope", () => {
+    expect(paddleBounceVx(36, 4, 38, 24, 45)).toBeLessThan(0);
+    expect(paddleBounceVx(58, 4, 38, 24, 45)).toBeGreaterThan(0);
+    expect(paddleBounceVx(200, 4, 38, 24, 45)).toBeCloseTo(36);
+    expect(paddleBounceVx(-200, 4, 38, 24, 45)).toBeCloseTo(-36);
   });
 });
