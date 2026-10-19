@@ -91,7 +91,10 @@ un bloque incorrecto— no se registran, no restan vidas y la partida sigue con
 el mismo ejercicio (`src/lib/minigames/lessonArcade.tsx`). En los bloques, qué
 bloque toca la pelota depende del rebote, así que solo el correcto cuenta y
 ese juego no registra errores. Las vidas, estrellas y marcas solo existen en
-niveles y mundos.
+niveles y mundos. Para que lo que se registra sea siempre una decisión, en la
+clase la serpiente y el laberinto no avanzan solos hasta la primera flecha
+(al empezar, tras un fallo de reflejos y tras cada respuesta), y en la carrera
+cada puerta empieza fuera de los carriles: hay que elegir uno con las flechas.
 
 El cohete empieza sin límite de tiempo y permite activar un reto de 30 segundos. Se puede
 pausar; el reloj se detiene durante el guardado, al ocultar la pestaña y al

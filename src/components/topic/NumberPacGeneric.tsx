@@ -102,6 +102,10 @@ export function NumberPacGeneric({
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
   const goal = lesson ? 1 : GOAL;
   const [reflexMiss, setReflexMiss] = useState(false);
+  // Clase: el jugador no avanza solo hasta la primera flecha (al empezar,
+  // tras el fantasma o tras responder); el fantasma sí se mueve.
+  const [awaitingInput, setAwaitingInput] = useState(true);
+  const waiting = lesson && awaitingInput;
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
@@ -154,6 +158,7 @@ export function NumberPacGeneric({
     if (frozen) return;
     playSound("click", soundOn);
     setReflexMiss(false);
+    setAwaitingInput(true);
     dirRef.current = { x: 1, y: 0 };
     ghostDirRef.current = GHOST_INITIAL_DIR;
     playerAccRef.current = 0;
@@ -177,6 +182,7 @@ export function NumberPacGeneric({
     if (lesson) {
       // Fallo de reflejos: sin vidas ni respuesta, solo el respiro de siempre.
       setReflexMiss(true);
+      setAwaitingInput(true);
       setPlayer(START_CELL);
       return;
     }
@@ -198,6 +204,7 @@ export function NumberPacGeneric({
         await exercise.onResponse(eaten.value);
       } finally {
         spawnRound(atCell, ghostAt);
+        setAwaitingInput(true);
         busyRef.current = false;
       }
       return;
@@ -269,7 +276,7 @@ export function NumberPacGeneric({
         }
       }
 
-      if (!busyRef.current) {
+      if (!busyRef.current && !waiting) {
         playerAccRef.current += dtMs;
         if (playerAccRef.current >= PLAYER_TICK_MS) {
           playerAccRef.current -= PLAYER_TICK_MS;
@@ -288,6 +295,7 @@ export function NumberPacGeneric({
 
   function trySetDirection(next: Cell) {
     dirRef.current = next;
+    setAwaitingInput(false);
   }
 
   useArrowKeys(
@@ -337,7 +345,7 @@ export function NumberPacGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-yellow-300">Usa las flechas del teclado (o los botones) para moverte.{lesson && " En esta clase, que te alcance el fantasma no cuenta como respuesta."}</p>
+            <p className="text-xs text-yellow-300">Usa las flechas del teclado (o los botones) para moverte.{lesson && " En esta clase no avanzas hasta tu primera flecha, y que te alcance el fantasma no cuenta como respuesta."}</p>
           </div>
         )}
 
@@ -358,19 +366,31 @@ export function NumberPacGeneric({
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-yellow-700 bg-yellow-950/80 p-3 text-sm">
-              {lesson ? <ReflexNotice show={reflexMiss} /> : <span aria-live="polite">
-                <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
-              </span>}
-              {invulnerable && (
-                <span role="status" className="font-bold text-fuchsia-300">
-                  <span aria-hidden="true">⭐ </span>Invulnerable
+            {lesson ? (
+              // Sin vidas ni estrellas en la clase: solo avisos, sin recuadro vacío.
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <ReflexNotice show={reflexMiss} waiting={waiting} />
+                {invulnerable && (
+                  <span role="status" className="font-bold text-fuchsia-300">
+                    <span aria-hidden="true">⭐ </span>Invulnerable
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-between rounded-xl border border-yellow-700 bg-yellow-950/80 p-3 text-sm">
+                <span aria-live="polite">
+                  <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
                 </span>
-              )}
-              {!lesson && <span>
-                <span aria-hidden="true">⭐ </span>Estrellas: <strong className="text-yellow-300">{starsThisRound}</strong>
-              </span>}
-            </div>
+                {invulnerable && (
+                  <span role="status" className="font-bold text-fuchsia-300">
+                    <span aria-hidden="true">⭐ </span>Invulnerable
+                  </span>
+                )}
+                <span>
+                  <span aria-hidden="true">⭐ </span>Estrellas: <strong className="text-yellow-300">{starsThisRound}</strong>
+                </span>
+              </div>
+            )}
 
             <div className="rounded-2xl border-2 border-fuchsia-400 bg-yellow-900/30 p-3">
               {problem.flavor && (

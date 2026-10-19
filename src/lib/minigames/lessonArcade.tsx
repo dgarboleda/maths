@@ -30,10 +30,14 @@ export function lessonArcadeState(exercise: LessonExercise | undefined) {
   };
 }
 
-export function ReflexNotice({ show }: { show: boolean }) {
+export const AWAITING_INPUT = "Pulsa una flecha para empezar a moverte.";
+
+/** `waiting`: en la clase, la serpiente y el laberinto no se mueven solos
+ *  hasta la primera flecha, para que lo que se come sea siempre una decisión. */
+export function ReflexNotice({ show, waiting = false }: { show: boolean; waiting?: boolean }) {
   return (
     <p role="status" className="min-h-5 text-sm font-semibold text-amber-200">
-      {show ? REFLEX_MISS : ""}
+      {show ? REFLEX_MISS : waiting ? AWAITING_INPUT : ""}
     </p>
   );
 }

@@ -15,6 +15,7 @@ import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/li
 
 const LANES = 3;
 const CENTER_LANE = 1;
+const NO_LANE = -1;
 const LIVES_START = 3;
 const GOAL = 3; // puertas a cruzar para ganar
 const GATE_TIME_BASE_MS = 2500;
@@ -62,13 +63,13 @@ export function RunnerGeneric({
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
   const goal = lesson ? 1 : GOAL;
   const [reflexMiss, setReflexMiss] = useState(false);
-  // Hubo una decisión de carril durante la puerta actual (modo clase).
-  const decidedRef = useRef(false);
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
   const [phase, setPhase] = useState<Phase>("start");
-  const [lane, setLane] = useState(CENTER_LANE);
+  // Clase: cada puerta empieza fuera de los carriles (-1); el carril lo elige
+  // el jugador con una flecha, también si es el de la respuesta correcta.
+  const [lane, setLane] = useState(lesson ? NO_LANE : CENTER_LANE);
   const [lives, setLives] = useState(LIVES_START);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
@@ -98,7 +99,7 @@ export function RunnerGeneric({
     const spread = Math.max(8, LANES * 2);
     setProblem(nextProblem);
     setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, LANES));
-    decidedRef.current = false;
+    if (exercise) setLane(NO_LANE);
     const wave = waveIndex(countForWave, 1);
     const total = scaleWithWave(GATE_TIME_BASE_MS, GATE_TIME_STEP_MS, wave, GATE_TIME_FLOOR_MS);
     setGateTotalMs(total);
@@ -121,7 +122,7 @@ export function RunnerGeneric({
     if (frozen) return;
     playSound("click", soundOn);
     setReflexMiss(false);
-    setLane(CENTER_LANE);
+    setLane(lesson ? NO_LANE : CENTER_LANE);
     setLives(LIVES_START);
     setCorrectCount(0);
     setStarsThisRound(0);
@@ -134,7 +135,7 @@ export function RunnerGeneric({
   async function resolveGate() {
     busyRef.current = true;
     if (exercise) {
-      if (!decidedRef.current) {
+      if (lane === NO_LANE) {
         // Llegó la puerta sin elegir carril: es un fallo de reflejos.
         playSound("wrong", soundOn);
         setReflexMiss(true);
@@ -194,12 +195,10 @@ export function RunnerGeneric({
   const laneCount = lesson ? candidates.length || LANES : LANES;
   function moveLaneUp() {
     if (busyRef.current || frozen) return;
-    decidedRef.current = true;
     setLane((l) => Math.max(0, l - 1));
   }
   function moveLaneDown() {
     if (busyRef.current || frozen) return;
-    decidedRef.current = true;
     setLane((l) => Math.min(laneCount - 1, l + 1));
   }
 
@@ -243,7 +242,7 @@ export function RunnerGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-amber-300">Usa las flechas arriba/abajo (o los botones) para cambiar de carril.{lesson && " En esta clase, la puerta solo cuenta como respuesta si pulsaste una flecha antes de llegar a ella."}</p>
+            <p className="text-xs text-amber-300">Usa las flechas arriba/abajo (o los botones) para cambiar de carril.{lesson && " En esta clase empiezas fuera de los carriles: elige uno con las flechas antes de que llegue la puerta. Si no eliges, no cuenta como respuesta."}</p>
           </div>
         )}
 
@@ -296,6 +295,11 @@ export function RunnerGeneric({
             </div>
 
             <div aria-hidden="true" className="mx-auto flex w-full max-w-sm flex-col gap-1">
+              {lesson && lane === NO_LANE && (
+                <div className="flex h-10 items-center justify-center gap-2 rounded-lg border border-dashed border-amber-400 text-sm font-bold text-amber-200">
+                  <span>🏃</span> Elige un carril con las flechas
+                </div>
+              )}
               {Array.from({ length: laneCount }, (_, row) => (
                 <div
                   key={row}

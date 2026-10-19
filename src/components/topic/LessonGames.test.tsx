@@ -6,7 +6,7 @@ import { RunnerGeneric } from "./RunnerGeneric";
 import { NumberPacGeneric } from "./NumberPacGeneric";
 import { InvadersGeneric } from "./InvadersGeneric";
 import { BreakoutGeneric } from "./BreakoutGeneric";
-import { REFLEX_MISS } from "@/lib/minigames/lessonArcade";import { FroggerGeneric } from "./FroggerGeneric";
+import { AWAITING_INPUT, REFLEX_MISS } from "@/lib/minigames/lessonArcade";import { FroggerGeneric } from "./FroggerGeneric";
 import { CoheteGeneric } from "./CoheteGeneric";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 
@@ -112,11 +112,20 @@ test("Serpiente: chocar no envía respuesta ni termina; comer envía el valor", 
   const legacy = vi.fn();
   const view = render(<SnakeGeneric moduleId="" soundOn={false} onAnswer={legacy} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  // Quieta hasta la primera flecha: nada se come solo.
+  tick(5_000);
+  expect(screen.getByText(AWAITING_INPUT)).toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+  key("ArrowRight");
   tick(450 * 6); // avanza a la derecha hasta el borde
   expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
   expect(screen.getByText(data.problem.prompt)).toBeInTheDocument();
   expect(data.onResponse).not.toHaveBeenCalled();
-  key("ArrowUp"); // columna 3 hasta la fila 0, donde está -1
+  // Tras chocar vuelve a esperar; la flecha arriba la lleva por la columna 3
+  // hasta la fila 0, donde está -1.
+  tick(2_000);
+  expect(data.onResponse).not.toHaveBeenCalled();
+  key("ArrowUp");
   tick(450 * 4);
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-1);
@@ -138,15 +147,18 @@ test("Serpiente: en pausa no se mueve ni responde", () => {
   expect(data.onResponse).not.toHaveBeenCalled();
 });
 
-test("Carrera: una puerta sin decidir carril no cuenta; tras elegir, envía ese carril", async () => {
+test("Carrera: se empieza fuera de los carriles; sin elegir no cuenta y la primera flecha elige el primero", async () => {
   vi.useFakeTimers();
   const data = exercise();
   render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  expect(screen.getByText("Elige un carril con las flechas")).toBeInTheDocument();
   tick(2600);
   expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
   expect(data.onResponse).not.toHaveBeenCalled();
-  key("ArrowDown"); // del carril 1 al 2, donde está -2
+  key("ArrowDown"); // fuera → carril 0
+  key("ArrowDown");
+  key("ArrowDown"); // carril 2, donde está -2
   tick(2600);
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
@@ -157,6 +169,10 @@ test("Laberinto: comer un número envía su valor", async () => {
   const data = exercise();
   render(<NumberPacGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  tick(3_000); // sin flecha no avanza: nada se come solo
+  expect(data.onResponse).not.toHaveBeenCalled();
+  expect(screen.getByText(AWAITING_INPUT)).toBeInTheDocument();
+  key("ArrowRight");
   tick(400); // de (0,0) a (1,0), donde está -4
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-4);
