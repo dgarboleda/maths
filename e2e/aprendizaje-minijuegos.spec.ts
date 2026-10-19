@@ -3,7 +3,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { getLesson } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 
-async function practice(page: Page, lessonId: string, game: "frogger" | "cohete") {
+type Game = "frogger" | "cohete" | "snake" | "runner" | "numberpac" | "invaders" | "breakout";
+
+async function practice(page: Page, lessonId: string, game: Game) {
   // La app sortea el juego de cada ejercicio; aquí se fija para que la
   // prueba sea determinista.
   await page.addInitScript((forced) => {
@@ -17,7 +19,7 @@ async function practice(page: Page, lessonId: string, game: "frogger" | "cohete"
   return getLesson(lessonId)!;
 }
 
-async function conceptThenNumeric(page: Page, lessonId: string, game: "frogger" | "cohete") {
+async function conceptThenNumeric(page: Page, lessonId: string, game: Game) {
   const lesson = await practice(page, lessonId, game);
   const question = lesson.practice[0];
   await page.getByRole("radio", { name: question.choices!.find((c) => c.id === question.answer)!.label, exact: true }).check();
@@ -125,4 +127,16 @@ test("Cohete: fracción exacta, sin reloj por defecto y recuperación de respues
   // La respuesta persistida sigue en el ejercicio de práctica, sin salto a evaluación.
   await expect(page.getByRole("heading", { name: "Práctica", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("Invasión por turnos: el disparo envía la respuesta al servidor y no acredita dominio", async ({ page }) => {
+  const q = await conceptThenNumeric(page, "fracciones-unidad", "invaders");
+  await page.getByRole("button", { name: "¡Defender!", exact: true }).click();
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  const answer = savedAnswer(page);
+  await page.getByRole("button", { name: "Disparar a 1/3", exact: true }).click();
+  const progress = (await (await answer).json()).result.progress;
+  expect(progress.responses[`practice:${q.id}`]).toMatchObject({ response: String(1 / 3), correct: true, attempts: 1 });
+  expect(progress.checkPassedAt).toBeNull();
+  await expect(page.getByRole("heading", { name: "¡Invasión repelida!" })).toBeVisible();
 });

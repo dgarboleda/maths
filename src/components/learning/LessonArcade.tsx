@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { LessonExercise, PracticeMode } from "@/lib/minigames/lessonExercise";
+import type { LessonExercise, PracticeGame } from "@/lib/minigames/lessonExercise";
+import { LessonChoiceGame } from "./LessonChoiceGame";
 
 const Frogger = dynamic(() =>
   import("@/components/topic/FroggerGeneric").then((m) => m.FroggerGeneric),
@@ -15,9 +16,10 @@ export function LessonArcade({
   mode,
   exercise,
 }: {
-  mode: Exclude<PracticeMode, "write">;
+  mode: PracticeGame;
   exercise: LessonExercise;
 }) {
+  if (mode !== "frogger" && mode !== "cohete") return <LessonChoiceGame game={mode} exercise={exercise} />;
   const Game = mode === "frogger" ? Frogger : Cohete;
   return (
     <Game

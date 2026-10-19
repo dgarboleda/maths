@@ -2,16 +2,16 @@ import type { ReactNode } from "react";
 import type { Question } from "@/lib/learning/domain";
 import { shuffle, type Problem } from "@/lib/problem";
 
-export type PracticeMode = "write" | "frogger" | "cohete";
-export type PracticeGame = Exclude<PracticeMode, "write">;
-export const PRACTICE_GAMES: readonly PracticeGame[] = ["frogger", "cohete"];
+export const PRACTICE_GAMES = ["frogger", "cohete", "snake", "runner", "numberpac", "invaders", "breakout"] as const;
+export type PracticeGame = (typeof PRACTICE_GAMES)[number];
+export type PracticeMode = "write" | PracticeGame;
 
 /** La aplicación sortea el juego de cada ejercicio de práctica; el estudiante
  * no tiene que decidirlo. `random` se inyecta para las pruebas unitarias; las
  * e2e fijan el juego con `window.__MATHS_TEST_PRACTICE_GAME__`. */
 export function pickPracticeGame(random: () => number = Math.random): PracticeGame {
   const forced = (globalThis as { __MATHS_TEST_PRACTICE_GAME__?: unknown }).__MATHS_TEST_PRACTICE_GAME__;
-  if (forced === "frogger" || forced === "cohete") return forced;
+  if (PRACTICE_GAMES.includes(forced as PracticeGame)) return forced as PracticeGame;
   return PRACTICE_GAMES[Math.min(PRACTICE_GAMES.length - 1, Math.floor(random() * PRACTICE_GAMES.length))];
 }
 

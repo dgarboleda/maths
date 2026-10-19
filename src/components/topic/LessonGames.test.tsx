@@ -1,8 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
+import { axe } from "jest-axe";
 import { FroggerGeneric } from "./FroggerGeneric";
 import { CoheteGeneric } from "./CoheteGeneric";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { LESSON_GAME_THEMES, LessonChoiceGame, type LessonChoiceGameId } from "@/components/learning/LessonChoiceGame";
 
 vi.mock("@/lib/curriculum", () => ({ getModule: () => { throw new Error("La clase no usa generadores antiguos"); } }));
 vi.mock("@/lib/gameSound", () => ({ playSound: vi.fn() }));
@@ -74,4 +76,30 @@ test("Cohete empieza sin límite; pausar o guardar detiene el reloj opcional sin
   expect(legacy).not.toHaveBeenCalled();
   expect(data.onResponse).not.toHaveBeenCalled();
   expect(screen.queryByText(/Estrellas/)).not.toBeInTheDocument();
+});
+
+test.each(Object.entries(LESSON_GAME_THEMES))("%s por turnos: envía el valor una vez, respeta la pausa y celebra lo guardado", async (game, theme) => {
+  let complete!: (saved: boolean) => void;
+  const onResponse = vi.fn(() => new Promise<boolean>((resolve) => { complete = resolve; }));
+  const data = exercise({ onResponse, paused: true });
+  const id = game as LessonChoiceGameId;
+  const view = render(<LessonChoiceGame game={id} exercise={data} />);
+  expect(screen.getByRole("button", { name: theme.start })).toBeDisabled();
+  view.rerender(<LessonChoiceGame game={id} exercise={{ ...data, paused: false }} />);
+  fireEvent.click(screen.getByRole("button", { name: theme.start }));
+  const choice = screen.getByRole("button", { name: `${theme.action} -2` });
+  fireEvent.click(choice);
+  fireEvent.click(choice);
+  expect(onResponse).toHaveBeenCalledExactlyOnceWith(-2);
+  expect(screen.queryByText(theme.success)).not.toBeInTheDocument();
+  await act(async () => { complete(true); });
+  view.rerender(<LessonChoiceGame game={id} exercise={{ ...data, paused: false, solved: true, disabled: true }} />);
+  expect(screen.getByText(theme.success)).toBeInTheDocument();
+  expect(screen.queryByText(/Estrellas/)).not.toBeInTheDocument();
+});
+
+test.each(Object.keys(LESSON_GAME_THEMES))("%s por turnos no tiene problemas de accesibilidad", async (game) => {
+  const { container } = render(<LessonChoiceGame game={game as LessonChoiceGameId} exercise={exercise()} />);
+  fireEvent.click(screen.getByRole("button", { name: LESSON_GAME_THEMES[game as LessonChoiceGameId].start }));
+  expect(await axe(container)).toHaveNoViolations();
 });

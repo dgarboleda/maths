@@ -70,16 +70,23 @@ Las métricas educativas nuevas se muestran primero en `/panel/progreso`; la act
 
 ## Minijuegos dentro de las clases
 
-En la etapa **Práctica** la aplicación sortea, en cada ejercicio numérico,
-**Estanque** (Frogger) o **Cohete**; el estudiante no tiene que elegir. Las doce
-clases ofrecen ejercicios numéricos para ambos juegos. Cada pregunta conserva su
+En la etapa **Práctica** la aplicación sortea, en cada ejercicio numérico, uno
+de los siete minijuegos: **Estanque** (Frogger), **Cohete**, **Serpiente
+numérica**, **Autopista de resultados**, **Laberinto de números**, **Invasión
+numérica** o **Bloques numéricos**. El estudiante no tiene que elegir. Las doce
+clases ofrecen ejercicios numéricos para todos. Cada pregunta conserva su
 enunciado, respuesta, pistas y desarrollo del catálogo educativo compartido.
 Las preguntas de elección conceptual se responden en su formato habitual.
 «Prefiero escribir la respuesta» ofrece siempre la vía escrita (accesibilidad o
 preferencia) y conserva la evidencia de la pregunta; recargar conserva el
 avance y vuelve a sortear el juego.
 
-El estanque usa turnos y botones accesibles, sin obstáculos ni reloj. El cohete
+El estanque usa turnos y botones accesibles, sin obstáculos ni reloj. Los
+cinco juegos de reflejos (serpiente, carrera, laberinto, invasores y bloques)
+conservan su tema pero, dentro de las clases, también funcionan por turnos
+(`LessonChoiceGame`): sin reloj, persecución, choques ni física, para que un
+fallo refleje las matemáticas y no los reflejos. Sus versiones completas siguen
+en los niveles y mundos. El cohete
 empieza sin límite de tiempo y permite activar un reto de 30 segundos. Se puede
 pausar; el reloj se detiene durante el guardado, al ocultar la pestaña y al
 revisar un error. Cada error pausa la partida hasta que el estudiante decide
