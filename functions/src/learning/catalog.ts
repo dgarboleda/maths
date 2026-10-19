@@ -14,6 +14,14 @@ import {
   QUADRATIC_LESSONS,
   SIMILARITY_LESSONS,
 } from "./extraTopics";
+import {
+  COUNTING_LESSONS,
+  EXPONENTIAL_LESSONS,
+  SPREAD_LESSONS,
+  SYSTEM_LESSONS,
+  TRANSFORMATION_LESSONS,
+  TRIGONOMETRY_LESSONS,
+} from "./upperGrades";
 import type { Lesson, UnitId } from "./types";
 
 export const LEARNING_UNITS = [
@@ -64,10 +72,16 @@ export const LESSONS: Lesson[] = [
   ...ALGEBRA_LESSONS,
   ...EXPRESSION_LESSONS,
   ...QUADRATIC_LESSONS,
+  ...SYSTEM_LESSONS,
+  ...EXPONENTIAL_LESSONS,
   ...ANGLE_LESSONS,
   ...GEOMETRY_LESSONS,
   ...SIMILARITY_LESSONS,
+  ...TRANSFORMATION_LESSONS,
+  ...TRIGONOMETRY_LESSONS,
   ...DATA_LESSONS,
+  ...SPREAD_LESSONS,
+  ...COUNTING_LESSONS,
 ];
 export function getLesson(id: string): Lesson | undefined {
   return LESSONS.find((lesson) => lesson.id === id);

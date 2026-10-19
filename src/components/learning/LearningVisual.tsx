@@ -18,6 +18,14 @@ import {
   TreeVisual,
   VolumeVisual,
 } from "./ShapeVisuals";
+import {
+  BoxplotVisual,
+  CountingVisual,
+  ExponentialVisual,
+  SystemVisual,
+  TransformVisual,
+  TrigVisual,
+} from "./AdvancedVisuals";
 
 function Bar({
   numerator,
@@ -177,6 +185,12 @@ const OWN_VISUALS: Partial<Record<Visual, (props: { id: string }) => React.JSX.E
   tree: TreeVisual,
   powers: PowersVisual,
   "decimal-grid": DecimalGridVisual,
+  system: SystemVisual,
+  exponential: ExponentialVisual,
+  trig: TrigVisual,
+  boxplot: BoxplotVisual,
+  counting: CountingVisual,
+  transform: TransformVisual,
 };
 
 export function LearningVisual({ kind }: { kind: Visual }) {

@@ -36,6 +36,12 @@ describe("Modelos visuales de las clases", () => {
       "probabilidad-compuesta": "tree",
       "notacion-cientifica": "powers",
       "operaciones-decimales": "decimal-grid",
+      "sistemas-ecuaciones": "system",
+      "funciones-exponenciales": "exponential",
+      trigonometria: "trig",
+      "estadistica-dispersion": "boxplot",
+      combinatoria: "counting",
+      transformaciones: "transform",
     };
     for (const [id, visual] of Object.entries(expected))
       expect(LESSONS.find((l) => l.id === id)?.visual, id).toBe(visual);

@@ -14,9 +14,9 @@ for (const [name, url] of [
   const response = await fetch(url, { signal: AbortSignal.timeout(20_000), cache: "no-store" });
   if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
   const status = await response.json();
-  if (status.service !== name || status.protocol !== 8 || status.release !== release) {
+  if (status.service !== name || status.protocol !== 9 || status.release !== release) {
     throw new Error(`${name}: versión incompatible o distinta del commit esperado.`);
   }
-  console.log(`${name}: ${release}, protocolo 8 confirmado.`);
+  console.log(`${name}: ${release}, protocolo 9 confirmado.`);
 }
 console.log("Frontend y Functions coinciden. Las reglas e índices se despliegan juntos con npm run deploy:all; estos endpoints no certifican su contenido.");

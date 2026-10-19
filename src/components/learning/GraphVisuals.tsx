@@ -125,7 +125,7 @@ export function Plane({
 }
 
 /** Traza una función muestreada como una sola línea. */
-function curve(f: (x: number) => number, [a, b]: [number, number], { sx, sy }: Scale, samples = 120) {
+export function curve(f: (x: number) => number, [a, b]: [number, number], { sx, sy }: Scale, samples = 120) {
   return Array.from({ length: samples + 1 }, (_, i) => {
     const x = a + ((b - a) * i) / samples,
       y = f(x);
