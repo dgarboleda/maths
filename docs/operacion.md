@@ -19,6 +19,8 @@ No lo rotes sin plan: los hashes v2 dejarían de coincidir y habría que restabl
 
 **Migración:** los enlaces anteriores (sin clave) dejan de funcionar y muestran que hay que pedir uno nuevo. Al publicar, avisa a las familias de que vuelvan a compartir el enlace desde Ajustes. El contrato de los callables cambió: Functions y Worker anuncian el **protocolo 4** y deben desplegarse desde la misma revisión.
 
+**Contenido educativo v2 (protocolo 5):** el navegador y Functions comparten el catálogo de lecciones; al cambiar los bancos ambos deben desplegarse desde la misma revisión (`npm run deploy`) y anuncian el **protocolo 5**. El avance existente se migra automáticamente sin perder logros (ver [reorientación](reorientacion-aprendizaje.md#diseño-de-los-bancos-contenido-v2)).
+
 Las pruebas llaman a los callables reales en el emulador y comprueban la clave del enlace, el formato v2 del hash, el contador, el rechazo durante el bloqueo, la expiración y los claims del token. El recorrido de navegador abre el enlace compartido en un contexto sin sesión del padre. Los tokens sintéticos usados por las pruebas de reglas siguen siendo útiles, pero no sustituyen estas comprobaciones.
 
 ## Estrellas y datos existentes

@@ -121,21 +121,46 @@ export const ALGEBRA_LESSONS: Lesson[] = [
       ),
     ],
     questions(v) {
-      const x = v + 4,
-        b = v + 3,
-        total = x + b;
-      return [
+      const [x, b] = [[5, 3], [9, 4], [6, 8], [12, 5], [7, 9], [15, 6]][v],
+        total = x + b,
+        extra = [2, 6, 3, 7, 4, 5][v];
+      const concept = [
         c(
           "q0",
           "¿Qué afirma el signo = en una ecuación?",
           [
-            "Que la operación terminó",
+            ["Que la operación terminó", "El signo igual no anuncia un resultado: compara dos expresiones."],
             "Que las expresiones de ambos lados tienen el mismo valor",
-            "Que la incógnita siempre vale cero",
+            ["Que la incógnita siempre vale cero", "La incógnita vale lo que haga verdadera la igualdad."],
           ],
           1,
           "La igualdad relaciona dos expresiones que representan el mismo valor.",
         ),
+        c(
+          "q0",
+          `¿Es verdadera ${b} + ${x} = ${x} + ${b}?`,
+          [
+            "Sí: ambos lados valen lo mismo",
+            ["No: a la derecha debería ir el resultado", "El = no exige un resultado a la derecha; compara valores."],
+            ["No: los números están en otro orden", "El orden de los sumandos no cambia la suma."],
+          ],
+          0,
+          `Ambos lados valen ${total}: la igualdad es verdadera.`,
+        ),
+        c(
+          "q0",
+          `En x + ${b} = ${total}, ¿qué representa x?`,
+          [
+            ["Siempre el número 10", "La letra no tiene un valor fijo: depende de la ecuación."],
+            ["La operación que hay que hacer", "x es un número, no una operación."],
+            "Un número desconocido que hace verdadera la igualdad",
+          ],
+          2,
+          "La incógnita guarda el lugar de un número que hay que descubrir.",
+        ),
+      ];
+      return [
+        concept[v % 3],
         n(
           "q1",
           `¿Qué valor de x hace verdadera x + ${b} = ${total}?`,
@@ -149,6 +174,11 @@ export const ALGEBRA_LESSONS: Lesson[] = [
             `Resta ${b} a ambos lados.`,
             `${total} − ${b} = ${x}.`,
           ],
+          {
+            errors: [
+              { value: total + b, feedback: `Sumaste ${b}. Para deshacer la suma hay que restar ${b} a ambos lados.` },
+            ],
+          },
         ),
         n(
           "q2",
@@ -177,8 +207,8 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           "q4",
           `En x + ${b} = ${total}, ¿qué transformación conserva la igualdad?`,
           [
-            `Restar ${b} solo al lado izquierdo`,
-            `Sumar ${b} solo al derecho`,
+            [`Restar ${b} solo al lado izquierdo`, "Cambiar un solo lado rompe el equilibrio entre ambos."],
+            [`Sumar ${b} solo al derecho`, "Cambiar un solo lado rompe el equilibrio entre ambos."],
             `Restar ${b} a ambos lados`,
           ],
           2,
@@ -197,10 +227,61 @@ export const ALGEBRA_LESSONS: Lesson[] = [
             "Expresa lo inicial más lo recibido igual a lo final.",
             `Resta ${b} al total ${total}.`,
           ],
-          { intent: "transfer", unit: "unidades" },
+          {
+            intent: "transfer",
+            unit: "unidades",
+            errors: [
+              { value: total + b, feedback: "El depósito recibió unidades: al inicio tenía menos que al final." },
+            ],
+          },
+        ),
+        n(
+          "q6",
+          `Completa la igualdad: ${total} + ${extra} = ${b} + __.`,
+          total + extra - b,
+          [
+            `El lado izquierdo vale ${total} + ${extra} = ${total + extra}.`,
+            `El derecho debe valer lo mismo: ${b} + ${total + extra - b} = ${total + extra}.`,
+          ],
+          [
+            "El signo = no pide el resultado de la izquierda: ambos lados deben valer lo mismo.",
+            `Calcula cuánto vale el lado izquierdo.`,
+            `Busca qué número sumado a ${b} da ${total + extra}.`,
+          ],
+          {
+            intent: "transfer",
+            errors: [
+              {
+                value: total + extra,
+                feedback: `Escribiste el resultado de la izquierda, pero entonces la derecha valdría ${b} + ${total + extra}. Ambos lados deben valer lo mismo.`,
+              },
+            ],
+          },
         ),
       ];
     },
+    application: n(
+      "app",
+      "Dos medidores de la central deben marcar lo mismo. El izquierdo indica x + 14 y el derecho, 9 + 23. ¿Qué valor de x equilibra los medidores?",
+      18,
+      [
+        "El lado derecho vale 9 + 23 = 32.",
+        "x + 14 = 32, así que x = 32 − 14 = 18.",
+        "Comprobación: 18 + 14 = 32 = 9 + 23.",
+      ],
+      [
+        "Calcula primero el lado que no tiene incógnita.",
+        "Plantea x + 14 = 32.",
+        "Resta 14 a ambos lados.",
+      ],
+      {
+        intent: "transfer",
+        errors: [
+          { value: 32, feedback: "32 es el valor de cada lado. Se pide el valor de x." },
+          { value: 46, feedback: "Sumaste 14. Para deshacer la suma, resta 14 a ambos lados." },
+        ],
+      },
+    ),
     outcome:
       "Los medidores quedan relacionados mediante una igualdad que puedes comprobar sustituyendo valores.",
     commonErrors: [
@@ -283,6 +364,15 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         ],
         "Una solución negativa es válida si satisface la igualdad.",
       ),
+      ex(
+        "Una carga se reparte por igual entre 4 baterías y cada una recibe 6 unidades. ¿Cuál era la carga?",
+        [
+          ["x/4 = 6", "La incógnita está dividida entre cuatro."],
+          ["x/4 × 4 = 6 × 4 → x = 24", "Multiplicar ambos lados por 4 deshace la división."],
+          ["24 ÷ 4 = 6", "Comprobamos en la ecuación original."],
+        ],
+        "La multiplicación y la división también son operaciones inversas.",
+      ),
     ],
     diagnostic: [
       c(
@@ -320,17 +410,20 @@ export const ALGEBRA_LESSONS: Lesson[] = [
       ),
     ],
     questions(v) {
-      const x = v + 3,
-        m = v + 2,
-        b = v + 4;
+      const [x, m] = [[4, 3], [7, 5], [6, 8], [9, 4], [3, 7], [8, 6]][v],
+        b = [5, 9, 4, 12, 7, 3][v],
+        rhs = [5, 8, 3, 11, 6, 9][v],
+        // x + c = r con solución negativa distinta en cada forma.
+        [c3, r3] = [[6, 2], [9, 4], [5, -1], [12, 7], [8, 3], [10, 1]][v],
+        [dm, dq] = [[3, 4], [5, 2], [4, 6], [2, 9], [6, 3], [7, 2]][v];
       return [
         c(
           "q0",
           `Para resolver ${m}x = ${m * x}, ¿qué operación conserva la igualdad y aísla x?`,
           [
             `Dividir ambos lados entre ${m}`,
-            `Restar ${m} solo a la izquierda`,
-            `Multiplicar solo el lado derecho por ${m}`,
+            [`Restar ${m} solo a la izquierda`, `${m}x significa ${m} veces x: restar ${m} no deshace la multiplicación.`],
+            [`Multiplicar solo el lado derecho por ${m}`, "Cambiar un solo lado rompe la igualdad."],
           ],
           0,
           `Como el coeficiente ${m} no es cero, dividir ambos lados entre él deshace la multiplicación.`,
@@ -348,40 +441,57 @@ export const ALGEBRA_LESSONS: Lesson[] = [
             `Divide ambos lados entre ${m}.`,
             `x = ${m * x} ÷ ${m}.`,
           ],
+          {
+            errors: [
+              { value: m * x - m, feedback: `Restaste el coeficiente. ${m}x son ${m} grupos de x: se deshace dividiendo.` },
+              { value: m * x * m, feedback: "Multiplicaste. Para deshacer una multiplicación se divide." },
+            ],
+          },
         ),
         n(
           "q2",
-          `Completa la solución: x − ${b} = ${x}; x = ${x} + ${b} = __.`,
-          x + b,
-          [`Sumamos ${b} a ambos lados; x = ${x + b}.`],
+          `Completa la solución: x − ${b} = ${rhs}; x = ${rhs} + ${b} = __.`,
+          rhs + b,
+          [`Sumamos ${b} a ambos lados; x = ${rhs + b}.`],
           [
             "Se deshace una resta.",
             `Suma ${b} a ambos lados.`,
-            `${x} + ${b} = ${x + b}.`,
+            `${rhs} + ${b} = ${rhs + b}.`,
           ],
-          { step: true },
+          {
+            step: true,
+            errors: [
+              { value: rhs - b, feedback: "Restaste otra vez. Una resta se deshace sumando." },
+            ],
+          },
         ),
         n(
           "q3",
-          `Resuelve x + ${b} = ${v + 1}.`,
-          v + 1 - b,
+          `Resuelve x + ${c3} = ${r3}.`,
+          r3 - c3,
           [
-            `Resta ${b} a ambos lados: x = ${v + 1} − ${b} = ${v + 1 - b}.`,
-            `Comprueba: ${v + 1 - b} + ${b} = ${v + 1}.`,
+            `Resta ${c3} a ambos lados: x = ${r3} − ${c3} = ${r3 - c3}.`,
+            `Comprueba: ${r3 - c3} + ${c3} = ${r3}.`,
           ],
           [
             "No descartes una solución negativa.",
-            `Resta ${b} al valor ${v + 1}.`,
-            `El resultado es ${v + 1 - b}.`,
+            `Resta ${c3} al valor ${r3}.`,
+            `El resultado es ${r3 - c3}.`,
           ],
+          {
+            errors: [
+              { value: c3 - r3, feedback: "El signo está invertido: comprueba sustituyendo en la ecuación original." },
+              { value: r3 + c3, feedback: `Sumaste ${c3}. Para deshacer la suma, resta ${c3}.` },
+            ],
+          },
         ),
         c(
           "q4",
           `¿Por qué ${m}x = ${m * x} y x = ${x} tienen la misma solución?`,
           [
-            "Porque se borran cifras iguales sin una regla",
+            ["Porque se borran cifras iguales sin una regla", "No se borran cifras: se aplica la misma operación a ambos lados."],
             `Porque se dividieron ambos lados entre ${m}, que no es cero`,
-            "Porque cualquier valor de x sirve",
+            ["Porque cualquier valor de x sirve", `Solo x = ${x} hace verdadera ${m}x = ${m * x}.`],
           ],
           1,
           "La división por el mismo número distinto de cero conserva las soluciones.",
@@ -401,8 +511,52 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           ],
           { intent: "transfer", unit: "unidades" },
         ),
+        n(
+          "q6",
+          `Una carga desconocida x se reparte por igual entre ${dm} baterías y cada una recibe ${dq} unidades. El modelo es x/${dm} = ${dq}. ¿Cuál era la carga total?`,
+          dm * dq,
+          [
+            `x está dividida entre ${dm}: se deshace multiplicando ambos lados por ${dm}.`,
+            `x = ${dq} × ${dm} = ${dm * dq}. Comprobación: ${dm * dq} ÷ ${dm} = ${dq}.`,
+          ],
+          [
+            "Ahora la incógnita está dividida.",
+            "La operación inversa de dividir es multiplicar.",
+            `Multiplica ambos lados por ${dm}.`,
+          ],
+          {
+            intent: "transfer",
+            unit: "unidades",
+            errors: [
+              { value: dq / dm, feedback: `Dividiste otra vez. x/${dm} se deshace multiplicando por ${dm}.` },
+            ],
+          },
+        ),
       ];
     },
+    application: n(
+      "app",
+      "Durante la noche, la temperatura de un depósito bajó 9 grados y ahora marca −4 °C. ¿Qué temperatura tenía al anochecer?",
+      5,
+      [
+        "Modelo: x − 9 = −4, donde x es la temperatura inicial.",
+        "Sumamos 9 a ambos lados: x = −4 + 9 = 5.",
+        "Comprobación: 5 − 9 = −4.",
+      ],
+      [
+        "Define x como la temperatura al anochecer.",
+        "Bajar 9 grados es restar 9: x − 9 = −4.",
+        "Deshaz la resta sumando 9.",
+      ],
+      {
+        intent: "transfer",
+        unit: "°C",
+        errors: [
+          { value: -13, feedback: "Restaste otra vez. Si bajó 9 grados, al principio estaba 9 grados más alta." },
+          { value: 13, feedback: "Revisa el signo: −4 + 9 = 5." },
+        ],
+      },
+    ),
     outcome:
       "El sensor queda calibrado: puedes recuperar un valor desconocido y verificarlo con la medición original.",
     commonErrors: [
@@ -486,6 +640,15 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         ],
         "La solución es x = 3.",
       ),
+      ex(
+        "Resuelve x/3 + 2 = 7.",
+        [
+          ["x/3 + 2 − 2 = 7 − 2 → x/3 = 5", "Deshacemos primero la suma."],
+          ["x/3 × 3 = 5 × 3 → x = 15", "Multiplicar por 3 deshace la división."],
+          ["15 ÷ 3 + 2 = 7", "La igualdad se cumple al sustituir."],
+        ],
+        "El orden inverso funciona igual cuando la incógnita está dividida.",
+      ),
     ],
     diagnostic: [
       n(
@@ -511,18 +674,54 @@ export const ALGEBRA_LESSONS: Lesson[] = [
       ),
     ],
     questions(v) {
-      const x = v + 2,
-        m = v + 2,
-        b = v + 3,
-        total = m * x + b;
+      const [m, x, b] = [[3, 5, 4], [2, 9, 7], [5, 4, 6], [4, 7, 3], [6, 2, 9], [7, 3, 5]][v],
+        total = m * x + b,
+        [sm, sx, sb] = [[4, 6, 5], [3, 8, 2], [6, 3, 7], [2, 11, 4], [5, 5, 8], [8, 2, 3]][v],
+        // x/dm + db = dt
+        [dm, db, dt] = [[2, 3, 8], [3, 4, 9], [4, 3, 8], [5, 2, 5], [3, 7, 10], [2, 5, 12]][v];
+      const concept = [
+        c(
+          "q4",
+          "¿Cuál es una comprobación válida de la solución de mx + b = c?",
+          [
+            "Sustituir x y verificar que mx + b vale c",
+            ["Comprobar solo que mx vale c", "Falta el término fijo: la comprobación usa la ecuación completa."],
+            ["Cambiar el signo del resultado", "Cambiar signos no comprueba nada."],
+          ],
+          0,
+          "La comprobación debe incluir todas las operaciones de la ecuación original, también el término fijo.",
+        ),
+        c(
+          "q4",
+          `Para resolver ${sm}x − ${sb} = ${sm * sx - sb}, ¿qué haces primero?`,
+          [
+            [`Restar ${sb} a ambos lados`, "Restar otra vez aleja el término con x. Una resta se deshace sumando."],
+            `Sumar ${sb} a ambos lados`,
+            [`Dividir solo ${sm * sx - sb} entre ${sm}`, "Dividir un solo término rompe la igualdad."],
+          ],
+          1,
+          `Sumar ${sb} deshace la resta y deja ${sm}x = ${sm * sx}.`,
+        ),
+        c(
+          "q4",
+          `Ana resuelve ${m}x + ${b} = ${total} dividiendo solo ${total} entre ${m}. ¿Qué falla?`,
+          [
+            ["Nada, el resultado es el mismo", "Dividir solo un término cambia la ecuación y su solución."],
+            `Debía dividir todos los términos, también el ${b}, o restar ${b} primero`,
+            ["Debía multiplicar en vez de dividir", "Dividir es correcto, pero debe hacerse en ambos lados completos."],
+          ],
+          1,
+          "La misma operación se aplica a cada lado completo; restar primero el término fijo es más sencillo.",
+        ),
+      ];
       return [
         c(
           "q0",
           `En ${m}x + ${b} = ${total}, ¿qué paso aísla primero el término con x?`,
           [
-            `Dividir solo el ${total} entre ${m}`,
+            [`Dividir solo el ${total} entre ${m}`, "Dividir un solo término rompe la igualdad."],
             `Restar ${b} a ambos lados`,
-            `Sumar ${b} solo a la izquierda`,
+            [`Sumar ${b} solo a la izquierda`, "Sumar no deshace una suma, y cambiar un solo lado rompe la igualdad."],
           ],
           1,
           "Deshacer la suma deja el término que contiene a x; la misma resta debe aplicarse a ambos lados.",
@@ -548,6 +747,10 @@ export const ALGEBRA_LESSONS: Lesson[] = [
                 feedback:
                   "Si divides primero, debes dividir la ecuación completa. Prueba aislar primero el término con x restando a ambos lados.",
               },
+              {
+                value: (total + b) / m,
+                feedback: `Sumaste ${b}. Para deshacer la suma, resta ${b} a ambos lados.`,
+              },
             ],
           },
         ),
@@ -561,33 +764,33 @@ export const ALGEBRA_LESSONS: Lesson[] = [
             `Resta ${b} al total.`,
             `El paso intermedio es ${m}x = ${m * x}.`,
           ],
-          { step: true },
+          {
+            step: true,
+            errors: [
+              { value: total + b, feedback: "Sumaste el término fijo. Se deshace restándolo a ambos lados." },
+            ],
+          },
         ),
         n(
           "q3",
-          `Resuelve ${m}x − ${b} = ${m * x - b}.`,
-          x,
+          `Resuelve ${sm}x − ${sb} = ${sm * sx - sb}.`,
+          sx,
           [
-            `Suma ${b} a ambos lados: ${m}x = ${m * x}.`,
-            `Divide entre ${m}: x = ${x}.`,
+            `Suma ${sb} a ambos lados: ${sm}x = ${sm * sx}.`,
+            `Divide entre ${sm}: x = ${sx}.`,
           ],
           [
             "Una resta se deshace sumando.",
-            `Suma ${b} a ambos lados.`,
-            `Divide el resultado ${m * x} entre ${m}.`,
+            `Suma ${sb} a ambos lados.`,
+            `Divide el resultado ${sm * sx} entre ${sm}.`,
           ],
+          {
+            errors: [
+              { value: (sm * sx - 2 * sb) / sm, feedback: `Restaste ${sb} otra vez. Para deshacer la resta, suma ${sb}.` },
+            ],
+          },
         ),
-        c(
-          "q4",
-          "¿Cuál es una comprobación válida de la solución de mx + b = c?",
-          [
-            "Sustituir x y verificar que mx + b vale c",
-            "Comprobar solo que mx vale c",
-            "Cambiar el signo del resultado",
-          ],
-          0,
-          "La comprobación debe incluir todas las operaciones de la ecuación original, también el término fijo.",
-        ),
+        concept[v % 3],
         n(
           "q5",
           `Una máquina consume ${b} unidades al encenderse y ${m} por ciclo. Ha consumido ${total} unidades. ¿Cuántos ciclos realizó?`,
@@ -602,10 +805,62 @@ export const ALGEBRA_LESSONS: Lesson[] = [
             `Resta las ${b} unidades del encendido.`,
             `Divide ${m * x} entre ${m}.`,
           ],
-          { intent: "transfer", unit: "ciclos" },
+          {
+            intent: "transfer",
+            unit: "ciclos",
+            errors: [
+              { value: total / m, feedback: "Olvidaste el consumo de encendido: réstalo antes de dividir." },
+            ],
+          },
+        ),
+        n(
+          "q6",
+          `Un depósito se divide en ${dm} partes iguales. A una de ellas se le añaden ${db} litros y queda con ${dt}. El modelo es x/${dm} + ${db} = ${dt}. ¿Cuántos litros tenía el depósito?`,
+          dm * (dt - db),
+          [
+            `Resta ${db}: x/${dm} = ${dt - db}.`,
+            `Multiplica por ${dm}: x = ${dm * (dt - db)}.`,
+            `Comprueba: ${dm * (dt - db)} ÷ ${dm} + ${db} = ${dt}.`,
+          ],
+          [
+            "Deshaz las operaciones en orden inverso: primero la suma.",
+            `x/${dm} = ${dt} − ${db}.`,
+            `Deshaz la división multiplicando por ${dm}.`,
+          ],
+          {
+            intent: "transfer",
+            unit: "litros",
+            errors: [
+              { value: dm * dt - db, feedback: `Multiplicaste antes de quitar los ${db} litros: deshaz primero la suma.` },
+              { value: dt - db, feedback: `Ese es el contenido de una parte. El depósito tiene ${dm} partes.` },
+            ],
+          },
         ),
       ];
     },
+    application: n(
+      "app",
+      "Un montacargas lleva 5 cajas iguales sobre una plataforma de 40 kg. El conjunto pesa 340 kg. ¿Cuánto pesa cada caja?",
+      60,
+      [
+        "Modelo: 5x + 40 = 340, donde x es el peso de una caja.",
+        "Resta 40: 5x = 300. Divide entre 5: x = 60.",
+        "Comprobación: 5 × 60 + 40 = 340.",
+      ],
+      [
+        "Separa el peso fijo de la plataforma del peso de las cajas.",
+        "Plantea 5x + 40 = 340.",
+        "Resta 40 a ambos lados y después divide entre 5.",
+      ],
+      {
+        intent: "transfer",
+        unit: "kg",
+        errors: [
+          { value: 68, feedback: "Dividiste 340 entre 5 sin quitar la plataforma. Resta primero los 40 kg." },
+          { value: 28, feedback: "Dividiste solo 340 entre 5 y después restaste 40: la división debe aplicarse a todo el lado." },
+        ],
+      },
+    ),
     outcome:
       "La máquina muestra cuántos ciclos puede completar y puedes justificar cada paso de su calibración.",
     commonErrors: [
@@ -695,6 +950,15 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         ],
         "No se puede gastar exactamente 45. Con un máximo de 45, caben siete sensores y sobran dos créditos.",
       ),
+      ex(
+        "Un técnico cobró 18 créditos por 2 horas y 30 por 5 horas, con tarifa fija más precio por hora. ¿Cuál es la tarifa fija?",
+        [
+          ["30 − 18 = 12 por 3 horas", "La tarifa fija se paga en ambas facturas; la diferencia es solo de horas."],
+          ["12 ÷ 3 = 4 créditos/hora", "Obtenemos el precio por hora."],
+          ["2 × 4 + f = 18 → f = 10", "Con una factura conocida, despejamos el término fijo."],
+        ],
+        "Modelo: costo = 4h + 10. Comprobación: 4 × 5 + 10 = 30.",
+      ),
     ],
     diagnostic: [
       n(
@@ -720,18 +984,57 @@ export const ALGEBRA_LESSONS: Lesson[] = [
       ),
     ],
     questions(v) {
-      const count = v + 3,
-        price = v + 2,
-        fixed = v + 5,
-        budget = count * price + fixed;
+      const [count, price, fixed] = [[6, 4, 5], [4, 3, 6], [7, 5, 8], [3, 9, 4], [5, 6, 10], [8, 2, 7]][v],
+        budget = count * price + fixed,
+        maxBudget = budget + price - 1,
+        // Dos facturas de un técnico: tarifa fija f y precio p por hora.
+        [f, p, h1, h2] = [[10, 4, 2, 5], [6, 5, 1, 3], [12, 3, 2, 6], [8, 7, 3, 4], [15, 2, 4, 9], [5, 9, 1, 2]][v],
+        c1 = f + p * h1,
+        c2 = f + p * h2,
+        half = count + 0.5;
+      const concept = [
+        c(
+          "q4",
+          `Una ecuación da x = ${half.toLocaleString("es")} sensores para un gasto exacto. ¿Qué debes concluir?`,
+          [
+            [`Hay que redondear a ${count + 1} sin comprobar`, "Redondear cambia el gasto: ya no se cumpliría la condición de gasto exacto."],
+            ["La respuesta siempre es incorrecta en cualquier contexto", "La ecuación puede estar bien planteada; lo que falla es la restricción del contexto."],
+            "La solución numérica no permite comprar esa cantidad de sensores enteros",
+          ],
+          2,
+          "Hay que comprobar las restricciones del contexto. Redondear modifica el gasto y puede dejar de satisfacer la condición de gasto exacto.",
+        ),
+        c(
+          "q4",
+          `Con sensores de ${price} créditos y envío de ${fixed}, se dispone de un máximo de ${budget} créditos. ¿Qué relación describe la compra?`,
+          [
+            [`${price}x + ${fixed} = ${budget}`, "La igualdad exige gastar exactamente; un máximo admite gastar menos."],
+            `${price}x + ${fixed} ≤ ${budget}`,
+            [`${price}x + ${fixed} ≥ ${budget}`, "≥ permitiría gastar más del máximo."],
+          ],
+          1,
+          "Un presupuesto máximo se expresa con ≤: el gasto puede ser menor o igual.",
+        ),
+        c(
+          "q4",
+          `Si x es el número de sensores y cada uno cuesta ${price} créditos, ¿qué unidad tiene ${price}x?`,
+          [
+            ["Sensores", "x cuenta sensores, pero al multiplicar por créditos/sensor se obtienen créditos."],
+            "Créditos",
+            ["Créditos por sensor", "Esa es la unidad del precio, no del costo total de los sensores."],
+          ],
+          1,
+          "(créditos/sensor) × sensores = créditos.",
+        ),
+      ];
       return [
         c(
           "q0",
           `Cada sensor cuesta ${price} y el envío ${fixed}. Si x cuenta sensores, ¿qué expresión representa el costo?`,
           [
-            `${fixed}x + ${price}`,
+            [`${fixed}x + ${price}`, "Intercambiaste los papeles: el envío se paga una vez y el precio se multiplica por x."],
             `${price}x + ${fixed}`,
-            `${price} + ${fixed} + x`,
+            [`${price} + ${fixed} + x`, "Sumar x añade sensores como si fueran créditos; el precio debe multiplicar a x."],
           ],
           1,
           "El precio unitario multiplica al número de sensores; el envío se suma una sola vez.",
@@ -749,7 +1052,12 @@ export const ALGEBRA_LESSONS: Lesson[] = [
             "Quita el envío antes de dividir por el precio unitario.",
             `(${budget} − ${fixed}) ÷ ${price} = ${count}.`,
           ],
-          { unit: "sensores" },
+          {
+            unit: "sensores",
+            errors: [
+              { value: budget / price, feedback: "Olvidaste el envío: réstalo antes de dividir entre el precio." },
+            ],
+          },
         ),
         n(
           "q2",
@@ -765,30 +1073,25 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         ),
         n(
           "q3",
-          `Con un presupuesto máximo de ${budget + 1} créditos, envío de ${fixed} y precio de ${price} por sensor, ¿cuántos sensores enteros puedes comprar como máximo?`,
+          `Con un presupuesto máximo de ${maxBudget} créditos, envío de ${fixed} y precio de ${price} por sensor, ¿cuántos sensores enteros puedes comprar como máximo?`,
           count,
           [
-            `Disponible sin envío: ${budget + 1 - fixed}.`,
-            `Caben ${count} sensores; ${count + 1} costarían ${(count + 1) * price + fixed}, que supera ${budget + 1}.`,
+            `Disponible sin envío: ${maxBudget - fixed}.`,
+            `${maxBudget - fixed} ÷ ${price} = ${((maxBudget - fixed) / price).toLocaleString("es", { maximumFractionDigits: 2 })}: caben ${count} sensores; ${count + 1} costarían ${(count + 1) * price + fixed}, que supera ${maxBudget}.`,
           ],
           [
             "La cantidad de sensores debe ser entera.",
             "Descuenta el envío y busca cuántos precios completos caben.",
             `Puedes comprar ${count}; uno más excede el presupuesto.`,
           ],
-          { unit: "sensores" },
+          {
+            unit: "sensores",
+            errors: [
+              ...(price > 1 ? [{ value: count + 1, feedback: `Redondeaste hacia arriba: ${count + 1} sensores costarían ${(count + 1) * price + fixed}, más que el máximo.` }] : []),
+            ],
+          },
         ),
-        c(
-          "q4",
-          "Una ecuación da x = 4,5 sensores para un gasto exacto. ¿Qué debes concluir?",
-          [
-            "Hay que redondear a 5 sin comprobar",
-            "La respuesta siempre es incorrecta en cualquier contexto",
-            "La solución numérica no permite comprar esa cantidad de sensores enteros",
-          ],
-          2,
-          "Hay que comprobar las restricciones del contexto. Redondear modifica el gasto y puede dejar de satisfacer la condición de gasto exacto.",
-        ),
+        concept[v % 3],
         n(
           "q5",
           `La ciudad tiene ${budget} créditos para un envío urgente de ${fixed} y baterías de ${price} cada una. Debe gastarlos exactamente, comprando baterías enteras. ¿Cuántas puede recibir?`,
@@ -805,8 +1108,54 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           ],
           { intent: "transfer", unit: "baterías" },
         ),
+        n(
+          "q6",
+          `Un técnico cobra una tarifa fija por visita más un precio por hora. Por ${h1} ${h1 === 1 ? "hora" : "horas"} cobró ${c1} créditos y por ${h2} horas, ${c2}. ¿Cuál es la tarifa fija?`,
+          f,
+          [
+            `${h2 - h1 === 1 ? "La hora" : `Las ${h2 - h1} horas`} de diferencia ${h2 - h1 === 1 ? "cuesta" : "cuestan"} ${c2} − ${c1} = ${c2 - c1}: el precio por hora es ${c2 - c1} ÷ ${h2 - h1} = ${p}.`,
+            `Con ${h1} ${h1 === 1 ? "hora" : "horas"}: ${p} × ${h1} + f = ${c1}, así que f = ${c1 - p * h1}.`,
+          ],
+          [
+            "La tarifa fija es igual en ambas facturas; la diferencia viene solo de las horas.",
+            `Calcula cuánto cuesta${h2 - h1 === 1 ? " la hora" : `n las ${h2 - h1} horas`} de diferencia.`,
+            `Halla el precio por hora y réstalo ${h1} ${h1 === 1 ? "vez" : "veces"} a ${c1}.`,
+          ],
+          {
+            intent: "transfer",
+            unit: "créditos",
+            errors: [
+              { value: p, feedback: "Ese es el precio por hora. Se pide la parte que no depende de las horas." },
+              { value: c1 / h1, feedback: "Dividir la factura entre las horas reparte también la tarifa fija; sepárala primero." },
+            ],
+          },
+        ),
       ];
     },
+    application: n(
+      "app",
+      "El equipo tiene 100 créditos. El envío cuesta 12, cada sensor 8, y deben quedar al menos 20 créditos de reserva. ¿Cuántos sensores enteros pueden comprar como máximo?",
+      8,
+      [
+        "Disponible para sensores: 100 − 20 − 12 = 68 créditos.",
+        "8x ≤ 68 → x ≤ 8,5. Como se compran sensores enteros, el máximo es 8.",
+        "Comprobación: 8 × 8 + 12 = 76 y quedan 24 ≥ 20; con 9 sensores quedarían 16.",
+      ],
+      [
+        "Separa la reserva y el envío antes de calcular sensores.",
+        "Plantea 8x + 12 ≤ 100 − 20.",
+        "Resuelve y elige el mayor entero que cumpla la condición.",
+      ],
+      {
+        intent: "transfer",
+        unit: "sensores",
+        errors: [
+          { value: 9, feedback: "Con 9 sensores quedarían solo 16 créditos de reserva. Redondea hacia abajo." },
+          { value: 11, feedback: "Olvidaste guardar los 20 créditos de reserva." },
+          { value: 8.5, feedback: "8,5 no es una cantidad entera de sensores: elige el mayor entero que cabe." },
+        ],
+      },
+    ),
     outcome:
       "El pedido de suministros queda justificado con una ecuación, sus unidades y una comprobación de las restricciones.",
     commonErrors: [

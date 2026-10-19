@@ -12,9 +12,9 @@ La entrega implementa el producto y los instrumentos del piloto. **No se ha real
 2. Abre una clase. Tres preguntas breves exploran sus bases; puede ir directamente a la explicación o demostrar lo que ya sabe en la comprobación.
 3. Recorre tres ideas con representación, significado y notación; manipula un modelo visual y consulta vocabulario.
 4. Sigue dos ejemplos cuyos pasos explican **por qué** se hace cada transformación.
-5. Completa tres actividades guiadas y seis de práctica con reintentos, pistas graduales y desarrollo completo.
-6. Resuelve cinco tareas de comprobación con primera respuesta registrada, incluidas comprensión conceptual y transferencia.
-7. Aplica la idea a una situación de la ciudad. Puede completar el recorrido con apoyo y recibe las mismas cinco estrellas.
+5. Completa tres actividades guiadas y siete de práctica con reintentos, pistas graduales y desarrollo completo.
+6. Resuelve cinco tareas de comprobación con primera respuesta registrada, incluidas comprensión conceptual y una transferencia con otra estructura (problema inverso, comparación o cambio de representación).
+7. Aplica la idea a una situación de la ciudad con una tarea propia, de varios pasos y distinta de los bancos. Puede completar el recorrido con apoyo y recibe las mismas cinco estrellas.
 8. Consulta lo que ha demostrado, las tareas por reforzar y el repaso programado. El avance se confirma al guardar y se puede retomar desde otro dispositivo.
 
 Las ayudas durante una comprobación, incluida la consulta de la explicación, se registran como apoyo. La práctica guiada y la aplicación con solución disponible no acreditan autonomía. La primera respuesta incorrecta de una comprobación no se sustituye por un acierto posterior. Los minijuegos existentes siguen como actividades adicionales; sus métricas no se convierten en la nueva evidencia de aprendizaje.
@@ -27,7 +27,19 @@ Las ayudas durante una comprobación, incluida la consulta de la explicación, s
 | Razones y proporcionalidad | Razones parte-parte y parte-total; tasa unitaria; proporcionalidad directa; cambios porcentuales |
 | Álgebra inicial | Igualdad e incógnita; ecuaciones de un paso; ecuaciones de dos pasos; modelación y restricciones |
 
-Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos ejemplos razonados, errores habituales y bancos de tareas. Hay 24 ejemplos desarrollados y 324 instancias de actividades, organizadas en familias y formas paralelas; ese conteo no equivale a 324 competencias ni a 324 problemas de estructura distinta. Las dos formas de comprobación alternan datos. El repaso utiliza un banco separado; algunas preguntas conceptuales recuperan el mismo principio con formulaciones similares.
+Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales y bancos de tareas. Hay 32 ejemplos desarrollados y 336 instancias de actividades, organizadas en familias y formas paralelas; ese conteo no equivale a 336 competencias ni a 336 problemas de estructura distinta.
+
+### Diseño de los bancos (contenido v2)
+
+Cada lección define seis formas paralelas de siete tareas: concepto (q0), procedimiento (q1), paso intermedio (q2), variante (q3), concepto o análisis de errores (q4), transferencia cercana (q5) y transferencia con otra estructura (q6). Guiada usa la forma 0; práctica, la 1 completa; las comprobaciones A y B, las formas 2 y 3 con q0, q1, q2, q4 y q6; el repaso, la forma 4 con q0, q2, q3 y q5.
+
+- **Parámetros independientes.** Cada forma toma sus datos de una tabla, no de fórmulas en `v`: ninguna respuesta se deduce de otra (antes, en dos pasos la solución coincidía con el coeficiente y en un paso siempre era −3). Una prueba verifica que ninguna tarea numérica repite respuesta entre las formas A y B.
+- **Conceptos que cambian.** Las preguntas conceptuales rotan entre dos o tres formulaciones según la forma, para que superar la comprobación no dependa de recordar una pregunta ya vista.
+- **Opciones en orden variable.** El orden de las alternativas se fija por pregunta con una semilla (`arrangeChoices`): es el mismo en servidor, navegador y al recargar, pero la respuesta correcta no ocupa siempre la misma posición.
+- **Feedback por error.** Cada alternativa incorrecta explica su propio error, y las tareas numéricas reconocen los errores habituales de la lección (dividir entre el numerador, sumar en vez de multiplicar, dividir entre el valor final, redondear hacia arriba…) con un mensaje específico. Una prueba verifica que ningún error previsto coincide con la respuesta correcta.
+- **Contenidos añadidos.** Problemas inversos (hallar el todo desde una fracción, la base de un descuento, el número de sensores en y = kx, la carga en x/m = q y x/m + b = c, la tarifa fija desde dos facturas), comparación de fracciones con numerador y denominador distintos, comparación de razones y de ofertas, fracción → porcentaje con denominadores distintos de 100, porcentajes menores que 10 y mayores que 100, e igualdades con operaciones en ambos lados. Fracción de una cantidad ya no usa solo cuartos.
+
+**Migración.** Al cambiar los bancos, `CONTENT_VERSION` pasa a 2. Un avance guardado con la versión anterior conserva logros, fechas, comprobaciones y repasos; solo se reinicia la ronda en curso, cuyas respuestas pertenecían a preguntas que ya no existen (`migrateProgress`, aplicada igual en el navegador y en Functions).
 
 Las representaciones interactivas incluyen barras de fracción y equivalencia, relación con porcentajes, fracción de un total, razones, tasas, tablas proporcionales, cambios de base e igualdad. Las bases se ofrecen como enlaces a otras clases, sin candados nuevos.
 

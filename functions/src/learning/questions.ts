@@ -26,10 +26,13 @@ export function numeric(
     ...(options.errors ? { errors: options.errors } : {}),
   };
 }
+/** Una opción es su texto o `[texto, feedback]`: el feedback propio explica
+ *  el error concreto de esa alternativa en vez de revelar la idea correcta. */
+export type ChoiceLabel = string | [string, string];
 export function choice(
   id: string,
   prompt: string,
-  labels: string[],
+  labels: ChoiceLabel[],
   correct: number,
   explanation: string,
   intent: Intent = "concept",
@@ -40,13 +43,16 @@ export function choice(
     intent,
     prompt,
     answer: `c${correct}`,
-    choices: labels.map((label, i) => ({
-      id: `c${i}`,
-      label,
-      ...(i !== correct
-        ? { feedback: `Revisa esa afirmación: ${explanation}` }
-        : {}),
-    })),
+    choices: labels.map((item, i) => {
+      const [label, feedback] = typeof item === "string" ? [item] : item;
+      return {
+        id: `c${i}`,
+        label,
+        ...(i !== correct
+          ? { feedback: feedback ?? `Revisa esa afirmación: ${explanation}` }
+          : {}),
+      };
+    }),
     solution: [explanation],
     explanation,
     hints: [
@@ -103,7 +109,11 @@ export function errorFeedback(question: Question, response: string): string {
     if (feedback) return feedback;
   }
   const value = question.format === "choice" ? response : parseNumber(response);
-  const error = question.errors?.find((item) => item.value === value);
+  const error = question.errors?.find((item) =>
+    typeof item.value === "number" && typeof value === "number"
+      ? Math.abs(item.value - value) < 1e-8
+      : item.value === value,
+  );
   if (error) return error.feedback;
   if (question.format !== "choice" && value === null)
     return "Escribe un número, un decimal con coma o punto, o una fracción como 3/4. Revisa que el denominador sea distinto de cero.";

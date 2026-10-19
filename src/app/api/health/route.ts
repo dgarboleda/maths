@@ -1,5 +1,5 @@
 export function GET() {
-  return Response.json({ service: "maths", protocol: 4, version: process.env.NEXT_PUBLIC_APP_VERSION, release: process.env.NEXT_PUBLIC_RELEASE }, {
+  return Response.json({ service: "maths", protocol: 5, version: process.env.NEXT_PUBLIC_APP_VERSION, release: process.env.NEXT_PUBLIC_RELEASE }, {
     headers: { "Cache-Control": "no-store" },
   });
 }
