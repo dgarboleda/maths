@@ -151,6 +151,16 @@ Primer minijuego con disparo. **Simplificación deliberada** respecto al diseño
 
 **Criterio de aceptación (cumplido):** romper el bloque correcto avanza sin perder vidas; romper uno incorrecto no cuesta nada ni termina la partida; dejar caer la pelota cuesta una vida sin terminar la partida; agotar las vidas termina sin ganar; romper 3 bloques correctos llama a `onWin`/`onGameOver` con los aciertos correctos — los 6 casos de `BreakoutGeneric.test.tsx` (con `advanceUntil`, no ventanas fijas) más las 15 pruebas puras de `breakoutPhysics.test.ts`, todo estable en corridas repetidas.
 
+## 8b. Fases 42-43 — Topos numéricos y Caja numérica (completas)
+
+Los siete juegos anteriores se controlan con flechas o cruceta, y casi todos exigen reflejos. Estos dos cubren los dos huecos: responder **solo tocando** y jugar **sin presión de tiempo**.
+
+- **`activityId: "topos"` — `src/components/topic/TopoGeneric.tsx`.** Seis agujeros (3×2); salen como mucho dos topos a la vez, cada uno con un candidato, desde una cola que recorre todos los candidatos antes de repetir (la respuesta correcta siempre vuelve a salir). Cada agujero es un `<button>` real ("Topo con 5" / "Agujero vacío"): se juega tocando, o con Tab y Enter, sin `TouchDPad`. El reloj de juego vive en `useRef` (§11, lección 1) y el estado solo cambia cuando sale o se esconde un topo. Que un topo se esconda nunca es una respuesta; en los niveles, dejar escapar el correcto cuesta una vida (como la oleada que aterriza en Invasión), y en la clase no pasa nada.
+- **`activityId: "cajas"` — `src/components/topic/CajasGeneric.tsx`.** Tablero 5×6, cinco cajas en la fila 3 y el camión en la fila 0. Por turnos y sin `useGameLoop`: nada se mueve si no se pulsa una flecha, así que no existe el fallo de reflejos. Se empuja (nunca se tira), una caja no empuja a otra, y la que llega a la fila del camión es la respuesta. «Reiniciar cajas» deshace un atasco sin coste.
+- **`LevelTopoOverlay.tsx` / `LevelCajasOverlay.tsx`** — calco de `LevelInvadersOverlay.tsx`; `ACTIVITIES`, `ARCADE_OVERLAYS` y `PRACTICE_GAMES` ganan las dos entradas.
+
+**Criterio de aceptación (cumplido):** en la clase solo tocar un topo o entregar una caja envía `onResponse(valor)`; en los niveles, acierto suma, error o topo correcto escapado cuesta una vida y 3 aciertos llaman a `onWin`/`onGameOver` (`TopoGeneric.test.tsx`, `CajasGeneric.test.tsx`, `LessonGames.test.tsx`); recorrido real en escritorio y móvil en `e2e/aprendizaje-minijuegos.spec.ts`.
+
 ## 9. Riesgos transversales
 
 1. **Rendimiento.** Juegos con muchas entidades en movimiento simultáneo (Pac-Man, Invaders, Breakout) no deben promover cada posición a `useState` — usar `useRef` + actualización imperativa de `style.transform` para las entidades "calientes" (balas, fantasmas, pelota), reservando `useState` para eventos discretos (puntaje, vidas, fin de ronda). Techo duro de entidades simultáneas por juego para no depender de que la optimización sea perfecta.

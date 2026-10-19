@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { Question } from "@/lib/learning/domain";
 import { shuffle, type Problem } from "@/lib/problem";
 
-export const PRACTICE_GAMES = ["frogger", "cohete", "snake", "runner", "numberpac", "invaders", "breakout"] as const;
+export const PRACTICE_GAMES = ["frogger", "cohete", "snake", "runner", "numberpac", "invaders", "breakout", "topos", "cajas"] as const;
 export type PracticeGame = (typeof PRACTICE_GAMES)[number];
 export type PracticeMode = "write" | PracticeGame;
 

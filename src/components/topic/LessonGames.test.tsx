@@ -6,6 +6,8 @@ import { RunnerGeneric } from "./RunnerGeneric";
 import { NumberPacGeneric } from "./NumberPacGeneric";
 import { InvadersGeneric } from "./InvadersGeneric";
 import { BreakoutGeneric } from "./BreakoutGeneric";
+import { TopoGeneric } from "./TopoGeneric";
+import { CajasGeneric } from "./CajasGeneric";
 import { AWAITING_INPUT, REFLEX_MISS } from "@/lib/minigames/lessonArcade";import { FroggerGeneric } from "./FroggerGeneric";
 import { CoheteGeneric } from "./CoheteGeneric";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
@@ -206,6 +208,7 @@ test("Bloques: un rebote contra un bloque incorrecto o perder la pelota no cuent
 test.each([
   ["Serpiente", SnakeGeneric], ["Carrera", RunnerGeneric], ["Laberinto", NumberPacGeneric],
   ["Invasión", InvadersGeneric], ["Bloques", BreakoutGeneric],
+  ["Topos", TopoGeneric], ["Cajas", CajasGeneric],
 ] as const)("%s en modo clase no tiene problemas de accesibilidad", async (_name, Game) => {
   const { container } = render(<Game moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={exercise()} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
@@ -222,4 +225,68 @@ test("Bloques en la clase: golpear con el borde de la paleta desvía la pelota h
   const startX = parseFloat(ball.style.left);
   tick(3_000);
   expect(Math.abs(parseFloat(ball.style.left) - startX)).toBeGreaterThan(10);
+});
+
+test("Topos: que un topo se esconda no cuenta; tocarlo envía su valor", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  render(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  tick(100);
+  expect(screen.getByRole("button", { name: "Topo con -4" })).toBeInTheDocument();
+  tick(3_000); // se esconde sin que nadie lo toque
+  expect(data.onResponse).not.toHaveBeenCalled();
+  expect(screen.queryByText(/Vidas/)).not.toBeInTheDocument();
+  for (let i = 0; i < 100 && !screen.queryByRole("button", { name: "Topo con -2" }); i++) tick(100);
+  fireEvent.click(screen.getByRole("button", { name: "Topo con -2" }));
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
+  // Un agujero vacío no responde nada.
+  fireEvent.click(screen.getAllByRole("button", { name: "Agujero vacío" })[0]);
+  expect(data.onResponse).toHaveBeenCalledTimes(1);
+});
+
+test("Topos: en pausa no salen topos ni se puede responder", () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const view = render(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  view.rerender(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
+  tick(3_000);
+  expect(screen.queryByRole("button", { name: /Topo con/ })).not.toBeInTheDocument();
+});
+
+test("Cajas: nada se mueve solo; la caja que llega al camión envía su valor", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const legacy = vi.fn();
+  const view = render(<CajasGeneric moduleId="" soundOn={false} onAnswer={legacy} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  act(() => vi.advanceTimersByTime(60_000));
+  expect(data.onResponse).not.toHaveBeenCalled();
+  key("ArrowUp"); // (2,5) → (2,4)
+  key("ArrowUp"); // empuja -2 a la fila 2
+  key("ArrowUp"); // fila 1
+  expect(data.onResponse).not.toHaveBeenCalled();
+  key("ArrowUp"); // fila 0: el camión
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
+  view.rerender(<CajasGeneric moduleId="" soundOn={false} onAnswer={legacy} exercise={{ ...data, solved: true }} />);
+  expect(screen.getByText("¡Caja entregada!")).toBeInTheDocument();
+  expect(legacy).not.toHaveBeenCalled();
+});
+
+test("Cajas: una caja no empuja a otra y reiniciar las devuelve a su sitio", async () => {
+  const data = exercise();
+  const { container } = render(<CajasGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const row = (y: number) => [...container.querySelectorAll("div.grid > div")].slice(y * 5, y * 5 + 5).map((c) => c.textContent);
+  key("ArrowUp");
+  key("ArrowUp"); // -2 sube a la fila 2; el jugador queda en (2,3)
+  key("ArrowLeft"); // -3 no puede empujar a -4
+  expect(row(3)).toEqual(["-4", "-3", "🧑", "-1", "0"]);
+  fireEvent.click(screen.getByRole("button", { name: "Reiniciar cajas" }));
+  expect(row(3)).toEqual(["-4", "-3", "-2", "-1", "0"]);
+  expect(row(5)[2]).toBe("🧑");
+  expect(data.onResponse).not.toHaveBeenCalled();
 });

@@ -1,0 +1,156 @@
+"use client";
+
+import { useEffect, useId, useRef, useState } from "react";
+import { CajasGeneric } from "@/components/topic/CajasGeneric";
+import { useDialogFocus } from "@/components/world/useDialogFocus";
+import { getFirebase } from "@/lib/firebase";
+import { getModule, missingPrerequisites } from "@/lib/curriculum";
+import { recordModuleAttempt } from "@/lib/attemptRecorder";
+import { awardMasteryBadges } from "@/lib/masteryRewards";
+import { getRecord, recordIfBest, type PersonalRecord } from "@/lib/records";
+import { PrerequisiteGate } from "./PrerequisiteGate";
+import type { ChallengePlacement, LevelEntity } from "@/lib/level/schema";
+import type { SkillProgress } from "@/lib/types";
+
+/**
+ * Actividad "cajas" de un `ChallengePlacement` — Fase 43 (docs/plan-
+ * minijuegos-retro.md), calco de `LevelInvadersOverlay.tsx`: `CajasGeneric`
+ * reporta con `onAnswer(correct) => Promise<estrellas>` y acá se adapta al
+ * mismo `recordModuleAttempt` (o su sustituto de Play Test/sandbox).
+ *
+ * Ganar (entregar las cajas correctas de la meta) es el único desenlace que resuelve el desafío
+ * del nivel (`onResolved`); agotar las vidas lo deja sin resolver.
+ */
+export function LevelCajasOverlay({
+  placement,
+  entity,
+  parentId,
+  childId,
+  progressBySkill,
+  streak,
+  repeatsToday,
+  soundOn,
+  onClose,
+  onResolved,
+  recordAttempt,
+  awardBadges,
+}: {
+  placement: ChallengePlacement;
+  entity: LevelEntity | undefined;
+  parentId: string;
+  childId: string;
+  progressBySkill: Record<string, SkillProgress>;
+  streak: number;
+  repeatsToday?: number;
+  soundOn: boolean;
+  onClose: () => void;
+  onResolved: (result: { moduleId: string; updated: SkillProgress; correct: boolean; stars: number }) => void;
+  recordAttempt?: typeof recordModuleAttempt;
+  awardBadges?: typeof awardMasteryBadges;
+}) {
+  const titleId = useId();
+  const { dialogRef, handleKeyDown } = useDialogFocus(onClose);
+  const mod = getModule(placement.moduleId);
+  const liveProgressRef = useRef(progressBySkill);
+  const totalStarsRef = useRef(0);
+  const resolvedRef = useRef(false);
+  const isSandbox = Boolean(recordAttempt);
+  const [record, setRecord] = useState<PersonalRecord | null>(null);
+
+  useEffect(() => {
+    if (isSandbox || !mod) return;
+    let cancelled = false;
+    getFirebase()
+      .then(({ db, firestore }) => getRecord(firestore, db, parentId, childId, "cajas", mod.id))
+      .then((r) => {
+        if (!cancelled) setRecord(r);
+      })
+      .catch((err) => console.error("No se pudo cargar la marca de Caja numérica", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [isSandbox, mod, parentId, childId]);
+
+  function handleGameOver(correctCount: number) {
+    if (isSandbox || !mod) return;
+    getFirebase()
+      .then(({ db, firestore }) => recordIfBest(firestore, db, parentId, childId, "cajas", mod.id, correctCount, record))
+      .then((next) => setRecord(next))
+      .catch((err) => console.error("No se pudo guardar la marca de Caja numérica", err));
+  }
+
+  if (!mod) return null;
+
+  const missing = missingPrerequisites(progressBySkill, mod.id);
+  if (missing.length > 0) {
+    return (
+      <PrerequisiteGate
+        mod={mod}
+        entity={entity}
+        childId={childId}
+        missing={missing}
+        titleId={titleId}
+        dialogRef={dialogRef}
+        onKeyDown={handleKeyDown}
+        onClose={onClose}
+      />
+    );
+  }
+
+  async function onAnswer(correct: boolean): Promise<number> {
+    const { db, firestore } = await getFirebase();
+    const outcome = await (recordAttempt ?? recordModuleAttempt)(
+      firestore,
+      db,
+      parentId,
+      childId,
+      mod!,
+      liveProgressRef.current[mod!.id],
+      correct,
+      streak,
+      0,
+      repeatsToday,
+    );
+    liveProgressRef.current = { ...liveProgressRef.current, [mod!.id]: outcome.updatedProgress };
+    totalStarsRef.current += outcome.stars;
+    const mastered = !outcome.wasMastered && outcome.updatedProgress.masteredAt !== null;
+    if (mastered) {
+      await (awardBadges ?? awardMasteryBadges)(firestore, db, parentId, childId, mod!, liveProgressRef.current);
+    }
+    return outcome.stars;
+  }
+
+  function handleWin() {
+    if (resolvedRef.current) return;
+    resolvedRef.current = true;
+    onResolved({ moduleId: mod!.id, updated: liveProgressRef.current[mod!.id], correct: true, stars: totalStarsRef.current });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/80 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={entity?.name ?? mod.label}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        className="max-h-full w-full max-w-lg overflow-y-auto focus:outline-none"
+      >
+        <div className="mb-2 flex justify-end">
+          <button type="button" onClick={onClose} className="rounded-xl bg-slate-800 px-3 py-1.5 text-sm font-bold text-slate-300 hover:bg-slate-700">
+            Salir
+          </button>
+        </div>
+        <CajasGeneric
+          moduleId={mod.id}
+          soundOn={soundOn}
+          onAnswer={onAnswer}
+          onWin={handleWin}
+          bestScore={record?.best}
+          onGameOver={handleGameOver}
+        />
+      </div>
+    </div>
+  );
+}

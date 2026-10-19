@@ -9,6 +9,8 @@ import { LevelRunnerOverlay } from "./LevelRunnerOverlay";
 import { LevelNumberPacOverlay } from "./LevelNumberPacOverlay";
 import { LevelInvadersOverlay } from "./LevelInvadersOverlay";
 import { LevelBreakoutOverlay } from "./LevelBreakoutOverlay";
+import { LevelTopoOverlay } from "./LevelTopoOverlay";
+import { LevelCajasOverlay } from "./LevelCajasOverlay";
 import type { PuzzleRules } from "@/components/world/PuzzleOverlay";
 import type { ChallengePlacement, LevelEntity } from "@/lib/level/schema";
 import type { SkillProgress } from "@/lib/types";
@@ -48,6 +50,8 @@ const ARCADE_OVERLAYS: Record<string, ComponentType<ArcadeOverlayProps>> = {
   pacman: LevelNumberPacOverlay,
   invaders: LevelInvadersOverlay,
   breakout: LevelBreakoutOverlay,
+  topos: LevelTopoOverlay,
+  cajas: LevelCajasOverlay,
 };
 
 /**

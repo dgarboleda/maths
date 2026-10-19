@@ -24,6 +24,12 @@ const Invaders = dynamic(() =>
 const Breakout = dynamic(() =>
   import("@/components/topic/BreakoutGeneric").then((m) => m.BreakoutGeneric),
 );
+const Topos = dynamic(() =>
+  import("@/components/topic/TopoGeneric").then((m) => m.TopoGeneric),
+);
+const Cajas = dynamic(() =>
+  import("@/components/topic/CajasGeneric").then((m) => m.CajasGeneric),
+);
 const GAMES = {
   frogger: Frogger,
   cohete: Cohete,
@@ -32,6 +38,8 @@ const GAMES = {
   numberpac: NumberPac,
   invaders: Invaders,
   breakout: Breakout,
+  topos: Topos,
+  cajas: Cajas,
 } as const;
 const noLegacyReward = async () => 0;
 

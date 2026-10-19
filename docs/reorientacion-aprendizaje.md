@@ -71,9 +71,11 @@ Las métricas educativas nuevas se muestran primero en `/panel/progreso`; la act
 ## Minijuegos dentro de las clases
 
 En la etapa **Práctica** la aplicación sortea, en cada ejercicio numérico, uno
-de los siete minijuegos: **Estanque** (Frogger), **Cohete**, **Serpiente
+de los nueve minijuegos: **Estanque** (Frogger), **Cohete**, **Serpiente
 numérica**, **Autopista de resultados**, **Laberinto de números**, **Invasión
-numérica** o **Bloques numéricos**. El estudiante no tiene que elegir. Las doce
+numérica**, **Bloques numéricos**, **Topos numéricos** (se responde tocando el
+topo, sin cruceta) o **Caja numérica** (Sokoban por turnos, sin reloj). El
+estudiante no tiene que elegir. Las doce
 clases ofrecen ejercicios numéricos para todos. Cada pregunta conserva su
 enunciado, respuesta, pistas y desarrollo del catálogo educativo compartido.
 Las preguntas de elección conceptual se responden en su formato habitual.

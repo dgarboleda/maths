@@ -43,7 +43,7 @@ describe("pickPracticeGame", () => {
     const n = PRACTICE_GAMES.length;
     expect(PRACTICE_GAMES.map((_, i) => pickPracticeGame(() => (i + 0.5) / n))).toEqual([...PRACTICE_GAMES]);
     expect(pickPracticeGame(() => 0)).toBe("frogger");
-    expect(pickPracticeGame(() => 0.999999)).toBe("breakout");
+    expect(pickPracticeGame(() => 0.999999)).toBe("cajas");
   });
 
   test("las e2e pueden fijar el juego", () => {
