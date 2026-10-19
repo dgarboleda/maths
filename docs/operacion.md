@@ -19,6 +19,8 @@ No lo rotes sin plan: los hashes v2 dejarían de coincidir y habría que restabl
 
 **Migración:** los enlaces anteriores (sin clave) dejan de funcionar y muestran que hay que pedir uno nuevo. Al publicar, avisa a las familias de que vuelvan a compartir el enlace desde Ajustes. El contrato de los callables cambió: Functions y Worker anuncian el **protocolo 4** y deben desplegarse desde la misma revisión.
 
+**Aventuras por unidad y 37 lecciones (protocolo 7):** Functions acepta los identificadores de las siete aventuras y valida cada plan con las entradas de su definición; el frontend sin ese Functions no puede guardar las aventuras nuevas. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 7.
+
 **Currículo de 32 lecciones y repaso mixto (protocolo 6):** Functions valida ahora los identificadores `repaso-{unidad}` y lee el avance de las clases de la unidad para decidir qué mezclar; el frontend sin ese Functions no puede abrir el repaso ni las clases nuevas. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 6.
 
 **Contenido educativo v2 (protocolo 5):** el navegador y Functions comparten el catálogo de lecciones; al cambiar los bancos ambos deben desplegarse desde la misma revisión (`npm run deploy`) y anuncian el **protocolo 5**. El avance existente se migra automáticamente sin perder logros (ver [reorientación](reorientacion-aprendizaje.md#diseño-de-los-bancos-contenido-v2)).

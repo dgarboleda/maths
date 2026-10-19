@@ -168,6 +168,8 @@ test("El apagón responde a decisiones, se guarda y funciona en una cuenta sin n
 }) => {
   const childId = await learner(page);
   await page.getByRole("link", { name: "Aventura", exact: true }).click();
+  await page.getByRole("link", { name: /El apagón/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/jugar/${childId}/aventura/apagon$`));
   await page.getByRole("button", { name: /Inspeccionar la central/ }).click();
   await expect(page.getByText(/Reserva disponible: 120/)).toBeVisible();
   const configure = async (values: number[]) => {
@@ -203,4 +205,35 @@ test("El apagón responde a decisiones, se guarda y funciona en una cuenta sin n
   expect(results.violations).toEqual([]);
   await page.getByRole("link", { name: "Inicio", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/jugar/${childId}$`));
+});
+
+test("una aventura de unidad orienta cada intento, se guarda y aparece completada", async ({
+  page,
+}) => {
+  const childId = await learner(page);
+  await page.goto(`/jugar/${childId}/aventura`);
+  await expect(page.getByRole("heading", { name: "Aventuras", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: /El jardín de baldosas/ }).click();
+  await page.getByRole("button", { name: "Investigar la situación" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /al menos 50 m²/ })).toBeVisible();
+  const plan = async (lado: string, baldosas: string) => {
+    await page.getByLabel("Lado del jardín (m)").fill(lado);
+    await page.getByLabel("Baldosas", { exact: true }).fill(baldosas);
+    await page.getByRole("button", { name: "Probar el plan" }).click();
+  };
+  await plan("8", "32");
+  await expect(page.getByRole("status").filter({ hasText: /esquinas/ })).toBeVisible();
+  await plan("8", "36");
+  await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
+  const results = await new AxeBuilder({ page }).include("main").analyze();
+  expect(results.violations).toEqual([]);
+  await page.getByRole("link", { name: "Elegir otra aventura" }).click();
+  await expect(page.getByText("1 de 7 misiones completadas")).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });

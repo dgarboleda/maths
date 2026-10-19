@@ -7,6 +7,13 @@ import { GEOMETRY_LESSONS } from "./geometry";
 import { DATA_LESSONS } from "./data";
 import { PROPORTIONALITY_LESSONS } from "./proportionality";
 import { ALGEBRA_LESSONS } from "./algebra";
+import {
+  ANGLE_LESSONS,
+  DECIMAL_LESSONS,
+  NUMBER_EXTRA_LESSONS,
+  QUADRATIC_LESSONS,
+  SIMILARITY_LESSONS,
+} from "./extraTopics";
 import type { Lesson, UnitId } from "./types";
 
 export const LEARNING_UNITS = [
@@ -48,13 +55,18 @@ export const LEARNING_UNITS = [
 ] as const satisfies readonly { id: UnitId; title: string; description: string }[];
 export const LESSONS: Lesson[] = [
   ...NUMBER_LESSONS,
+  ...NUMBER_EXTRA_LESSONS,
   ...FRACTION_LESSONS,
   ...FRACTION_OPERATION_LESSONS,
+  ...DECIMAL_LESSONS,
   ...PROPORTIONALITY_LESSONS,
   ...INVERSE_LESSONS,
   ...ALGEBRA_LESSONS,
   ...EXPRESSION_LESSONS,
+  ...QUADRATIC_LESSONS,
+  ...ANGLE_LESSONS,
   ...GEOMETRY_LESSONS,
+  ...SIMILARITY_LESSONS,
   ...DATA_LESSONS,
 ];
 export function getLesson(id: string): Lesson | undefined {

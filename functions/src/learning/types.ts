@@ -153,13 +153,14 @@ export interface AdventureState {
   completedAt: number | null;
   attempts: number;
   inspected: boolean;
-  allocation: [number, number, number];
+  /** Último plan probado: un valor por entrada de la aventura. */
+  allocation: number[];
   feedback: string;
   updatedAt: number;
 }
 export type AdventureAction =
   | { kind: "inspect" }
-  | { kind: "dispatch"; allocation: [number, number, number] };
+  | { kind: "dispatch"; allocation: number[] };
 
 /** Repaso intercalado de una unidad: mezcla problemas de las clases ya
  *  terminadas para que el estudiante tenga que elegir la estrategia. */

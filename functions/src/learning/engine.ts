@@ -1,3 +1,4 @@
+import { getAdventure, type AdventureDef } from "./adventures";
 import { isAnswerCorrect } from "./questions";
 import type {
   AdventureAction,
@@ -320,65 +321,66 @@ export function applyLearningAction(
   return state;
 }
 
-export function initialAdventure(): AdventureState {
+export function initialAdventure(id = "apagon"): AdventureState {
+  const adventure = requireAdventure(id);
   return {
     revision: 0,
     completedAt: null,
     attempts: 0,
     inspected: false,
-    allocation: [0, 0, 0],
-    feedback:
-      "Inspecciona la central para conocer la reserva y las necesidades de la ciudad.",
+    allocation: adventure.inputs.map((input) => input.start),
+    feedback: adventure.initialFeedback,
     updatedAt: 0,
   };
+}
+function requireAdventure(id: string) {
+  const adventure = getAdventure(id);
+  if (!adventure) throw new LearningError("Esta aventura no existe.");
+  return adventure;
+}
+/** Un plan válido trae un entero dentro del rango de cada entrada. */
+export function validAllocation(adventure: AdventureDef, allocation: unknown) {
+  return (
+    Array.isArray(allocation) &&
+    allocation.length === adventure.inputs.length &&
+    allocation.every(
+      (n, i) =>
+        Number.isSafeInteger(n) &&
+        n >= adventure.inputs[i].min &&
+        n <= adventure.inputs[i].max,
+    )
+  );
 }
 export function applyAdventureAction(
   previous: AdventureState | undefined,
   action: AdventureAction,
   now: number,
+  id = "apagon",
 ): AdventureState {
+  const adventure = requireAdventure(id);
   const state = {
-    ...(previous ?? initialAdventure()),
+    ...(previous ?? initialAdventure(id)),
     revision: (previous?.revision ?? 0) + 1,
     updatedAt: now,
   };
   if (action.kind === "inspect") {
     state.inspected = true;
-    state.feedback =
-      "Reserva disponible: 120. El hospital requiere 3/4 de la reserva, la radio 1/6 y el taller puede usar lo restante. Planifica y prueba la distribución.";
+    state.feedback = adventure.inspectFeedback;
     return state;
   }
-  if (!state.inspected)
+  if (!state.inspected) throw new LearningError(adventure.inspectFirst);
+  if (!validAllocation(adventure, action.allocation)) {
+    const [first] = adventure.inputs;
     throw new LearningError(
-      "Inspecciona primero las necesidades de la ciudad.",
+      adventure.inputs.every((i) => i.min === first.min && i.max === first.max)
+        ? `Cada valor debe ser un número entero entre ${first.min} y ${first.max}.`
+        : "Cada valor debe ser un número entero dentro de su rango.",
     );
-  if (
-    !Array.isArray(action.allocation) ||
-    action.allocation.length !== 3 ||
-    action.allocation.some((n) => !Number.isSafeInteger(n) || n < 0 || n > 120)
-  )
-    throw new LearningError(
-      "Cada suministro debe ser un número entero entre 0 y 120.",
-    );
+  }
   state.allocation = [...action.allocation];
   state.attempts++;
-  const [hospital, radio, workshop] = action.allocation,
-    total = hospital + radio + workshop;
-  if (total > 120)
-    state.feedback = `La red se protege y corta el suministro: pediste ${total}, pero hay 120. Redistribuye la reserva antes de conectar.`;
-  else if (hospital < 90)
-    state.feedback =
-      "El hospital sigue con energía de emergencia. Necesita 3/4 de 120: encuentra el valor de un cuarto y toma tres partes.";
-  else if (radio < 20)
-    state.feedback =
-      "El hospital responde, pero la radio aún no transmite. Necesita 1/6 de la reserva original de 120, no de lo que queda después del hospital.";
-  else if (workshop < 10)
-    state.feedback =
-      "El hospital y la radio funcionan. El taller necesita al menos 10 unidades para reparar la red: revisa cuánto queda después de ambos suministros.";
-  else {
-    state.completedAt ??= now;
-    state.feedback =
-      "La ciudad recuperó la energía: el hospital funciona con 90, la radio transmite con 20 y el taller repara con 10. Tu distribución respeta las necesidades y conserva las 120 unidades.";
-  }
+  const result = adventure.evaluate(state.allocation);
+  state.feedback = result.feedback;
+  if (result.goals.every(Boolean)) state.completedAt ??= now;
   return state;
 }

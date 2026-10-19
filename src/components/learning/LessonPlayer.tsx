@@ -13,6 +13,7 @@ import {
   initialProgress,
   learningStatus,
   LESSONS,
+  ADVENTURES,
   questionsFor,
   STAGE_LABELS,
   type LearningAction,
@@ -724,6 +725,7 @@ function LessonSummary({
   disabled: boolean;
 }) {
   const next = LESSONS[LESSONS.findIndex((item) => item.id === lesson.id) + 1];
+  const adventure = ADVENTURES.find((item) => item.lessonIds.at(-1) === lesson.id);
   const result =
     progress.lastReview &&
     progress.lastReview.at >= (progress.lastCheck?.at ?? 0)
@@ -825,9 +827,12 @@ function LessonSummary({
         )}
       </div>
       <div className="flex flex-wrap gap-3 border-t border-slate-700 pt-5">
-        {lesson.id === "fraccion-cantidad" && (
-          <Link className={primaryButton} href={`/jugar/${childId}/aventura`}>
-            Jugar El apagón
+        {adventure && (
+          <Link
+            className={primaryButton}
+            href={`/jugar/${childId}/aventura/${adventure.id}`}
+          >
+            Jugar {adventure.title}
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
         )}

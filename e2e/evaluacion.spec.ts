@@ -18,7 +18,8 @@ test.describe("Evaluación de ubicación en el navegador", () => {
     await expect(page.getByRole("link", { name: "Comenzar mi primera clase" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Todavía no hay ninguna aventura" })).toHaveCount(0);
     await page.getByRole("link", { name: "Aventura", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "El apagón", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Aventuras", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /El apagón/ })).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`/jugar/${childId}/aventura$`));
   });
 

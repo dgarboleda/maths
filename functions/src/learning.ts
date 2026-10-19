@@ -1,11 +1,13 @@
 import { createHash } from "node:crypto";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { getAdventure, type AdventureDef } from "./learning/adventures";
 import { getLesson } from "./learning/catalog";
 import {
   applyAdventureAction,
   applyLearningAction,
   LearningError,
+  validAllocation,
 } from "./learning/engine";
 import type {
   AdventureAction,
@@ -33,19 +35,14 @@ const stages = [
 ];
 function validAction(
   action: unknown,
-  adventure: boolean,
+  adventure: AdventureDef | undefined,
 ): action is LearningAction | AdventureAction {
   if (!action || typeof action !== "object") return false;
   const a = action as Record<string, unknown>;
   if (adventure)
     return (
       a.kind === "inspect" ||
-      (a.kind === "dispatch" &&
-        Array.isArray(a.allocation) &&
-        a.allocation.length === 3 &&
-        a.allocation.every(
-          (n) => Number.isSafeInteger(n) && n >= 0 && n <= 120,
-        ))
+      (a.kind === "dispatch" && validAllocation(adventure, a.allocation))
     );
   return (
     a.kind === "next" ||
@@ -106,7 +103,7 @@ export const recordLearningAction = onCall(
         "permission-denied",
         "Este perfil pertenece a otra sesión.",
       );
-    const adventure = lessonId === "apagon";
+    const adventure = getAdventure(lessonId);
     const reviewUnit = unitForReviewId(lessonId);
     const lesson = adventure || reviewUnit ? undefined : getLesson(lessonId);
     if ((!adventure && !reviewUnit && !lesson) || !validAction(action, adventure))
@@ -173,6 +170,7 @@ export const recordLearningAction = onCall(
               previous as AdventureState | undefined,
               action as AdventureAction,
               now,
+              adventure.id,
             )
           : reviewUnit
             ? applyMixedReviewAction(
