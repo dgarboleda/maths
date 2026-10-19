@@ -13,7 +13,7 @@ export const INVERSE_LESSONS: Lesson[] = [
       "Cuantas más bombas trabajan, menos tiempo tarda en llenarse el depósito. Para planificar equipos hay que saber cómo cambia el tiempo.",
     prerequisites: ["proporcionalidad"],
     legacyModuleIds: ["algebra-d5", "algebra-d9"],
-    visual: "proportion",
+    visual: "inverse",
     vocabulary: [
       { term: "Proporcionalidad inversa", meaning: "Relación en la que, si una cantidad se multiplica por k, la otra se divide entre k: x · y es constante." },
       { term: "Constante de proporcionalidad inversa", meaning: "El producto x · y, igual para todos los pares." },

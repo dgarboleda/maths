@@ -24,7 +24,7 @@ export const NUMBER_EXTRA_LESSONS: Lesson[] = [
       "Los informes de la central hablan de millones de vatios y de milésimas de segundo. La notación científica permite leerlos y compararlos sin contar ceros.",
     prerequisites: ["potencias-raices"],
     legacyModuleIds: ["aritmetica-notacion-cientifica", "aritmetica-potencias"],
-    visual: "integers",
+    visual: "powers",
     vocabulary: [
       { term: "Notación científica", meaning: "Escritura a × 10ⁿ con 1 ≤ a < 10 y n entero." },
       { term: "Exponente negativo", meaning: "10⁻³ = 1/1000 = 0,001: indica posiciones a la derecha de la coma." },
@@ -203,7 +203,7 @@ export const DECIMAL_LESSONS: Lesson[] = [
       "Los precios y las mediciones de la ciudad tienen decimales. Un error en la coma convierte 2,4 kg en 24 kg.",
     prerequisites: ["fraccion-decimal-porcentaje"],
     legacyModuleIds: ["aritmetica-d8", "aritmetica-decimales-mult-div"],
-    visual: "percent",
+    visual: "decimal-grid",
     vocabulary: [
       { term: "Valor posicional", meaning: "Cada posición vale diez veces la de su derecha: décimas, centésimas, milésimas…" },
       { term: "Estimar", meaning: "Calcular aproximadamente para comprobar si un resultado es razonable." },
@@ -382,7 +382,7 @@ export const ANGLE_LESSONS: Lesson[] = [
       "Para instalar antenas y rampas hay que calcular ángulos que no se pueden medir directamente.",
     prerequisites: ["jerarquia-operaciones"],
     legacyModuleIds: ["geometria-d6", "geometria-d1"],
-    visual: "area",
+    visual: "angles",
     vocabulary: [
       { term: "Complementarios", meaning: "Dos ángulos que suman 90°." },
       { term: "Suplementarios", meaning: "Dos ángulos que suman 180°." },
@@ -549,7 +549,7 @@ export const SIMILARITY_LESSONS: Lesson[] = [
       "Los planos de la ciudad están a escala y la altura de un edificio se puede medir con su sombra. Ambas ideas se basan en la semejanza.",
     prerequisites: ["razones", "perimetro-area"],
     legacyModuleIds: ["geometria-d10", "algebra-d5"],
-    visual: "ratio",
+    visual: "similarity",
     vocabulary: [
       { term: "Semejantes", meaning: "Figuras con la misma forma: ángulos iguales y lados proporcionales." },
       { term: "Razón de semejanza (k)", meaning: "El factor por el que se multiplican todas las longitudes." },
@@ -716,7 +716,7 @@ export const QUADRATIC_LESSONS: Lesson[] = [
       "Al diseñar placas y parcelas aparecen áreas que dependen de una longitud desconocida al cuadrado.",
     prerequisites: ["propiedad-distributiva", "potencias-raices"],
     legacyModuleIds: ["algebra-d10", "aritmetica-raices"],
-    visual: "area",
+    visual: "parabola",
     vocabulary: [
       { term: "Ecuación cuadrática", meaning: "Ecuación en la que la incógnita aparece al cuadrado: ax² + bx + c = 0." },
       { term: "Producto nulo", meaning: "Si un producto vale 0, al menos uno de los factores vale 0." },

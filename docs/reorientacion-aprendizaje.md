@@ -57,7 +57,26 @@ Cada lección define seis formas paralelas de siete tareas: concepto (q0), proce
 
 **Migración.** Al cambiar los bancos, `CONTENT_VERSION` pasa a 2. Un avance guardado con la versión anterior conserva logros, fechas, comprobaciones y repasos; solo se reinicia la ronda en curso, cuyas respuestas pertenecían a preguntas que ya no existen (`migrateProgress`, aplicada igual en el navegador y en Functions).
 
-Las representaciones interactivas incluyen barras de fracción y equivalencia, relación con porcentajes, fracción de un total, razones, tasas, tablas proporcionales, cambios de base e igualdad. Las bases se ofrecen como enlaces a otras clases, sin candados nuevos.
+Las representaciones interactivas incluyen barras de fracción y equivalencia, relación con porcentajes, fracción de un total, razones, tasas, cambios de base e igualdad. Las bases se ofrecen como enlaces a otras clases, sin candados nuevos.
+
+**Gráficos dinámicos.** Cada clase cuyo concepto depende de una forma o de un gráfico tiene un modelo propio en SVG, sin librerías de gráficos (`GraphVisuals.tsx`, `ShapeVisuals.tsx`). Un componente `Plane` común dibuja ejes, cuadrícula y escalas para las funciones.
+
+| Clase | Modelo | Qué se conserva al mover los controles |
+| --- | --- | --- |
+| Expresiones y funciones lineales | Recta en el plano con punto inicial y triángulo de pendiente | Cada +1 en x cambia y en m |
+| Proporcionalidad directa / inversa | Recta por el origen frente a hipérbola, con conmutador | Cociente y ÷ x / producto x · y |
+| Ecuaciones cuadráticas | Parábola y = (x − p)(x − q) con raíces y eje de simetría | Las raíces son los ceros de cada factor |
+| Inecuaciones | Recta con punto abierto/cerrado, valor de prueba y multiplicación por −1 | El conjunto solución; el signo se invierte |
+| Ángulos | Rectas que se cortan y triángulo deformable | Opuestos iguales, vecinos suman 180°, el triángulo suma 180° |
+| Pitágoras | Cuadrados sobre los tres lados | a² + b² = c² |
+| Círculo | Radio, cuadrado r² y borde desenrollado | Borde ≈ 3,14 diámetros |
+| Semejanza | Triángulo 3-4-5 escalado por k | Ángulos; lados × k, área × k² |
+| Volumen | Prisma por capas en perspectiva | Base × altura |
+| Probabilidad compuesta | Árbol con y sin reemplazo | Producto por rama; las ramas suman 1 |
+| Notación científica | Escala logarítmica de 10⁻⁶ a 10⁹ m | Cada paso multiplica por 10 |
+| Operaciones con decimales | Cuadrícula 10 × 10 | Décima × décima = centésima |
+
+Todos tienen etiqueta textual que se actualiza con cada cambio, controles nativos operables con teclado y pruebas con axe (componentes y navegador, también en móvil).
 
 ## Evidencias y criterios provisionales
 

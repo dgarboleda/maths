@@ -237,3 +237,25 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
     ),
   ).toBe(true);
 });
+
+test("los gráficos dinámicos de la clase responden, son accesibles y caben en pantalla", async ({
+  page,
+}) => {
+  const childId = await learner(page);
+  for (const [lessonId, graph] of [
+    ["funciones-lineales", /Recta y = 3x más 2/],
+    ["angulos", /Dos rectas que se cortan: 60°/],
+  ] as const) {
+    await page.goto(`/jugar/${childId}/aprende/${lessonId}`);
+    await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+    const explore = page.getByRole("region", { name: "Explora la idea" });
+    await expect(explore.getByRole("img", { name: graph })).toBeVisible();
+    await explore.getByRole("slider").first().press("ArrowRight");
+    await expect(explore.getByRole("img", { name: graph })).toHaveCount(0);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    const results = await new AxeBuilder({ page }).include("main").analyze();
+    expect(results.violations).toEqual([]);
+  }
+});

@@ -542,7 +542,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       "Muchas decisiones de la ciudad no exigen un valor exacto sino un límite: como máximo, al menos. Las inecuaciones describen esos rangos.",
     prerequisites: ["ecuaciones-ambos-lados"],
     legacyModuleIds: ["algebra-d8"],
-    visual: "integers",
+    visual: "inequality",
     vocabulary: [
       { term: "Inecuación", meaning: "Desigualdad con una incógnita, como 3x + 2 < 14." },
       { term: "Conjunto solución", meaning: "Todos los valores que hacen verdadera la desigualdad." },

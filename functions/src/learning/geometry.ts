@@ -208,7 +208,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
       "Los depósitos y las turbinas son circulares. Para cercarlos o cubrirlos hay que medir su borde y su superficie.",
     prerequisites: ["perimetro-area"],
     legacyModuleIds: ["geometria-d4", "geometria-d6"],
-    visual: "area",
+    visual: "circle",
     vocabulary: [
       { term: "Radio (r)", meaning: "Distancia del centro a la circunferencia." },
       { term: "Diámetro (d)", meaning: "Segmento que pasa por el centro: d = 2r." },
@@ -386,7 +386,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
       "Para saber cuánta agua cabe en los depósitos de la ciudad hay que calcular su volumen y expresarlo en litros.",
     prerequisites: ["circulo"],
     legacyModuleIds: ["geometria-d7", "geometria-d2", "medicion-d4"],
-    visual: "area",
+    visual: "volume",
     vocabulary: [
       { term: "Volumen", meaning: "Espacio que ocupa un cuerpo; se mide en unidades cúbicas: cm³, m³." },
       { term: "Capacidad", meaning: "Lo que cabe dentro; 1 dm³ = 1 L y 1 m³ = 1000 L." },
@@ -552,7 +552,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
       "Para tender un cable en diagonal o calcular la longitud de una rampa hay que relacionar los lados de un triángulo rectángulo.",
     prerequisites: ["potencias-raices", "perimetro-area"],
     legacyModuleIds: ["geometria-d9", "geometria-d8"],
-    visual: "area",
+    visual: "pythagoras",
     vocabulary: [
       { term: "Catetos", meaning: "Los dos lados que forman el ángulo recto." },
       { term: "Hipotenusa", meaning: "El lado opuesto al ángulo recto; es el más largo." },

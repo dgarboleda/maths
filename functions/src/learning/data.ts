@@ -364,7 +364,7 @@ export const DATA_LESSONS: Lesson[] = [
       "Una ruta pasa por dos semáforos y dos centrales pueden fallar a la vez. Para estimar esas situaciones hay que combinar probabilidades.",
     prerequisites: ["probabilidad-simple", "fracciones-producto-cociente"],
     legacyModuleIds: ["medicion-d10", "medicion-d9"],
-    visual: "probability",
+    visual: "tree",
     vocabulary: [
       { term: "Espacio muestral", meaning: "Conjunto de todos los resultados posibles." },
       { term: "Sucesos independientes", meaning: "El resultado de uno no cambia la probabilidad del otro." },

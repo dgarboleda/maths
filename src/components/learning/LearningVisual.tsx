@@ -2,6 +2,22 @@
 
 import { useId, useState } from "react";
 import type { Visual } from "@/lib/learning/domain";
+import {
+  InequalityVisual,
+  LinearVisual,
+  ParabolaVisual,
+  ProportionVisual,
+} from "./GraphVisuals";
+import {
+  AnglesVisual,
+  CircleVisual,
+  DecimalGridVisual,
+  PowersVisual,
+  PythagorasVisual,
+  SimilarityVisual,
+  TreeVisual,
+  VolumeVisual,
+} from "./ShapeVisuals";
 
 function Bar({
   numerator,
@@ -143,42 +159,24 @@ function ProbabilityVisual({ id }: { id: string }) {
   );
 }
 
-function LinearVisual({ id }: { id: string }) {
-  const [slope, setSlope] = useState(3);
-  const [intercept, setIntercept] = useState(2);
-  return (
-    <>
-      <label htmlFor={`${id}-m`} className="block text-sm">Cambio por unidad (pendiente): <strong>{slope}</strong></label>
-      <input id={`${id}-m`} type="range" min={-4} max={6} value={slope}
-        onChange={(e) => setSlope(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
-      <label htmlFor={`${id}-b`} className="block text-sm">Valor inicial (x = 0): <strong>{intercept}</strong></label>
-      <input id={`${id}-b`} type="range" min={-5} max={10} value={intercept}
-        onChange={(e) => setIntercept(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
-      <p className="font-mono text-lg">y = {slope}x {intercept < 0 ? "−" : "+"} {Math.abs(intercept)}</p>
-      <table className="w-full text-left text-sm">
-        <caption className="sr-only">Tabla de la función lineal</caption>
-        <thead><tr><th className="p-2">x</th><th className="p-2">y</th><th className="p-2">Cambio de y</th></tr></thead>
-        <tbody>
-          {[0, 1, 2, 3].map((x) => (
-            <tr key={x} className="border-t border-slate-700">
-              <td className="p-2">{x}</td>
-              <td className="p-2">{slope * x + intercept}</td>
-              <td className="p-2">{x === 0 ? "—" : `+${slope}`.replace("+-", "−")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="text-sm text-slate-300">Cada vez que x aumenta 1, y cambia {slope}: esa es la pendiente.</p>
-    </>
-  );
-}
-
 const OWN_VISUALS: Partial<Record<Visual, (props: { id: string }) => React.JSX.Element>> = {
   integers: NumberLineVisual,
   area: AreaVisual,
   data: DataVisual,
   probability: ProbabilityVisual,
   linear: LinearVisual,
+  direct: ({ id }) => <ProportionVisual id={id} initial="direct" />,
+  inverse: ({ id }) => <ProportionVisual id={id} initial="inverse" />,
+  parabola: ParabolaVisual,
+  inequality: InequalityVisual,
+  angles: AnglesVisual,
+  pythagoras: PythagorasVisual,
+  circle: CircleVisual,
+  similarity: SimilarityVisual,
+  volume: VolumeVisual,
+  tree: TreeVisual,
+  powers: PowersVisual,
+  "decimal-grid": DecimalGridVisual,
 };
 
 export function LearningVisual({ kind }: { kind: Visual }) {
