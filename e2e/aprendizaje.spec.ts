@@ -72,12 +72,14 @@ test("clase, ejemplos, práctica con reintento, comprobación y aplicación con 
       { exact: false },
     ),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
-  await page.getByRole("button", { name: "Ahora, hazlo con ayuda" }).click();
   const lesson = getLesson("fraccion-cantidad")!;
-  // Un error genera una ayuda y permite reintentar el mismo problema.
-  await answer(page, lesson.guided[0], "c0");
-  await expect(page.getByText(/Revisa esa afirmación/)).toBeVisible();
+  for (let i = 1; i < lesson.examples.length; i++)
+    await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
+  await page.getByRole("button", { name: "Ahora, hazlo con ayuda" }).click();
+  // Un error recibe el feedback propio de esa alternativa y permite reintentar.
+  const wrong = lesson.guided[0].choices!.find((o) => o.id !== lesson.guided[0].answer)!;
+  await answer(page, lesson.guided[0], wrong.id);
+  await expect(page.getByText(wrong.feedback!, { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Pedir una pista", exact: true })
     .click();

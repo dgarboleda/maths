@@ -47,6 +47,22 @@ export function initialProgress(lesson: Lesson): LearningProgress {
     updatedAt: 0,
   };
 }
+/** Avance guardado con una versión anterior del contenido: conserva logros,
+ *  fechas e historial de comprobaciones, y reinicia solo la ronda en curso,
+ *  porque sus respuestas pertenecen a preguntas que ya no existen. */
+export function migrateProgress(
+  lesson: Lesson,
+  progress: LearningProgress,
+): LearningProgress {
+  if (progress.contentVersion === lesson.version) return progress;
+  const questionStage = !["class", "examples", "summary"].includes(progress.stage);
+  return {
+    ...progress,
+    contentVersion: lesson.version,
+    responses: {},
+    index: questionStage ? 0 : progress.index,
+  };
+}
 export function questionsFor(
   lesson: Lesson,
   progress: LearningProgress,
@@ -160,11 +176,7 @@ export function applyLearningAction(
   action: LearningAction,
   now: number,
 ): LearningProgress {
-  const base = previous ?? initialProgress(lesson);
-  if (base.contentVersion !== lesson.version)
-    throw new LearningError(
-      "La lección cambió. Vuelve a abrirla para cargar su nueva versión.",
-    );
+  const base = previous ? migrateProgress(lesson, previous) : initialProgress(lesson);
   const state: LearningProgress = {
     ...base,
     responses: { ...base.responses },

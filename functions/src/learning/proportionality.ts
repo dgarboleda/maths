@@ -82,6 +82,15 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         ],
         "Las otras 14 son negras; 21 + 14 = 35 y 21:14 = 3:2.",
       ),
+      ex(
+        "La mezcla A tiene 2 azules por cada 3 verdes; la B, 3 azules por cada 5 verdes. ¿Cuál es más azul?",
+        [
+          ["A: 2/5; B: 3/8", "Comparamos la parte azul respecto del total de cada mezcla."],
+          ["2/5 = 16/40; 3/8 = 15/40", "Un denominador común hace comparables las partes."],
+          ["16/40 > 15/40", "La mezcla A tiene mayor proporción de azul."],
+        ],
+        "Para comparar razones no basta mirar qué mezcla tiene más azul en cantidad: se compara la proporción.",
+      ),
     ],
     diagnostic: [
       n(
@@ -112,17 +121,20 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
       ),
     ],
     questions(v) {
-      const a = v + 2,
-        b = v + 3,
-        k = v + 2;
+      const [a, b, k] = [[2, 3, 4], [3, 5, 3], [2, 7, 3], [5, 2, 3], [3, 4, 5], [4, 7, 2]][v],
+        // Dos mezclas azules:verdes cuya proporción de azules hay que comparar.
+        [p, q, r, s] = [[3, 4, 2, 3], [2, 3, 3, 5], [3, 2, 5, 3], [5, 6, 4, 5], [3, 4, 4, 5], [2, 5, 3, 7]][v],
+        shareA = p / (p + q),
+        shareB = r / (r + s),
+        best = Math.max(shareA, shareB);
       return [
         c(
           "q0",
           `La razón azules:verdes es ${a}:${b}. ¿Qué significa?`,
           [
-            `Hay ${a} azules en total`,
+            [`Hay ${a} azules en total`, `La razón no dice cuántas hay en total: compara ${a} azules con ${b} verdes en cada grupo.`],
             `Hay ${a} azules por cada ${b} verdes`,
-            `Hay ${b} azules por cada ${a} verdes`,
+            [`Hay ${b} azules por cada ${a} verdes`, "Invertiste el orden: el primer número corresponde al primer nombre, azules."],
           ],
           1,
           "El orden de los nombres fija el orden de los números; la razón compara ambas cantidades.",
@@ -136,10 +148,18 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             `Negros: ${b} × ${k} = ${b * k}.`,
           ],
           [
-            "Busca cuánto aumentó la primera cantidad.",
+            "Busca cuántas veces aumentó la primera cantidad.",
             `La cantidad de rojos se multiplicó por ${k}.`,
             `Multiplica ${b} por ${k}.`,
           ],
+          {
+            errors: [
+              {
+                value: b + (a * k - a),
+                feedback: `Sumaste la misma cantidad a ambos términos. La razón se conserva multiplicando: los rojos se multiplicaron por ${k}.`,
+              },
+            ],
+          },
         ),
         n(
           "q2",
@@ -151,7 +171,12 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             `El primer término se multiplicó por ${k}.`,
             `El segundo será ${b * k}.`,
           ],
-          { step: true },
+          {
+            step: true,
+            errors: [
+              { value: b + (a * k - a), feedback: "Sumar la misma cantidad no conserva la razón: multiplica ambos términos por el mismo factor." },
+            ],
+          },
         ),
         n(
           "q3",
@@ -166,18 +191,35 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             `Suma ${a} y ${b} para formar el denominador.`,
             `La fracción azul es ${a}/${a + b}.`,
           ],
+          {
+            errors: [
+              { value: a / b, feedback: `${a}/${b} compara azules con verdes. El total de cada conjunto tiene ${a + b} piezas.` },
+            ],
+          },
         ),
-        c(
-          "q4",
-          `¿Por qué la fracción azul del total de una mezcla ${a}:${b} es ${a}/${a + b}?`,
-          [
-            "El total se forma sumando ambas partes",
-            "El total siempre es el segundo número",
-            "Se invierte la razón",
-          ],
-          0,
-          `El total de un conjunto contiene ${a} piezas azules y ${b} verdes: ${a + b} piezas.`,
-        ),
+        v % 2 === 0
+          ? c(
+              "q4",
+              `¿Por qué la fracción azul del total de una mezcla ${a}:${b} es ${a}/${a + b}?`,
+              [
+                "El total se forma sumando ambas partes",
+                ["El total siempre es el segundo número", `El ${b} cuenta solo las verdes; el total incluye también las azules.`],
+                ["Se invierte la razón", `Invertir daría ${b}:${a}, que compara verdes con azules.`],
+              ],
+              0,
+              `El total de un conjunto contiene ${a} piezas azules y ${b} verdes: ${a + b} piezas.`,
+            )
+          : c(
+              "q4",
+              `Un compañero amplía la mezcla ${a}:${b} a ${a + 2}:${b + 2} y dice que conserva el color. ¿Qué responde?`,
+              [
+                ["Tiene razón: añadió lo mismo de cada color", `Añadir 2 de cada uno cambia la proporción: ${a}/${a + b} ≠ ${a + 2}/${a + b + 4}.`],
+                `No: para conservar el color debe multiplicar ambos, por ejemplo ${2 * a}:${2 * b}`,
+                ["Solo cambia si los números son impares", "La paridad no importa: sumar la misma cantidad cambia la razón en general."],
+              ],
+              1,
+              "Una razón se conserva multiplicando ambos términos por el mismo factor, no sumando.",
+            ),
         n(
           "q5",
           `El taller recibe ${(a + b) * k} componentes con razón sensores:antenas = ${a}:${b}. ¿Cuántos sensores recibe?`,
@@ -191,10 +233,59 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             `Divide el total entre ${a + b}.`,
             `Multiplica los ${k} conjuntos por ${a} sensores.`,
           ],
-          { intent: "transfer" },
+          {
+            intent: "transfer",
+            errors: [
+              { value: ((a + b) * k) / a, feedback: `Dividiste entre ${a}, pero cada conjunto tiene ${a + b} componentes.` },
+            ],
+          },
+        ),
+        n(
+          "q6",
+          `La mezcla A tiene ${p} litros azules por cada ${q} verdes; la B, ${r} azules por cada ${s} verdes. ¿Cuál tiene mayor proporción de azul? Escribe la fracción azul del total de esa mezcla.`,
+          best,
+          [
+            `A: ${p}/(${p} + ${q}) = ${p}/${p + q}. B: ${r}/(${r} + ${s}) = ${r}/${r + s}.`,
+            `Con denominador común ${(p + q) * (r + s)}: ${p * (r + s)} frente a ${r * (p + q)}; la mayor es ${best === shareA ? `${p}/${p + q}` : `${r}/${r + s}`}.`,
+          ],
+          [
+            "Compara la parte azul respecto del total de cada mezcla, no las cantidades sueltas.",
+            `Escribe ${p}/${p + q} y ${r}/${r + s}.`,
+            "Llévalas a un denominador común o a decimal y compara.",
+          ],
+          {
+            intent: "transfer",
+            errors: [
+              { value: Math.min(shareA, shareB), feedback: "Esa mezcla tiene menor proporción de azul. Compara ambas fracciones con un denominador común." },
+              { value: best === shareA ? p / q : r / s, feedback: "Esa es la razón azul:verde. Se pide la fracción azul del total." },
+            ],
+          },
         ),
       ];
     },
+    application: n(
+      "app",
+      "Una pintura se mezcla con 3 litros de azul por cada 2 de blanco. Hay 18 litros de azul y 10 de blanco. Sin cambiar la razón, ¿cuántos litros de mezcla se pueden preparar como máximo?",
+      25,
+      [
+        "Cada conjunto usa 3 L de azul y 2 L de blanco: 5 L de mezcla.",
+        "El azul alcanza para 18 ÷ 3 = 6 conjuntos; el blanco, para 10 ÷ 2 = 5. Limita el blanco.",
+        "5 conjuntos × 5 L = 25 litros (15 L de azul y 10 de blanco).",
+      ],
+      [
+        "Piensa en conjuntos de 3 azules y 2 blancos.",
+        "Calcula para cuántos conjuntos alcanza cada color.",
+        "El color que se acaba antes decide cuántos conjuntos hay.",
+      ],
+      {
+        intent: "transfer",
+        unit: "litros",
+        errors: [
+          { value: 28, feedback: "Sumaste toda la pintura, pero así la razón no sería 3:2. Busca qué color se acaba antes." },
+          { value: 30, feedback: "Para 6 conjuntos harían falta 12 L de blanco y solo hay 10." },
+        ],
+      },
+    ),
     outcome:
       "El taller puede aumentar sus pedidos manteniendo la composición de cada conjunto.",
     commonErrors: [
@@ -311,14 +402,60 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
       ),
     ],
     questions(v) {
-      const count = v + 3,
-        rate = v + 4,
-        cost = count * rate;
+      const [count, rate] = [[4, 5], [3, 8], [6, 4], [5, 7], [8, 3], [7, 6]][v],
+        cost = count * rate,
+        order = [7, 5, 9, 4, 11, 10][v],
+        [hours, speed] = [[3, 40], [4, 15], [2, 55], [5, 12], [6, 25], [3, 70]][v],
+        // Dos ofertas: unidades y precio de cada una.
+        [n1, p1, n2, p2] = [[6, 30, 4, 24], [5, 40, 8, 56], [3, 27, 5, 40], [10, 45, 4, 20], [12, 30, 5, 15], [8, 36, 6, 30]][v],
+        unitA = p1 / n1,
+        unitB = p2 / n2,
+        cheaper = Math.min(unitA, unitB),
+        dec = (x: number) => x.toLocaleString("es");
+      const concept = [
+        c(
+          "q4",
+          "¿Qué comparación permite elegir el menor precio por sensor?",
+          [
+            ["Comparar solo el precio total de paquetes distintos", "Un paquete puede costar más en total y menos por unidad: hay que repartir el precio."],
+            "Expresar las dos ofertas en créditos por sensor",
+            ["Elegir siempre el paquete más pequeño", "El tamaño del paquete no decide: decide el precio de cada unidad."],
+          ],
+          1,
+          "Las tasas deben tener la misma unidad para que la comparación tenga sentido.",
+        ),
+        c(
+          "q4",
+          `Un dron A recorre 300 metros por minuto y un dron B, 15 kilómetros por hora. ¿Qué hay que hacer antes de compararlos?`,
+          [
+            ["Nada: 300 es mayor que 15", "Los números están en unidades distintas y no se pueden comparar directamente."],
+            "Expresar ambas velocidades en la misma unidad",
+            ["Sumar las dos velocidades", "Sumar no compara; además las unidades son distintas."],
+          ],
+          1,
+          "300 m/min = 18 km/h: solo con la misma unidad se ve que A es más rápido.",
+        ),
+        c(
+          "q4",
+          `Un plan cobra ${cost} créditos por ${count} horas de taller más 10 de alta. ¿Puedes usar ${rate} créditos/hora para cualquier pedido?`,
+          [
+            ["Sí, siempre se divide el total entre la cantidad", "Con un cargo fijo, el total no es proporcional a las horas."],
+            ["Sí, porque la tarifa es constante", "La parte variable es constante, pero el alta se paga una sola vez."],
+            "No del todo: el cargo de alta no depende de las horas",
+          ],
+          2,
+          "Una tasa unitaria sirve para escalar cuando no hay cargos fijos ni descuentos por cantidad.",
+        ),
+      ];
       return [
         c(
           "q0",
           `Para conocer el precio por sensor de ${count} sensores a ${cost} créditos, calculas…`,
-          [`${count} ÷ ${cost}`, `${cost} × ${count}`, `${cost} ÷ ${count}`],
+          [
+            [`${count} ÷ ${cost}`, "Así obtienes sensores por crédito, no créditos por sensor."],
+            [`${cost} × ${count}`, "Multiplicar agranda el total; hay que repartirlo entre los sensores."],
+            `${cost} ÷ ${count}`,
+          ],
           2,
           "Se reparte el precio total entre el número de sensores.",
         ),
@@ -332,60 +469,105 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             "Divide precio total entre cantidad.",
             `${cost} ÷ ${count} = ${rate}.`,
           ],
-          { unit: "créditos/sensor" },
+          {
+            unit: "créditos/sensor",
+            errors: [
+              { value: count / cost, feedback: "Invertiste la división: eso es sensores por crédito." },
+            ],
+          },
         ),
         n(
           "q2",
-          `Completa: ${count + 2} sensores a ${rate} créditos/sensor cuestan __ créditos.`,
-          (count + 2) * rate,
-          [`${count + 2} × ${rate} = ${(count + 2) * rate}.`],
+          `Completa: ${order} sensores a ${rate} créditos/sensor cuestan __ créditos.`,
+          order * rate,
+          [`${order} × ${rate} = ${order * rate}.`],
           [
             "Ya conoces el precio de una unidad.",
             "Toma una vez ese precio por cada sensor.",
-            `Multiplica ${count + 2} por ${rate}.`,
+            `Multiplica ${order} por ${rate}.`,
           ],
           { step: true },
         ),
         n(
           "q3",
-          `Un dron recorre ${count * rate} km en ${count} horas a velocidad constante. ¿Cuántos km recorre en una hora?`,
-          rate,
-          [`${count * rate} km ÷ ${count} h = ${rate} km/h.`],
+          `Un dron recorre ${hours * speed} km en ${hours} horas a velocidad constante. ¿Cuál es su velocidad en km/h?`,
+          speed,
+          [`${hours * speed} km ÷ ${hours} h = ${speed} km/h.`],
           [
-            "Se pregunta por la distancia por hora.",
+            "Se pregunta por la distancia que corresponde a una hora.",
             "Divide distancia entre tiempo.",
-            `La tasa es ${rate} km/h.`,
+            `${hours * speed} ÷ ${hours} = ${speed}.`,
           ],
-          { unit: "km" },
+          {
+            unit: "km/h",
+            errors: [
+              { value: hours / (hours * speed), feedback: "Eso son horas por kilómetro. La velocidad es distancia ÷ tiempo." },
+            ],
+          },
         ),
-        c(
-          "q4",
-          "¿Qué comparación permite elegir el menor precio por sensor?",
-          [
-            "Comparar solo el precio total de paquetes distintos",
-            "Expresar las dos ofertas en créditos por sensor",
-            "Elegir siempre el paquete más pequeño",
-          ],
-          1,
-          "Las tasas deben tener la misma unidad para que la comparación tenga sentido.",
-        ),
+        concept[v % 3],
         n(
           "q5",
-          `Un proveedor vende ${count} baterías por ${cost} créditos, sin cargo fijo. Manteniendo el precio unitario, ¿cuánto cuesta pedir ${count + 1} baterías?`,
-          (count + 1) * rate,
+          `Un proveedor vende ${count} baterías por ${cost} créditos, sin cargo fijo. Manteniendo el precio unitario, ¿cuánto cuesta pedir ${order} baterías?`,
+          order * rate,
           [
             `Precio unitario: ${cost} ÷ ${count} = ${rate}.`,
-            `Pedido: ${count + 1} × ${rate} = ${(count + 1) * rate} créditos.`,
+            `Pedido: ${order} × ${rate} = ${order * rate} créditos.`,
           ],
           [
             "Obtén primero el precio de una batería.",
             `Cada batería cuesta ${rate} créditos.`,
-            `Multiplica ese precio por ${count + 1}.`,
+            `Multiplica ese precio por ${order}.`,
           ],
           { intent: "transfer", unit: "créditos" },
         ),
+        n(
+          "q6",
+          `Oferta A: ${n1} sensores por ${p1} créditos. Oferta B: ${n2} sensores por ${p2} créditos. ¿Cuál es el menor precio por sensor?`,
+          cheaper,
+          [
+            `A: ${p1} ÷ ${n1} = ${dec(unitA)} créditos/sensor. B: ${p2} ÷ ${n2} = ${dec(unitB)} créditos/sensor.`,
+            `El menor es ${dec(cheaper)} créditos/sensor (oferta ${cheaper === unitA ? "A" : "B"}).`,
+          ],
+          [
+            "Compara el precio de un sensor en cada oferta.",
+            "Divide el precio de cada oferta entre su número de sensores.",
+            `Compara ${dec(unitA)} con ${dec(unitB)}.`,
+          ],
+          {
+            intent: "transfer",
+            unit: "créditos/sensor",
+            errors: [
+              { value: Math.max(unitA, unitB), feedback: "Ese es el precio unitario de la oferta más cara por sensor." },
+              { value: Math.min(p1, p2), feedback: "Ese es el precio total más bajo, no el precio por sensor." },
+            ],
+          },
+        ),
       ];
     },
+    application: n(
+      "app",
+      "Un taxi eléctrico de la ciudad gasta 18 kWh cada 120 km. Si mantiene ese consumo, ¿cuántos kWh necesita para un recorrido de 300 km?",
+      45,
+      [
+        "Tasa: 18 kWh ÷ 120 km = 0,15 kWh por km.",
+        "300 km × 0,15 kWh/km = 45 kWh.",
+        "Comprobación: 300 km son 2,5 veces 120 km, y 2,5 × 18 = 45.",
+      ],
+      [
+        "Busca el consumo de un solo kilómetro.",
+        "Divide 18 entre 120.",
+        "Multiplica esa tasa por 300.",
+      ],
+      {
+        intent: "transfer",
+        unit: "kWh",
+        errors: [
+          { value: 2000, feedback: "Calculaste kilómetros por kWh y luego multiplicaste. La tasa que necesitas es kWh por km." },
+          { value: 198, feedback: "Sumar no escala la tasa: el consumo crece en proporción a la distancia." },
+        ],
+      },
+    ),
     outcome:
       "Puedes comparar suministros con una medida común y anticipar el costo de un nuevo pedido.",
     commonErrors: [
@@ -467,6 +649,15 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         ],
         "Es una relación afín con cargo fijo, no una proporcionalidad directa.",
       ),
+      ex(
+        "En una red proporcional, 3 sensores consumen 12 unidades. ¿Cuántos sensores consumen 28?",
+        [
+          ["k = 12 ÷ 3 = 4", "Cada sensor consume cuatro unidades."],
+          ["28 = 4x", "Planteamos la incógnita: ahora se desconoce la cantidad de sensores."],
+          ["x = 28 ÷ 4 = 7", "Deshacemos la multiplicación dividiendo entre la constante."],
+        ],
+        "Siete sensores consumen 28 unidades; 4 × 7 = 28 lo comprueba.",
+      ),
     ],
     diagnostic: [
       n(
@@ -496,20 +687,37 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
       ),
     ],
     questions(v) {
-      const k = v + 3,
-        x = v + 2;
+      const [k, x] = [[3, 4], [5, 2], [4, 7], [6, 3], [2, 9], [7, 5]][v],
+        next = [10, 7, 3, 8, 4, 6][v],
+        fixed = [0, 6, 0, 4, 10, 0][v],
+        extra = [5, 2, 8, 3, 6, 4][v],
+        // Inverso: x1 sensores consumen y1; ¿cuántos consumen y2?
+        [x1, y1, y2] = [[2, 6, 15], [4, 20, 35], [3, 12, 32], [5, 30, 54], [6, 12, 22], [2, 14, 49]][v],
+        rate = y1 / x1;
       return [
-        c(
-          "q0",
-          "¿Cuál es una condición de proporcionalidad directa?",
-          [
-            "Siempre hay un cargo fijo",
-            "La razón y/x se mantiene constante para x distinto de cero",
-            "y siempre es mayor que x",
-          ],
-          1,
-          "En y = kx, dividir y entre x distinto de cero devuelve siempre k.",
-        ),
+        v % 2 === 0
+          ? c(
+              "q0",
+              "¿Cuál es una condición de proporcionalidad directa?",
+              [
+                ["Siempre hay un cargo fijo", "Un cargo fijo es justamente lo que impide que la relación sea proporcional."],
+                "La razón y/x se mantiene constante para x distinto de cero",
+                ["y siempre es mayor que x", "Con k < 1, y es menor que x y la relación sigue siendo proporcional."],
+              ],
+              1,
+              "En y = kx, dividir y entre x distinto de cero devuelve siempre k.",
+            )
+          : c(
+              "q0",
+              `En una relación y = ${k}x, ¿qué ocurre con y si x se triplica?`,
+              [
+                ["Aumenta en 3 unidades", "Eso sería sumar; en y = kx el cambio es multiplicativo."],
+                "También se triplica",
+                ["No se puede saber sin una tabla", "La fórmula basta: k(3x) = 3(kx)."],
+              ],
+              1,
+              `${k} × (3x) = 3 × (${k}x): si x se multiplica por 3, y también.`,
+            ),
         n(
           "q1",
           `Cada sensor consume ${k} unidades y no hay consumo fijo. ¿Cuánto consumen ${x} sensores?`,
@@ -520,6 +728,11 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             `Multiplica la cantidad de sensores por ${k}.`,
             `${k} × ${x} = ${k * x}.`,
           ],
+          {
+            errors: [
+              { value: k + x, feedback: "Sumaste. Cada sensor añade su consumo: hay que multiplicar." },
+            ],
+          },
         ),
         n(
           "q2",
@@ -531,43 +744,116 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             "Divide consumo entre sensores.",
             `El factor es ${k}.`,
           ],
-          { step: true },
+          {
+            step: true,
+            errors: [
+              { value: x / (k * x), feedback: "Invertiste la división: k = y ÷ x." },
+            ],
+          },
         ),
         n(
           "q3",
-          `En y = ${k}x, ¿cuánto vale y cuando x = 0?`,
-          0,
-          [`${k} × 0 = 0; no hay término fijo.`],
-          ["Sustituye x por cero.", "Multiplicar por cero da cero.", "y = 0."],
-        ),
-        c(
-          "q4",
-          `Un sistema consume y = ${k}x + 5. ¿Es directamente proporcional a x?`,
+          `Una tarifa sigue y = ${k}x + ${fixed}. ¿Cuánto vale y cuando x = 0?`,
+          fixed,
           [
-            "No: hay cinco unidades de consumo fijo",
-            "Sí: y aumenta de forma regular",
-            "Sí: todos los números son positivos",
+            `${k} × 0 + ${fixed} = ${fixed}.`,
+            fixed === 0
+              ? "Sin término fijo, x = 0 da y = 0: compatible con proporcionalidad."
+              : `Hay un término fijo de ${fixed}: la relación no es proporcional.`,
           ],
-          0,
-          "El término fijo hace que y/x cambie; duplicar x no duplica el consumo total.",
+          [
+            "Sustituye x por cero.",
+            "Multiplicar por cero da cero; el término fijo queda.",
+            `y = ${fixed}.`,
+          ],
+          {
+            errors: fixed
+              ? [{ value: 0, feedback: `El término ${fixed} no depende de x: sigue ahí cuando x = 0.` }]
+              : [{ value: k, feedback: `${k} × 0 = 0: el coeficiente no queda al sustituir.` }],
+          },
         ),
+        v % 2 === 0
+          ? c(
+              "q4",
+              `Un sistema consume y = ${k}x + ${extra}. ¿Es directamente proporcional a x?`,
+              [
+                `No: hay ${extra} unidades de consumo fijo`,
+                ["Sí: y aumenta de forma regular", `Aumentar ${k} por sensor no basta: el término fijo hace que y/x cambie.`],
+                ["Sí: todos los números son positivos", "El signo de los números no decide la proporcionalidad."],
+              ],
+              0,
+              "El término fijo hace que y/x cambie; duplicar x no duplica el consumo total.",
+            )
+          : c(
+              "q4",
+              `Una tabla indica: 2 sensores → ${2 * k + extra} unidades; 4 sensores → ${4 * k + extra}. ¿Es proporcional?`,
+              [
+                ["Sí: al aumentar x, aumenta y", "Que ambas crezcan no basta; la razón y/x debe ser constante."],
+                `No: ${2 * k + extra}/2 y ${4 * k + extra}/4 no son iguales`,
+                ["Sí: la diferencia es constante", "Una diferencia constante no implica razón constante si hay un término fijo."],
+              ],
+              1,
+              `y/x cambia de ${((2 * k + extra) / 2).toLocaleString("es")} a ${((4 * k + extra) / 4).toLocaleString("es")}: no hay una constante k.`,
+            ),
         n(
           "q5",
-          `La red tiene ${x} lámparas que consumen ${k * x} unidades. Todas consumen lo mismo y no hay pérdidas fijas. ¿Cuánto consumirán ${x + 4} lámparas?`,
-          (x + 4) * k,
+          `La red tiene ${x} lámparas que consumen ${k * x} unidades. Todas consumen lo mismo y no hay pérdidas fijas. ¿Cuánto consumirán ${next} lámparas?`,
+          next * k,
           [
             `Cada lámpara consume ${k * x} ÷ ${x} = ${k}.`,
-            `${x + 4} lámparas consumen ${x + 4} × ${k} = ${(x + 4) * k}.`,
+            `${next} lámparas consumen ${next} × ${k} = ${next * k}.`,
           ],
           [
             "Comprueba que la tasa es constante y sin término fijo.",
             `La tasa es ${k} por lámpara.`,
-            `Multiplica ${k} por ${x + 4}.`,
+            `Multiplica ${k} por ${next}.`,
           ],
           { intent: "transfer" },
         ),
+        n(
+          "q6",
+          `En una red proporcional, ${x1} sensores consumen ${y1} unidades. ¿Cuántos sensores consumen ${y2} unidades?`,
+          y2 / rate,
+          [
+            `Constante: k = ${y1} ÷ ${x1} = ${rate} unidades por sensor.`,
+            `${y2} = ${rate} × x, así que x = ${y2} ÷ ${rate} = ${y2 / rate}.`,
+          ],
+          [
+            "Ahora conoces el consumo y buscas la cantidad de sensores.",
+            `Calcula primero cuánto consume un sensor: ${y1} ÷ ${x1}.`,
+            `Divide ${y2} entre esa constante.`,
+          ],
+          {
+            intent: "transfer",
+            unit: "sensores",
+            errors: [
+              { value: y2 * rate, feedback: `Multiplicaste por la constante. Si ${y2} = ${rate} × x, x se obtiene dividiendo.` },
+            ],
+          },
+        ),
       ];
     },
+    application: n(
+      "app",
+      "Una tabla de consumo indica: 2 sensores → 7 unidades; 4 → 14; 6 → 21. Si la relación se mantiene, ¿cuánto consumirán 15 sensores?",
+      52.5,
+      [
+        "7/2 = 14/4 = 21/6 = 3,5: la razón es constante, y = 3,5x.",
+        "15 × 3,5 = 52,5 unidades.",
+      ],
+      [
+        "Comprueba primero si la razón consumo/sensores es constante.",
+        "Calcula 7 ÷ 2.",
+        "Multiplica la constante por 15.",
+      ],
+      {
+        intent: "transfer",
+        unit: "unidades",
+        errors: [
+          { value: 45, feedback: "Calculaste 15 × 3. La constante es 7 ÷ 2 = 3,5." },
+        ],
+      },
+    ),
     outcome:
       "El consumo previsto de la red queda calibrado y puedes distinguir cuándo hace falta incluir un consumo fijo.",
     commonErrors: [
@@ -655,6 +941,15 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         ],
         "El aumento es del 25% respecto de las 120 unidades iniciales.",
       ),
+      ex(
+        "Tras un descuento del 20%, un repuesto cuesta 64 créditos. ¿Cuál era el precio original?",
+        [
+          ["100% − 20% = 80%", "Después del descuento se paga el 80% del precio original."],
+          ["64 = 0,8 × precio", "El precio original es la base, y es la incógnita."],
+          ["precio = 64 ÷ 0,8 = 80", "Comprobación: 20% de 80 = 16; 80 − 16 = 64."],
+        ],
+        "Sumar el 20% a 64 daría 76,8: el 20% se calculó sobre 80, no sobre 64.",
+      ),
     ],
     diagnostic: [
       n(
@@ -692,14 +987,53 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
       ),
     ],
     questions(v) {
-      const p = [10, 20, 25, 40, 30, 50][v],
-        base = 200 + 100 * v,
-        delta = (base * p) / 100;
+      const [p, base] = [[10, 250], [20, 300], [15, 400], [35, 600], [25, 360], [40, 450]][v],
+        delta = (base * p) / 100,
+        final = base - delta;
+      const concept = [
+        c(
+          "q4",
+          "Un precio sube 20% y después baja 20%. ¿Por qué el segundo cambio no anula el primero?",
+          [
+            "Porque el segundo porcentaje se calcula sobre una base distinta",
+            ["Porque 20% siempre significa veinte unidades", "Un porcentaje depende de su base: el 20% de 100 y el de 120 son distintos."],
+            ["Porque los descuentos no se pueden calcular", "Se pueden calcular: el problema es la base de cada uno."],
+          ],
+          0,
+          "Partiendo de 100: sube a 120 y baja 24, que es el 20% de 120; termina en 96.",
+        ),
+        c(
+          "q4",
+          `Un repuesto baja de ${base} a ${final} créditos. ¿Respecto de qué cantidad se calcula el porcentaje de descuento?`,
+          [
+            [`De ${final}, el precio final`, "El cambio porcentual se mide respecto del valor inicial."],
+            `De ${base}, el precio inicial`,
+            [`De ${delta}, la rebaja`, "La rebaja es lo que se compara, no la referencia."],
+          ],
+          1,
+          `El descuento ${delta} se compara con el precio inicial ${base}: ${delta}/${base} = ${p}%.`,
+        ),
+        c(
+          "q4",
+          `Pagar el ${100 - p}% de un precio equivale a…`,
+          [
+            [`Un aumento del ${100 - p}%`, `Pagar el ${100 - p}% es pagar menos que el 100%.`],
+            [`Un descuento del ${100 - p}%`, `Si te descuentan el ${100 - p}%, pagas el ${p}%.`],
+            `Un descuento del ${p}%`,
+          ],
+          2,
+          `100% − ${p}% = ${100 - p}%: se paga el ${100 - p}% cuando el descuento es del ${p}%.`,
+        ),
+      ];
       return [
         c(
           "q0",
           `Un repuesto de ${base} créditos tiene ${p}% de descuento. ¿Cuál es la base del porcentaje?`,
-          [`${p}`, `${base}`, `${100 - p}`],
+          [
+            [`${p}`, `${p} es el porcentaje, no la cantidad de referencia.`],
+            `${base}`,
+            [`${100 - p}`, `${100 - p}% es lo que se paga; la base sigue siendo el precio original.`],
+          ],
           1,
           `El precio original, ${base} créditos, representa el 100% sobre el que calculas la rebaja.`,
         ),
@@ -713,21 +1047,32 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             `Multiplica ${base} por ${p}/100.`,
             `El cambio vale ${delta}.`,
           ],
-          { unit: "créditos" },
+          {
+            unit: "créditos",
+            errors: [
+              { value: base - p, feedback: `Restaste ${p} créditos. ${p}% es una proporción de ${base}, no ${p} unidades.` },
+              { value: final, feedback: "Ese es el precio después del descuento. Se pide el valor del porcentaje." },
+            ],
+          },
         ),
         n(
           "q2",
           `Completa el precio final: ${base} − ${delta} = __ después de un descuento del ${p}%.`,
-          base - delta,
+          final,
           [
-            `El descuento es ${delta}; el precio final es ${base} − ${delta} = ${base - delta}.`,
+            `El descuento es ${delta}; el precio final es ${base} − ${delta} = ${final}.`,
           ],
           [
             "El descuento y el precio final son cantidades diferentes.",
             "Resta la rebaja al precio original.",
-            `El final es ${base - delta}.`,
+            `El final es ${final}.`,
           ],
-          { step: true },
+          {
+            step: true,
+            errors: [
+              { value: delta, feedback: "Ese es el descuento. Se pregunta cuánto se paga." },
+            ],
+          },
         ),
         n(
           "q3",
@@ -742,18 +1087,14 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             `El cambio es ${delta}.`,
             "Suma el cambio al consumo original.",
           ],
+          {
+            errors: [
+              { value: delta, feedback: "Ese es solo el aumento. Súmalo al consumo inicial." },
+              { value: base + p, feedback: `Sumaste ${p} unidades. Un aumento del ${p}% vale ${p}/100 de ${base}.` },
+            ],
+          },
         ),
-        c(
-          "q4",
-          "Un precio sube 20% y después baja 20%. ¿Por qué el segundo cambio no anula el primero?",
-          [
-            "Porque el segundo porcentaje se calcula sobre una base distinta",
-            "Porque 20% siempre significa veinte unidades",
-            "Porque los descuentos no se pueden calcular",
-          ],
-          0,
-          "Partiendo de 100: sube a 120 y baja 24, que es el 20% de 120; termina en 96.",
-        ),
+        concept[v % 3],
         n(
           "q5",
           `El presupuesto de una reparación pasa de ${base} a ${base + delta} créditos. ¿Qué porcentaje aumentó respecto del presupuesto inicial?`,
@@ -764,10 +1105,65 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             "Divide el cambio entre el presupuesto inicial.",
             `Multiplica ${delta}/${base} por 100.`,
           ],
-          { intent: "transfer", unit: "%" },
+          {
+            intent: "transfer",
+            unit: "%",
+            errors: [
+              { value: (delta / (base + delta)) * 100, feedback: "Dividiste entre el valor final. El cambio porcentual se mide respecto del inicial." },
+              { value: delta, feedback: "Ese es el aumento en créditos. Exprésalo como porcentaje del presupuesto inicial." },
+            ],
+          },
+        ),
+        n(
+          "q6",
+          `Tras un descuento del ${p}%, un repuesto cuesta ${final} créditos. ¿Cuál era su precio original?`,
+          base,
+          [
+            `Después del descuento se paga el ${100 - p}% del original: ${final} = ${((100 - p) / 100).toLocaleString("es")} × precio.`,
+            `Precio = ${final} ÷ ${((100 - p) / 100).toLocaleString("es")} = ${base}. Comprobación: ${p}% de ${base} = ${delta}; ${base} − ${delta} = ${final}.`,
+          ],
+          [
+            "El descuento se calculó sobre el precio original, que no conoces.",
+            `${final} es el ${100 - p}% del precio original.`,
+            `Divide ${final} entre ${((100 - p) / 100).toLocaleString("es")}.`,
+          ],
+          {
+            intent: "transfer",
+            unit: "créditos",
+            errors: [
+              {
+                value: final * (1 + p / 100),
+                feedback: `Sumaste el ${p}% del precio final. El descuento se calculó sobre el original, que es mayor.`,
+              },
+              { value: final + p, feedback: `Sumaste ${p} créditos: el porcentaje no son unidades.` },
+            ],
+          },
         ),
       ];
     },
+    application: n(
+      "app",
+      "Un repuesto de 400 créditos sube un 10% por escasez. Una semana después tiene un descuento del 10% sobre el precio de ese momento. ¿Cuánto se paga al final?",
+      396,
+      [
+        "Subida: 10% de 400 = 40; nuevo precio 440.",
+        "Descuento: 10% de 440 = 44; precio final 440 − 44 = 396.",
+        "El precio final es menor que el inicial porque el descuento se calcula sobre una base mayor.",
+      ],
+      [
+        "Cada cambio tiene su propia base.",
+        "Calcula primero el precio después de la subida.",
+        "Aplica el 10% de descuento a 440.",
+      ],
+      {
+        intent: "transfer",
+        unit: "créditos",
+        errors: [
+          { value: 400, feedback: "Subir y bajar el mismo porcentaje no se anula: el descuento se calcula sobre 440." },
+          { value: 360, feedback: "Aplicaste el descuento sobre 400. Se aplica sobre el precio que había tras la subida." },
+        ],
+      },
+    ),
     outcome:
       "Puedes revisar las ofertas y presupuestos del taller usando la base correcta para cada cambio.",
     commonErrors: [

@@ -8,6 +8,7 @@ import type {
   LearningAction,
   LearningProgress,
 } from "@/lib/learning/domain";
+import { getLesson } from "@/lib/learning/domain";
 
 describe("Servicio educativo y reglas reales", () => {
   test("solo la sesión del perfil autorizado puede registrar evidencia", async () => {
@@ -74,7 +75,10 @@ describe("Servicio educativo y reglas reales", () => {
           action: {
             kind: "answer",
             questionId: "p-1",
-            response: "c0",
+            // Una alternativa incorrecta, aunque el navegador diga lo contrario.
+            response: getLesson("fraccion-cantidad")!.practice[0].choices!.find(
+              (o) => o.id !== getLesson("fraccion-cantidad")!.practice[0].answer,
+            )!.id,
             correct: true,
           },
         },
@@ -264,7 +268,7 @@ describe("Servicio educativo y reglas reales", () => {
       expect(completed.result.progress.checkPassedAt).toBeNull();
       await call(family.app, "recordLearningAction", completed.request);
       await send({ kind: "begin", stage: "application" });
-      await send({ kind: "answer", questionId: "m-1", response: "35" });
+      await send({ kind: "answer", questionId: "m-1", response: String(getLesson("fraccion-cantidad")!.application.answer) });
       expect((await send({ kind: "next" })).result.stars).toBe(0);
       expect(
         (

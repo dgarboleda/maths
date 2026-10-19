@@ -6,6 +6,7 @@ import {
   getLesson,
   initialProgress,
   learningStatus,
+  migrateProgress,
   type LearningAction,
   type LearningProgress,
 } from "./domain";
@@ -18,9 +19,11 @@ const update = (
   action: LearningAction,
   now = NOW,
 ) => applyLearningAction(lesson, state, action, now);
+const wrongChoice = (q: { answer: number | string; choices?: { id: string }[] }) =>
+  q.choices!.find((o) => o.id !== q.answer)!.id;
 function completeCheck(helpOnTransfer = false) {
   let state = update(undefined, { kind: "begin", stage: "check" });
-  const answers = ["c1", "60", "20", "c2", "20"];
+  const answers = lesson.checks[0].map((q) => String(q.answer));
   for (let i = 0; i < answers.length; i++) {
     const q = currentQuestion(lesson, state)!;
     if (helpOnTransfer && i === 4)
@@ -38,7 +41,8 @@ function completeCheck(helpOnTransfer = false) {
 describe("Evidencia educativa", () => {
   test("recorrer clase y ejemplos no acredita comprensión", () => {
     let state = update(undefined, { kind: "begin", stage: "class" });
-    for (let i = 0; i < 5; i++) state = update(state, { kind: "next" });
+    const steps = lesson.sections.length + lesson.examples.length;
+    for (let i = 0; i < steps; i++) state = update(state, { kind: "next" });
     expect(state.classCompleted).toBe(true);
     expect(state.examplesCompleted).toBe(true);
     expect(state.stage).toBe("guided");
@@ -50,13 +54,13 @@ describe("Evidencia educativa", () => {
     state = update(state, {
       kind: "answer",
       questionId: "p-1",
-      response: "c0",
+      response: wrongChoice(lesson.practice[0]),
     });
     state = update(state, { kind: "hint", questionId: "p-1" });
     state = update(state, {
       kind: "answer",
       questionId: "p-1",
-      response: "c1",
+      response: String(lesson.practice[0].answer),
     });
     expect(state.responses["practice:p-1"]).toMatchObject({
       correct: true,
@@ -114,7 +118,7 @@ describe("Evidencia educativa", () => {
       { kind: "begin", stage: "review" },
       NOW + 3 * DAY,
     );
-    const answers = ["c1", "30", "150", "30"];
+    const answers = lesson.review.map((q) => String(q.answer));
     for (const answer of answers) {
       review = update(
         review,
@@ -189,6 +193,34 @@ describe("Evidencia educativa", () => {
     expect(() =>
       update(undefined, { kind: "answer", questionId: "p-1", response: "1" }),
     ).toThrow(/actividad cambió/);
+  });
+});
+
+describe("Migración de contenido", () => {
+  test("un avance de la versión anterior conserva logros y reinicia solo la ronda en curso", () => {
+    const passed = completeCheck();
+    const old: LearningProgress = {
+      ...passed,
+      contentVersion: lesson.version - 1,
+      stage: "practice",
+      index: 3,
+      responses: { "practice:p-1": passed.responses["check:a-1"]! },
+    };
+    const migrated = migrateProgress(lesson, old);
+    expect(migrated).toMatchObject({
+      contentVersion: lesson.version,
+      stage: "practice",
+      index: 0,
+      responses: {},
+      checkPassedAt: passed.checkPassedAt,
+      reviewDueAt: passed.reviewDueAt,
+      lastCheck: passed.lastCheck,
+    });
+    // El servidor aplica la misma migración en la siguiente acción en vez de rechazarla.
+    const next = update(old, { kind: "hint", questionId: "p-1" });
+    expect(next.contentVersion).toBe(lesson.version);
+    expect(next.responses["practice:p-1"]).toMatchObject({ hintsUsed: 1, attempts: 0 });
+    expect(migrateProgress(lesson, migrated)).toBe(migrated);
   });
 });
 

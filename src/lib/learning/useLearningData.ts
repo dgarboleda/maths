@@ -6,7 +6,9 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase, getFirebaseFunctions } from "@/lib/firebase";
 import type { ChildProfile } from "@/lib/types";
 import {
+  getLesson,
   initialAdventure,
+  migrateProgress,
   type AdventureAction,
   type AdventureState,
   type LearningAction,
@@ -89,10 +91,12 @@ export function useLearningData(childId: string) {
             (snap) =>
               receive("progress", {
                 progress: Object.fromEntries(
-                  snap.docs.map((item) => [
-                    item.id,
-                    item.data() as LearningProgress,
-                  ]),
+                  snap.docs.map((item) => {
+                    const saved = item.data() as LearningProgress;
+                    const lesson = getLesson(item.id);
+                    // Misma migración que aplica el servidor en la próxima acción.
+                    return [item.id, lesson ? migrateProgress(lesson, saved) : saved];
+                  }),
                 ),
               }),
             failed,
