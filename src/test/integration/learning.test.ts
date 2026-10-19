@@ -9,11 +9,13 @@ import type {
   LearningProgress,
 } from "@/lib/learning/domain";
 import {
+  dailyQuestions,
   getLesson,
   initialMixedReview,
   mixedQuestions,
   placementQuestion,
   summarizeMisconceptions,
+  type DailyReviewState,
   type MixedReviewState,
   type PlacementState,
 } from "@/lib/learning/domain";
@@ -582,6 +584,73 @@ describe("Servicio educativo y reglas reales", () => {
       // El navegador no puede fabricar un repaso superado.
       await expect(
         fs.setDoc(fs.doc(family.db, "parents", family.parentId, "children", family.childId, "learningProgress", "repaso-datos"), { completedAt: 1 }),
+      ).rejects.toThrow();
+    } finally {
+      await deleteApp(family.app);
+    }
+  });
+
+  test("el repaso diario elige en el servidor, agenda cada clase y premia la primera sesión del día", async () => {
+    const family = await createFamily();
+    try {
+      const revisions: Record<string, number> = {};
+      const send = async <T,>(lessonId: string, action: LearningAction, operationId = crypto.randomUUID()) => {
+        const result = await call<{ progress: T & { revision: number }; stars: number }>(family.app, "recordLearningAction", {
+          parentId: family.parentId,
+          childId: family.childId,
+          lessonId,
+          expectedRevision: revisions[lessonId] ?? 0,
+          operationId,
+          action,
+        });
+        revisions[lessonId] = result.progress.revision;
+        return result;
+      };
+      // Sin clases terminadas no hay nada que repasar.
+      await expect(send("diario", { kind: "begin", stage: "review" })).rejects.toThrow(/Termina una clase/);
+      for (const lessonId of ["enteros-recta", "razones"]) {
+        await send(lessonId, { kind: "begin", stage: "application" });
+        await send(lessonId, { kind: "reveal", questionId: "m-1" });
+        await send(lessonId, { kind: "next" });
+      }
+      const session = async () => {
+        let state = (await send<DailyReviewState>("diario", { kind: "begin", stage: "review" })).progress;
+        expect(new Set(state.items.map((i) => i.lessonId))).toEqual(new Set(["enteros-recta", "razones"]));
+        // El desarrollo no se revela durante el repaso.
+        await expect(send("diario", { kind: "reveal", questionId: "q1" })).rejects.toThrow();
+        let stars = 0;
+        let firstOperation = "";
+        for (const { question } of dailyQuestions(state)) {
+          const operationId = crypto.randomUUID();
+          firstOperation ||= operationId;
+          await send("diario", { kind: "answer", questionId: question.id, response: String(question.answer) }, operationId);
+          const next = await send<DailyReviewState>("diario", { kind: "next" });
+          stars += next.stars;
+          state = next.progress;
+        }
+        return { state, stars, firstOperation };
+      };
+      const first = await session();
+      expect(first.stars).toBe(2);
+      expect(first.state).toMatchObject({ stage: "summary", sessions: 1, lastResult: { correct: 4, total: 4 } });
+      // Cada clase sube una sola caja por sesión.
+      expect(first.state.schedule["razones"]).toMatchObject({ box: 1, seen: 2 });
+      const evidence = await fs.getDoc(
+        fs.doc(family.db, "parents", family.parentId, "children", family.childId, "learningEvidence", first.firstOperation),
+      );
+      expect(evidence.data()?.outcome).toMatchObject({ stage: "daily", correct: true, attempt: 1 });
+      expect(["enteros-recta", "razones"]).toContain(evidence.data()?.outcome.lessonId);
+      // Una segunda sesión el mismo día no vuelve a premiar.
+      const second = await session();
+      expect(second.stars).toBe(0);
+      expect(second.state.sessions).toBe(2);
+      const saved = await fs.getDoc(
+        fs.doc(family.db, "parents", family.parentId, "children", family.childId, "learningProgress", "diario"),
+      );
+      expect((saved.data() as DailyReviewState).sessions).toBe(2);
+      // El navegador no puede escribir su propia agenda.
+      await expect(
+        fs.setDoc(saved.ref, { ...saved.data(), rewardDay: null }),
       ).rejects.toThrow();
     } finally {
       await deleteApp(family.app);
