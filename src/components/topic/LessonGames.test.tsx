@@ -233,6 +233,13 @@ test.each([
   expect(await axe(container)).toHaveNoViolations();
 });
 
+test.each([FroggerGeneric, InvadersGeneric, RunnerGeneric, BreakoutGeneric])("al empezar, el foco pasa al enunciado para leer y jugar con el teclado", (Game) => {
+  const data = exercise();
+  render(<Game moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  expect(screen.getByText(data.problem.prompt)).toHaveFocus();
+});
+
 test("Bloques en la clase: el lanzamiento apuntado envía el bloque elegido, correcto o no", async () => {
   vi.useFakeTimers();
   const data = exercise({ onResponse: vi.fn(async () => false) });

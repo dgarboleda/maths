@@ -8,6 +8,7 @@ import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
 import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
+import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
@@ -98,6 +99,7 @@ export function FroggerGeneric({
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
   const shownPhase = exercise?.solved ? "over" : phase;
+  const promptFocus = useArcadeFocus(shownPhase === "playing");
   const shownCount = exercise ? Number(exercise.solved) : correctCount;
   const shownWin = exercise ? exercise.solved : win;
   const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused);
@@ -367,7 +369,7 @@ export function FroggerGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200`}>
+              <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200 outline-none`}>
                 {problem.prompt}
               </p>
             </div>

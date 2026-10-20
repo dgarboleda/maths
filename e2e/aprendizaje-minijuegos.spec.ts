@@ -57,6 +57,14 @@ function savedAnswer(page: Page) {
   );
 }
 
+async function expectGameInView(page: Page) {
+  const prompt = page.locator('main p[tabindex="-1"]');
+  await expect(prompt).toBeFocused();
+  const box = await prompt.boundingBox();
+  expect(box!.y).toBeGreaterThanOrEqual(-1);
+  expect(box!.y).toBeLessThan(80);
+}
+
 test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar dominio", async ({ page }) => {
   const lesson = await practice(page, "fraccion-cantidad", "frogger");
   // Sin selector: la app decide el juego y la pregunta conceptual se responde
@@ -68,6 +76,7 @@ test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar d
   await page.getByRole("button", { name: "Siguiente actividad", exact: true }).click();
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
   const q = lesson.practice[1];
+  await expectGameInView(page);
   await expect(page.getByText(/Vidas/)).toHaveCount(0);
   // En pausa el teclado no mueve la rana ni envía respuestas.
   let answers = 0;
@@ -160,6 +169,7 @@ test("Cohete: fracción exacta, sin reloj por defecto y recuperación de respues
 test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; sin estrellas ni dominio", async ({ page }) => {
   const q = await conceptThenNumeric(page, "fracciones-unidad", "invaders");
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  await expectGameInView(page);
   await expect(page.getByText(/Vidas/)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   // La formación es decorativa (aria-hidden): se lee para saber dónde apuntar.
@@ -180,6 +190,7 @@ test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; s
 test("Autopista: elegir carril y usar el turbo guarda el resultado de la clase", async ({ page }, testInfo) => {
   const q = await conceptThenNumeric(page, "fracciones-unidad", "runner");
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  await expectGameInView(page);
   const board = page.locator("main [data-runner-board]");
   await expect(board).toHaveAttribute("data-racing", "false");
   const labels = await board.locator("[data-choice-label]").allTextContents();
@@ -200,6 +211,7 @@ test("Autopista: elegir carril y usar el turbo guarda el resultado de la clase",
 test("Bloques: el rebote lateral alcanza la respuesta apuntada y se guarda una sola vez", async ({ page }, testInfo) => {
   const q = await conceptThenNumeric(page, "fracciones-unidad", "breakout");
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  await expectGameInView(page);
   const board = page.locator("main [data-breakout-board]");
   const labels = await board.locator("[data-choice-label]").allTextContents();
   const target = labels.indexOf("1/3");
