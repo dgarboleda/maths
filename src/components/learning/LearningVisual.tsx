@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useId, useState } from "react";
 import type { Visual } from "@/lib/learning/domain";
 import {
@@ -32,13 +33,18 @@ import {
   TwoWayVisual,
   TrigVisual,
 } from "./AdvancedVisuals";
-import {
-  FractionProductVisual,
-  FractionSumVisual,
-  IntegerProductVisual,
-  OrderOfOperationsVisual,
-  SquareRootVisual,
-} from "./NumberVisuals";
+
+// Los modelos de números se cargan aparte: solo los usan cinco clases y así
+// no pesan en el resto (presupuesto de JS de la clase en Lighthouse).
+const numberVisual = (name: keyof typeof import("./NumberVisuals")) =>
+  dynamic<{ id: string }>(() => import("./NumberVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const FractionSumVisual = numberVisual("FractionSumVisual");
+const FractionProductVisual = numberVisual("FractionProductVisual");
+const IntegerProductVisual = numberVisual("IntegerProductVisual");
+const OrderOfOperationsVisual = numberVisual("OrderOfOperationsVisual");
+const SquareRootVisual = numberVisual("SquareRootVisual");
 
 function Bar({
   numerator,
@@ -185,7 +191,7 @@ function ProbabilityVisual({ id }: { id: string }) {
   );
 }
 
-const OWN_VISUALS: Partial<Record<Visual, (props: { id: string }) => React.JSX.Element>> = {
+const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> = {
   integers: NumberLineVisual,
   area: AreaVisual,
   data: DataVisual,

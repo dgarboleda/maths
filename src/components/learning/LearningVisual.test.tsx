@@ -10,7 +10,7 @@ const KINDS = [...new Set(LESSONS.map((l) => l.visual))] as Visual[];
 describe("Modelos visuales de las clases", () => {
   test.each(KINDS)("%s se dibuja, es accesible y responde a sus controles", async (kind) => {
     const { container } = render(<LearningVisual kind={kind} />);
-    const sliders = screen.getAllByRole("slider");
+    const sliders = await screen.findAllByRole("slider");
     expect(sliders.length).toBeGreaterThan(0);
     const before = container.textContent;
     const slider = sliders[0] as HTMLInputElement;
