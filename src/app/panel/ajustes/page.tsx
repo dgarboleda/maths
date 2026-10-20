@@ -59,6 +59,7 @@ export default function AjustesPage() {
                 <li key={c.id} className="flex flex-wrap items-center gap-3 py-3">
                   <Avatar
                     variant="headshot"
+                    avatarId={c.avatarId}
                     title={c.name}
                     className="size-11 shrink-0 rounded-full border border-indigo-500/25"
                   />

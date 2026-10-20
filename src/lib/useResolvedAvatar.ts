@@ -9,6 +9,7 @@ import { getLevel, listLevels } from "./level/persistence/levelRepository";
 import type { LevelDefinition } from "./level/schema";
 import type { ChildProfile, SkillProgress } from "./types";
 import { useTotalStars } from "./useTotalStars";
+import { getProfileAvatar } from "./profileAvatars";
 
 export interface ResolvedAvatar {
   id: string;
@@ -101,6 +102,12 @@ export function useResolvedAvatar(
   // así que acá se los da por resueltos en vez de forzar un `setState`
   // síncrono dentro del efecto solo para marcarlos.
   const loading = (Boolean(parentId) && !worldLoaded) || (Boolean(parentId) && Boolean(childId) && !avatarIdLoaded);
+
+  const included = getProfileAvatar(avatarId);
+  if (included) return {
+    avatar: { id: included.id, headshotSrc: included.src, bodySrc: "/illustrations/explorer.webp", scale: 1 },
+    loading: Boolean(parentId) && Boolean(childId) && !avatarIdLoaded,
+  };
 
   if (!world || world.avatars.avatars.length === 0) return { avatar: null, loading };
 

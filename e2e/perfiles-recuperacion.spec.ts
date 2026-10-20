@@ -84,8 +84,8 @@ test("Ada con un id antiguo respeta el bloqueo del PIN, se restablece y se borra
   await page
     .getByRole("button", { name: /Entrar al perfil de\s+Ada\s*$/ })
     .click();
-  await page.getByLabel(/PIN de\s+Ada/).fill("1234");
-  await page.getByLabel(/PIN de\s+Ada/).press("Enter");
+  await page.getByRole("textbox", { name: /PIN de\s+Ada/ }).pressSequentially("1234");
+  await page.getByRole("textbox", { name: /PIN de\s+Ada/ }).press("Enter");
   await expect(page.getByText("Demasiados intentos. Espera un momento.")).toBeVisible();
   await page.goto("/panel/ajustes");
   const row = page
@@ -111,8 +111,8 @@ test("Ada con un id antiguo respeta el bloqueo del PIN, se restablece y se borra
   await page
     .getByRole("button", { name: /Entrar al perfil de\s+Ada\s*$/ })
     .click();
-  await page.getByLabel(/PIN de\s+Ada/).fill("4321");
-  await page.getByLabel(/PIN de\s+Ada/).press("Enter");
+  await page.getByRole("textbox", { name: /PIN de\s+Ada/ }).pressSequentially("4321");
+  await page.getByRole("textbox", { name: /PIN de\s+Ada/ }).press("Enter");
   await expect(
     page.getByRole("heading", { name: /¿Qué vamos a descubrir/ }),
   ).toBeVisible();

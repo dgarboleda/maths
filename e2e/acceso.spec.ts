@@ -32,11 +32,15 @@ test.describe("Acceso de la familia", () => {
     const { nombre } = await crearHijo(page, { nombre: "Bruno", pin: "4321" });
 
     await page.getByRole("button", { name: `Entrar al perfil de ${nombre}` }).click();
-    const campoPin = page.getByLabel(`PIN de ${nombre}`);
-    await campoPin.fill("1111");
-    await campoPin.press("Enter");
+    const campoPin = page.getByRole("textbox", { name: `PIN de ${nombre}` });
+    const dialog = page.getByRole("dialog", { name: `PIN de ${nombre}` });
+    await expect(dialog.locator("input, textarea, [contenteditable], form")).toHaveCount(0);
+    for (let i = 0; i < 4; i++) await dialog.getByRole("button", { name: "1", exact: true }).click();
+    await expect(campoPin).not.toContainText("1111");
+    await dialog.getByRole("button", { name: "Entrar", exact: true }).click();
 
     await expect(page.locator("main").getByRole("alert")).toHaveText("PIN incorrecto");
+    await expect(campoPin).toBeFocused();
     await expect(page).toHaveURL(/\/perfiles$/);
   });
 

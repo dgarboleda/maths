@@ -1,3 +1,5 @@
+import { getProfileAvatar, PROFILE_AVATARS } from "@/lib/profileAvatars";
+
 /**
  * Personaje del alumno: los mismos assets del prototipo de referencia
  * (`src/assets/explorer.png` para la escena, `avatar.png` para el HUD/las
@@ -17,6 +19,7 @@ export function Avatar({
   walking = false,
   className = "",
   title,
+  avatarId,
   bodySrc,
   headshotSrc,
   scale = 1,
@@ -26,10 +29,24 @@ export function Avatar({
   walking?: boolean;
   className?: string;
   title?: string;
+  /** Personaje incluido con Maths, elegido al crear el perfil. */
+  avatarId?: string;
   bodySrc?: string;
   headshotSrc?: string;
   scale?: number;
 }) {
+  const portrait = headshotSrc
+    ? PROFILE_AVATARS.find((avatar) => avatar.src === headshotSrc)
+    : getProfileAvatar(avatarId);
+  if (variant === "headshot" && portrait) {
+    return (
+      <span data-avatar-id={portrait.id} className={`relative inline-block aspect-square shrink-0 overflow-hidden ${className}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- archivos locales, sin transformación remota */}
+        <img src={portrait.src} alt={title ?? ""} className="pointer-events-none absolute left-1/2 top-1/2 h-auto max-w-none select-none"
+          style={{ width: portrait.portraitWidth, transform: `translate(-50%, -${portrait.portraitY})` }} />
+      </span>
+    );
+  }
   const src = variant === "explorer" ? (bodySrc ?? "/illustrations/explorer.webp") : (headshotSrc ?? "/illustrations/avatar.webp");
   const animClass = variant === "explorer" ? (walking ? "anim-walk" : "anim-idle") : "";
 

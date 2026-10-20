@@ -113,6 +113,7 @@ export default function ChildDetailPage() {
         <Avatar
           variant="headshot"
           title={child.name}
+          avatarId={child.avatarId}
           className="size-20 shrink-0 rounded-full border-2 border-cyan-400/40"
         />
         <div className="min-w-0 flex-1">

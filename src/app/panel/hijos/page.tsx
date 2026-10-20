@@ -68,6 +68,7 @@ function ChildCard({ child }: { child: ChildDoc }) {
         <Avatar
           variant="headshot"
           title={child.name}
+          avatarId={child.avatarId}
           className="size-16 shrink-0 rounded-full border-2 border-indigo-500/25"
         />
         <div className="min-w-0">

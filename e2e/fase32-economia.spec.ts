@@ -22,7 +22,8 @@ test.describe("El niño elige su avatar", () => {
     await page.goto(`/jugar/${childId}/mapa`);
     const retrato = page.getByRole("button", { name: `Cambiar el avatar de ${nombre}` });
     await expect(retrato).toBeVisible();
-    await expect(retrato.locator("img")).toHaveAttribute("src", /avatar\.webp/);
+    // Los perfiles nuevos ya eligen un personaje incluido al crearse.
+    await expect(retrato.locator("img")).toHaveAttribute("src", /animo\.jpg/);
 
     await retrato.click();
     const dialogo = page.getByRole("dialog", { name: `Avatar de ${nombre}` });
@@ -31,6 +32,13 @@ test.describe("El niño elige su avatar", () => {
     await expect(dialogo).not.toBeVisible();
 
     // Sin recargar: el retrato del HUD ya muestra el elegido.
+    await expect(retrato.locator("img")).toHaveAttribute("src", /nia-portrait\.webp/);
+
+    // El inicio no sustituye el avatar personalizado por el retrato de fábrica.
+    await page.goto(`/jugar/${childId}`);
+    await expect(page.getByRole("heading", { name: `Hola, ${nombre}. ¿Qué vamos a descubrir?` })).toBeVisible();
+    await expect(page.getByRole("img", { name: `Avatar de ${nombre}` })).toHaveCount(0);
+    await page.goto(`/jugar/${childId}/mapa`);
     await expect(retrato.locator("img")).toHaveAttribute("src", /nia-portrait\.webp/);
   });
 });

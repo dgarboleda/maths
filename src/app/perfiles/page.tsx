@@ -10,13 +10,14 @@ import { getFirebase } from "@/lib/firebase";
 import { confirmChildPin, setChildPin } from "@/lib/pin";
 import { Avatar } from "@/components/world/Avatar";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
+import { ChildPinEntry } from "@/components/family/ChildPinEntry";
 import type { ChildProfile } from "@/lib/types";
+import { PROFILE_AVATARS } from "@/lib/profileAvatars";
+import { ProfileAvatarSelector } from "@/components/family/ProfileAvatarSelector";
 
 interface ChildDoc extends ChildProfile {
   id: string;
 }
-
-const KEYPAD = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
 export default function PerfilesPage() {
   const { user, loading } = useAuth();
@@ -196,7 +197,7 @@ function ChildCard({ child }: { child: ChildDoc }) {
       className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3 md:gap-3 md:p-4"
     >
       <span className="grid size-16 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30 md:size-20">
-        <Avatar className="h-11 md:h-14" title={child.name} />
+        <Avatar avatarId={child.avatarId} className="h-11 md:h-14 rounded-full" title={child.name} />
       </span>
       <span className="font-display text-sm font-bold text-white md:text-base">{child.name}</span>
     </button>
@@ -218,7 +219,7 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
   const [checking, setChecking] = useState(false);
   const [shakes, setShakes] = useState(0);
   const pinId = `pin-${child.id}`;
-  const pinInputRef = useRef<HTMLInputElement>(null);
+  const pinInputRef = useRef<HTMLDivElement>(null);
 
   function handleClose() {
     onClose();
@@ -226,17 +227,13 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
 
   const { dialogRef, handleKeyDown } = useDialogFocus(handleClose, pinInputRef);
 
-  // El input se remonta (key={shakes}) en cada intento fallido para reiniciar
-  // la animación anim-shake; el foco inicial ya lo pone useDialogFocus, pero
-  // tras el remonte hay que devolverlo a mano — sin `autoFocus` nativo, que
-  // en Chrome móvil competía en el tiempo con el bloqueo de scroll y volvía a
-  // disparar el mismo zoom que useDialogFocus evita en el montaje inicial.
+  // Devuelve el foco al indicador tras un intento fallido, sin abrir un
+  // teclado virtual: los dígitos se introducen con ChildPinEntry.
   useEffect(() => {
     if (shakes > 0) pinInputRef.current?.focus();
   }, [shakes]);
 
-  async function handleConfirm(e?: FormEvent) {
-    e?.preventDefault();
+  async function handleConfirm() {
     if (pin.length !== 4 || checking) return;
     if (!user) return;
     setChecking(true);
@@ -263,16 +260,6 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
     setPin("");
   }
 
-  function press(d: string) {
-    if (checking) return;
-    setError(null);
-    if (d === "borrar") {
-      setPin((p) => p.slice(0, -1));
-    } else if (pin.length < 4) {
-      setPin((p) => p + d);
-    }
-  }
-
   // Modal centrado y de ancho fijo (no una celda del grid de perfiles): antes
   // este formulario se devolvía en el lugar de la tarjeta dentro del grid, así
   // que su ancho salía del track de columna — angosto incluso en pantallas
@@ -289,69 +276,16 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
         onKeyDown={handleKeyDown}
         className="family-panel anim-rise flex w-64 flex-col items-center gap-3 rounded-2xl p-5 focus:outline-none"
       >
-        <form onSubmit={handleConfirm} className="flex w-full flex-col items-center gap-3">
-          <Avatar className="h-16" title={child.name} />
-
-          <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
-            PIN de {child.name}
-            <input
-              key={shakes}
-              ref={pinInputRef}
-              id={pinId}
-              type="password"
-              inputMode="numeric"
-              maxLength={4}
-              value={pin}
-              onChange={(e) => {
-                setError(null);
-                setPin(e.target.value.replace(/\D/g, ""));
-              }}
-              className={`family-input mt-1.5 h-10 w-24 text-center text-lg tracking-[0.6em]${
-                error ? " anim-shake has-error" : ""
-              }`}
-            />
-          </label>
-
-          <span role="alert" className="min-h-4 text-xs font-semibold text-red-300">
-            {error ?? ""}
-          </span>
-
-          <div
-            role="group"
-            aria-label={`Teclado numérico para ${child.name}`}
-            className="grid grid-cols-3 gap-1.5"
-          >
-            {KEYPAD.map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => press(d)}
-                className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
-              >
-                {d}
-              </button>
-            ))}
-            <span aria-hidden="true" />
-            <button
-              type="button"
-              onClick={() => press("0")}
-              className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
-            >
-              0
-            </button>
-            <button
-              type="button"
-              onClick={() => press("borrar")}
-              aria-label="Borrar último dígito"
-              className="family-keycap grid min-h-9 min-w-9 place-items-center rounded-lg text-xs"
-            >
-              ⌫
-            </button>
-          </div>
+        <div className="flex w-full flex-col items-center gap-3">
+          <Avatar avatarId={child.avatarId} className="h-16 rounded-full" title={child.name} />
+          <ChildPinEntry id={pinId} childName={child.name} pin={pin} entryRef={pinInputRef}
+            disabled={checking} error={error} shakes={shakes} onConfirm={() => void handleConfirm()}
+            onChange={(next) => { setError(null); setPin(next); }} />
 
           <div className="flex gap-4 text-xs">
             <button
-              type="submit"
+              type="button"
+              onClick={() => void handleConfirm()}
               disabled={pin.length !== 4 || checking}
               className="font-bold text-cyan-300 underline-offset-2 hover:underline disabled:opacity-40"
             >
@@ -365,7 +299,7 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
               Cancelar
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -382,6 +316,7 @@ function NewChildForm({
   const [birthDate, setBirthDate] = useState("");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [avatarId, setAvatarId] = useState<string>(PROFILE_AVATARS[0].id);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -406,6 +341,7 @@ function NewChildForm({
       const created = await addDoc(childrenCollection, {
         name,
         birthDate,
+        avatarId,
         createdAt: serverTimestamp(),
       });
       // El hash del PIN lo escribe Functions; si falla, no dejar un perfil
@@ -433,6 +369,7 @@ function NewChildForm({
   return (
     <form onSubmit={handleSubmit} className="family-panel flex flex-col gap-4 rounded-2xl p-6">
       <h2 className="font-display text-base font-bold text-white">Nuevo perfil</h2>
+      <ProfileAvatarSelector value={avatarId} onChange={setAvatarId} disabled={submitting} />
       <label className="flex flex-col gap-1 text-sm text-indigo-200">
         Nombre
         <input required value={name} onChange={(e) => setName(e.target.value)} className="family-input" />

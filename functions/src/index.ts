@@ -7,6 +7,7 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { defineSecret } from "firebase-functions/params";
 import { HttpsError, onCall, onRequest, type CallableRequest } from "firebase-functions/v2/https";
 import { ACCESS_KEY_PATTERN, checkPin, PIN_HASH_VERSION, PIN_PATTERN, pinHmac, safeEqual } from "./pin";
+import { getProfileAvatar } from "./profileAvatars";
 
 initializeApp();
 
@@ -80,7 +81,7 @@ async function assertAccessKey(parentId: string, accessKey: unknown): Promise<vo
 
 /**
  * Lista de los hijos de una familia para dibujar el selector de perfiles en
- * otro dispositivo — solo id + nombre, nunca `pinHash`: firestore.rules no
+ * otro dispositivo — id, nombre y avatar incluido, nunca `pinHash`: firestore.rules no
  * puede exponer un subconjunto de campos de un documento, así que ese
  * filtrado lo hace esta función con el Admin SDK. Exige la clave del enlace.
  */
@@ -95,7 +96,11 @@ export const listChildrenPublic = onCall(async (request) => {
   return {
     children: snap.docs
       .filter((d) => !d.data().deleting)
-      .map((d) => ({ id: d.id, name: (d.data().name as string | undefined) ?? "" })),
+      .map((d) => {
+        const data = d.data();
+        const avatar = getProfileAvatar(data.avatarId);
+        return { id: d.id, name: (data.name as string | undefined) ?? "", ...(avatar ? { avatarId: avatar.id } : {}) };
+      }),
   };
 });
 
