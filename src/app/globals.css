@@ -836,6 +836,18 @@ body {
   animation: arcade-road 0.8s linear infinite;
 }
 .arcade-paused, .arcade-paused * { animation-play-state: paused !important; }
+.sokoban-wall {
+  border: 1px solid #a88b68;
+  background-color: #68513c;
+  background-image: linear-gradient(0deg, transparent 46%, #34281e 47% 53%, transparent 54%), linear-gradient(90deg, transparent 46%, #34281e 47% 53%, transparent 54%);
+  box-shadow: inset 0 2px 0 #cfb48b55, inset 0 -3px 0 #221a1455;
+}
+.sokoban-crate {
+  border: 2px solid #8c4a13;
+  background-color: #fbbf67;
+  background-image: linear-gradient(45deg, transparent 43%, #a7612426 44% 54%, transparent 55%), linear-gradient(-45deg, transparent 43%, #a7612426 44% 54%, transparent 55%);
+  box-shadow: inset 0 0 0 2px #ffe3aa, 0 2px 0 #713f12;
+}
 @media (prefers-reduced-motion: reduce) {
   .arcade-hover, .arcade-hop, .arcade-road { animation: none; }
 }
