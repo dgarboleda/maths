@@ -1,39 +1,32 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
+import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
+import { WAREHOUSES, deliverySquares, floorAt, goalAt, initialWarehouse, moveWarehouse, sameCell, warehouseFor, type Direction, type WarehouseState } from "@/lib/minigames/sokoban";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import { lessonArcadeState, lessonLabel, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
-const COLS = 5;
-const ROWS = 6; // la fila 0 es el camión
-const BOX_ROW = 3;
-const START = { x: Math.floor(COLS / 2), y: ROWS - 1 };
+const CHOICES = 5;
 const GOAL = 3;
 const LIVES_START = 3;
 
 type Phase = "start" | "playing" | "over";
-type Cell = { x: number; y: number };
-type Box = Cell & { value: number };
-
-function layout(values: number[]): Box[] {
-  return values.slice(0, COLS).map((value, x) => ({ x, y: BOX_ROW, value }));
-}
 
 /**
  * Caja numérica (tipo Sokoban) — mismo contrato que el resto de la serie
  * retro (docs/plan-minijuegos-retro.md). Por turnos y sin reloj: nada se
  * mueve si el jugador no pulsa una flecha, así que no hay fallos de
  * reflejos. Se empuja una caja (nunca se tira de ella) y una caja no
- * empuja a otra; la que llega a la fila del camión es la respuesta.
+ * empuja a otra; solo la que llega a la meta del almacén es la respuesta.
  *
- * Una caja contra la pared de abajo ya no puede subir: «Reiniciar cajas»
- * vuelve a colocarlas sin coste, como en el Sokoban clásico.
+ * Paredes y pasillos exigen cambiar de lado y recolocar otras cajas.
+ * Deshacer y reiniciar no envían respuestas ni cuestan premios.
  */
 export function CajasGeneric({
   moduleId,
@@ -61,8 +54,15 @@ export function CajasGeneric({
   const promptId = useId();
 
   const [phase, setPhase] = useState<Phase>("start");
-  const [player, setPlayer] = useState<Cell>(START);
-  const [boxes, setBoxes] = useState<Box[]>([]);
+  const [level, setLevel] = useState(WAREHOUSES[0]);
+  const levelRef = useRef(WAREHOUSES[0]);
+  const [board, setBoard] = useState(() => initialWarehouse(WAREHOUSES[0], []));
+  const boardRef = useRef(board);
+  const historyRef = useRef<WarehouseState[]>([]);
+  const [undoCount, setUndoCount] = useState(0);
+  const [pending, setPending] = useState(false);
+  const [notice, setNotice] = useState("");
+  const deliverable = useMemo(() => deliverySquares(level), [level]);
   const [lives, setLives] = useState(LIVES_START);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
@@ -73,14 +73,20 @@ export function CajasGeneric({
   const busyRef = useRef(false); // true mientras se espera la respuesta
 
   function resetBoxes() {
-    setPlayer(START);
-    setBoxes(layout(candidatesRef.current));
+    const initial = initialWarehouse(levelRef.current, candidatesRef.current);
+    boardRef.current = initial;
+    setBoard(initial);
+    historyRef.current = [];
+    setUndoCount(0);
+    setNotice("");
   }
 
-  function spawnRound() {
+  function spawnRound(round = 0) {
     const nextProblem = newProblem();
     setProblem(nextProblem);
-    candidatesRef.current = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, Math.max(8, COLS * 2), COLS);
+    candidatesRef.current = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, Math.max(8, CHOICES * 2), CHOICES);
+    levelRef.current = warehouseFor(nextProblem.id, round);
+    setLevel(levelRef.current);
     resetBoxes();
   }
 
@@ -103,6 +109,7 @@ export function CajasGeneric({
     setStarsThisRound(0);
     setWin(false);
     busyRef.current = false;
+    setPending(false);
     setPhase("playing");
     spawnRound();
   }
@@ -127,8 +134,9 @@ export function CajasGeneric({
         return;
       }
     }
-    spawnRound();
+    spawnRound(correct ? correctCount + 1 : correctCount);
     busyRef.current = false;
+    setPending(false);
   }
 
   async function deliverLesson(value: number) {
@@ -139,55 +147,84 @@ export function CajasGeneric({
     } finally {
       resetBoxes();
       busyRef.current = false;
+      setPending(false);
     }
   }
 
-  const inside = (c: Cell) => c.x >= 0 && c.x < COLS && c.y >= 0 && c.y < ROWS;
-  const boxAt = (c: Cell) => boxes.findIndex((b) => b.x === c.x && b.y === c.y);
-
-  function move(dx: number, dy: number) {
+  function move(direction: Direction) {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
-    const target = { x: player.x + dx, y: player.y + dy };
-    if (!inside(target)) return;
-    const pushed = boxAt(target);
-    if (pushed < 0) {
-      setPlayer(target);
-      return;
-    }
-    const beyond = { x: target.x + dx, y: target.y + dy };
-    if (!inside(beyond) || boxAt(beyond) >= 0) return; // pared u otra caja
-    const box = boxes[pushed];
-    setBoxes(boxes.map((b, i) => (i === pushed ? { ...b, ...beyond } : b)));
-    setPlayer(target);
-    if (beyond.y === 0) {
+    const previous = boardRef.current;
+    const result = moveWarehouse(levelRef.current, previous, direction);
+    if (result.state === previous) { setNotice(result.blocked ?? ""); return; }
+    historyRef.current = [...historyRef.current.slice(-99), previous];
+    setUndoCount(historyRef.current.length);
+    boardRef.current = result.state;
+    setBoard(result.state);
+    const trapped = result.state.boxes.some((box) => !deliverable.has(`${box.x},${box.y}`));
+    setNotice(trapped ? "Una caja quedó sin salida hacia la meta. Puedes deshacer o reiniciar sin perder nada." : "");
+    if (result.delivered) {
+      busyRef.current = true;
+      setPending(true);
       playSound("click", soundOn);
-      if (lesson) void deliverLesson(box.value);
-      else void resolveRound(box.value === problem.answer);
+      if (lesson) void deliverLesson(result.delivered.value);
+      else void resolveRound(result.delivered.value === problem.answer);
     }
   }
+
+  function undo() {
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
+    const previous = historyRef.current.pop();
+    if (!previous) return;
+    boardRef.current = previous;
+    setBoard(previous);
+    setUndoCount(historyRef.current.length);
+    setNotice("Movimiento deshecho. Prueba otro camino.");
+  }
+
+  function restart() {
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
+    resetBoxes();
+    setNotice("Almacén reiniciado. Conservas la misma pregunta y las mismas cajas.");
+  }
+
+  // Igual que las flechas, Z sigue funcionando con el foco en los controles
+  // externos de pausa. Nunca intercepta la escritura ni atajos del navegador.
+  useEffect(() => {
+    if (phase !== "playing" || frozen || solved) return;
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target;
+      if (event.code !== "KeyZ" || event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.isComposing) return;
+      if (target instanceof HTMLElement && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+      event.preventDefault();
+      undo();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   useArrowKeys(
     {
-      up: () => move(0, -1),
-      down: () => move(0, 1),
-      left: () => move(-1, 0),
-      right: () => move(1, 0),
+      up: () => move("U"),
+      down: () => move("D"),
+      left: () => move("L"),
+      right: () => move("R"),
     },
     { enabled: phase === "playing" && !frozen && !solved },
   );
 
   function onTouchMove(dx: number, dy: number) {
-    if (dx !== 0) move(Math.sign(dx), 0);
-    else if (dy !== 0) move(0, Math.sign(dy));
+    if (dx !== 0) move(dx > 0 ? "R" : "L");
+    else if (dy !== 0) move(dy > 0 ? "D" : "U");
   }
 
   const shownPhase = solved ? "over" : phase;
+  const promptFocus = useArcadeFocus(shownPhase === "playing");
   const shownCount = lesson ? Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-6 text-white shadow-2xl">
+    <div className="relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -198,7 +235,7 @@ export function CajasGeneric({
         <h2 className="mb-2 bg-gradient-to-r from-orange-300 to-sky-400 bg-clip-text text-3xl font-extrabold text-transparent">
           📦 Caja numérica
         </h2>
-        <p className="mb-6 text-sm text-orange-200">Empuja hasta el camión la caja con el resultado correcto.</p>
+        <p className="mb-4 text-sm text-orange-200">Abre paso entre las cajas y empuja tu respuesta hasta la meta 🚚.</p>
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
@@ -214,7 +251,7 @@ export function CajasGeneric({
               ¡Empezar!
             </button>
             <p className="text-xs text-orange-300">
-              Usa las flechas (o los botones) para moverte. Sin prisa: nada se mueve hasta que tú lo decides.
+              Solo puedes empujar, nunca tirar de una caja ni empujar dos a la vez. Rodea las paredes y cambia de lado. Sin reloj: puedes deshacer y reiniciar.
             </p>
           </div>
         )}
@@ -253,43 +290,44 @@ export function CajasGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-sky-200`}>
+              <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-sky-200 outline-none`}>
                 {problem.prompt}
               </p>
             </div>
 
+            <div className="flex flex-wrap justify-between gap-2 text-xs text-slate-300"><span>{level.name}</span><span>Pasos: {board.moves} · Empujes: {board.pushes}</span></div>
             <div
               aria-hidden="true"
-              className="mx-auto grid max-w-sm gap-1 rounded-2xl border-2 border-orange-700 bg-slate-900 p-2"
-              style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
+              data-sokoban-board="" data-warehouse={level.id} data-player-x={board.player.x} data-player-y={board.player.y}
+              className="mx-auto grid max-w-sm gap-0.5 rounded-2xl border-2 border-amber-700 bg-stone-950 p-2"
+              style={{ gridTemplateColumns: `repeat(${level.rows[0].length}, minmax(0, 1fr))` }}
             >
-              {Array.from({ length: ROWS * COLS }, (_, i) => {
-                const cell = { x: i % COLS, y: Math.floor(i / COLS) };
-                const box = boxes[boxAt(cell)];
-                const isPlayer = player.x === cell.x && player.y === cell.y;
+              {Array.from({ length: level.rows.length * level.rows[0].length }, (_, i) => {
+                const cell = { x: i % level.rows[0].length, y: Math.floor(i / level.rows[0].length) };
+                const box = board.boxes.find((item) => sameCell(item, cell));
+                const isPlayer = sameCell(board.player, cell);
+                const wall = !floorAt(level, cell);
+                const goal = goalAt(level, cell);
                 return (
                   <div
                     key={i}
-                    className={`flex h-11 items-center justify-center rounded-md text-sm font-black ${
-                      box ? "bg-orange-400 text-slate-900" : cell.y === 0 ? "bg-sky-900/70 text-sky-200" : "bg-slate-800"
-                    }`}
+                    data-x={cell.x} data-y={cell.y} data-wall={wall || undefined} data-goal={goal || undefined} data-box-id={box?.id}
+                    className={`relative flex aspect-square min-w-0 items-center justify-center rounded text-xs font-black sm:text-sm ${wall ? "sokoban-wall" : box ? "sokoban-crate text-slate-950" : goal ? "border-2 border-dashed border-cyan-300 bg-cyan-950 text-cyan-100" : "border border-slate-700/70 bg-slate-800"}`}
                   >
-                    {box ? lessonLabel(exercise, box.value) : isPlayer ? "🧑" : cell.y === 0 ? "🚚" : ""}
+                    {box ? <span className="relative z-10 px-0.5 leading-tight [overflow-wrap:anywhere]">{lessonLabel(exercise, box.value)}</span> : isPlayer ? <span className="text-lg sm:text-2xl">🧑</span> : goal ? <span className="text-lg">🚚</span> : ""}
                   </div>
                 );
               })}
             </div>
 
-            <button
-              type="button"
-              onClick={resetBoxes}
-              disabled={frozen}
-              className="min-h-11 rounded-xl bg-slate-800 px-4 py-2 text-sm font-bold text-orange-200 hover:bg-slate-700"
-            >
-              Reiniciar cajas
-            </button>
-
-            <TouchDPad inline onMove={onTouchMove} />
+            <p className="text-xs text-slate-300">🧱 Pared · 📦 Caja · 🚚 Meta. Mueve otras cajas si necesitas abrir paso.</p>
+            <p role="status" className="min-h-5 text-sm text-amber-200">{pending ? "Entregando tu respuesta…" : notice || "Elige qué caja entregar. Solo llegar a la meta envía una respuesta."}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button type="button" onClick={undo} disabled={frozen || pending || undoCount === 0} aria-keyshortcuts="Z" className="min-h-11 rounded-xl border border-slate-500 bg-slate-800 px-4 text-sm font-bold text-slate-100 disabled:opacity-50">Deshacer</button>
+              <button type="button" onClick={restart} disabled={frozen || pending} className="min-h-11 rounded-xl bg-slate-800 px-4 py-2 text-sm font-bold text-orange-200 hover:bg-slate-700">Reiniciar cajas</button>
+            </div>
+            <p className="text-xs text-slate-400">Flechas: moverte · Z: deshacer</p>
+            <TouchDPad inline repeat={false} onMove={onTouchMove} />
           </div>
         )}
 

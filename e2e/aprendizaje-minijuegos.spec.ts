@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { getLesson } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
+import { SOKOBAN_SOLUTIONS } from "../src/test/sokobanSolutions";
 
 type Game = "frogger" | "cohete" | "snake" | "runner" | "numberpac" | "invaders" | "breakout" | "topos" | "cajas";
 
@@ -273,26 +274,72 @@ test("Topos: tocar el topo envía la respuesta y que se escondan no cuenta", asy
   await expect(page.getByRole("heading", { name: "¡Atrapaste al topo!" })).toBeVisible();
 });
 
-test("Cajas: por turnos, la caja empujada hasta el camión es la respuesta", async ({ page }, testInfo) => {
+test("Cajas Sokoban: paredes, deshacer, pausa y entrega elegida sin premiar movimientos", async ({ page }, testInfo) => {
   const q = await conceptThenNumeric(page, "fracciones-unidad", "cajas");
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  await expectGameInView(page);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
-  // El tablero es decorativo (aria-hidden): se lee la fila de cajas (fila 3 de 5 columnas).
-  const cells = await page.locator("main div.grid.max-w-sm").first().locator(":scope > div").allTextContents();
-  const target = cells.slice(15, 20).map((c) => c.trim()).indexOf("1/3");
+  const board = page.locator("main [data-sokoban-board]");
+  expect(await board.locator('[data-wall="true"]').count()).toBeGreaterThan(0);
+  await expect(board.locator('[data-goal="true"]')).toHaveCount(1);
+  await expect(board.locator("[data-box-id]")).toHaveCount(5);
+  const cells = await board.locator("[data-box-id]").allTextContents();
+  const target = cells.map((c) => c.trim()).indexOf("1/3");
   expect(target).toBeGreaterThanOrEqual(0);
   const mobile = testInfo.project.name === "móvil";
-  const press = (dir: "Left" | "Right" | "Up") =>
+  const codes: Record<string, string> = { L: "Left", R: "Right", U: "Up", D: "Down" };
+  const names: Record<string, string> = { L: "Mover a la izquierda", R: "Mover a la derecha", U: "Mover arriba", D: "Mover abajo" };
+  const press = (dir: string) =>
     mobile
-      ? page.getByRole("button", { name: { Left: "Mover a la izquierda", Right: "Mover a la derecha", Up: "Mover arriba" }[dir] }).click()
-      : page.keyboard.press(`Arrow${dir}`);
-  for (let col = 2; col !== target; col += Math.sign(target - col)) await press(target > col ? "Right" : "Left");
-  for (let i = 0; i < 3; i++) await press("Up");
+      ? page.getByRole("button", { name: names[dir], exact: true }).click()
+      : page.keyboard.press(`Arrow${codes[dir]}`);
+  let submissions = 0;
+  page.on("request", (request) => { if (request.url().endsWith("/recordLearningAction") && request.postDataJSON()?.data?.action?.kind === "answer") submissions++; });
+  await press("D"); // pared del borde: no hay movimiento ni respuesta
+  await expect(page.getByText(/Una pared bloquea el paso/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Deshacer", exact: true })).toBeDisabled();
+  await press("L");
+  await expect(board).toHaveAttribute("data-player-x", "2");
+  if (mobile) await page.getByRole("button", { name: "Deshacer", exact: true }).click();
+  else await page.keyboard.press("z");
+  await expect(board).toHaveAttribute("data-player-x", "3");
+  await press("R");
+  await page.getByRole("button", { name: "Pausar partida", exact: true }).click();
+  await press("L");
+  await expect(board).toHaveAttribute("data-player-x", "4");
+  await expect(page.getByRole("button", { name: "Reiniciar cajas", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Reanudar partida", exact: true }).click();
+  if (!mobile) {
+    await page.keyboard.press("z"); // foco en el control externo de reanudar
+    await expect(board).toHaveAttribute("data-player-x", "3");
+    await press("R");
+  }
+  await page.getByRole("button", { name: "Reiniciar cajas", exact: true }).click();
+  await expect(board).toHaveAttribute("data-player-x", "3");
+  expect(await board.locator("[data-box-id]").allTextContents()).toEqual(cells);
+  expect(submissions).toBe(0);
+  await testInfo.attach("sokoban", { body: await board.screenshot(), contentType: "image/png" });
+  const routes = SOKOBAN_SOLUTIONS[(await board.getAttribute("data-warehouse"))!];
+  const wrong = target === 0 ? 1 : 0;
+  for (const direction of routes[wrong].slice(0, -1)) await press(direction);
+  expect(submissions).toBe(0);
+  const incorrect = savedAnswer(page);
+  await press(routes[wrong].at(-1)!);
+  const first = (await (await incorrect).json()).result;
+  expect(first.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: false, attempts: 1 });
+  expect(first.stars).toBe(0);
+  await page.getByRole("button", { name: "Reanudar partida", exact: true }).click();
+  for (const direction of routes[target].slice(0, -1)) await press(direction);
+  expect(submissions).toBe(1);
   const answer = savedAnswer(page);
-  await press("Up");
+  await press(routes[target].at(-1)!);
   const saved = (await (await answer).json()).result;
-  expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
+  expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 2 });
+  expect(saved.progress.checkPassedAt).toBeNull();
+  expect(saved.stars).toBe(0);
   await expect(page.getByRole("heading", { name: "¡Caja entregada!" })).toBeVisible();
+  expect(submissions).toBe(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test("Laberinto en móvil: un toque es un paso, el fantasma espera y pisar un número guarda su valor", async ({ page }, testInfo) => {

@@ -12,6 +12,8 @@ import { AWAITING_INPUT, REFLEX_MISS } from "@/lib/minigames/lessonArcade";
 import { FroggerGeneric, FROGGER_MISS } from "./FroggerGeneric";
 import { CoheteGeneric } from "./CoheteGeneric";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { SOKOBAN_SOLUTIONS } from "@/test/sokobanSolutions";
+import { warehouseFor } from "@/lib/minigames/sokoban";
 
 vi.mock("@/lib/curriculum", () => ({ getModule: () => { throw new Error("La clase no usa generadores antiguos"); } }));
 vi.mock("@/lib/gameSound", () => ({ playSound: vi.fn() }));
@@ -363,11 +365,11 @@ test("Cajas: nada se mueve solo; la caja que llega al camión envía su valor", 
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   act(() => vi.advanceTimersByTime(60_000));
   expect(data.onResponse).not.toHaveBeenCalled();
-  key("ArrowUp"); // (2,5) → (2,4)
-  key("ArrowUp"); // empuja -2 a la fila 2
-  key("ArrowUp"); // fila 1
+  const route = SOKOBAN_SOLUTIONS[warehouseFor(data.problem.id).id][2];
+  const codes: Record<string, string> = { U: "ArrowUp", D: "ArrowDown", L: "ArrowLeft", R: "ArrowRight" };
+  for (const direction of route.slice(0, -1)) key(codes[direction]);
   expect(data.onResponse).not.toHaveBeenCalled();
-  key("ArrowUp"); // fila 0: el camión
+  key(codes[route.at(-1)!]);
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
   view.rerender(<CajasGeneric moduleId="" soundOn={false} onAnswer={legacy} exercise={{ ...data, solved: true }} />);
@@ -375,17 +377,32 @@ test("Cajas: nada se mueve solo; la caja que llega al camión envía su valor", 
   expect(legacy).not.toHaveBeenCalled();
 });
 
-test("Cajas: una caja no empuja a otra y reiniciar las devuelve a su sitio", async () => {
+test("Cajas: pausa y guardado bloquean movimientos, deshacer y reinicio", async () => {
   const data = exercise();
-  const { container } = render(<CajasGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  let finish!: (saved: boolean) => void;
+  data.onResponse = vi.fn(() => new Promise<boolean>((resolve) => { finish = resolve; }));
+  const view = render(<CajasGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
-  const row = (y: number) => [...container.querySelectorAll("div.grid > div")].slice(y * 5, y * 5 + 5).map((c) => c.textContent);
-  key("ArrowUp");
-  key("ArrowUp"); // -2 sube a la fila 2; el jugador queda en (2,3)
-  key("ArrowLeft"); // -3 no puede empujar a -4
-  expect(row(3)).toEqual(["-4", "-3", "🧑", "-1", "0"]);
-  fireEvent.click(screen.getByRole("button", { name: "Reiniciar cajas" }));
-  expect(row(3)).toEqual(["-4", "-3", "-2", "-1", "0"]);
-  expect(row(5)[2]).toBe("🧑");
+  const board = view.container.querySelector("[data-sokoban-board]")!;
+  const snapshot = () => ({ player: [board.getAttribute("data-player-x"), board.getAttribute("data-player-y")], boxes: [...board.querySelectorAll("[data-box-id]")].map((box) => [box.getAttribute("data-box-id"), box.getAttribute("data-x"), box.getAttribute("data-y"), box.textContent]) });
+  const before = snapshot();
+  view.rerender(<CajasGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
+  key("ArrowLeft");
+  expect(snapshot()).toEqual(before);
+  expect(screen.getByRole("button", { name: "Reiniciar cajas" })).toBeDisabled();
   expect(data.onResponse).not.toHaveBeenCalled();
+  view.rerender(<CajasGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  const route = SOKOBAN_SOLUTIONS[warehouseFor(data.problem.id).id][0];
+  const codes: Record<string, string> = { U: "ArrowUp", D: "ArrowDown", L: "ArrowLeft", R: "ArrowRight" };
+  for (const direction of route) key(codes[direction]);
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-4);
+  const delivered = snapshot();
+  key("ArrowDown");
+  key("KeyZ");
+  fireEvent.click(screen.getByRole("button", { name: "Reiniciar cajas" }));
+  expect(snapshot()).toEqual(delivered);
+  expect(screen.getByRole("button", { name: "Deshacer" })).toBeDisabled();
+  await act(async () => { finish(false); });
+  expect(snapshot()).toEqual(before);
+  expect(data.onResponse).toHaveBeenCalledTimes(1);
 });
