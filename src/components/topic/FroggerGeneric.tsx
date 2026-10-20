@@ -102,10 +102,10 @@ export function FroggerGeneric({
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
   const shownPhase = exercise?.solved ? "over" : phase;
-  const promptFocus = useArcadeFocus(shownPhase === "playing");
+  const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused);
+  const promptFocus = useArcadeFocus(shownPhase === "playing", controlsDisabled);
   const shownCount = exercise ? Number(exercise.solved) : correctCount;
   const shownWin = exercise ? exercise.solved : win;
-  const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused);
   const [reflexMiss, setReflexMiss] = useState(false);
 
   const obstacleDirRef = useRef(1);

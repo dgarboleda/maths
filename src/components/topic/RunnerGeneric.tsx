@@ -245,7 +245,7 @@ export function RunnerGeneric({
   }
 
   const shownPhase = solved ? "over" : phase;
-  const promptFocus = useArcadeFocus(shownPhase === "playing");
+  const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
   const shownCount = lesson ? Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);

@@ -28,6 +28,7 @@ Los escenarios usan SVG y CSS locales, sin peticiones de imágenes ni dependenci
 - Los atajos no capturan escritura, contenido editable, composición ni combinaciones con Ctrl, Cmd o Alt. Espacio conserva la activación nativa del botón enfocado, sin disparar además otra acción del juego.
 - El bucle compartido limita a 100 ms el avance de un fotograma tras un bloqueo del hilo y continúa evitando acumular tiempo con la pestaña oculta.
 - Las animaciones decorativas se detienen en pausa y respetan reducir movimiento. La lógica y las respuestas no dependen del final de una animación CSS.
+- Empezar y reanudar vuelven a mostrar el enunciado y el tablero. Pausar o mover al personaje no desplazan la página ni vuelven a tomar el foco.
 - Las elecciones de Laberinto se colocan sin conocer el valor correcto y se comprueba que cada una tiene un camino que no obliga a recoger otra primero. El escudo se elige en una zona accesible sin atravesar el fantasma inicial.
 - «Ver atascos» identifica bloqueos geométricos, no todos los bloqueos entre varias cajas. Deshacer y reiniciar siguen resolviendo esos casos.
 

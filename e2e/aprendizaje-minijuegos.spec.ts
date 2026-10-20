@@ -441,6 +441,7 @@ test("Topos sin prisas: las tandas esperan y solo tocar un topo envía la respue
   await page.getByRole("button", { name: "Pausar partida", exact: true }).click();
   await expect(page.getByRole("button", { name: "Siguiente tanda", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Reanudar partida", exact: true }).click();
+  await expectGameInView(page);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await testInfo.attach("topos-sin-prisas", { body: await page.screenshot(), contentType: "image/png" });
   const target = page.getByRole("button", { name: "Topo con 1/3", exact: true });
@@ -468,6 +469,7 @@ test("Serpiente: el tablero espera para leer y la pausa conserva el control y la
   await page.waitForTimeout(500);
   await expect(board).toHaveAttribute("data-head-y", "4");
   await page.getByRole("button", { name: "Reanudar partida", exact: true }).click();
+  await expectGameInView(page);
   expect(await page.locator('main [data-game="snake"] .arcade-snake-body').first().evaluate((node) => getComputedStyle(node).transitionDuration)).toBe("0s");
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await testInfo.attach("serpiente", { body: await page.screenshot(), contentType: "image/png" });
