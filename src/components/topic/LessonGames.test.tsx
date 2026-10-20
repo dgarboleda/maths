@@ -14,6 +14,7 @@ import { CoheteGeneric } from "./CoheteGeneric";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import { SOKOBAN_SOLUTIONS } from "@/test/sokobanSolutions";
 import { warehouseFor } from "@/lib/minigames/sokoban";
+import { mazeNeighbors, mazeKey, type MazeCell } from "@/lib/minigames/maze";
 
 vi.mock("@/lib/curriculum", () => ({ getModule: () => { throw new Error("La clase no usa generadores antiguos"); } }));
 vi.mock("@/lib/gameSound", () => ({ playSound: vi.fn() }));
@@ -167,7 +168,7 @@ test("Carrera: leer no activa el reloj; la primera flecha da la salida y el turb
   const data = exercise();
   render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
-  expect(screen.getByText("Elige un carril con las flechas")).toBeInTheDocument();
+  expect(screen.getByText("Elige tu carril")).toBeInTheDocument();
   tick(2600);
   expect(screen.queryByText(REFLEX_MISS)).not.toBeInTheDocument();
   expect(data.onResponse).not.toHaveBeenCalled();
@@ -324,6 +325,7 @@ test("Estanque: un salto no se puede repetir durante el vuelo y el cocodrilo sig
   expect(board).toHaveAttribute("data-frog-col", "1");
   tick(1_000);
   expect(board).toHaveAttribute("data-obstacle-col", "3");
+  expect(board).toHaveAttribute("data-obstacle-next", "2");
   expect(board).toHaveAttribute("data-frog-lane", "orilla");
   expect(data.onResponse).not.toHaveBeenCalled();
 });
@@ -355,6 +357,167 @@ test("Topos: en pausa no salen topos ni se puede responder", () => {
   view.rerender(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
   tick(3_000);
   expect(screen.queryByRole("button", { name: /Topo con/ })).not.toBeInTheDocument();
+});
+
+test("Serpiente: varios giros antes de avanzar no provocan una vuelta contra el cuerpo", () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const view = render(<SnakeGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const board = view.container.querySelector("[data-snake-board]")!;
+  key("ArrowUp"); key("ArrowLeft");
+  tick(500);
+  expect(board).toHaveAttribute("data-head-x", "3");
+  expect(board).toHaveAttribute("data-head-y", "3");
+  key("ArrowLeft");
+  tick(450);
+  expect(board).toHaveAttribute("data-head-x", "2");
+  expect(board).toHaveAttribute("data-head-y", "3");
+  expect(data.onResponse).not.toHaveBeenCalled();
+  expect(screen.queryByText(REFLEX_MISS)).not.toBeInTheDocument();
+});
+
+test("Invasión: tocar un blanco solo apunta y el disparo conserva su valor hasta guardarse", async () => {
+  vi.useFakeTimers();
+  let finish!: (saved: boolean) => void;
+  const data = exercise({ onResponse: vi.fn(() => new Promise<boolean>((resolve) => { finish = resolve; })) });
+  render(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const target = screen.getByRole("button", { name: "Apuntar a -4" });
+  fireEvent.click(target);
+  tick(200);
+  expect(target).toHaveAttribute("aria-pressed", "true");
+  expect(data.onResponse).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Disparar (espacio)" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apuntar a 0" }));
+  tick(500);
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-4);
+  expect(target).toBeDisabled();
+  key("Space"); tick(2_000);
+  expect(data.onResponse).toHaveBeenCalledTimes(1);
+  await act(async () => { finish(false); });
+  expect(target).toBeEnabled();
+});
+
+test("Carrera: tocar carriles permite cambiar de elección antes de cruzar", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  fireEvent.click(screen.getByRole("button", { name: "Carril 4: -1" }));
+  tick(500);
+  expect(data.onResponse).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Carril 3: -2" }));
+  fireEvent.click(screen.getByRole("button", { name: /Turbo · cruzar/ }));
+  tick(750);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
+});
+
+test("Bloques: tocar un bloque no lanza; el rebote entrega la elección fijada", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const target = screen.getByRole("button", { name: "Apuntar al bloque -4" });
+  fireEvent.click(target);
+  fireEvent.click(screen.getByRole("button", { name: "Rebote ←" }));
+  tick(2_000);
+  expect(target).toHaveAttribute("aria-pressed", "true");
+  expect(data.onResponse).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Lanzar la pelota" }));
+  expect(target).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Apuntar al bloque 0" }));
+  tick(2_000);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-4);
+});
+
+test("Topos sin prisas: no caducan, las tandas cubren las opciones y pausarlas no responde", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const view = render(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  fireEvent.click(screen.getByRole("button", { name: "Sin prisas" }));
+  const first = screen.getAllByRole("button", { name: /Topo con/ }).map((button) => button.getAttribute("aria-label"));
+  act(() => { vi.advanceTimersByTime(60_000); });
+  expect(screen.getAllByRole("button", { name: /Topo con/ }).map((button) => button.getAttribute("aria-label"))).toEqual(first);
+  view.rerender(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
+  expect(screen.getByRole("button", { name: "Siguiente tanda" })).toBeDisabled();
+  expect(data.onResponse).not.toHaveBeenCalled();
+  view.rerender(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "Siguiente tanda" }));
+  const target = screen.getByRole("button", { name: "Topo con -2" });
+  expect(data.onResponse).not.toHaveBeenCalled();
+  fireEvent.click(target);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
+});
+
+test("Laberinto: el escudo se puede recoger sin responder y conserva su duración en pausa", () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const view = render(<NumberPacGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const board = view.container.querySelector("[data-numberpac-board]")!;
+  expect(board.querySelectorAll('[data-wall="true"]')).toHaveLength(4);
+  const power = board.querySelector("[data-power]")!;
+  const target = { x: Number(power.getAttribute("data-cell-x")), y: Number(power.getAttribute("data-cell-y")) };
+  const numbers = new Set([...board.querySelectorAll("[data-value]")].map((node) => `${node.getAttribute("data-cell-x")},${node.getAttribute("data-cell-y")}`));
+  numbers.add(`${board.getAttribute("data-ghost-x")},${board.getAttribute("data-ghost-y")}`);
+  const seen = new Set(["0,0"]);
+  const pending: { cell: MazeCell; path: MazeCell[] }[] = [{ cell: { x: 0, y: 0 }, path: [] }];
+  let route: MazeCell[] | undefined;
+  while (pending.length) {
+    const next = pending.shift()!;
+    if (mazeKey(next.cell) === mazeKey(target)) { route = next.path; break; }
+    for (const cell of mazeNeighbors(next.cell)) if (!seen.has(mazeKey(cell)) && !numbers.has(mazeKey(cell))) {
+      seen.add(mazeKey(cell)); pending.push({ cell, path: [...next.path, cell] });
+    }
+  }
+  expect(route).toBeDefined();
+  let position = { x: 0, y: 0 };
+  for (const cell of route!) {
+    key(cell.x > position.x ? "ArrowRight" : cell.x < position.x ? "ArrowLeft" : cell.y > position.y ? "ArrowDown" : "ArrowUp");
+    expect(board).toHaveAttribute("data-player-x", String(cell.x));
+    expect(board).toHaveAttribute("data-player-y", String(cell.y));
+    position = cell;
+  }
+  expect(board).toHaveAttribute("data-shield", "true");
+  expect(screen.getByText(/Escudo · 4s/)).toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+  view.rerender(<NumberPacGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
+  tick(8_000);
+  expect(screen.getByText(/Escudo · 4s/)).toBeInTheDocument();
+  view.rerender(<NumberPacGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  tick(4_500);
+  expect(board).toHaveAttribute("data-shield", "false");
+  expect(data.onResponse).not.toHaveBeenCalled();
+});
+
+test("Laberinto: las paredes bloquean al personaje sin registrar una respuesta", () => {
+  const data = exercise();
+  const view = render(<NumberPacGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const board = view.container.querySelector("[data-numberpac-board]")!;
+  key("ArrowDown"); key("ArrowRight");
+  expect(board).toHaveAttribute("data-player-x", "0");
+  expect(board).toHaveAttribute("data-player-y", "1");
+  expect(screen.getByText("Hay una pared. Busca otro camino.")).toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+});
+
+test("Cajas: ver zonas de atasco ayuda a planear sin cambiar la respuesta ni el tablero", () => {
+  const data = exercise();
+  const view = render(<CajasGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const board = view.container.querySelector("[data-sokoban-board]")!;
+  const boxes = [...board.querySelectorAll("[data-box-id]")].map((node) => node.textContent);
+  fireEvent.click(screen.getByRole("button", { name: "Ver atascos" }));
+  expect(board.querySelectorAll("[data-dead-square]").length).toBeGreaterThan(0);
+  expect(board.querySelector('[data-goal="true"]')).not.toHaveAttribute("data-dead-square");
+  expect([...board.querySelectorAll("[data-box-id]")].map((node) => node.textContent)).toEqual(boxes);
+  expect(data.onResponse).not.toHaveBeenCalled();
 });
 
 test("Cajas: nada se mueve solo; la caja que llega al camión envía su valor", async () => {

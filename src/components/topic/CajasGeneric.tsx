@@ -1,5 +1,7 @@
 "use client";
 
+import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, type Problem } from "@/lib/problem";
@@ -62,6 +64,7 @@ export function CajasGeneric({
   const [undoCount, setUndoCount] = useState(0);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState("");
+  const [showTraps, setShowTraps] = useState(false);
   const deliverable = useMemo(() => deliverySquares(level), [level]);
   const [lives, setLives] = useState(LIVES_START);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
@@ -218,13 +221,13 @@ export function CajasGeneric({
   }
 
   const shownPhase = solved ? "over" : phase;
-  const promptFocus = useArcadeFocus(shownPhase === "playing");
+  const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
   const shownCount = lesson ? Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6">
+    <div data-game="cajas" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -239,9 +242,7 @@ export function CajasGeneric({
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
-              📦
-            </div>
+            <ArcadeIntro game="cajas" />
             <button
               type="button"
               onClick={start}
@@ -308,13 +309,15 @@ export function CajasGeneric({
                 const isPlayer = sameCell(board.player, cell);
                 const wall = !floorAt(level, cell);
                 const goal = goalAt(level, cell);
+                const dead = showTraps && !wall && !deliverable.has(`${cell.x},${cell.y}`);
                 return (
                   <div
                     key={i}
-                    data-x={cell.x} data-y={cell.y} data-wall={wall || undefined} data-goal={goal || undefined} data-box-id={box?.id}
+                    data-x={cell.x} data-y={cell.y} data-wall={wall || undefined} data-goal={goal || undefined} data-box-id={box?.id} data-dead-square={dead || undefined}
                     className={`relative flex aspect-square min-w-0 items-center justify-center rounded text-xs font-black sm:text-sm ${wall ? "sokoban-wall" : box ? "sokoban-crate text-slate-950" : goal ? "border-2 border-dashed border-cyan-300 bg-cyan-950 text-cyan-100" : "border border-slate-700/70 bg-slate-800"}`}
                   >
-                    {box ? <span className="relative z-10 px-0.5 leading-tight [overflow-wrap:anywhere]">{lessonLabel(exercise, box.value)}</span> : isPlayer ? <span className="text-lg sm:text-2xl">🧑</span> : goal ? <span className="text-lg">🚚</span> : ""}
+                    {dead && <span className="absolute right-0.5 top-0 text-xs font-bold text-rose-200">×</span>}
+                    {box ? <span className="arcade-value relative z-10 px-0.5 leading-tight">{lessonLabel(exercise, box.value)}</span> : isPlayer ? <ArcadeSprite kind="worker" className="size-full" /> : goal ? <ArcadeSprite kind="truck" className="size-full" /> : ""}
                   </div>
                 );
               })}
@@ -325,9 +328,11 @@ export function CajasGeneric({
             <div className="flex flex-wrap justify-center gap-2">
               <button type="button" onClick={undo} disabled={frozen || pending || undoCount === 0} aria-keyshortcuts="Z" className="min-h-11 rounded-xl border border-slate-500 bg-slate-800 px-4 text-sm font-bold text-slate-100 disabled:opacity-50">Deshacer</button>
               <button type="button" onClick={restart} disabled={frozen || pending} className="min-h-11 rounded-xl bg-slate-800 px-4 py-2 text-sm font-bold text-orange-200 hover:bg-slate-700">Reiniciar cajas</button>
+              <button type="button" onClick={() => setShowTraps(!showTraps)} aria-pressed={showTraps} disabled={frozen || pending} className="arcade-option">Ver atascos</button>
             </div>
+            {showTraps && <p className="text-xs text-rose-100">× Si empujas una caja aquí, no podrá llegar a la meta. Puedes deshacer.</p>}
             <p className="text-xs text-slate-400">Flechas: moverte · Z: deshacer</p>
-            <TouchDPad inline repeat={false} onMove={onTouchMove} />
+            <TouchDPad inline repeat={false} disabled={frozen || pending || solved} onMove={onTouchMove} />
           </div>
         )}
 

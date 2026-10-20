@@ -1,5 +1,7 @@
 "use client";
 
+import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, shuffle, type Problem } from "@/lib/problem";
@@ -7,6 +9,7 @@ import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
 import { useGameLoop } from "@/lib/minigames/useGameLoop";
+import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import { lessonArcadeState, lessonLabel, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
@@ -75,6 +78,8 @@ export function TopoGeneric({
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
+  const [calm, setCalm] = useState(false);
+  const [pending, setPending] = useState(false);
 
   const clockRef = useRef(0); // tiempo de juego, no de reloj: la pausa lo detiene
   const popAccRef = useRef(0);
@@ -91,7 +96,28 @@ export function TopoGeneric({
     candidatesRef.current = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, Math.max(8, CHOICES * 2), CHOICES);
     queueRef.current = [];
     popAccRef.current = POP_MS; // el primer topo sale enseguida
-    setHoles(emptyHoles());
+    setHoles(calm ? batch(true) : emptyHoles());
+  }
+
+  function batch(withoutClock: boolean): Mole[] {
+    const next = emptyHoles();
+    for (const hole of shuffle([0, 1, 2, 3, 4, 5]).slice(0, MAX_UP)) {
+      const value = nextValue(next);
+      if (value !== undefined) next[hole] = { value, until: withoutClock ? Infinity : clockRef.current + upMs };
+    }
+    return next;
+  }
+
+  function changePace() {
+    if (busyRef.current || frozen || solved) return;
+    setCalm(!calm);
+    setHoles(batch(!calm));
+    popAccRef.current = 0;
+  }
+
+  function nextBatch() {
+    if (busyRef.current || frozen || solved || !calm) return;
+    setHoles(batch(true));
   }
 
   /** Siguiente candidato que no esté ya fuera; la cola se rellena barajada. */
@@ -126,6 +152,7 @@ export function TopoGeneric({
     setStarsThisRound(0);
     setWin(false);
     busyRef.current = false;
+    setPending(false);
     clockRef.current = 0;
     setPhase("playing");
     spawnRound();
@@ -133,6 +160,7 @@ export function TopoGeneric({
 
   async function resolveRound(correct: boolean) {
     busyRef.current = true;
+    setPending(true);
     playSound(correct ? "correct" : "wrong", soundOn);
     const stars = await onAnswer(correct);
     if (correct) {
@@ -153,22 +181,25 @@ export function TopoGeneric({
     }
     spawnRound();
     busyRef.current = false;
+    setPending(false);
   }
 
   async function whackLesson(value: number) {
     busyRef.current = true;
+    setPending(true);
     try {
       // Se envía el topo tocado: el resultado lo decide el servidor.
       await exercise!.onResponse(value);
     } finally {
       spawnRound();
       busyRef.current = false;
+      setPending(false);
     }
   }
 
   function whack(hole: number) {
     const mole = holes[hole];
-    if (!mole || busyRef.current || frozen || phase !== "playing") return;
+    if (!mole || busyRef.current || frozen || solved || phase !== "playing") return;
     playSound("click", soundOn);
     if (lesson) void whackLesson(mole.value);
     else void resolveRound(mole.value === problem.answer);
@@ -204,16 +235,17 @@ export function TopoGeneric({
       }
       if (next !== holes) setHoles(next);
     },
-    { running: phase === "playing" && !frozen && !solved },
+    { running: phase === "playing" && !frozen && !solved && !calm },
   );
 
   const shownPhase = solved ? "over" : phase;
+  const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
   const shownCount = lesson ? Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-6 text-white shadow-2xl">
+    <div data-game="topos" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -228,9 +260,7 @@ export function TopoGeneric({
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
-              🐹
-            </div>
+            <ArcadeIntro game="topos" />
             <button
               type="button"
               onClick={start}
@@ -280,30 +310,36 @@ export function TopoGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200`}>
+              <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200 outline-none`}>
                 {problem.prompt}
               </p>
             </div>
 
-            <div role="group" aria-labelledby={promptId} className="mx-auto grid max-w-sm grid-cols-3 gap-3 rounded-2xl border-2 border-amber-700 bg-lime-950/60 p-3">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button type="button" aria-pressed={calm} onClick={changePace} disabled={frozen || pending} className="arcade-option">Sin prisas</button>
+              {calm && <button type="button" onClick={nextBatch} disabled={frozen || pending} className="arcade-option">Siguiente tanda</button>}
+            </div>
+            <p role="status" className="text-xs text-amber-100">{pending ? "Guardando el número elegido…" : calm ? "Los topos esperan. Cambia de tanda hasta ver el número que elegiste." : "Observa a los topos. Si necesitas leer sin reloj, activa «Sin prisas»."}</p>
+            <div role="group" aria-labelledby={promptId} className="arcade-scene arcade-scene-meadow mx-auto grid max-w-sm grid-cols-3 gap-3 rounded-2xl border-2 border-amber-700 p-3">
               {holes.map((mole, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => whack(i)}
-                  disabled={frozen}
+                  disabled={frozen || pending || !mole}
                   aria-label={mole ? `Topo con ${lessonLabel(exercise, mole.value)}` : "Agujero vacío"}
-                  className="relative flex h-24 items-end justify-center overflow-hidden rounded-2xl bg-amber-950/70 pb-2 focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-300"
+                  className="arcade-mole-hole relative flex h-28 touch-manipulation items-end justify-center overflow-hidden rounded-2xl pb-3 focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-300"
                 >
                   <span aria-hidden="true" className="absolute inset-x-3 bottom-1 h-5 rounded-[50%] bg-black/60" />
                   <span
                     aria-hidden="true"
                     className={`relative flex flex-col items-center ${reducedMotion ? "" : "transition-transform duration-150"} ${mole ? "translate-y-0" : "translate-y-24"}`}
                   >
-                    <span className="text-3xl leading-none">🐹</span>
+                    <ArcadeSprite kind="mole" className="size-14" />
                     <span className="mt-1 rounded-md bg-lime-300 px-2 text-sm font-black text-slate-900">
                       {mole ? lessonLabel(exercise, mole.value) : ""}
                     </span>
+                    {mole && !calm && <span key={mole.until} className="arcade-mole-clock mt-1 h-1 w-10 rounded-full bg-amber-200" style={{ animationDuration: `${upMs}ms` }} />}
                   </span>
                 </button>
               ))}

@@ -1,5 +1,7 @@
 "use client";
 
+import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, shuffle, type Problem } from "@/lib/problem";
@@ -8,12 +10,14 @@ import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
 import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
+import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
+import { MAZE_SIZE, mazeWall, mazeChoiceCells, nextMazeGhost, reachableMaze } from "@/lib/minigames/maze";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
-const GRID_SIZE = 5;
+const GRID_SIZE = MAZE_SIZE;
 const GOAL = 3; // pellets correctos para ganar
 const WAVE_SIZE = 1;
 const LIVES_START = 3;
@@ -47,12 +51,12 @@ function cellKey(c: Cell): string {
   return `${c.x},${c.y}`;
 }
 
-function pickFreeCells(occupied: Cell[], count: number): Cell[] {
+function pickFreeCells(occupied: Cell[], count = GRID_SIZE * GRID_SIZE): Cell[] {
   const taken = new Set(occupied.map(cellKey));
   const free: Cell[] = [];
   for (let y = 0; y < GRID_SIZE; y++) {
     for (let x = 0; x < GRID_SIZE; x++) {
-      if (!taken.has(`${x},${y}`)) free.push({ x, y });
+      if (!taken.has(`${x},${y}`) && !mazeWall({ x, y })) free.push({ x, y });
     }
   }
   return shuffle(free).slice(0, count);
@@ -120,12 +124,12 @@ export function NumberPacGeneric({
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
   const [invulnerable, setInvulnerable] = useState(false);
+  const [shieldSeconds, setShieldSeconds] = useState(0);
+  const [blocked, setBlocked] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
 
-  const ghostDirectionRef = useRef(-1);
-  const ghostRowDirectionRef = useRef(-1);
   const movingRef = useRef(false);
   const ghostAccRef = useRef(0);
   const invulnRemainingRef = useRef(0);
@@ -151,11 +155,14 @@ export function NumberPacGeneric({
     const nextProblem = newProblem();
     const spread = Math.max(8, pelletCount * 2);
     const values = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, pelletCount);
-    const cells = pickFreeCells([START_CELL, currentPlayer, currentGhost], values.length + 1);
+    const free = pickFreeCells([START_CELL, currentPlayer, currentGhost]);
+    const cells = mazeChoiceCells(currentPlayer, free, values.length);
+    const reachable = reachableMaze(currentPlayer, [...cells, currentGhost]);
+    const power = free.find((cell) => reachable.has(cellKey(cell)) && !cells.some((number) => cellKey(cell) === cellKey(number)));
     setProblem(nextProblem);
     updateBoard({
       pellets: cells.slice(0, values.length).map((c, i) => ({ ...c, value: values[i] })),
-      powerPellet: cells[values.length] ?? null,
+      powerPellet: power ?? null,
     });
   }
 
@@ -175,9 +182,9 @@ export function NumberPacGeneric({
     playSound("click", soundOn);
     setReflexMiss(false);
     waitForMove();
-    ghostDirectionRef.current = -1;
-    ghostRowDirectionRef.current = -1;
     invulnRemainingRef.current = 0;
+    setShieldSeconds(0);
+    setBlocked(false);
     busyRef.current = false;
     updateBoard({ player: START_CELL, ghost: GHOST_START });
     setInvulnerable(false);
@@ -196,7 +203,7 @@ export function NumberPacGeneric({
       // Fallo de reflejos: sin vidas ni respuesta, solo el respiro de siempre.
       setReflexMiss(true);
       waitForMove();
-      updateBoard({ player: START_CELL });
+      updateBoard({ player: START_CELL, ghost: GHOST_START });
       return;
     }
     const remaining = lives - 1;
@@ -206,7 +213,7 @@ export function NumberPacGeneric({
       return;
     }
     waitForMove();
-    updateBoard({ player: START_CELL }); // respiro tras el golpe
+    updateBoard({ player: START_CELL, ghost: GHOST_START }); // respiro tras el golpe
   }
 
   async function resolvePellet(eaten: Candidate, atCell: Cell, ghostAt: Cell) {
@@ -254,7 +261,8 @@ export function NumberPacGeneric({
     if (phase !== "playing" || frozen || solved || busyRef.current) return;
     const current = boardRef.current;
     const newCell = { x: current.player.x + direction.x, y: current.player.y + direction.y };
-    if (newCell.x < 0 || newCell.x >= GRID_SIZE || newCell.y < 0 || newCell.y >= GRID_SIZE) return;
+    if (mazeWall(newCell)) { setBlocked(true); return; }
+    setBlocked(false);
     movingRef.current = true;
     setAwaitingInput(false);
     updateBoard({ player: newCell });
@@ -263,6 +271,7 @@ export function NumberPacGeneric({
       updateBoard({ powerPellet: null });
       invulnRemainingRef.current = INVULN_MS;
       setInvulnerable(true);
+      setShieldSeconds(INVULN_MS / 1000);
     }
     if (cellKey(newCell) === cellKey(current.ghost) && invulnRemainingRef.current <= 0) {
       handleGhostHit();
@@ -272,19 +281,10 @@ export function NumberPacGeneric({
     if (eaten) void resolvePellet(eaten, newCell, current.ghost);
   }
 
-  // Patrulla en zigzag: al llegar a un extremo, cambia de fila.
+  // Persigue por los pasillos. El escudo permite invertir la persecución.
   function stepGhost() {
     const current = boardRef.current;
-    let next = { x: current.ghost.x + ghostDirectionRef.current, y: current.ghost.y };
-    if (next.x < 0 || next.x >= GRID_SIZE) {
-      let y = current.ghost.y + ghostRowDirectionRef.current;
-      if (y < 0 || y >= GRID_SIZE) {
-        ghostRowDirectionRef.current *= -1;
-        y = current.ghost.y + ghostRowDirectionRef.current;
-      }
-      ghostDirectionRef.current *= -1;
-      next = { x: current.ghost.x, y };
-    }
+    const next = nextMazeGhost(current.ghost, current.player, invulnRemainingRef.current > 0);
     updateBoard({ ghost: next });
     if (cellKey(next) === cellKey(current.player)) handleGhostHit();
   }
@@ -293,11 +293,14 @@ export function NumberPacGeneric({
     (dtMs) => {
       if (busyRef.current || !movingRef.current) return;
       if (invulnRemainingRef.current > 0) {
+        const previousSeconds = Math.ceil(invulnRemainingRef.current / 1000);
         invulnRemainingRef.current -= dtMs;
         if (invulnRemainingRef.current <= 0) {
           invulnRemainingRef.current = 0;
           setInvulnerable(false);
         }
+        const seconds = Math.ceil(invulnRemainingRef.current / 1000);
+        if (seconds !== previousSeconds) setShieldSeconds(seconds);
       }
 
       ghostAccRef.current += dtMs;
@@ -325,12 +328,13 @@ export function NumberPacGeneric({
   }
 
   const shownPhase = solved ? "over" : phase;
+  const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
   const shownCount = lesson ? Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const progressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-yellow-500 bg-slate-950 p-6 text-white shadow-2xl">
+    <div data-game="numberpac" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-yellow-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -341,13 +345,11 @@ export function NumberPacGeneric({
         <h2 className="mb-2 bg-gradient-to-r from-yellow-300 to-fuchsia-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🟡 Laberinto de números
         </h2>
-        <p className="mb-6 text-sm text-yellow-200">¡Recoge el número que resuelve la operación y esquiva al fantasma!</p>
+        <p className="mb-4 text-sm text-yellow-200">¡Rodea las paredes, busca el escudo y recoge tu respuesta!</p>
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
-              🟡
-            </div>
+            <ArcadeIntro game="numberpac" />
             <button
               type="button"
               onClick={start}
@@ -383,7 +385,7 @@ export function NumberPacGeneric({
                 <ReflexNotice show={reflexMiss} waiting={waiting} />
                 {invulnerable && (
                   <span role="status" className="font-bold text-fuchsia-300">
-                    <span aria-hidden="true">⭐ </span>Invulnerable
+                    <span aria-hidden="true">◇ </span>Escudo · {shieldSeconds}s
                   </span>
                 )}
               </div>
@@ -394,7 +396,7 @@ export function NumberPacGeneric({
                 </span>
                 {invulnerable && (
                   <span role="status" className="font-bold text-fuchsia-300">
-                    <span aria-hidden="true">⭐ </span>Invulnerable
+                    <span aria-hidden="true">◇ </span>Escudo · {shieldSeconds}s
                   </span>
                 )}
                 <span>
@@ -409,7 +411,7 @@ export function NumberPacGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-fuchsia-200`}>
+              <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-fuchsia-200 outline-none`}>
                 {problem.prompt}
               </p>
             </div>
@@ -417,36 +419,38 @@ export function NumberPacGeneric({
             <div
               aria-hidden="true"
               data-numberpac-board=""
+              data-shield={invulnerable}
               data-player-x={player.x} data-player-y={player.y}
               data-ghost-x={ghost.x} data-ghost-y={ghost.y}
-              className="relative mx-auto grid aspect-square w-full max-w-sm overflow-hidden rounded-2xl border-2 border-yellow-700 bg-slate-900"
+              className="arcade-scene arcade-scene-maze relative mx-auto grid aspect-square w-full max-w-sm overflow-hidden rounded-2xl border-2 border-yellow-700"
               style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}
             >
               {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, index) => {
                 const x = index % GRID_SIZE, y = Math.floor(index / GRID_SIZE);
                 const pellet = pellets.find((p) => p.x === x && p.y === y);
                 return (
-                  <div key={index} data-cell-x={x} data-cell-y={y} data-value={pellet?.value} className="relative min-h-0 min-w-0">
+                  <div key={index} data-cell-x={x} data-cell-y={y} data-value={pellet?.value} data-wall={mazeWall({ x, y }) || undefined} data-power={powerPellet?.x === x && powerPellet.y === y || undefined} className={`relative min-h-0 min-w-0 ${mazeWall({ x, y }) ? "arcade-maze-wall" : "arcade-maze-floor"}`}>
                     {pellet && (
-                      <span className="absolute inset-[6%] flex items-center justify-center rounded-md bg-slate-800 text-xs font-bold text-fuchsia-200">
+                      <span className={`arcade-value absolute inset-[8%] z-20 flex justify-center rounded-xl border-2 border-amber-300 bg-amber-950 font-bold text-amber-100 shadow-lg ${ghost.x === x && ghost.y === y ? "items-end pb-1" : "items-center"}`}>
                         {lessonLabel(exercise, pellet.value)}
                       </span>
                     )}
                     {powerPellet?.x === x && powerPellet.y === y && (
-                      <span className="absolute inset-[10%] flex items-center justify-center rounded-full bg-fuchsia-500 text-xs">⭐</span>
+                      <span className="absolute inset-[18%] z-10 flex items-center justify-center rounded-full border-2 border-cyan-200 bg-cyan-700 text-2xl font-black text-white shadow-[0_0_16px_#22d3ee80]">◇</span>
                     )}
                     {player.x === x && player.y === y && (
-                      <span className={`absolute inset-[8%] flex items-center justify-center rounded-full ${invulnerable ? "bg-fuchsia-300" : "bg-yellow-400"}`}>🟡</span>
+                      <span className={`absolute inset-[8%] z-10 flex items-center justify-center rounded-full ${invulnerable ? "ring-4 ring-cyan-200" : ""}`}><ArcadeSprite kind="explorer" className="size-full" /></span>
                     )}
                     {ghost.x === x && ghost.y === y && (
-                      <span className={`${reducedMotion ? "" : "transition-colors duration-150"} absolute inset-[8%] flex items-center justify-center rounded-full ${invulnerable ? "bg-slate-500 opacity-50" : "bg-slate-200"}`}>👻</span>
+                      <span className={`${reducedMotion ? "" : "transition-colors duration-150"} absolute flex items-center justify-center ${pellet ? "right-0 top-0 z-30 size-[45%] rounded-full bg-violet-950" : "inset-[8%] z-10"} ${invulnerable ? "opacity-40" : ""}`}><ArcadeSprite kind="ghost" className="size-full" /></span>
                     )}
                   </div>
                 );
               })}
             </div>
 
-            <TouchDPad inline repeat={false} onMove={onTouchMove} />
+            <p role="status" className="text-xs text-cyan-100">{blocked ? "Hay una pared. Busca otro camino." : "◇ Escudo: el fantasma huye durante 4 segundos. Las paredes bloquean a los dos."}</p>
+            <TouchDPad inline repeat={false} disabled={frozen || solved} onMove={onTouchMove} />
           </div>
         )}
 

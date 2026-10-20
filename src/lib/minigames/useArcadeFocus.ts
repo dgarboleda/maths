@@ -2,14 +2,15 @@
 
 import { useEffect, useRef } from "react";
 
-/** Al empezar, muestra el problema y el tablero en vez de dejar los controles
- * bajo el pliegue de la clase. Pausar o mover al personaje no desplaza la vista. */
-export function useArcadeFocus(playing: boolean) {
+/** Al empezar o reanudar, muestra el problema y el tablero. El botón externo
+ * de reanudar puede haber desplazado el juego fuera de la pantalla móvil.
+ * Pausar o mover al personaje no desplaza la vista. */
+export function useArcadeFocus(playing: boolean, paused = false) {
   const prompt = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
-    if (!playing) return;
+    if (!playing || paused) return;
     prompt.current?.focus({ preventScroll: true });
     prompt.current?.scrollIntoView?.({ block: "start", behavior: "instant" });
-  }, [playing]);
+  }, [playing, paused]);
   return prompt;
 }

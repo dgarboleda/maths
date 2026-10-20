@@ -20,7 +20,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const REPEAT_MS = 160;
 
 const BUTTON_CLASS =
-  "pointer-events-auto flex size-11 items-center justify-center rounded-full border border-indigo-500/30 bg-slate-900/70 text-slate-100 shadow-lg active:bg-slate-800 active:scale-95";
+  "pointer-events-auto flex size-11 touch-manipulation items-center justify-center rounded-xl border border-indigo-400/50 bg-slate-900 text-slate-100 shadow-lg active:bg-slate-800 active:scale-95 disabled:opacity-40";
 
 export function HorizontalPad({
   onLeft,
@@ -28,6 +28,7 @@ export function HorizontalPad({
   onAction,
   actionLabel = "Disparar",
   inline = false,
+  disabled = false,
 }: {
   onLeft: () => void;
   onRight: () => void;
@@ -36,6 +37,7 @@ export function HorizontalPad({
   actionLabel?: string;
   /** En flujo, debajo del tablero (minijuegos), en vez de flotar encima. */
   inline?: boolean;
+  disabled?: boolean;
 }) {
   const timerRef = useRef<number | null>(null);
   // La repetición usa siempre el manejador más reciente (ver TouchDPad).
@@ -52,11 +54,13 @@ export function HorizontalPad({
   }
   function startRepeating(side: "onLeft" | "onRight") {
     stop();
+    if (disabled) return;
     handlersRef.current[side]();
     timerRef.current = window.setInterval(() => handlersRef.current[side](), REPEAT_MS);
   }
 
   useEffect(() => stop, []);
+  useEffect(() => { if (disabled) stop(); }, [disabled]);
 
   return (
     <div
@@ -71,6 +75,8 @@ export function HorizontalPad({
         <button
           type="button"
           aria-label="Mover a la izquierda"
+          disabled={disabled}
+          onClick={(event) => { if (event.detail === 0) handlersRef.current.onLeft(); }}
           className={BUTTON_CLASS}
           onPointerDown={() => startRepeating("onLeft")}
           onPointerUp={stop}
@@ -82,6 +88,8 @@ export function HorizontalPad({
         <button
           type="button"
           aria-label="Mover a la derecha"
+          disabled={disabled}
+          onClick={(event) => { if (event.detail === 0) handlersRef.current.onRight(); }}
           className={BUTTON_CLASS}
           onPointerDown={() => startRepeating("onRight")}
           onPointerUp={stop}
@@ -95,8 +103,10 @@ export function HorizontalPad({
         <button
           type="button"
           aria-label={actionLabel}
+          disabled={disabled}
+          onClick={(event) => { if (event.detail === 0) onAction(); }}
           className="pointer-events-auto min-h-11 rounded-full border border-red-400/40 bg-red-600/80 px-5 py-3 text-xs font-bold uppercase tracking-wide text-white shadow-lg active:bg-red-700"
-          onPointerDown={onAction}
+          onPointerDown={() => { if (!disabled) onAction(); }}
         >
           {actionLabel}
         </button>

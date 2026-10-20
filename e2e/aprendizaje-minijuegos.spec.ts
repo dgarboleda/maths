@@ -167,20 +167,24 @@ test("Cohete: fracción exacta, sin reloj por defecto y recuperación de respues
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; sin estrellas ni dominio", async ({ page }) => {
+test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; sin estrellas ni dominio", async ({ page }, testInfo) => {
   const q = await conceptThenNumeric(page, "fracciones-unidad", "invaders");
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
   await expectGameInView(page);
   await expect(page.getByText(/Vidas/)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
-  // La formación es decorativa (aria-hidden): se lee para saber dónde apuntar.
+  // En móvil se apunta directamente; el teclado sigue disponible en escritorio.
   const columns = await page.locator("main [data-invaders-board] [data-choice-label]").allTextContents();
   const target = columns.findIndex((label) => label.trim() === "1/3");
   expect(target).toBeGreaterThanOrEqual(0);
-  for (let col = 2; col !== target; col += Math.sign(target - col))
+  if (testInfo.project.name === "móvil") await page.getByRole("button", { name: "Apuntar a 1/3", exact: true }).tap();
+  else for (let col = 2; col !== target; col += Math.sign(target - col))
     await page.keyboard.press(target > col ? "ArrowRight" : "ArrowLeft");
+  await expect(page.getByRole("button", { name: "Apuntar a 1/3", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await testInfo.attach("invasion", { body: await page.screenshot(), contentType: "image/png" });
   const answer = savedAnswer(page);
-  await page.keyboard.press("Space");
+  if (testInfo.project.name === "móvil") await page.getByRole("button", { name: "Disparar", exact: true }).tap();
+  else await page.keyboard.press("Space");
   const saved = (await (await answer).json()).result;
   expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
   expect(saved.progress.checkPassedAt).toBeNull();
@@ -199,7 +203,8 @@ test("Autopista: elegir carril y usar el turbo guarda el resultado de la clase",
   expect(target).toBeGreaterThanOrEqual(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await testInfo.attach("autopista", { body: await page.screenshot(), contentType: "image/png" });
-  for (let i = 0; i <= target; i++) await page.keyboard.press("ArrowDown");
+  if (testInfo.project.name === "móvil") await page.getByRole("button", { name: `Carril ${target + 1}: 1/3`, exact: true }).tap();
+  else for (let i = 0; i <= target; i++) await page.keyboard.press("ArrowDown");
   await expect(board).toHaveAttribute("data-lane", String(target));
   const answer = savedAnswer(page);
   await page.getByRole("button", { name: "Turbo · cruzar ⚡", exact: true }).click();
@@ -217,7 +222,8 @@ test("Bloques: el rebote lateral alcanza la respuesta apuntada y se guarda una s
   const labels = await board.locator("[data-choice-label]").allTextContents();
   const target = labels.indexOf("1/3");
   expect(target).toBeGreaterThanOrEqual(0);
-  for (let col = 2; col !== target; col += Math.sign(target - col)) await page.keyboard.press(target > col ? "ArrowRight" : "ArrowLeft");
+  if (testInfo.project.name === "móvil") await page.getByRole("button", { name: "Apuntar al bloque 1/3", exact: true }).tap();
+  else for (let col = 2; col !== target; col += Math.sign(target - col)) await page.keyboard.press(target > col ? "ArrowRight" : "ArrowLeft");
   const shotStyle = page.getByRole("button", { name: "Rebote →", exact: true });
   await shotStyle.focus();
   await page.keyboard.press("Space");
@@ -305,7 +311,8 @@ test("Cajas Sokoban: paredes, deshacer, pausa y entrega elegida sin premiar movi
   await expect(board).toHaveAttribute("data-player-x", "3");
   await press("R");
   await page.getByRole("button", { name: "Pausar partida", exact: true }).click();
-  await press("L");
+  if (mobile) await expect(page.getByRole("button", { name: "Mover a la izquierda", exact: true })).toBeDisabled();
+  await page.keyboard.press("ArrowLeft"); // la pausa también ignora el teclado
   await expect(board).toHaveAttribute("data-player-x", "4");
   await expect(page.getByRole("button", { name: "Reiniciar cajas", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Reanudar partida", exact: true }).click();
@@ -391,6 +398,7 @@ test("Laberinto en móvil: un toque es un paso, el fantasma espera y pisar un n�
     x: Number(element.getAttribute("data-player-x")), y: Number(element.getAttribute("data-player-y")),
     gx: Number(element.getAttribute("data-ghost-x")), gy: Number(element.getAttribute("data-ghost-y")),
     numbers: [...element.querySelectorAll("[data-value]")].map((cell) => ({ x: Number(cell.getAttribute("data-cell-x")), y: Number(cell.getAttribute("data-cell-y")), value: cell.getAttribute("data-value")! })),
+    walls: [...element.querySelectorAll('[data-wall="true"]')].map((cell) => `${cell.getAttribute("data-cell-x")},${cell.getAttribute("data-cell-y")}`),
   }));
   type Point = { x: number; y: number };
   const queue: { cell: Point; path: Point[] }[] = [{ cell: state, path: [] }];
@@ -402,7 +410,7 @@ test("Laberinto en móvil: un toque es un paso, el fantasma espera y pisar un n�
     if (number) { path = next.path; chosen = number.value; break; }
     for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
       const cell = { x: next.cell.x + dx, y: next.cell.y + dy }, key = `${cell.x},${cell.y}`;
-      if (cell.x < 0 || cell.x > 4 || cell.y < 0 || cell.y > 4 || seen.has(key) || (cell.x === state.gx && cell.y === state.gy)) continue;
+      if (cell.x < 0 || cell.x > 4 || cell.y < 0 || cell.y > 4 || state.walls.includes(key) || seen.has(key) || (cell.x === state.gx && cell.y === state.gy)) continue;
       seen.add(key); queue.push({ cell, path: [...next.path, cell] });
     }
   }
@@ -419,4 +427,57 @@ test("Laberinto en móvil: un toque es un paso, el fantasma espera y pisar un n�
   expect(result.stars).toBe(0);
   expect(answers).toBe(1);
   await page.screenshot({ path: testInfo.outputPath("laberinto-movil.png"), fullPage: true });
+});
+
+test("Topos sin prisas: las tandas esperan y solo tocar un topo envía la respuesta", async ({ page }, testInfo) => {
+  const q = await conceptThenNumeric(page, "fracciones-unidad", "topos");
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  await expectGameInView(page);
+  await page.getByRole("button", { name: "Sin prisas", exact: true }).click();
+  const moles = page.getByRole("button", { name: /Topo con/ });
+  const labels = await moles.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label")));
+  await page.waitForTimeout(3000); // más que la duración de un topo en modo automático
+  expect(await moles.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label")))).toEqual(labels);
+  await page.getByRole("button", { name: "Pausar partida", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Siguiente tanda", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Reanudar partida", exact: true }).click();
+  await expectGameInView(page);
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  await testInfo.attach("topos-sin-prisas", { body: await page.screenshot(), contentType: "image/png" });
+  const target = page.getByRole("button", { name: "Topo con 1/3", exact: true });
+  for (let batch = 0; batch < 4 && !(await target.count()); batch++) await page.getByRole("button", { name: "Siguiente tanda", exact: true }).click();
+  await expect(target).toBeVisible();
+  const answer = savedAnswer(page);
+  await target.click();
+  const saved = (await (await answer).json()).result;
+  expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
+  expect(saved.stars).toBe(0);
+  await expect(page.getByRole("heading", { name: "¡Atrapaste al topo!" })).toBeVisible();
+});
+
+test("Serpiente: el tablero espera para leer y la pausa conserva el control y la vía escrita", async ({ page }, testInfo) => {
+  const q = await conceptThenNumeric(page, "fracciones-unidad", "snake");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  await expectGameInView(page);
+  const board = page.locator("main [data-snake-board]");
+  await page.waitForTimeout(1500);
+  await expect(board).toHaveAttribute("data-head-x", "3");
+  await expect(board).toHaveAttribute("data-head-y", "4");
+  await page.getByRole("button", { name: "Pausar partida", exact: true }).click();
+  await page.keyboard.press("ArrowUp");
+  await page.waitForTimeout(500);
+  await expect(board).toHaveAttribute("data-head-y", "4");
+  await page.getByRole("button", { name: "Reanudar partida", exact: true }).click();
+  await expectGameInView(page);
+  expect(await page.locator('main [data-game="snake"] .arcade-snake-body').first().evaluate((node) => getComputedStyle(node).transitionDuration)).toBe("0s");
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  await testInfo.attach("serpiente", { body: await page.screenshot(), contentType: "image/png" });
+  await page.getByRole("button", { name: "Prefiero escribir la respuesta", exact: true }).click();
+  await page.getByRole("textbox", { name: /Tu respuesta/ }).fill("1/3");
+  const answer = savedAnswer(page);
+  await page.getByRole("button", { name: "Comprobar mi respuesta", exact: true }).click();
+  const saved = (await (await answer).json()).result;
+  expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
+  expect(saved.stars).toBe(0);
 });

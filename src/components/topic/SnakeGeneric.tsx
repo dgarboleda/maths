@@ -1,5 +1,7 @@
 "use client";
 
+import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, shuffle, type Problem } from "@/lib/problem";
@@ -8,6 +10,7 @@ import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
 import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
+import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
@@ -104,6 +107,8 @@ export function SnakeGeneric({
 
   const [phase, setPhase] = useState<Phase>("start");
   const [snake, setSnake] = useState<Cell[]>(INITIAL_SNAKE);
+  const snakeRef = useRef(INITIAL_SNAKE);
+  const turnQueuedRef = useRef(false);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -146,6 +151,8 @@ export function SnakeGeneric({
     setAwaitingInput(true);
     dirRef.current = INITIAL_DIR;
     accRef.current = 0;
+    turnQueuedRef.current = false;
+    snakeRef.current = INITIAL_SNAKE;
     setSnake(INITIAL_SNAKE);
     spawnRound(INITIAL_SNAKE);
   }
@@ -157,6 +164,8 @@ export function SnakeGeneric({
     setAwaitingInput(true);
     dirRef.current = INITIAL_DIR;
     accRef.current = 0;
+    turnQueuedRef.current = false;
+    snakeRef.current = INITIAL_SNAKE;
     busyRef.current = false;
     setSnake(INITIAL_SNAKE);
     setCorrectCount(0);
@@ -199,7 +208,9 @@ export function SnakeGeneric({
 
   function step() {
     if (busyRef.current) return;
-    const head = snake[0];
+    const currentSnake = snakeRef.current;
+    turnQueuedRef.current = false;
+    const head = currentSnake[0];
     const newHead = { x: head.x + dirRef.current.x, y: head.y + dirRef.current.y };
     if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
       if (lesson) reflexReset();
@@ -208,13 +219,14 @@ export function SnakeGeneric({
     }
     const eaten = candidates.find((c) => c.x === newHead.x && c.y === newHead.y);
     const grow = eaten ? eaten.value === problem.answer : false;
-    const bodyToCheck = grow ? snake : snake.slice(0, -1);
+    const bodyToCheck = grow ? currentSnake : currentSnake.slice(0, -1);
     if (bodyToCheck.some((seg) => seg.x === newHead.x && seg.y === newHead.y)) {
       if (lesson) reflexReset();
       else endGame(false, correctCount);
       return;
     }
-    const newSnake = grow ? [newHead, ...snake] : [newHead, ...snake.slice(0, -1)];
+    const newSnake = grow ? [newHead, ...currentSnake] : [newHead, ...currentSnake.slice(0, -1)];
+    snakeRef.current = newSnake;
     setSnake(newSnake);
     if (eaten) resolveEaten(eaten, newSnake);
   }
@@ -230,8 +242,10 @@ export function SnakeGeneric({
   );
 
   function trySetDirection(next: Cell) {
+    if (phase !== "playing" || frozen || solved || busyRef.current || turnQueuedRef.current) return;
     const cur = dirRef.current;
-    if (snake.length > 1 && next.x === -cur.x && next.y === -cur.y) return; // sin giro de 180°
+    if (snakeRef.current.length > 1 && next.x === -cur.x && next.y === -cur.y) return; // sin giro de 180°
+    turnQueuedRef.current = next.x !== cur.x || next.y !== cur.y;
     dirRef.current = next;
     setAwaitingInput(false);
   }
@@ -252,12 +266,14 @@ export function SnakeGeneric({
   }
 
   const shownPhase = solved ? "over" : phase;
+  const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
   const shownCount = lesson ? Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const progressPct = Math.min(100, (shownCount / goal) * 100);
+  const facing = snake.length > 1 ? { x: snake[0].x - snake[1].x, y: snake[0].y - snake[1].y } : INITIAL_DIR;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-emerald-500 bg-slate-950 p-6 text-white shadow-2xl">
+    <div data-game="snake" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-emerald-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -272,9 +288,7 @@ export function SnakeGeneric({
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
-              🐍
-            </div>
+            <ArcadeIntro game="snake" />
             <button
               type="button"
               onClick={start}
@@ -319,27 +333,28 @@ export function SnakeGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-teal-200`}>
+              <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-teal-200 outline-none`}>
                 {problem.prompt}
               </p>
             </div>
 
             <div
               aria-hidden="true"
-              className="relative mx-auto grid aspect-square w-full max-w-sm overflow-hidden rounded-2xl border-2 border-emerald-700 bg-slate-900"
+              data-snake-board="" data-head-x={snake[0].x} data-head-y={snake[0].y}
+              className="arcade-scene arcade-scene-garden relative mx-auto grid aspect-square w-full max-w-sm overflow-hidden rounded-2xl border-2 border-emerald-700"
               style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`, gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)` }}
             >
               {snake.map((seg, i) => (
                 <div
                   key={`snake-${i}`}
-                  className={`${reducedMotion ? "" : "transition-all duration-150"} m-[6%] rounded-sm ${i === 0 ? "bg-emerald-300" : "bg-emerald-500"}`}
+                  className={`${reducedMotion ? "" : "transition-all duration-150"} relative m-[4%] rounded-xl ${i === 0 ? "z-10" : "arcade-snake-body"}`}
                   style={{ gridColumn: seg.x + 1, gridRow: seg.y + 1 }}
-                />
+                >{i === 0 && <span className="absolute inset-0" style={{ transform: `rotate(${facing.y === 1 ? 90 : facing.y === -1 ? -90 : facing.x === -1 ? 180 : 0}deg)` }}><ArcadeSprite kind="snake" className="size-full" /></span>}</div>
               ))}
               {candidates.map((c) => (
                 <div
                   key={`candidate-${c.x}-${c.y}`}
-                  className="m-[4%] flex items-center justify-center rounded-md bg-slate-800 text-xs font-bold text-teal-200"
+                  className="arcade-value z-10 m-[3%] flex items-center justify-center rounded-lg border border-emerald-300/70 bg-emerald-950 font-bold text-emerald-100 shadow-md"
                   style={{ gridColumn: c.x + 1, gridRow: c.y + 1 }}
                 >
                   {lessonLabel(exercise, c.value)}
@@ -347,7 +362,7 @@ export function SnakeGeneric({
               ))}
             </div>
 
-            <TouchDPad inline onMove={onTouchMove} />
+            <TouchDPad inline repeat={false} disabled={frozen || solved} onMove={onTouchMove} />
           </div>
         )}
 

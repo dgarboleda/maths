@@ -1,5 +1,7 @@
 "use client";
 
+import { ArcadeIntro } from "./ArcadeArt";
+
 import { useEffect, useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, type Problem } from "@/lib/problem";
@@ -53,11 +55,12 @@ interface Block {
 const LESSON_COLS = 5;
 const LESSON_W = FIELD_WIDTH / LESSON_COLS;
 const LESSON_ROW_Y = 14;
+const LESSON_BLOCK_H = 16;
 const LESSON_SPEED = 150;
 
 function buildBlocks(values: number[], lesson = false): Block[] {
   if (lesson)
-    return values.map((value, col) => ({ id: `0-${col}`, x: col * LESSON_W, y: LESSON_ROW_Y, w: LESSON_W, h: BLOCK_H, value }));
+    return values.map((value, col) => ({ id: `0-${col}`, x: col * LESSON_W, y: LESSON_ROW_Y, w: LESSON_W, h: LESSON_BLOCK_H, value }));
   const blocks: Block[] = [];
   let i = 0;
   for (let row = 0; row < BLOCK_ROWS; row++) {
@@ -329,18 +332,23 @@ export function BreakoutGeneric({
     setPaddleX((x) => Math.min(FIELD_WIDTH - paddleWidth, x + paddleStep));
   }
 
+  function aimBlock(block: Block) {
+    if (!lesson || !held || busyRef.current || frozen || solved || phase !== "playing") return;
+    setPaddleX(block.x);
+  }
+
   useArrowKeys({ left: moveLeft, right: moveRight, up: launch, action: launch }, { enabled: phase === "playing" && !frozen && !solved });
 
   const shownPhase = solved ? "over" : phase;
-  const promptFocus = useArcadeFocus(shownPhase === "playing");
+  const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
   const shownCount = lesson ? Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
   const preview = lesson ? shotRoute({ x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE },
-    { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: LESSON_ROW_Y + BLOCK_H }, shotStyle, FIELD_WIDTH - BALL_SIZE) : [];
+    { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: LESSON_ROW_Y + LESSON_BLOCK_H }, shotStyle, FIELD_WIDTH - BALL_SIZE) : [];
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen ? "arcade-paused" : ""}`}>
+    <div data-game="breakout" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -355,9 +363,7 @@ export function BreakoutGeneric({
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
-              🧱
-            </div>
+            <ArcadeIntro game="breakout" />
             <button
               type="button"
               onClick={start}
@@ -412,21 +418,18 @@ export function BreakoutGeneric({
             </div>
 
             <div
-              aria-hidden="true"
+              aria-hidden={!lesson || undefined} role={lesson ? "group" : undefined} aria-label={lesson ? "Pista: elige un bloque y después lanza" : undefined}
               data-breakout-board="" data-held={held} data-shot-style={shotStyle}
-              className="arcade-stars relative mx-auto aspect-[4/3] w-full max-w-sm overflow-hidden rounded-2xl border-2 border-orange-700 bg-slate-900"
+              className={`arcade-scene arcade-scene-court relative mx-auto aspect-[4/3] w-full max-w-sm overflow-hidden rounded-2xl border-2 border-orange-700 ${lesson ? "min-h-[280px]" : ""}`}
             >
-              {lesson && held && <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full"><polyline points={preview.map((point) => `${point.x + BALL_SIZE / 2},${point.y + BALL_SIZE / 2}`).join(" ")} fill="none" stroke="#c4b5fd" strokeWidth="0.6" strokeDasharray="2 2" /></svg>}
-              {blocks.map((b) => (
-                <div
-                  key={b.id}
-                  data-choice-label=""
-                  className={`absolute flex items-center justify-center rounded-lg border-2 text-sm font-bold text-orange-100 ${lesson && paddleX + paddleWidth / 2 >= b.x && paddleX + paddleWidth / 2 < b.x + b.w ? "border-violet-200 bg-violet-700 shadow-lg shadow-violet-500/50" : "border-orange-500/50 bg-orange-950"}`}
-                  style={{ left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` }}
-                >
-                  {lessonLabel(exercise, b.value)}
-                </div>
-              ))}
+              {lesson && held && <svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full"><polyline points={preview.map((point) => `${point.x + BALL_SIZE / 2},${point.y + BALL_SIZE / 2}`).join(" ")} fill="none" stroke="#c4b5fd" strokeWidth="0.6" strokeDasharray="2 2" /></svg>}
+              {blocks.map((b) => {
+                const selected = lesson && paddleX + paddleWidth / 2 >= b.x && paddleX + paddleWidth / 2 < b.x + b.w;
+                const className = `arcade-brick arcade-value absolute flex touch-manipulation items-center justify-center rounded-lg border-2 font-bold text-orange-100 ${selected ? "border-violet-200 bg-violet-700 shadow-lg shadow-violet-500/50" : "border-orange-400 bg-orange-950"}`;
+                const style = { left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` };
+                return lesson ? <button key={b.id} type="button" data-choice-label="" aria-label={`Apuntar al bloque ${lessonLabel(exercise, b.value)}`} aria-pressed={selected} disabled={!held || frozen} onClick={() => aimBlock(b)} className={className} style={style}>{lessonLabel(exercise, b.value)}</button>
+                  : <div key={b.id} data-choice-label="" className={className} style={style}>{lessonLabel(exercise, b.value)}</div>;
+              })}
               <div
                 ref={ballElRef}
                 className="absolute rounded-full bg-yellow-300 shadow-[0_0_12px_3px_#fbbf24]"
@@ -450,7 +453,8 @@ export function BreakoutGeneric({
                 Lanzar la pelota
               </button>
             )}
-            <HorizontalPad inline onLeft={moveLeft} onRight={moveRight} />
+            {lesson && <p className="text-xs text-violet-100">Toca un bloque para apuntar. La guía muestra el camino de la pelota.</p>}
+            <HorizontalPad inline disabled={frozen || (lesson && !held)} onLeft={moveLeft} onRight={moveRight} />
           </div>
         )}
 
