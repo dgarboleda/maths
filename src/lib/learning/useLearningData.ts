@@ -56,7 +56,7 @@ export function useLearningData(childId: string) {
     if (!authLoading && !user) router.replace("/login");
   }, [authLoading, user, router]);
   useEffect(() => {
-    if (!user || !parentId) return;
+    if (!user || !parentId || !childId) return;
     let cancelled = false;
     const subscriptions: (() => void)[] = [];
     const receive = (part: string, patch: Partial<Snapshot>) => {

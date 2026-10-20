@@ -1,9 +1,27 @@
 import { describe, expect, test } from "vitest";
 import { getAuth, signInWithCustomToken } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { connectFirestoreEmulator, doc, getDoc, getFirestore, setDoc, updateDoc } from "firebase/firestore";
 import { anonymousApp, call, createFamily, deleteApp } from "./familyFixture";
 
 describe("acceso infantil — callables reales", () => {
+  test("el plan lo administra la familia y el acceso infantil no publica sus preferencias", async () => {
+    const family = await createFamily();
+    const guest = await anonymousApp();
+    const plan = { lessonIds: ["angulos"] };
+    try {
+      await updateDoc(family.profile, { learningPlan: plan });
+      expect((await getDoc(family.profile)).data()?.learningPlan).toEqual(plan);
+      expect(await call(guest, "listChildrenPublic", { parentId: family.parentId, accessKey: family.accessKey }))
+        .toEqual({ children: [{ id: family.childId, name: "Sofía" }] });
+      const { token } = await call<{ token: string }>(guest, "verifyChildPin", { parentId: family.parentId, childId: family.childId, pin: "1234", accessKey: family.accessKey });
+      await signInWithCustomToken(getAuth(guest), token);
+      const guestDb = getFirestore(guest);
+      connectFirestoreEmulator(guestDb, "127.0.0.1", 8080);
+      const profile = doc(guestDb, "parents", family.parentId, "children", family.childId);
+      expect((await getDoc(profile)).data()?.learningPlan).toEqual(plan);
+      await expect(updateDoc(profile, { learningPlan: { lessonIds: [] } })).rejects.toThrow();
+    } finally { await Promise.all([deleteApp(family.app), deleteApp(guest)]); }
+  });
   test("el enlace comparte solo avatares incluidos y descarta URLs o identificadores privados", async () => {
     const family = await createFamily();
     const guest = await anonymousApp();

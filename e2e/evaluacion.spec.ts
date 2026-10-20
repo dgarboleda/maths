@@ -124,7 +124,7 @@ test.describe("Evaluación de ubicación en el navegador", () => {
       grantedModuleIds: ["aritmetica-d1", "aritmetica-d2"],
     });
 
-    await page.goto(`/panel/${childId}`);
+    await page.goto(`/panel/archivo/${childId}`);
     await expect(page.getByText("1.º (22/100)")).toBeVisible();
     await expect(page.getByText("✓ Dominado (evaluación inicial)").first()).toBeVisible();
 

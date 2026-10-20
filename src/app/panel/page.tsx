@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Bell, ChartLine, Flame, History, Play, Star, Swords } from "lucide-react";
+import { Bell, ChartLine, Flame, History, Play, Star } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { useFamily, type ChildDoc } from "@/components/family/FamilyProvider";
-import { useChildDashboard, type ChildDashboard } from "@/lib/family/useChildDashboard";
+import { useLearningDashboard, type LearningDashboard } from "@/lib/family/useLearningDashboard";
 import {
   ActivityRow,
   ChildSwitcher,
@@ -15,9 +15,8 @@ import {
   WeeklyChart,
 } from "@/components/family/ui";
 import { Avatar } from "@/components/world/Avatar";
+import { LESSONS } from "@/lib/learning/domain";
 import { LearningReport } from "@/components/learning/LearningReport";
-
-const DAY_MS = 86_400_000;
 
 interface AlertItem {
   id: string;
@@ -25,9 +24,8 @@ interface AlertItem {
   text: string;
 }
 
-function buildAlerts(children: ChildDoc[], dashboards: Record<string, ChildDashboard>): AlertItem[] {
+function buildAlerts(children: ChildDoc[], dashboards: Record<string, LearningDashboard>): AlertItem[] {
   const alerts: AlertItem[] = [];
-  const now = Date.now();
   for (const c of children) {
     const d = dashboards[c.id];
     if (!d) continue;
@@ -38,16 +36,7 @@ function buildAlerts(children: ChildDoc[], dashboards: Record<string, ChildDashb
         text: `${c.name} lleva ${d.daysSinceLastAttempt} días sin practicar.`,
       });
     }
-    const recentBadge = d.badges.find(
-      (b) => b.unlocked && b.earnedAt !== null && now - b.earnedAt < 7 * DAY_MS,
-    );
-    if (recentBadge) {
-      alerts.push({
-        id: `insignia-${c.id}-${recentBadge.id}`,
-        icon: "🏅",
-        text: `${c.name} desbloqueó la insignia «${recentBadge.label}».`,
-      });
-    }
+    if (d.support > 0) alerts.push({ id: `apoyo-${c.id}`, icon: "💡", text: `${c.name} tiene ${d.support} clases para reforzar con ejemplos y práctica guiada.` });
     if (d.pendingRedemptions.length > 0) {
       const r = d.pendingRedemptions[0];
       alerts.push({
@@ -62,10 +51,10 @@ function buildAlerts(children: ChildDoc[], dashboards: Record<string, ChildDashb
 
 export default function PanelPage() {
   const { user } = useAuth();
-  const { parentId, children, loadingChildren, selectedChildId, selectedChild } = useFamily();
-  const [dashboards, setDashboards] = useState<Record<string, ChildDashboard>>({});
+  const { children, loadingChildren, selectedChildId, selectedChild } = useFamily();
+  const [dashboards, setDashboards] = useState<Record<string, LearningDashboard>>({});
 
-  const handleDashboard = useCallback((childId: string, dashboard: ChildDashboard) => {
+  const handleDashboard = useCallback((childId: string, dashboard: LearningDashboard) => {
     setDashboards((prev) => (prev[childId] === dashboard ? prev : { ...prev, [childId]: dashboard }));
   }, []);
 
@@ -110,7 +99,7 @@ export default function PanelPage() {
         <>
           <div className="grid gap-4 md:grid-cols-2">
             {children.map((c) => (
-              <ChildResumenEntry key={c.id} parentId={parentId} child={c} onDashboard={handleDashboard} />
+              <ChildResumenEntry key={c.id} child={c} onDashboard={handleDashboard} />
             ))}
           </div>
 
@@ -146,7 +135,7 @@ export default function PanelPage() {
               icon={<ChartLine className="size-4" aria-hidden="true" />}
               action={<ChildSwitcher />}
             >
-              {selectedDashboard ? <WeeklyChart week={selectedDashboard.weeklyProblems} /> : <SkeletonRows rows={3} />}
+              {selectedDashboard ? <WeeklyChart noun="respuestas" week={selectedDashboard.weeklyProblems} /> : <SkeletonRows rows={3} />}
             </SectionCard>
 
             <SectionCard title="Actividad reciente" icon={<History className="size-4" aria-hidden="true" />}>
@@ -172,18 +161,16 @@ export default function PanelPage() {
 }
 
 function ChildResumenEntry({
-  parentId,
   child,
   onDashboard,
 }: {
-  parentId: string | undefined;
   child: ChildDoc;
-  onDashboard: (childId: string, dashboard: ChildDashboard) => void;
+  onDashboard: (childId: string, dashboard: LearningDashboard) => void;
 }) {
-  const dashboard = useChildDashboard(parentId, child.id);
+  const dashboard = useLearningDashboard(child.id);
 
   useEffect(() => {
-    onDashboard(child.id, dashboard);
+    if (!dashboard.loading) onDashboard(child.id, dashboard);
   }, [child.id, dashboard, onDashboard]);
 
   return (
@@ -197,7 +184,7 @@ function ChildResumenEntry({
         />
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-lg font-bold leading-tight text-white">{child.name}</h2>
-          <p className="text-xs text-slate-400">Nivel {dashboard.level}</p>
+          <p className="text-xs text-slate-400">{dashboard.completed} de {LESSONS.length} clases terminadas</p>
         </div>
       </header>
 
@@ -209,30 +196,19 @@ function ChildResumenEntry({
         </li>
         <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-orange-300">
           <Flame className="size-3.5" aria-hidden="true" />
-          {dashboard.streak} días
-          <span className="sr-only">de racha</span>
+          {dashboard.streak} {dashboard.streak === 1 ? "día" : "días"} de repaso
+          <span className="sr-only">de racha de repaso</span>
         </li>
         <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-slate-200">
-          {dashboard.masteryGlobal} % dominio
+          {dashboard.autonomous} comprobaciones autónomas
         </li>
       </ul>
 
       <div className="mt-3 rounded-xl bg-slate-800/50 p-3">
-        {dashboard.currentMission ? (
-          <>
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-cyan-300">
-              <Swords className="size-3.5" aria-hidden="true" />
-              {dashboard.currentMission.zoneName}
-            </p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-100">
-              <span aria-hidden="true">{dashboard.currentMission.icon} </span>
-              {dashboard.currentMission.title}
-            </p>
-            <p className="mt-1 text-xs text-slate-400">{dashboard.currentMission.progressLabel}</p>
-          </>
-        ) : (
-          <p className="text-sm font-semibold text-emerald-300">✓ Todas las misiones completadas</p>
-        )}
+        <p className="text-xs font-bold text-cyan-300">Siguiente paso de aprendizaje</p>
+        <p className="mt-1 text-sm font-semibold text-slate-100">{dashboard.nextLesson.title}</p>
+        <p className="mt-1 text-xs text-slate-400">{dashboard.nextLesson.objective}</p>
+
       </div>
 
       <div className="mt-3 flex gap-2">

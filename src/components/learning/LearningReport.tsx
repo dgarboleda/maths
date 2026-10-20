@@ -10,6 +10,8 @@ import {
   mixedReviewId,
 } from "@/lib/learning/domain";
 import { useLearningData } from "@/lib/learning/useLearningData";
+import { learningSummary } from "@/lib/learning/summary";
+import { useLearningClock } from "@/lib/learning/useLearningClock";
 import { MisconceptionPanel } from "./MisconceptionPanel";
 
 export function LearningReport({
@@ -25,13 +27,8 @@ export function LearningReport({
   const entries = Object.values(data.progress).filter((p) =>
     getLesson(p.lessonId),
   );
-  const completed = entries.filter((p) => p.completedAt).length;
-  const autonomous = entries.filter(
-    (p) => p.checkPassedAt && !p.needsSupport,
-  ).length;
-  const retained = entries.filter(
-    (p) => p.retainedAt && p.lastReview?.passed && !p.needsSupport,
-  ).length;
+  const now = useLearningClock();
+  const { completed, autonomous, retained, streak } = learningSummary(data.progress, data.daily, now);
   const support = entries.filter((p) => p.needsSupport);
   return (
     <section
@@ -228,9 +225,8 @@ export function LearningReport({
                 </p>
                 {data.daily.streak && (
                   <p className="mt-1">
-                    Racha de repaso: {data.daily.streak.current}{" "}
-                    {data.daily.streak.current === 1 ? "día seguido" : "días seguidos"} hasta el{" "}
-                    {new Date(`${data.daily.streak.lastDay}T12:00:00Z`).toLocaleDateString("es-PE")} · mejor racha:{" "}
+                    Racha de repaso: {streak}{" "}
+                    {streak === 1 ? "día seguido" : "días seguidos"} · mejor racha:{" "}
                     {data.daily.streak.best}. Saltarse un día se perdona una vez por semana.
                   </p>
                 )}

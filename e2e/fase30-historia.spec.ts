@@ -14,7 +14,7 @@ test.describe("La historia se ve", () => {
       intro: [{ id: "intro-1", speaker: "Dra. Nia", portrait: "/illustrations/ada-portrait.webp", text: "Bienvenido a Math Quest." }],
     });
 
-    await page.goto(`/jugar/${childId}/mapa`);
+    await page.goto(`/jugar/${childId}/mapa-anterior`);
     const dialogo = page.getByRole("dialog", { name: "Dra. Nia" });
     await expect(dialogo).toBeVisible();
     await expect(dialogo.getByText("Bienvenido a Math Quest.")).toBeVisible();

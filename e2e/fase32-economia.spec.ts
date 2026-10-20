@@ -19,7 +19,7 @@ test.describe("El niño elige su avatar", () => {
       ],
     });
 
-    await page.goto(`/jugar/${childId}/mapa`);
+    await page.goto(`/jugar/${childId}/mapa-anterior`);
     const retrato = page.getByRole("button", { name: `Cambiar el avatar de ${nombre}` });
     await expect(retrato).toBeVisible();
     // Los perfiles nuevos ya eligen un personaje incluido al crearse.
@@ -38,7 +38,7 @@ test.describe("El niño elige su avatar", () => {
     await page.goto(`/jugar/${childId}`);
     await expect(page.getByRole("heading", { name: `Hola, ${nombre}. ¿Qué vamos a descubrir?` })).toBeVisible();
     await expect(page.getByRole("img", { name: `Avatar de ${nombre}` })).toHaveCount(0);
-    await page.goto(`/jugar/${childId}/mapa`);
+    await page.goto(`/jugar/${childId}/mapa-anterior`);
     await expect(retrato.locator("img")).toHaveAttribute("src", /nia-portrait\.webp/);
   });
 });

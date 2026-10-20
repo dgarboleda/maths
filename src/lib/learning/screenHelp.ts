@@ -81,6 +81,8 @@ export function lessonScreenHelp(lesson: Lesson, progress: LearningProgress, que
 }
 
 export function navigationHelp(pathname: string): ScreenHelp {
+  if (pathname.endsWith("/mapa")) return { id: "navigation-map", title: "Tu mapa de aprendizaje", description: "Cada parada abre una clase con sus explicaciones y práctica. Los puntos indican tu avance real; todas las rutas y sus bases siguen disponibles. Las aventuras te ayudan a aplicar lo aprendido.", ideas: [] };
+
   const page = pathname.split("/")[3] ?? "inicio";
   const activity = pathname.split("/")[4];
   if (activity === "ubicacion") return { id: pathname, title: "Encuentra dónde empezar", description: "Resuelve lo que recuerdes sin pistas. Si algo todavía es nuevo para ti, elige «Todavía no lo sé»: así podremos recomendarte una clase adecuada. Esta evaluación no da estrellas ni marca clases como terminadas.", ideas: [] };

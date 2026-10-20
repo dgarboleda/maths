@@ -127,7 +127,7 @@ export function LevelRuntime({
   // conoce esa convención de URL, así el resto del motor nunca arma rutas.
   function resolveExitTarget(target: LevelExitTarget) {
     if (target.kind === "level") router.push(`/jugar/${childId}/nivel/${target.levelId}`);
-    else if (target.kind === "worldMap") router.push(`/jugar/${childId}/mapa`);
+    else if (target.kind === "worldMap") router.push(`/jugar/${childId}/mapa-anterior`);
     else router.push(target.href);
   }
 
@@ -346,7 +346,7 @@ export function LevelRuntime({
             <span aria-hidden="true">🗺️</span>
             ¡Nivel completo!
             <Link
-              href={`/jugar/${childId}/mapa`}
+              href={`/jugar/${childId}/mapa-anterior`}
               className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-1 text-xs font-bold text-white"
             >
               Ir al mapa
