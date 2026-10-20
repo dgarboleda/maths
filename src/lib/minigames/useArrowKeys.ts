@@ -31,8 +31,7 @@ const KEY_TO_DIRECTION: Record<string, keyof ArrowKeyHandlers> = {
 };
 
 function isTypingTarget(el: EventTarget | null): boolean {
-  const tag = (el as HTMLElement | null)?.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+  return el instanceof HTMLElement && Boolean(el.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'));
 }
 
 export function useArrowKeys(handlers: ArrowKeyHandlers, opts: { enabled: boolean }) {
@@ -46,7 +45,9 @@ export function useArrowKeys(handlers: ArrowKeyHandlers, opts: { enabled: boolea
 
     function onKeyDown(e: KeyboardEvent) {
       const direction = KEY_TO_DIRECTION[e.code];
-      if (!direction || e.repeat || isTypingTarget(e.target)) return;
+      if (!direction || e.repeat || e.isComposing || e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e.target)) return;
+      // Espacio activa el botón enfocado; no debe disparar además la nave.
+      if (direction === "action" && e.target instanceof HTMLElement && e.target.closest('button, a[href], [role="button"]')) return;
       const handler = handlersRef.current[direction];
       if (!handler) return;
       e.preventDefault();

@@ -37,3 +37,27 @@ test("sin repetición, mantener pulsado hace un único movimiento", () => {
   fireEvent.pointerUp(right);
   expect(onMove).toHaveBeenCalledExactlyOnceWith(5, 0);
 });
+
+test("teclado y lector de pantalla activan el botón sin duplicar un toque", () => {
+  const onMove = vi.fn();
+  render(<TouchDPad inline repeat={false} onMove={onMove} />);
+  const right = screen.getByRole("button", { name: "Mover a la derecha" });
+  fireEvent.pointerDown(right);
+  fireEvent.pointerUp(right);
+  fireEvent.click(right, { detail: 1 });
+  expect(onMove).toHaveBeenCalledExactlyOnceWith(5, 0);
+  fireEvent.click(right, { detail: 0 });
+  expect(onMove).toHaveBeenCalledTimes(2);
+});
+
+test("pausar desactiva los botones y cancela una repetición en curso", () => {
+  vi.useFakeTimers();
+  const onMove = vi.fn();
+  const view = render(<TouchDPad inline onMove={onMove} />);
+  const right = screen.getByRole("button", { name: "Mover a la derecha" });
+  fireEvent.pointerDown(right);
+  view.rerender(<TouchDPad inline disabled onMove={onMove} />);
+  act(() => { vi.advanceTimersByTime(500); });
+  expect(right).toBeDisabled();
+  expect(onMove).toHaveBeenCalledTimes(1);
+});

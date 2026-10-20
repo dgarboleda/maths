@@ -189,7 +189,7 @@ describe("NumberPacGeneric", () => {
     expect(onResponse).toHaveBeenCalledExactlyOnceWith(8);
     const board = container.querySelector("[data-numberpac-board]")!;
     expect(board).toHaveAttribute("data-player-x", "1");
-    expect(tile).toHaveTextContent("🟡");
+    expect(tile.querySelector("svg")).not.toBeNull();
     await advanceUntil(() => false, 2000, 100);
     expect(onResponse).toHaveBeenCalledTimes(1);
   });

@@ -1,5 +1,7 @@
 "use client";
 
+import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { QuestionWidget } from "./QuestionWidget";
 import {
@@ -94,7 +96,7 @@ export function CoheteGeneric({
       );
       setWin(didWin);
       setPhase("over");
-      playSound("fanfare", soundOn);
+      playSound(didWin ? "fanfare" : "fail", soundOn);
       onGameOver?.(correctCountRef.current);
       if (didWin) {
         triggerConfetti("medium"); // Fase 31: cohete ganado
@@ -117,7 +119,7 @@ export function CoheteGeneric({
   useEffect(() => {
     if (shownPhase !== "playing" || !timerRunning) return;
     const id = setInterval(() => {
-      if (lessonMode && document.hidden) return;
+      if (document.hidden) return;
       setTimeLeft(timerRef.current - 1);
       if (timerRef.current <= 0) endGame(false);
     }, 1000);
@@ -183,7 +185,7 @@ export function CoheteGeneric({
   const progressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-indigo-500 bg-slate-900 p-6 text-white shadow-2xl">
+    <div data-game="cohete" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-indigo-500 bg-slate-900 p-3 sm:p-6 text-white shadow-2xl">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-30"
@@ -205,9 +207,7 @@ export function CoheteGeneric({
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className={`${exercise ? "" : "animate-bounce"} text-6xl`}>
-              🚀
-            </div>
+            <ArcadeIntro game="cohete" />
             <button
               type="button"
               onClick={start}
@@ -231,27 +231,18 @@ export function CoheteGeneric({
               aria-valuemax={goal}
               aria-valuenow={shownCount}
               aria-valuetext={`${shownCount} de ${goal} respuestas correctas`}
-              className="relative flex h-28 items-center justify-between overflow-hidden rounded-2xl border border-indigo-500/40 bg-slate-800/80 p-4 px-6"
+              className="arcade-scene arcade-flight relative flex h-36 items-end justify-between overflow-hidden rounded-2xl border border-indigo-400/60 p-3"
             >
-              <span aria-hidden="true" className="z-10 text-3xl">
-                🌍
-              </span>
+              <span aria-hidden="true" className="z-10 flex flex-col items-center gap-1 text-xs text-sky-100"><ArcadeSprite kind="earth" className="size-12" />Tierra</span>
               <div
                 aria-hidden="true"
-                className="absolute left-10 right-10 flex items-center"
+                className="absolute bottom-12 left-10 right-10 h-16"
               >
-                <div
-                  className="text-4xl transition-all duration-500 motion-reduce:transition-none"
-                  style={exercise
-                    ? { marginLeft: `${progressPct}%`, transform: `translateX(-${progressPct}%)` }
-                    : { transform: `translateX(${progressPct * 3.4}px)` }}
-                >
-                  🚀
-                </div>
+                <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="absolute inset-0 size-full"><path d="M0 29 Q50 -20 100 29" fill="none" stroke="#a5b4fc" strokeWidth=".6" strokeDasharray="2 2" /></svg>
+                <div className="absolute -translate-x-1/2 transition-all duration-500 motion-reduce:transition-none" style={{ left: `${progressPct}%`, bottom: `${Math.sin(progressPct / 100 * Math.PI) * 45}%`, transform: `translateX(-50%) rotate(${progressPct * 1.2}deg)` }}><ArcadeSprite kind="rocket" className="size-12" /></div>
               </div>
-              <span aria-hidden="true" className="z-10 text-3xl">
-                🌕
-              </span>
+              <span aria-hidden="true" className="absolute inset-x-0 top-2 text-xs font-bold tracking-widest text-indigo-200">{progressPct === 0 ? "Listo para despegar" : progressPct < 70 ? "En órbita" : "Aproximación lunar"}</span>
+              <span aria-hidden="true" className="z-10 flex flex-col items-center gap-1 text-xs text-indigo-100"><ArcadeSprite kind="moon" className="size-12" />Luna</span>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-indigo-700 bg-indigo-950/80 p-3">

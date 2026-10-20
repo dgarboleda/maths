@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { renderHook } from "@testing-library/react";
+import { fireEvent, renderHook } from "@testing-library/react";
 import { useArrowKeys } from "./useArrowKeys";
 
 function fireKey(code: string, opts: Partial<KeyboardEventInit> = {}) {
@@ -46,5 +46,28 @@ describe("useArrowKeys", () => {
   test("una tecla sin handler asignado no revienta", () => {
     renderHook(() => useArrowKeys({ up: vi.fn() }, { enabled: true }));
     expect(() => fireKey("ArrowDown")).not.toThrow();
+  });
+
+  test("no captura escritura, modificadores ni la activación nativa de botones", () => {
+    const action = vi.fn(), left = vi.fn();
+    renderHook(() => useArrowKeys({ action, left }, { enabled: true }));
+    const editable = document.createElement("div");
+    editable.setAttribute("contenteditable", "true");
+    const child = document.createElement("span");
+    editable.append(child);
+    document.body.append(editable);
+    const button = document.createElement("button");
+    document.body.append(button);
+    fireEvent.keyDown(child, { code: "KeyA" });
+    fireKey("KeyA", { ctrlKey: true });
+    fireKey("KeyA", { metaKey: true });
+    fireKey("KeyA", { altKey: true });
+    fireKey("KeyA", { isComposing: true });
+    fireEvent.keyDown(button, { code: "Space" });
+    expect(left).not.toHaveBeenCalled();
+    expect(action).not.toHaveBeenCalled();
+    fireKey("Space");
+    expect(action).toHaveBeenCalledTimes(1);
+    editable.remove(); button.remove();
   });
 });

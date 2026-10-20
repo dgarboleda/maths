@@ -1,5 +1,7 @@
 "use client";
 
+import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, type Problem } from "@/lib/problem";
@@ -83,6 +85,7 @@ export function RunnerGeneric({
   const [win, setWin] = useState(false);
   const [racing, setRacing] = useState(false);
   const [turbo, setTurbo] = useState(false);
+  const [pending, setPending] = useState(false);
 
   // Cuenta regresiva "caliente": autoridad real de cuándo llega la próxima
   // puerta. Un `requestAnimationFrame` puede disparar muchos ticks dentro de
@@ -96,9 +99,11 @@ export function RunnerGeneric({
   // `remainingMs`, una vez por ronda para `gateTotalMs`) que leerlos de
   // estado en el render no repite el problema.
   const remainingRef = useRef(GATE_TIME_BASE_MS);
+  const paintAccRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
 
   function spawnGate(countForWave: number) {
+    setPending(false);
     const nextProblem = newProblem();
     const spread = Math.max(8, LANES * 2);
     setProblem(nextProblem);
@@ -110,6 +115,7 @@ export function RunnerGeneric({
     const total = scaleWithWave(GATE_TIME_BASE_MS, GATE_TIME_STEP_MS, wave, GATE_TIME_FLOOR_MS);
     setGateTotalMs(total);
     remainingRef.current = total;
+    paintAccRef.current = 0;
     setRemainingMs(total);
   }
 
@@ -140,6 +146,8 @@ export function RunnerGeneric({
 
   async function resolveGate() {
     busyRef.current = true;
+    setPending(true);
+    setRacing(false);
     if (exercise) {
       if (lane === NO_LANE) {
         // Llegó la puerta sin elegir carril: es un fallo de reflejos.
@@ -189,9 +197,13 @@ export function RunnerGeneric({
     (dtMs) => {
       if (busyRef.current || !racing) return;
       remainingRef.current -= dtMs;
+      paintAccRef.current += dtMs;
       if (remainingRef.current <= 0) {
         resolveGate();
-      } else {
+      } else if (paintAccRef.current >= 80) {
+        // La llegada usa el reloj real; pintar la aproximación no necesita
+        // volver a renderizar cinco carriles y sus SVG en cada fotograma.
+        paintAccRef.current %= 80;
         setRemainingMs(remainingRef.current);
       }
     },
@@ -199,6 +211,11 @@ export function RunnerGeneric({
   );
 
   const laneCount = lesson ? candidates.length || LANES : LANES;
+  function chooseLane(next: number) {
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
+    setLane(next);
+    setRacing(true);
+  }
   function moveLaneUp() {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
     setLane((l) => Math.max(0, l - 1));
@@ -235,7 +252,7 @@ export function RunnerGeneric({
   const gateApproachPct = Math.min(100, ((gateTotalMs - remainingMs) / gateTotalMs) * 100);
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen || !racing ? "arcade-paused" : ""}`}>
+    <div data-game="runner" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen || !racing ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -250,9 +267,7 @@ export function RunnerGeneric({
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
-              🏃
-            </div>
+            <ArcadeIntro game="runner" />
             <button
               type="button"
               onClick={start}
@@ -313,30 +328,30 @@ export function RunnerGeneric({
               />
             </div>
 
-            <p role="status" className="text-sm font-semibold text-amber-200">{!racing ? "Lee el problema y elige tu ruta. Tú das la salida." : turbo ? "¡Turbo activado! Aún puedes cambiar de carril." : "¡En marcha! Cambia de carril o acelera con el turbo."}</p>
-            <div aria-hidden="true" data-runner-board="" data-lane={lane} data-racing={racing} className="arcade-road relative mx-auto w-full max-w-sm overflow-hidden rounded-2xl border-2 border-amber-500/70 bg-slate-900 p-2">
+            <p role="status" className="text-sm font-semibold text-amber-200">{pending ? "Puerta cruzada. Guardando tu elección…" : !racing ? "Toca un carril o usa las flechas. Tú das la salida." : turbo ? "¡Turbo activado! Aún puedes cambiar de carril." : "¡En marcha! Cambia de carril o acelera con el turbo."}</p>
+            <div role="group" aria-label="Circuito: elige tu carril" data-runner-board="" data-lane={lane} data-racing={racing} className="arcade-scene arcade-road relative mx-auto w-full max-w-sm overflow-hidden rounded-2xl border-2 border-amber-500/70 bg-slate-900 p-2">
               {lesson && lane === NO_LANE && (
                 <div className="flex h-10 items-center justify-center gap-2 rounded-lg border border-dashed border-amber-400 text-sm font-bold text-amber-200">
-                  <span>🏎️</span> Elige un carril con las flechas
+                  <ArcadeSprite kind="car" className="size-10" /> Elige tu carril
                 </div>
               )}
               {Array.from({ length: laneCount }, (_, row) => (
-                <div
+                <button type="button" onClick={() => chooseLane(row)} aria-label={`Carril ${row + 1}: ${candidates[row] === undefined ? "" : lessonLabel(exercise, candidates[row])}`} aria-pressed={lane === row} disabled={frozen || pending}
                   key={row}
-                  className={`${reducedMotion ? "" : "transition-colors duration-150"} relative flex h-14 items-center rounded-lg border-b border-dashed font-bold ${
+                  className={`${reducedMotion ? "" : "transition-colors duration-150"} relative flex h-16 w-full touch-manipulation items-center rounded-lg border-b border-dashed font-bold ${
                     lane === row ? "border-amber-300 bg-amber-800/40 text-amber-100" : "border-slate-500/60 text-slate-200"
                   }`}
                 >
-                  <span className="absolute left-1 text-3xl">{lane === row ? "🏎️" : ""}</span>
-                  {turbo && lane === row && <span className="absolute left-0 text-lg">🔥</span>}
-                  <span data-choice-label="" className="absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-sm text-cyan-100 shadow-lg" style={{ left: `${74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : lessonLabel(exercise, candidates[row])}</span>
-                </div>
+                  <span aria-hidden="true" className="absolute left-1">{lane === row && <ArcadeSprite kind="car" className="size-14" />}</span>
+                  {turbo && lane === row && <span aria-hidden="true" className="absolute left-0 text-lg">🔥</span>}
+                  <span data-choice-label="" className="arcade-value absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-cyan-100 shadow-lg transition-[left] duration-100 motion-reduce:transition-none" style={{ left: `${74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : lessonLabel(exercise, candidates[row])}</span>
+                </button>
               ))}
             </div>
 
-            <button type="button" onClick={boost} disabled={frozen || lane === NO_LANE || turbo}
+            <button type="button" onClick={boost} disabled={frozen || pending || lane === NO_LANE || turbo}
               className="min-h-11 rounded-xl border-2 border-amber-200 bg-amber-400 px-6 font-bold text-slate-950 disabled:opacity-50">Turbo · cruzar ⚡</button>
-            <TouchDPad inline onMove={onTouchMove} />
+            <TouchDPad inline disabled={frozen || pending} onMove={onTouchMove} />
           </div>
         )}
 

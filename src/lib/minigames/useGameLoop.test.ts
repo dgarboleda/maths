@@ -54,4 +54,14 @@ describe("useGameLoop", () => {
     vi.advanceTimersByTime(200);
     expect(onTick.mock.calls.length).toBe(callsWhileRunning);
   });
+
+  test("una pausa larga del hilo no acumula una ráfaga de movimientos", () => {
+    let frame!: FrameRequestCallback;
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => { frame = callback; return 1; });
+    const onTick = vi.fn();
+    const { unmount } = renderHook(() => useGameLoop(onTick, { running: true }));
+    frame(0); frame(16); frame(5016); frame(5032);
+    expect(onTick.mock.calls.map(([dt]) => dt)).toEqual([16, 100, 16]);
+    unmount(); raf.mockRestore();
+  });
 });

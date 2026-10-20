@@ -1,5 +1,7 @@
 "use client";
 
+import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, type Problem } from "@/lib/problem";
@@ -92,6 +94,7 @@ export function FroggerGeneric({
   const problem = exercise?.problem ?? legacyProblem;
   const [candidates, setCandidates] = useState<number[]>([]);
   const [obstacleX, setObstacleX] = useState(COLS - 1);
+  const [obstacleDirection, setObstacleDirection] = useState(-1);
   const [moving, setMoving] = useState(false);
   const [hopping, setHopping] = useState(false);
   const hopRef = useRef(0);
@@ -121,6 +124,7 @@ export function FroggerGeneric({
     setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, COLS));
     setObstacleX(count % 2 ? 0 : COLS - 1);
     obstacleDirRef.current = count % 2 ? 1 : -1;
+    setObstacleDirection(count % 2 ? 1 : -1);
     accRef.current = 0;
   }
 
@@ -281,6 +285,7 @@ export function FroggerGeneric({
         next = obstacleX + dir;
       }
       obstacleDirRef.current = dir;
+      setObstacleDirection(dir);
       setObstacleX(next);
       if (isObstacleRow(row) && next === frogX) handleHit();
     },
@@ -301,9 +306,10 @@ export function FroggerGeneric({
 
   const progressPct = Math.min(100, (shownCount / goal) * 100);
   const inObstacleRow = isObstacleRow(row);
+  const nextObstacle = obstacleX + (obstacleX + obstacleDirection < 0 || obstacleX + obstacleDirection >= COLS ? -obstacleDirection : obstacleDirection);
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl border-4 border-sky-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${controlsDisabled ? "arcade-paused" : ""}`}>
+    <div data-game="frogger" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-sky-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${controlsDisabled ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -320,9 +326,7 @@ export function FroggerGeneric({
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
-              🐸
-            </div>
+            <ArcadeIntro game="frogger" />
             <button
               type="button"
               onClick={start}
@@ -381,33 +385,34 @@ export function FroggerGeneric({
             {/* Tres filas a la vista: nenúfares (meta), carril con el
                 obstáculo y orilla. La rana se dibuja en la fila donde está,
                 para que nunca parezca parada sobre un nenúfar que no eligió. */}
-            <div aria-hidden="true" data-board="" data-frog-col={frogX} data-frog-lane={inObstacleRow ? "carril" : "orilla"} data-hopping={hopping} data-obstacle-col={obstacleX}
-              className="mx-auto w-full max-w-sm space-y-1 overflow-hidden rounded-2xl border-2 border-sky-700 bg-slate-900 p-2">
+            <div aria-hidden="true" data-board="" data-frog-col={frogX} data-frog-lane={inObstacleRow ? "carril" : "orilla"} data-hopping={hopping} data-obstacle-col={obstacleX} data-obstacle-next={nextObstacle}
+              className="arcade-scene arcade-scene-pond mx-auto w-full max-w-sm space-y-2 overflow-hidden rounded-2xl border-2 border-sky-400/60 p-2">
               <div className="grid w-full max-w-sm gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
-                  <div key={col} className="arcade-hover flex aspect-[4/3] items-center justify-center rounded-[40%] border-b-4 border-lime-900 bg-lime-700/70 text-sm font-bold text-lime-100" style={{ animationDelay: `${-col * 0.3}s` }}>
+                  <div key={col} data-lily="" className="arcade-hover arcade-value flex aspect-[4/3] items-center justify-center rounded-[40%] font-bold text-lime-50" style={{ animationDelay: `${-col * 0.3}s` }}>
                     {candidates[col] !== undefined && lessonLabel(exercise, candidates[col])}
                   </div>
                 ))}
               </div>
               <div className="grid w-full gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
-                  <div key={col}
-                    className={`${reducedMotion ? "" : "transition-colors duration-150"} flex aspect-[4/3] items-center justify-center rounded-lg ${col === obstacleX ? (inObstacleRow ? "bg-red-600" : "bg-red-900/60") : "bg-slate-800"}`}>
-                    {col === obstacleX ? <span className="text-2xl">🐊</span> : inObstacleRow && frogX === col ? <span className={hopping ? "arcade-hop text-2xl" : "text-2xl"}>🐸</span> : <span className="text-sky-400/60">≈</span>}
+                  <div key={col} data-river-cell=""
+                    className={`${reducedMotion ? "" : "transition-colors duration-150"} flex aspect-[4/3] items-center justify-center rounded-lg ${col === nextObstacle ? "ring-1 ring-inset ring-dashed ring-sky-200" : ""} ${col === obstacleX ? (inObstacleRow ? "bg-red-600" : "bg-red-900/60") : "bg-slate-800"}`}>
+                    {col === obstacleX ? <span className="size-full" style={{ transform: obstacleDirection < 0 ? "scaleX(-1)" : undefined }}><ArcadeSprite kind="crocodile" className="size-full" /></span> : inObstacleRow && frogX === col ? <span className={hopping ? "arcade-hop size-10" : "size-10"}><ArcadeSprite kind="frog" className="size-full" /></span> : <span className="text-sky-200/80">{col === nextObstacle ? obstacleX > nextObstacle ? "←" : "→" : "≈"}</span>}
                   </div>
                 ))}
               </div>
               <div className="grid w-full gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
-                  <div key={col} className="flex aspect-[4/3] items-center justify-center rounded-lg bg-sky-950">
-                    {!inObstacleRow && frogX === col && <span className={hopping ? "arcade-hop text-2xl" : "text-2xl"}>🐸</span>}
+                  <div key={col} data-bank-cell="" className="flex aspect-[4/3] items-center justify-center rounded-lg">
+                    {!inObstacleRow && frogX === col && <span className={hopping ? "arcade-hop size-10" : "size-10"}><ArcadeSprite kind="frog" className="size-full" /></span>}
                   </div>
                 ))}
               </div>
             </div>
 
-            <TouchDPad inline repeat={false} onMove={onTouchMove} />
+            <p className="text-xs text-sky-100">La flecha marca el próximo paso del cocodrilo. Espera en la orilla para encontrar tu hueco.</p>
+            <TouchDPad inline repeat={false} disabled={controlsDisabled} onMove={onTouchMove} />
           </div>
         )}
 

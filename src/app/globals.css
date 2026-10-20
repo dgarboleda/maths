@@ -836,6 +836,55 @@ body {
   animation: arcade-road 0.8s linear infinite;
 }
 .arcade-paused, .arcade-paused * { animation-play-state: paused !important; }
+
+/* Escenarios y personajes propios de los nueve minijuegos. Solo estado visual;
+   ninguna animación decide colisiones, respuestas ni premios. */
+.arcade-cabinet {
+  --arcade-accent: #a5b4fc;
+  border-color: var(--arcade-accent);
+  border-width: 2px;
+  background: linear-gradient(150deg, #17233a, #060d1c 55%);
+  box-shadow: inset 0 1px 0 #ffffff20, 0 18px 50px #02061760;
+}
+.arcade-cabinet[data-game="snake"] { --arcade-accent: #6ee7b7; background: linear-gradient(145deg, #123c32, #071b1b 65%); }
+.arcade-cabinet[data-game="frogger"] { --arcade-accent: #7dd3fc; background: linear-gradient(145deg, #113c4b, #071a2a 65%); }
+.arcade-cabinet[data-game="topos"] { --arcade-accent: #fde68a; background: linear-gradient(145deg, #363817, #1c1c10 65%); }
+.arcade-cabinet[data-game="runner"] { --arcade-accent: #fdba74; }
+.arcade-cabinet[data-game="numberpac"] { --arcade-accent: #c4b5fd; background: linear-gradient(145deg, #2d2353, #100d23 65%); }
+.arcade-cabinet[data-game="invaders"] { --arcade-accent: #a5b4fc; background: linear-gradient(145deg, #30234a, #0d1125 65%); }
+.arcade-cabinet[data-game="breakout"] { --arcade-accent: #fdba74; background: linear-gradient(145deg, #3a243d, #140e22 65%); }
+.arcade-cabinet[data-game="cajas"] { --arcade-accent: #fcd34d; background: linear-gradient(145deg, #34352b, #151b20 65%); }
+.arcade-cabinet h2 { font-size: clamp(1.25rem, 5vw, 1.875rem); line-height: 1.2; }
+.arcade-cabinet :focus-visible { outline: 3px solid #fef08a; outline-offset: 3px; }
+.arcade-cabinet [tabindex="-1"]:focus { outline: none; }
+.arcade-cabinet[data-paused="true"] *, .arcade-cabinet[data-paused="true"] *::before, .arcade-cabinet[data-paused="true"] *::after { animation-play-state: paused !important; }
+.arcade-intro { background: radial-gradient(ellipse at 50% 0%, #ffffff16, transparent 80%), #02061730; box-shadow: inset 0 1px 0 #ffffff18; }
+.arcade-sprite { display: inline-block; vertical-align: middle; filter: drop-shadow(0 3px 1px #02061750); }
+.arcade-scene { box-shadow: inset 0 0 24px #02061770, 0 4px 0 #02061770; isolation: isolate; }
+.arcade-scene-garden { background-color: #0c3026; background-image: linear-gradient(#86efac0c 1px, transparent 1px), linear-gradient(90deg, #86efac0c 1px, transparent 1px); background-size: 12.5% 12.5%; }
+.arcade-snake-body { border: 2px solid #6ee7b7; background: linear-gradient(140deg, #34d399, #047857); box-shadow: inset 0 -3px 0 #064e3b; }
+.arcade-value { font-size: clamp(.6875rem, 2.8vw, .875rem); font-variant-numeric: tabular-nums; line-height: 1.15; overflow-wrap: anywhere; text-align: center; }
+.arcade-scene-maze { background: #14152d; }
+.arcade-maze-floor { background: radial-gradient(circle, #c4b5fd60 1.5px, transparent 2px); }
+.arcade-maze-wall { margin: 3px; border: 2px solid #a5b4fc; border-radius: 10px; background: linear-gradient(135deg, #4f46e5, #27215d); box-shadow: inset 0 3px 0 #e0e7ff40, 0 0 10px #818cf830; }
+.arcade-scene-pond { background: repeating-linear-gradient(175deg, #164e63 0 12px, #155e75 13px 14px, #164e63 15px 30px); }
+.arcade-scene-pond [data-river-cell] { background: #0c4a6e80; border-bottom: 2px solid #67e8f940; }
+.arcade-scene-pond [data-bank-cell] { background: linear-gradient(#365314, #1a2e05); border-top: 3px solid #84cc16; }
+.arcade-scene-pond [data-lily] { background: linear-gradient(135deg, #65a30d, #3f6212); border: 1px solid #bef264; border-bottom-width: 4px; border-bottom-color: #365314; text-shadow: 0 1px 2px #1a2e05; }
+.arcade-scene-meadow { background: radial-gradient(ellipse at 20% 5%, #84cc1640, transparent 45%), linear-gradient(#365314 5%, #28380e 70%, #3f2614); }
+.arcade-mole-hole { background: linear-gradient(transparent 40%, #a1620740 41%, #422006 68%); border-bottom: 4px solid #713f12; }
+.arcade-mole-hole::before { content: ""; position: absolute; left: 7%; right: 7%; bottom: 0; height: 30px; border-radius: 50%; background: #1c130a; box-shadow: 0 -3px 0 #b45309; }
+.arcade-mole-clock { transform-origin: left; animation: arcade-mole-clock linear forwards; }
+@keyframes arcade-mole-clock { to { transform: scaleX(0); } }
+.arcade-option { min-height: 44px; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 12px; background: #1e293b; color: #f1f5f9; font-size: .875rem; font-weight: 700; }
+.arcade-option[aria-pressed="true"] { background: #e0e7ff; color: #1e1b4b; border-color: #a5b4fc; box-shadow: inset 0 -3px 0 #a5b4fc; }
+.arcade-option:disabled { opacity: .5; }
+.arcade-scene-court { background: radial-gradient(ellipse at 50% 0%, #7c3aed40, transparent 65%), repeating-linear-gradient(0deg, transparent 0 39px, #a78bfa12 40px), #15122b; border-left: 5px solid #a78bfa; border-right: 5px solid #a78bfa; }
+.arcade-brick { box-shadow: inset 0 3px 0 #ffffff30, inset 0 -4px 0 #00000030, 0 3px 8px #02061750; }
+.arcade-flight { background: radial-gradient(ellipse at 80% 20%, #7c3aed40, transparent 50%), #0b1029; }
+@media (prefers-reduced-motion: reduce) {
+  .arcade-cabinet *, .arcade-cabinet *::before, .arcade-cabinet *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
 .sokoban-wall {
   border: 1px solid #a88b68;
   background-color: #68513c;

@@ -27,7 +27,9 @@ export function useGameLoop(onTick: (dtMs: number) => void, opts: { running: boo
 
     function step(now: number) {
       if (!document.hidden) {
-        if (last !== null) onTickRef.current(now - last);
+        // Un bloqueo del hilo principal tampoco debe recuperar varios
+        // segundos de física al volver: conserva el control del siguiente paso.
+        if (last !== null) onTickRef.current(Math.min(100, Math.max(0, now - last)));
         last = now;
       } else {
         last = null; // al volver de background, el próximo tick arranca en 0

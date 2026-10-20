@@ -19,12 +19,13 @@ const STEP_PCT = 5;
 const REPEAT_MS = 160;
 
 const BUTTON_CLASS =
-  "pointer-events-auto flex size-11 items-center justify-center rounded-full border border-indigo-500/30 bg-slate-900/70 text-slate-100 shadow-lg active:bg-slate-800 active:scale-95";
+  "pointer-events-auto flex size-11 touch-manipulation items-center justify-center rounded-xl border border-indigo-400/50 bg-slate-900 text-slate-100 shadow-lg active:bg-slate-800 active:scale-95 disabled:opacity-40";
 
 export function TouchDPad({
   onMove,
   inline = false,
   repeat = true,
+  disabled = false,
 }: {
   onMove: (dx: number, dy: number) => void;
   /** En flujo, debajo del tablero (minijuegos), en vez de flotar sobre una
@@ -33,6 +34,7 @@ export function TouchDPad({
   inline?: boolean;
   /** Desactivar en juegos donde cada pulsación debe mover un solo casillero. */
   repeat?: boolean;
+  disabled?: boolean;
 }) {
   const timerRef = useRef<number | null>(null);
   // La repetición llama siempre a la versión más reciente: con un cierre
@@ -50,22 +52,26 @@ export function TouchDPad({
   }
   function start(dx: number, dy: number) {
     stop();
+    if (disabled) return;
     onMoveRef.current(dx, dy);
     if (repeat) timerRef.current = window.setInterval(() => onMoveRef.current(dx, dy), REPEAT_MS);
   }
 
   useEffect(() => stop, []); // limpia el intervalo si el D-pad se desmonta con un botón presionado
+  useEffect(() => { if (disabled) stop(); }, [disabled]);
 
   return (
     <div
       aria-label="Control de movimiento"
       className={inline ? "mx-auto flex w-fit justify-center lg:hidden" : "pointer-events-none absolute bottom-4 left-4 z-30 lg:hidden"}
     >
-      <div className="grid w-[132px] grid-cols-3 grid-rows-3 place-items-center gap-1">
+      <div className="grid w-[140px] grid-cols-3 grid-rows-3 place-items-center gap-1">
         <span />
         <button
           type="button"
           aria-label="Mover arriba"
+          disabled={disabled}
+          onClick={(event) => { if (event.detail === 0) onMoveRef.current(0, -STEP_PCT); }}
           className={BUTTON_CLASS}
           onPointerDown={() => start(0, -STEP_PCT)}
           onPointerUp={stop}
@@ -79,6 +85,8 @@ export function TouchDPad({
         <button
           type="button"
           aria-label="Mover a la izquierda"
+          disabled={disabled}
+          onClick={(event) => { if (event.detail === 0) onMoveRef.current(-STEP_PCT, 0); }}
           className={BUTTON_CLASS}
           onPointerDown={() => start(-STEP_PCT, 0)}
           onPointerUp={stop}
@@ -91,6 +99,8 @@ export function TouchDPad({
         <button
           type="button"
           aria-label="Mover a la derecha"
+          disabled={disabled}
+          onClick={(event) => { if (event.detail === 0) onMoveRef.current(STEP_PCT, 0); }}
           className={BUTTON_CLASS}
           onPointerDown={() => start(STEP_PCT, 0)}
           onPointerUp={stop}
@@ -104,6 +114,8 @@ export function TouchDPad({
         <button
           type="button"
           aria-label="Mover abajo"
+          disabled={disabled}
+          onClick={(event) => { if (event.detail === 0) onMoveRef.current(0, STEP_PCT); }}
           className={BUTTON_CLASS}
           onPointerDown={() => start(0, STEP_PCT)}
           onPointerUp={stop}

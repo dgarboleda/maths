@@ -1,5 +1,7 @@
 "use client";
 
+import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, type Problem } from "@/lib/problem";
@@ -96,6 +98,7 @@ export function InvadersGeneric({
     setProblem(nextProblem);
     setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, COLS));
     setWaveRow(0);
+    setShotCol(null);
     setMoving(!lesson);
     waveAccRef.current = 0;
   }
@@ -168,7 +171,7 @@ export function InvadersGeneric({
   }
 
   function handleShoot() {
-    if (busyRef.current || frozen || phase !== "playing") return;
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
     playSound("click", soundOn);
     if (candidates[shipCol] === undefined) return;
     // La respuesta queda fijada al disparar; esperar al impacto nunca cambia
@@ -187,7 +190,6 @@ export function InvadersGeneric({
         if (shotEl.current) shotEl.current.style.bottom = `${18 + travel * (68 - waveRow * 15)}%`;
         if (travel === 1) {
           shotRef.current = null;
-          setShotCol(null);
           if (lesson) void shootLesson(shot.value);
           else void resolveWave(shot.value === problem.answer);
         }
@@ -214,13 +216,19 @@ export function InvadersGeneric({
   );
 
   function moveLeft() {
-    if (busyRef.current || frozen) return;
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
     setShipCol((c) => Math.max(0, c - 1));
     setMoving(true);
   }
   function moveRight() {
-    if (busyRef.current || frozen) return;
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
     setShipCol((c) => Math.min(COLS - 1, c + 1));
+    setMoving(true);
+  }
+
+  function aimAt(column: number) {
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
+    setShipCol(column);
     setMoving(true);
   }
 
@@ -234,7 +242,7 @@ export function InvadersGeneric({
   const wavePct = Math.min(100, (waveRow / (ROWS - 1)) * 100);
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl border-4 border-red-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen ? "arcade-paused" : ""}`}>
+    <div data-game="invaders" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-red-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -249,9 +257,7 @@ export function InvadersGeneric({
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
-            <div aria-hidden="true" className="animate-bounce text-6xl">
-              👾
-            </div>
+            <ArcadeIntro game="invaders" />
             <button
               type="button"
               onClick={start}
@@ -303,33 +309,33 @@ export function InvadersGeneric({
             </div>
 
             <div
-              aria-hidden="true"
+              role="group" aria-label="Zona de invasión: elige un blanco y después dispara"
               data-invaders-board="" data-ship-col={shipCol} data-shot={shotCol !== null}
-              className="arcade-stars relative mx-auto h-64 w-full max-w-sm overflow-hidden rounded-2xl border-2 border-red-700 bg-slate-900"
+              className="arcade-scene arcade-stars relative mx-auto h-72 w-full max-w-sm overflow-hidden rounded-2xl border-2 border-indigo-400/60 bg-slate-900"
             >
-              <div className="absolute bottom-12 top-0 border-l border-dashed border-indigo-300/50" style={{ left: `${(shipCol + 0.5) * 100 / COLS}%` }} />
+              <div aria-hidden="true" className="absolute bottom-12 top-0 border-l border-dashed border-indigo-300/50" style={{ left: `${(shipCol + 0.5) * 100 / COLS}%` }} />
               <div
                 className={`${reducedMotion ? "" : "transition-all duration-150"} absolute inset-x-0 grid px-2`}
                 style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)`, top: `${wavePct * 0.7}%` }}
               >
                 {candidates.map((v, i) => (
-                  <div
+                  <button type="button" onClick={() => aimAt(i)} aria-label={`Apuntar a ${lessonLabel(exercise, v)}`} aria-pressed={shipCol === i} disabled={frozen || shotCol !== null}
                     key={i}
-                    className={`arcade-hover m-0.5 flex h-14 flex-col items-center justify-center rounded-xl border text-sm font-bold ${
+                    className={`arcade-value m-0.5 flex h-20 touch-manipulation flex-col items-center justify-center rounded-xl border-2 font-bold ${
                       shipCol === i ? "border-indigo-200 bg-indigo-600 text-white shadow-lg shadow-indigo-500/40" : "border-red-400/40 bg-slate-800 text-indigo-200"
                     }`}
                     style={{ animationDelay: `${i * -0.2}s` }}
                   >
-                    <span aria-hidden="true" className="text-base">👾</span>
+                    <span className="arcade-hover size-10" style={{ animationDelay: `${i * -0.2}s` }}><ArcadeSprite kind="alien" className="size-full" /></span>
                     <span data-choice-label="">{lessonLabel(exercise, v)}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
-              {shotCol !== null && <div ref={shotEl} className="absolute h-8 w-1.5 -translate-x-1/2 rounded-full bg-cyan-100 shadow-[0_0_18px_5px_#67e8f9]" style={{ left: `${(shotCol + 0.5) * 100 / COLS}%`, bottom: "18%" }} />}
-              <div className="absolute inset-x-0 bottom-0 grid px-2 pb-2" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+              {shotCol !== null && <div aria-hidden="true" ref={shotEl} className="pointer-events-none absolute h-8 w-1.5 -translate-x-1/2 rounded-full bg-cyan-100 shadow-[0_0_18px_5px_#67e8f9]" style={{ left: `${(shotCol + 0.5) * 100 / COLS}%`, bottom: "18%" }} />}
+              <div aria-hidden="true" className="absolute inset-x-0 bottom-0 grid px-2 pb-2" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, i) => (
                   <div key={i} className="m-1 flex h-10 items-center justify-center text-2xl">
-                    {shipCol === i ? "🚀" : ""}
+                    {shipCol === i && <ArcadeSprite kind="ship" className="size-12" />}
                   </div>
                 ))}
               </div>
@@ -344,7 +350,8 @@ export function InvadersGeneric({
               Disparar (espacio)
             </button>
 
-            <HorizontalPad inline onLeft={moveLeft} onRight={moveRight} onAction={handleShoot} />
+            <p className="text-xs text-indigo-100">Toca un enemigo para apuntar. Solo disparar envía tu elección.</p>
+            <HorizontalPad inline disabled={frozen || shotCol !== null} onLeft={moveLeft} onRight={moveRight} onAction={handleShoot} />
           </div>
         )}
 
