@@ -17,7 +17,6 @@ const GRID_SIZE = 5;
 const GOAL = 3; // pellets correctos para ganar
 const WAVE_SIZE = 1;
 const LIVES_START = 3;
-const PLAYER_TICK_MS = 350;
 const GHOST_TICK_BASE_MS = 600;
 const GHOST_TICK_STEP_MS = -80;
 const GHOST_TICK_FLOOR_MS = 300;
@@ -37,12 +36,12 @@ interface Candidate extends Cell {
 
 const START_CELL: Cell = { x: 0, y: 0 };
 const GHOST_START: Cell = { x: GRID_SIZE - 1, y: GRID_SIZE - 1 };
-// El fantasma rebota solo en su propio eje horizontal (mismo criterio que el
-// obstáculo de Frogger, Fase 37) — queda confinado a su fila de siempre, no
-// explora el resto de la grilla. Elección deliberada, no una limitación: un
-// patrón simple y predecible es más justo para un niño que un fantasma con
-// IA de persecución, y mantiene la partida jugable sin física nueva.
-const GHOST_INITIAL_DIR: Cell = { x: -1, y: 0 };
+interface Board {
+  player: Cell;
+  ghost: Cell;
+  pellets: Candidate[];
+  powerPellet: Cell | null;
+}
 
 function cellKey(c: Cell): string {
   return `${c.x},${c.y}`;
@@ -102,29 +101,32 @@ export function NumberPacGeneric({
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
   const goal = lesson ? 1 : GOAL;
   const [reflexMiss, setReflexMiss] = useState(false);
-  // Clase: el jugador no avanza solo hasta la primera flecha (al empezar,
-  // tras el fantasma o tras responder); el fantasma sí se mueve.
+  // Cada pulsación da un paso. El fantasma espera el primer paso válido,
+  // también al volver a empezar después de un choque o de una respuesta.
   const [awaitingInput, setAwaitingInput] = useState(true);
-  const waiting = lesson && awaitingInput;
+  const waiting = awaitingInput;
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
   const [phase, setPhase] = useState<Phase>("start");
-  const [player, setPlayer] = useState<Cell>(START_CELL);
-  const [ghost, setGhost] = useState<Cell>(GHOST_START);
+  const [board, setBoard] = useState<Board>({
+    player: START_CELL, ghost: GHOST_START, pellets: [], powerPellet: null,
+  });
+  // El teclado, los toques y el reloj comparten la posición más reciente,
+  // incluso si llegan varios eventos antes del siguiente render de React.
+  const boardRef = useRef(board);
+  const { player, ghost, pellets, powerPellet } = board;
   const [lives, setLives] = useState(LIVES_START);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
-  const [pellets, setPellets] = useState<Candidate[]>([]);
-  const [powerPellet, setPowerPellet] = useState<Cell | null>(null);
   const [invulnerable, setInvulnerable] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
 
-  const dirRef = useRef<Cell>({ x: 1, y: 0 });
-  const ghostDirRef = useRef<Cell>(GHOST_INITIAL_DIR);
-  const playerAccRef = useRef(0);
+  const ghostDirectionRef = useRef(-1);
+  const ghostRowDirectionRef = useRef(-1);
+  const movingRef = useRef(false);
   const ghostAccRef = useRef(0);
   const invulnRemainingRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
@@ -133,14 +135,28 @@ export function NumberPacGeneric({
   const ghostTickMs = scaleWithWave(GHOST_TICK_BASE_MS, GHOST_TICK_STEP_MS, wave, GHOST_TICK_FLOOR_MS);
   const pelletCount = Math.round(scaleWithWave(PELLET_COUNT_BASE, PELLET_COUNT_STEP, wave, PELLET_COUNT_MAX));
 
+  function updateBoard(patch: Partial<Board>) {
+    const next = { ...boardRef.current, ...patch };
+    boardRef.current = next;
+    setBoard(next);
+  }
+
+  function waitForMove() {
+    movingRef.current = false;
+    ghostAccRef.current = 0;
+    setAwaitingInput(true);
+  }
+
   function spawnRound(currentPlayer: Cell, currentGhost: Cell) {
     const nextProblem = newProblem();
     const spread = Math.max(8, pelletCount * 2);
     const values = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, pelletCount);
-    const cells = pickFreeCells([currentPlayer, currentGhost], values.length + 1);
+    const cells = pickFreeCells([START_CELL, currentPlayer, currentGhost], values.length + 1);
     setProblem(nextProblem);
-    setPellets(cells.slice(0, values.length).map((c, i) => ({ ...c, value: values[i] })));
-    setPowerPellet(cells[values.length] ?? null);
+    updateBoard({
+      pellets: cells.slice(0, values.length).map((c, i) => ({ ...c, value: values[i] })),
+      powerPellet: cells[values.length] ?? null,
+    });
   }
 
   function endGame(didWin: boolean, finalCount: number) {
@@ -158,15 +174,12 @@ export function NumberPacGeneric({
     if (frozen) return;
     playSound("click", soundOn);
     setReflexMiss(false);
-    setAwaitingInput(true);
-    dirRef.current = { x: 1, y: 0 };
-    ghostDirRef.current = GHOST_INITIAL_DIR;
-    playerAccRef.current = 0;
-    ghostAccRef.current = 0;
+    waitForMove();
+    ghostDirectionRef.current = -1;
+    ghostRowDirectionRef.current = -1;
     invulnRemainingRef.current = 0;
     busyRef.current = false;
-    setPlayer(START_CELL);
-    setGhost(GHOST_START);
+    updateBoard({ player: START_CELL, ghost: GHOST_START });
     setInvulnerable(false);
     setLives(LIVES_START);
     setCorrectCount(0);
@@ -182,8 +195,8 @@ export function NumberPacGeneric({
     if (lesson) {
       // Fallo de reflejos: sin vidas ni respuesta, solo el respiro de siempre.
       setReflexMiss(true);
-      setAwaitingInput(true);
-      setPlayer(START_CELL);
+      waitForMove();
+      updateBoard({ player: START_CELL });
       return;
     }
     const remaining = lives - 1;
@@ -192,19 +205,20 @@ export function NumberPacGeneric({
       endGame(false, correctCount);
       return;
     }
-    setPlayer(START_CELL); // respiro: aleja al jugador del fantasma tras el golpe
+    waitForMove();
+    updateBoard({ player: START_CELL }); // respiro tras el golpe
   }
 
   async function resolvePellet(eaten: Candidate, atCell: Cell, ghostAt: Cell) {
     busyRef.current = true;
-    setPellets([]);
+    updateBoard({ pellets: [] });
+    waitForMove();
     setReflexMiss(false);
     if (exercise) {
       try {
         await exercise.onResponse(eaten.value);
       } finally {
         spawnRound(atCell, ghostAt);
-        setAwaitingInput(true);
         busyRef.current = false;
       }
       return;
@@ -236,51 +250,53 @@ export function NumberPacGeneric({
     busyRef.current = false;
   }
 
-  function stepPlayer() {
-    const newCell = { x: player.x + dirRef.current.x, y: player.y + dirRef.current.y };
-    if (newCell.x < 0 || newCell.x >= GRID_SIZE || newCell.y < 0 || newCell.y >= GRID_SIZE) return; // pared: no se mueve, no muere
-    setPlayer(newCell);
+  function stepPlayer(direction: Cell) {
+    if (phase !== "playing" || frozen || solved || busyRef.current) return;
+    const current = boardRef.current;
+    const newCell = { x: current.player.x + direction.x, y: current.player.y + direction.y };
+    if (newCell.x < 0 || newCell.x >= GRID_SIZE || newCell.y < 0 || newCell.y >= GRID_SIZE) return;
+    movingRef.current = true;
+    setAwaitingInput(false);
+    updateBoard({ player: newCell });
 
-    if (powerPellet && newCell.x === powerPellet.x && newCell.y === powerPellet.y) {
-      setPowerPellet(null);
+    if (current.powerPellet && cellKey(newCell) === cellKey(current.powerPellet)) {
+      updateBoard({ powerPellet: null });
       invulnRemainingRef.current = INVULN_MS;
       setInvulnerable(true);
     }
-    const eaten = pellets.find((p) => p.x === newCell.x && p.y === newCell.y);
-    if (eaten) {
-      resolvePellet(eaten, newCell, ghost);
+    if (cellKey(newCell) === cellKey(current.ghost) && invulnRemainingRef.current <= 0) {
+      handleGhostHit();
       return;
     }
-    if (newCell.x === ghost.x && newCell.y === ghost.y) handleGhostHit();
+    const eaten = current.pellets.find((p) => cellKey(p) === cellKey(newCell));
+    if (eaten) void resolvePellet(eaten, newCell, current.ghost);
   }
 
+  // Patrulla en zigzag: al llegar a un extremo, cambia de fila.
   function stepGhost() {
-    let dir = ghostDirRef.current;
-    let next = { x: ghost.x + dir.x, y: ghost.y + dir.y };
-    if (next.x < 0 || next.x >= GRID_SIZE || next.y < 0 || next.y >= GRID_SIZE) {
-      dir = { x: -dir.x, y: -dir.y };
-      ghostDirRef.current = dir;
-      next = { x: ghost.x + dir.x, y: ghost.y + dir.y };
+    const current = boardRef.current;
+    let next = { x: current.ghost.x + ghostDirectionRef.current, y: current.ghost.y };
+    if (next.x < 0 || next.x >= GRID_SIZE) {
+      let y = current.ghost.y + ghostRowDirectionRef.current;
+      if (y < 0 || y >= GRID_SIZE) {
+        ghostRowDirectionRef.current *= -1;
+        y = current.ghost.y + ghostRowDirectionRef.current;
+      }
+      ghostDirectionRef.current *= -1;
+      next = { x: current.ghost.x, y };
     }
-    setGhost(next);
-    if (next.x === player.x && next.y === player.y) handleGhostHit();
+    updateBoard({ ghost: next });
+    if (cellKey(next) === cellKey(current.player)) handleGhostHit();
   }
 
   useGameLoop(
     (dtMs) => {
+      if (busyRef.current || !movingRef.current) return;
       if (invulnRemainingRef.current > 0) {
         invulnRemainingRef.current -= dtMs;
         if (invulnRemainingRef.current <= 0) {
           invulnRemainingRef.current = 0;
           setInvulnerable(false);
-        }
-      }
-
-      if (!busyRef.current && !waiting) {
-        playerAccRef.current += dtMs;
-        if (playerAccRef.current >= PLAYER_TICK_MS) {
-          playerAccRef.current -= PLAYER_TICK_MS;
-          stepPlayer();
         }
       }
 
@@ -290,27 +306,22 @@ export function NumberPacGeneric({
         stepGhost();
       }
     },
-    { running: phase === "playing" && !frozen && !solved },
+    { running: phase === "playing" && !frozen && !solved && !waiting },
   );
-
-  function trySetDirection(next: Cell) {
-    dirRef.current = next;
-    setAwaitingInput(false);
-  }
 
   useArrowKeys(
     {
-      up: () => trySetDirection({ x: 0, y: -1 }),
-      down: () => trySetDirection({ x: 0, y: 1 }),
-      left: () => trySetDirection({ x: -1, y: 0 }),
-      right: () => trySetDirection({ x: 1, y: 0 }),
+      up: () => stepPlayer({ x: 0, y: -1 }),
+      down: () => stepPlayer({ x: 0, y: 1 }),
+      left: () => stepPlayer({ x: -1, y: 0 }),
+      right: () => stepPlayer({ x: 1, y: 0 }),
     },
     { enabled: phase === "playing" && !frozen && !solved },
   );
 
   function onTouchMove(dx: number, dy: number) {
-    if (dx !== 0) trySetDirection({ x: Math.sign(dx), y: 0 });
-    else if (dy !== 0) trySetDirection({ x: 0, y: Math.sign(dy) });
+    if (dx !== 0) stepPlayer({ x: Math.sign(dx), y: 0 });
+    else if (dy !== 0) stepPlayer({ x: 0, y: Math.sign(dy) });
   }
 
   const shownPhase = solved ? "over" : phase;
@@ -345,7 +356,7 @@ export function NumberPacGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-yellow-300">Usa las flechas del teclado (o los botones) para moverte.{lesson && " En esta clase no avanzas hasta tu primera flecha, y que te alcance el fantasma no cuenta como respuesta."}</p>
+            <p className="text-xs text-yellow-300">Cada pulsación de una flecha mueve un casillero. El fantasma empieza con tu primer paso.{lesson && " Que te alcance no cuenta como respuesta."}</p>
           </div>
         )}
 
@@ -405,45 +416,37 @@ export function NumberPacGeneric({
 
             <div
               aria-hidden="true"
+              data-numberpac-board=""
+              data-player-x={player.x} data-player-y={player.y}
+              data-ghost-x={ghost.x} data-ghost-y={ghost.y}
               className="relative mx-auto grid aspect-square w-full max-w-sm overflow-hidden rounded-2xl border-2 border-yellow-700 bg-slate-900"
-              style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`, gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)` }}
+              style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}
             >
-              {pellets.map((p) => (
-                <div
-                  key={`pellet-${p.x}-${p.y}`}
-                  className="m-[6%] flex items-center justify-center rounded-md bg-slate-800 text-xs font-bold text-fuchsia-200"
-                  style={{ gridColumn: p.x + 1, gridRow: p.y + 1 }}
-                >
-                  {lessonLabel(exercise, p.value)}
-                </div>
-              ))}
-              {powerPellet && (
-                <div
-                  className="m-[10%] flex items-center justify-center rounded-full bg-fuchsia-500 text-xs"
-                  style={{ gridColumn: powerPellet.x + 1, gridRow: powerPellet.y + 1 }}
-                >
-                  ⭐
-                </div>
-              )}
-              <div
-                className={`${reducedMotion ? "" : "transition-all duration-150"} m-[8%] flex items-center justify-center rounded-full ${
-                  invulnerable ? "bg-fuchsia-300" : "bg-yellow-400"
-                }`}
-                style={{ gridColumn: player.x + 1, gridRow: player.y + 1 }}
-              >
-                🟡
-              </div>
-              <div
-                className={`${reducedMotion ? "" : "transition-all duration-150"} m-[8%] flex items-center justify-center rounded-full ${
-                  invulnerable ? "bg-slate-500 opacity-50" : "bg-slate-200"
-                }`}
-                style={{ gridColumn: ghost.x + 1, gridRow: ghost.y + 1 }}
-              >
-                👻
-              </div>
+              {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, index) => {
+                const x = index % GRID_SIZE, y = Math.floor(index / GRID_SIZE);
+                const pellet = pellets.find((p) => p.x === x && p.y === y);
+                return (
+                  <div key={index} data-cell-x={x} data-cell-y={y} data-value={pellet?.value} className="relative min-h-0 min-w-0">
+                    {pellet && (
+                      <span className="absolute inset-[6%] flex items-center justify-center rounded-md bg-slate-800 text-xs font-bold text-fuchsia-200">
+                        {lessonLabel(exercise, pellet.value)}
+                      </span>
+                    )}
+                    {powerPellet?.x === x && powerPellet.y === y && (
+                      <span className="absolute inset-[10%] flex items-center justify-center rounded-full bg-fuchsia-500 text-xs">⭐</span>
+                    )}
+                    {player.x === x && player.y === y && (
+                      <span className={`absolute inset-[8%] flex items-center justify-center rounded-full ${invulnerable ? "bg-fuchsia-300" : "bg-yellow-400"}`}>🟡</span>
+                    )}
+                    {ghost.x === x && ghost.y === y && (
+                      <span className={`${reducedMotion ? "" : "transition-colors duration-150"} absolute inset-[8%] flex items-center justify-center rounded-full ${invulnerable ? "bg-slate-500 opacity-50" : "bg-slate-200"}`}>👻</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            <TouchDPad inline onMove={onTouchMove} />
+            <TouchDPad inline repeat={false} onMove={onTouchMove} />
           </div>
         )}
 

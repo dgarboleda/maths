@@ -25,3 +25,15 @@ test("en modo en línea no flota sobre el contenido", () => {
   render(<TouchDPad inline onMove={vi.fn()} />);
   expect(screen.getByLabelText("Control de movimiento").className).not.toContain("absolute");
 });
+
+
+test("sin repetición, mantener pulsado hace un único movimiento", () => {
+  vi.useFakeTimers();
+  const onMove = vi.fn();
+  render(<TouchDPad inline repeat={false} onMove={onMove} />);
+  const right = screen.getByRole("button", { name: "Mover a la derecha" });
+  fireEvent.pointerDown(right);
+  act(() => { vi.advanceTimersByTime(1000); });
+  fireEvent.pointerUp(right);
+  expect(onMove).toHaveBeenCalledExactlyOnceWith(5, 0);
+});
