@@ -11,7 +11,7 @@ import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const LANES = 3;
 const CENTER_LANE = 1;
@@ -278,7 +278,7 @@ export function RunnerGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className="text-2xl font-black text-orange-200 sm:text-3xl">
+              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-orange-200`}>
                 {problem.prompt}
               </p>
             </div>

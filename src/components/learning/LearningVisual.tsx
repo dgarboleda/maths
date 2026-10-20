@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useId, useState } from "react";
 import type { Visual } from "@/lib/learning/domain";
 import {
@@ -33,6 +34,18 @@ import {
   TrigVisual,
 } from "./AdvancedVisuals";
 
+// Los modelos de números se cargan aparte: solo los usan cinco clases y así
+// no pesan en el resto (presupuesto de JS de la clase en Lighthouse).
+const numberVisual = (name: keyof typeof import("./NumberVisuals")) =>
+  dynamic<{ id: string }>(() => import("./NumberVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const FractionSumVisual = numberVisual("FractionSumVisual");
+const FractionProductVisual = numberVisual("FractionProductVisual");
+const IntegerProductVisual = numberVisual("IntegerProductVisual");
+const OrderOfOperationsVisual = numberVisual("OrderOfOperationsVisual");
+const SquareRootVisual = numberVisual("SquareRootVisual");
+
 function Bar({
   numerator,
   denominator,
@@ -63,33 +76,38 @@ function NumberLineVisual({ id }: { id: string }) {
   const [move, setMove] = useState(5);
   const end = start + move;
   const ticks = Array.from({ length: 21 }, (_, i) => i - 10);
+  const [lo, hi] = [Math.min(start, end), Math.max(start, end)];
+  const sg = (n: number) => (n < 0 ? `−${-n}` : String(n));
+  const term = (n: number) => (n < 0 ? `(${sg(n)})` : sg(n));
   return (
     <>
       <label htmlFor={`${id}-start`} className="block text-sm">
-        Punto de partida: <strong>{start}</strong>
+        Punto de partida: <strong>{sg(start)}</strong>
       </label>
       <input id={`${id}-start`} type="range" min={-10} max={10} value={start}
         onChange={(e) => setStart(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
       <label htmlFor={`${id}-move`} className="block text-sm">
-        Sumar (positivo: derecha; negativo: izquierda): <strong>{move}</strong>
+        Sumar (positivo: derecha; negativo: izquierda): <strong>{sg(move)}</strong>
       </label>
       <input id={`${id}-move`} type="range" min={-10} max={10} value={move}
         onChange={(e) => setMove(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
-      <div role="img" aria-label={`Recta numérica: de ${start} se avanza ${move} y se llega a ${end}`}
-        className="grid grid-cols-[repeat(21,minmax(0,1fr))] gap-px rounded-lg bg-slate-950 p-2 text-center text-[10px]">
+      <div role="img" aria-label={`Recta numérica: de ${sg(start)} se avanza ${sg(move)} y se llega a ${sg(end)}`}
+        className="grid grid-cols-[repeat(21,minmax(0,1fr))] gap-px rounded-lg bg-slate-950 p-1 text-center text-[11px] sm:text-xs">
         {ticks.map((t) => (
           <span key={t} aria-hidden="true"
-            className={`rounded py-1 ${t === start ? "bg-slate-500 text-white" : t === end ? "bg-cyan-300 font-bold text-slate-950" : t === 0 ? "text-white" : "text-slate-400"}`}>
-            {t}
+            className={`rounded py-1 tabular-nums ${t === start ? "bg-slate-400 font-bold text-slate-950" : t === end ? "bg-cyan-300 font-bold text-slate-950" : t > lo && t < hi ? "bg-cyan-900/70 text-cyan-100" : t === 0 ? "text-white" : "text-slate-400"}`}>
+            {/* En pantallas angostas, los impares se marcan sin número. */}
+            <span className={t % 2 !== 0 && t !== start && t !== end ? "hidden sm:inline" : ""}>{sg(t)}</span>
+            {t % 2 !== 0 && t !== start && t !== end && <span className="sm:hidden">·</span>}
           </span>
         ))}
       </div>
       <p className="text-xl font-bold text-white">
-        {start} + ({move}) = {end}
+        {sg(start)} + {term(move)} = {sg(end)}
         {Math.abs(end) > 10 && " (fuera de la recta dibujada)"}
       </p>
       <p className="text-sm text-slate-300">
-        Restar un número equivale a sumar su opuesto: {start} − ({-move}) = {end}.
+        Restar un número equivale a sumar su opuesto: {sg(start)} − {term(-move)} = {sg(end)}.
       </p>
     </>
   );
@@ -173,7 +191,7 @@ function ProbabilityVisual({ id }: { id: string }) {
   );
 }
 
-const OWN_VISUALS: Partial<Record<Visual, (props: { id: string }) => React.JSX.Element>> = {
+const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> = {
   integers: NumberLineVisual,
   area: AreaVisual,
   data: DataVisual,
@@ -203,6 +221,11 @@ const OWN_VISUALS: Partial<Record<Visual, (props: { id: string }) => React.JSX.E
   vertex: VertexVisual,
   solids: SolidsVisual,
   "two-way": TwoWayVisual,
+  "fraction-sum": FractionSumVisual,
+  "fraction-product": FractionProductVisual,
+  "integer-product": IntegerProductVisual,
+  order: OrderOfOperationsVisual,
+  "square-root": SquareRootVisual,
 };
 
 export function LearningVisual({ kind }: { kind: Visual }) {
@@ -339,7 +362,11 @@ function ClassicVisual({ kind }: { kind: Visual }) {
           <label htmlFor={`${id}-factor`} className="block text-sm">
             {["balance", "equation"].includes(kind)
               ? "Valor de x"
-              : "Cantidad de conjuntos"}
+              : kind === "ratio"
+                ? "Grupos de 2 azules y 3 verdes"
+                : kind === "change"
+                  ? "Base en cientos"
+                  : "Cantidad de sensores"}
             : <strong>{factor}</strong>
           </label>
           <input
@@ -394,8 +421,8 @@ function ClassicVisual({ kind }: { kind: Visual }) {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="font-mono text-lg">
-                {factor} sensores × 5 créditos/sensor = {5 * factor} créditos
+              <p className="text-lg font-semibold">
+                {factor} {factor === 1 ? "sensor" : "sensores"} × 5 créditos por sensor = {5 * factor} créditos
               </p>
               <table className="w-full text-left text-sm">
                 <caption className="sr-only">
@@ -405,7 +432,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
                   <tr>
                     <th className="p-2">Sensores</th>
                     <th className="p-2">Costo</th>
-                    <th className="p-2">Costo / sensores</th>
+                    <th className="p-2">Costo por sensor</th>
                   </tr>
                 </thead>
                 <tbody>

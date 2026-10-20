@@ -8,7 +8,7 @@ import { triggerConfetti } from "@/lib/confetti";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, lessonLabel, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const ROWS = 6; // la fila 0 es el camión
@@ -253,7 +253,7 @@ export function CajasGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className="text-2xl font-black text-sky-200 sm:text-3xl">
+              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-sky-200`}>
                 {problem.prompt}
               </p>
             </div>
@@ -284,7 +284,7 @@ export function CajasGeneric({
               type="button"
               onClick={resetBoxes}
               disabled={frozen}
-              className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-bold text-orange-200 hover:bg-slate-700"
+              className="min-h-11 rounded-xl bg-slate-800 px-4 py-2 text-sm font-bold text-orange-200 hover:bg-slate-700"
             >
               Reiniciar cajas
             </button>

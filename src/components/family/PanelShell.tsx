@@ -13,7 +13,7 @@ const NAV = [
   { href: "/panel", label: "Resumen", icon: LayoutDashboard, exact: true },
   { href: "/panel/hijos", label: "Hijos", icon: Users, exact: false },
   { href: "/panel/progreso", label: "Progreso", icon: ChartLine, exact: false },
-  { href: "/panel/recompensas", label: "Recompensas", icon: Gift, exact: false },
+  { href: "/panel/recompensas", label: "Recompensas", short: "Premios", icon: Gift, exact: false },
   { href: "/panel/editor", label: "Editor", icon: Wand2, exact: false },
   { href: "/panel/editor/mundo", label: "Mundo", icon: Map, exact: false },
   { href: "/panel/curriculum", label: "Currícula", icon: BookOpen, exact: false },
@@ -155,12 +155,12 @@ export function PanelShell({ children }: { children: ReactNode }) {
                   <Link
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[10px] font-bold ${
+                    className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-bold ${
                       active ? "text-cyan-300" : "text-slate-400"
                     }`}
                   >
                     <item.icon className="size-5" aria-hidden="true" />
-                    <span className="truncate">{item.label}</span>
+                    <span className="block max-w-full truncate px-0.5">{"short" in item ? item.short : item.label}</span>
                   </Link>
                 </li>
               );

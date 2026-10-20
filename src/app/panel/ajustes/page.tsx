@@ -62,7 +62,7 @@ export default function AjustesPage() {
                     title={c.name}
                     className="size-11 shrink-0 rounded-full border border-indigo-500/25"
                   />
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-[8rem] flex-1">
                     <p className="text-sm font-bold text-white">{c.name}</p>
                     {c.deleting && (
                       <p role="status" className="text-xs text-amber-300">Borrado pendiente. Reintenta para terminarlo.</p>
@@ -218,7 +218,7 @@ function ChildDeviceLink({ parentId }: { parentId: string }) {
             value={link}
             onFocus={(e) => e.currentTarget.select()}
             aria-label="Enlace para entrar desde otro dispositivo"
-            className="family-input min-w-0 flex-1 text-xs"
+            className="family-input min-h-11 w-full min-w-0 text-xs sm:w-auto sm:flex-1"
           />
           <button
             type="button"

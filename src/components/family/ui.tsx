@@ -174,7 +174,7 @@ export function WeeklyChart({ week }: { week: { day: string; problems: number }[
                 style={d.problems > 0 ? { height: `${(d.problems / maxProblems) * 100}%` } : undefined}
               />
             </div>
-            <span className="text-[10px] font-bold uppercase text-slate-400">{d.day}</span>
+            <span className="text-xs font-bold uppercase text-slate-400">{d.day}</span>
           </div>
         ))}
       </div>

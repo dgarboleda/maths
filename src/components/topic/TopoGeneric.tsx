@@ -9,7 +9,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, lessonLabel, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const HOLES = 6; // 3 × 2
 const CHOICES = 5;
@@ -280,7 +280,7 @@ export function TopoGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className="text-2xl font-black text-lime-200 sm:text-3xl">
+              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200`}>
                 {problem.prompt}
               </p>
             </div>

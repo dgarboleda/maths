@@ -75,6 +75,11 @@ Las representaciones interactivas incluyen barras de fracción y equivalencia, r
 | Probabilidad compuesta | Árbol con y sin reemplazo | Producto por rama; las ramas suman 1 |
 | Notación científica | Escala logarítmica de 10⁻⁶ a 10⁹ m | Cada paso multiplica por 10 |
 | Operaciones con decimales | Cuadrícula 10 × 10 | Décima × décima = centésima |
+| Sumar y restar fracciones | Barras recortadas a un denominador común | Solo se juntan partes del mismo tamaño |
+| Multiplicar y dividir fracciones | Área (a/b de c/d) y «cuántas veces cabe» | El producto es parte de una parte; dividir es multiplicar por la inversa |
+| Multiplicar y dividir enteros | Saltos repetidos en la recta | k grupos de n; con k negativo, el opuesto |
+| Orden de las operaciones | Misma expresión con y sin paréntesis | El paréntesis cambia el resultado |
+| Potencias y raíces | Cuadrados de casillas | √A es el lado; si no es exacto, queda entre dos enteros |
 | Interés simple y compuesto | Recta (simple) frente a curva (compuesto) con capital, tasa y años | El simple suma lo mismo cada año; el compuesto multiplica por (1 + r/100) |
 | Progresiones | Puntos aₙ con conmutador aritmética/geométrica | Diferencia constante / cociente constante |
 | Distancia y punto medio | Dos puntos arrastrables con catetos, hipotenusa y punto medio | d = √(Δx² + Δy²); M promedia las coordenadas |
@@ -205,13 +210,15 @@ avance y vuelve a sortear el juego.
 Los seis juegos de reflejos (estanque, serpiente, carrera, laberinto,
 invasores y bloques) conservan su **mecánica real** dentro de las clases, pero solo una decisión
 deliberada envía una respuesta: llegar a un nenúfar, comer un número, disparar a una columna,
-cruzar una puerta después de pulsar una flecha o romper el bloque correcto.
+cruzar una puerta después de pulsar una flecha o lanzar la pelota contra un bloque.
 Los fallos de reflejos —chocar con el obstáculo o con el borde, que alcance el fantasma, que la oleada
-aterrice, perder la pelota, llegar a una puerta sin decidir o un rebote contra
-un bloque incorrecto— no se registran, no restan vidas y la partida sigue con
-el mismo ejercicio (`src/lib/minigames/lessonArcade.tsx`). En los bloques, qué
-bloque toca la pelota depende del rebote, así que solo el correcto cuenta y
-ese juego no registra errores. Las vidas, estrellas y marcas solo existen en
+aterrice, llegar a una puerta sin decidir— no se registran, no restan vidas y la partida sigue con
+el mismo ejercicio (`src/lib/minigames/lessonArcade.tsx`). En los bloques de la
+clase, las cinco opciones están en una sola fila y la pelota espera sobre la
+paleta: el estudiante la coloca bajo un bloque y la lanza en línea recta (flecha
+arriba, espacio o «Lanzar la pelota»); el bloque que rompe es su respuesta,
+correcta o no, y la pelota vuelve a la paleta. Antes la pelota salía sola y un
+rebote al azar podía registrar una respuesta sin intervención. Las vidas, estrellas y marcas solo existen en
 niveles y mundos. Para que lo que se registra sea siempre una decisión, en la
 clase la serpiente y el laberinto no avanzan solos hasta la primera flecha
 (al empezar, tras un fallo de reflejos y tras cada respuesta), y en la carrera
@@ -222,6 +229,8 @@ pausar; el reloj se detiene durante el guardado, al ocultar la pestaña y al
 revisar un error. Cada error pausa la partida hasta que el estudiante decide
 reanudar, para leer la orientación y pedir pistas antes de reintentar el mismo
 ejercicio. Agotar el tiempo no envía una respuesta ni resta progreso matemático.
+
+**Opciones de los juegos** (`lessonProblem`): la respuesta, los errores previstos de la pregunta y, si faltan, vecinos plausibles; solo valores que se leen bien (enteros, hasta 3 decimales o fracciones de denominador ≤ 100, mostradas como fracción si la respuesta no es un decimal exacto o el enunciado pide una fracción), con signo «−», en el dominio del problema (una probabilidad entre 0 y 1; sin negativos inventados si el enunciado no los tiene) y a una distancia proporcional al tamaño del número. El enunciado del juego reduce su tamaño cuando es largo para que el tablero y los controles quepan en un teléfono.
 
 Los juegos envían la **respuesta concreta** a `recordLearningAction`, igual
 que la práctica escrita. Functions valida y guarda los intentos y apoyos;
@@ -239,6 +248,10 @@ colecciones ni versiones del contenido. Las preguntas mantienen su estado de
 revisión docente pendiente. Snake, Runner, Number Pac, Invaders y Breakout siguen
 disponibles en los niveles anteriores; su incorporación a las clases queda fuera
 de esta entrega.
+
+## Auditoría de usabilidad en móvil
+
+`e2e/auditoria-movil.spec.ts` y `e2e/auditoria-visuales.spec.ts` (solo con `AUDITORIA=1`, fuera de CI) recorren en un Pixel 7 cada clase pantalla por pantalla —diagnóstico, explicación, ejemplos, guiada, práctica con los nueve juegos y comprobación— y las pantallas generales del estudiante y de la familia. Anotan en `informes/auditoria/*/hallazgos.json` desbordes, texto recortado o menor de 12 px, objetivos táctiles menores de 44 px, violaciones de axe y juegos cuyo enunciado y controles no caben a la vez en la pantalla, con capturas. La prueba del catálogo además impide «:» entre números (en Perú también es división) y `defineLesson` aplica la tipografía común: miles con espacio fijo («45 000 000», no «45.000.000») y signo «−».
 
 ## Auditoría del catálogo anterior
 

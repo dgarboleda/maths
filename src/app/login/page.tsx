@@ -150,7 +150,7 @@ export default function LoginPage() {
                 setError(null);
                 setMode(mode === "login" ? "signup" : "login");
               }}
-              className="block w-full text-center text-sm font-semibold text-cyan-300 underline-offset-4 hover:underline"
+              className="block min-h-11 w-full text-center text-sm font-semibold text-cyan-300 underline-offset-4 hover:underline"
             >
               {mode === "login" ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Entra"}
             </button>

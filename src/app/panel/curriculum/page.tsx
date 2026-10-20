@@ -114,7 +114,7 @@ export default function CurriculumListPage() {
                 </Link>
                 <p className="truncate text-xs text-slate-400">{getStrand(m.strandSlug)?.label ?? m.strandSlug}</p>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${m.published ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300"}`}>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${m.published ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300"}`}>
                 {m.published ? "Publicado" : "Borrador"}
               </span>
               <button type="button" onClick={() => void remove(m.id)} className="rounded-md p-2 text-slate-500 hover:bg-rose-500/10 hover:text-rose-400" aria-label={`Borrar ${m.label}`}>

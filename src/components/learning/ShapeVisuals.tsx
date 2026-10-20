@@ -134,13 +134,13 @@ export function CircleVisual({ id }: { id: string }) {
         <circle cx={60} cy={60} r={r * u} className="fill-cyan-300/15 stroke-cyan-300" strokeWidth={2.5} />
         <rect x={60} y={60 - r * u} width={r * u} height={r * u} className="fill-amber-300/25 stroke-amber-300" />
         <line x1={60} y1={60} x2={60 + r * u} y2={60} className="stroke-rose-300" strokeWidth={2} />
-        <text x={60 + (r * u) / 2} y={74} textAnchor="middle" className="fill-rose-200 text-[10px]">r</text>
+        <text x={60 + (r * u) / 2} y={74} textAnchor="middle" className="fill-rose-200 text-[11px]">r</text>
         <Handle x={60 + r * u} y={60} className="fill-rose-300" r={5} onDrag={(px) => setR(snap((px - 60) / u, 1, 5))} />
         <line x1={10} x2={10 + C * u} y1={140} y2={140} className="stroke-cyan-300" strokeWidth={4} />
         {[0, 1, 2, 3].map((i) => (
           <line key={i} x1={10 + i * 2 * r * u} x2={10 + i * 2 * r * u} y1={130} y2={150} className="stroke-slate-300" />
         ))}
-        <text x={10} y={124} className="fill-slate-300 text-[10px]">borde desenrollado: 3 diámetros y un poco más</text>
+        <text x={10} y={124} className="fill-slate-300 text-[11px]">borde desenrollado: 3 diámetros y un poco más</text>
       </svg>
       <p className="font-mono text-sm">
         Longitud = 2 · π · {r} ≈ <strong>{num(C)}</strong> · Área = π · {r}² ≈ <strong>{num(Math.PI * r * r)}</strong>
@@ -324,17 +324,17 @@ export function PowersVisual({ id }: { id: string }) {
       <p className="font-mono text-lg">
         {num(a)} × 10{sup(n)} = <strong>{expandScientific(a, n)}</strong>
       </p>
-      <svg role="img" viewBox="0 0 320 70" className="w-full max-w-md rounded-xl bg-slate-950"
+      <svg role="img" viewBox="0 0 320 72" className="w-full max-w-md rounded-xl bg-slate-950"
         aria-label={`Escala de potencias de 10 en metros: ${num(a)} por 10 a la ${n} está entre 10 a la ${n} y 10 a la ${n + 1}.`}>
         <line x1={15} x2={305} y1={36} y2={36} className="stroke-slate-500" strokeWidth={1.5} />
         {Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).map((e) => (
           <g key={e}>
             <line x1={pos(e)} x2={pos(e)} y1={31} y2={41} className="stroke-slate-500" />
-            {e % 3 === 0 && <text x={pos(e)} y={55} textAnchor="middle" className="fill-slate-400 text-[9px]">10{sup(e)}</text>}
+            {e % 3 === 0 && <text x={pos(e)} y={58} textAnchor={e === hi ? "end" : e === lo ? "start" : "middle"} className="fill-slate-400 text-[11px]">10{sup(e)}</text>}
           </g>
         ))}
         {refs.map((r) => (
-          <text key={r.text} x={pos(r.e)} y={18} textAnchor="middle" className="fill-slate-500 text-[8px]">{r.text}</text>
+          <text key={r.text} x={Math.min(305, pos(r.e))} y={18} textAnchor={r.e > 7 ? "end" : "middle"} className="fill-slate-300 text-[11px]">{r.text}</text>
         ))}
         <Handle x={pos(n + Math.log10(a))} y={36} className="fill-cyan-300"
           onDrag={(px) => {

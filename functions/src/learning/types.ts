@@ -81,7 +81,12 @@ export type Visual =
   | "distance"
   | "vertex"
   | "solids"
-  | "two-way";
+  | "two-way"
+  | "fraction-sum"
+  | "fraction-product"
+  | "integer-product"
+  | "order"
+  | "square-root";
 export type UnitId =
   | "numeros"
   | "fracciones"
