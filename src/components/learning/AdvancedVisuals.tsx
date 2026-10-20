@@ -449,3 +449,143 @@ export function DistanceVisual({ id }: { id: string }) {
     </>
   );
 }
+
+/** y = a(x − h)² + k: el vértice se arrastra y a decide si es máximo o mínimo. */
+export function VertexVisual({ id }: { id: string }) {
+  const [a, setA] = useState(1);
+  const [h, setH] = useState(2);
+  const [k, setK] = useState(-3);
+  const f = (x: number) => a * (x - h) ** 2 + k;
+  const kind = a > 0 ? "mínimo" : a < 0 ? "máximo" : null;
+  const form = `y = ${a === 1 ? "" : a === -1 ? "−" : num(a)}(x ${h < 0 ? "+" : "−"} ${num(Math.abs(h))})² ${k < 0 ? "−" : "+"} ${num(Math.abs(k))}`;
+  return (
+    <>
+      <Slider id={`${id}-a`} label="Coeficiente a" value={a} min={-2} max={2} step={0.5} onChange={setA} />
+      <Slider id={`${id}-h`} label="h (corrimiento horizontal)" value={h} min={-4} max={4} onChange={setH} />
+      <Slider id={`${id}-k`} label="k (corrimiento vertical)" value={k} min={-6} max={6} onChange={setK} />
+      <p className="font-mono text-lg">{a === 0 ? `y = ${num(k)}` : form}</p>
+      <Plane x={[-6, 6]} y={[-8, 8]} xStep={2} yStep={2}
+        label={a === 0
+          ? `Con a = 0 no hay parábola: es la recta horizontal y = ${num(k)}.`
+          : `Parábola ${form}, abre hacia ${a > 0 ? "arriba" : "abajo"} con vértice (${num(h)}, ${num(k)}): es un ${kind}, y = ${num(k)}.`}>
+        {(s) => (
+          <>
+            <line x1={s.sx(h)} x2={s.sx(h)} y1={s.sy(-8)} y2={s.sy(8)} className="stroke-slate-600" strokeDasharray="3 3" />
+            <path d={curve(f, [-6, 6], s)} className="fill-none stroke-cyan-300" strokeWidth={2.5} />
+            <Handle x={s.sx(h)} y={s.sy(k)} className="fill-rose-300"
+              onDrag={(px, py) => { setH(snap(s.ix(px), -4, 4)); setK(snap(s.iy(py), -6, 6)); }} />
+          </>
+        )}
+      </Plane>
+      <p className="text-sm text-slate-300">
+        {a === 0
+          ? "Sin el término al cuadrado, la función no cambia con x."
+          : `El vértice (${num(h)}, ${num(k)}) es el ${kind}: (x − ${num(h)})² vale 0 en x = ${num(h)} y es positivo en el resto, así que y ${a > 0 ? "solo puede crecer" : "solo puede bajar"} desde ${num(k)}. Cuanto mayor es |a|, más estrecha es la parábola.`}
+      </p>
+    </>
+  );
+}
+
+/** Cilindro, cono y esfera del mismo radio: el cono es 1/3 del cilindro. */
+export function SolidsVisual({ id }: { id: string }) {
+  const [r, setR] = useState(3);
+  const [h, setH] = useState(6);
+  const PI = 3.14;
+  const cylinder = PI * r * r * h,
+    cone = cylinder / 3,
+    sphere = (4 * PI * r ** 3) / 3;
+  const max = Math.max(cylinder, sphere);
+  const bars: [string, number, string][] = [
+    ["Cilindro π·r²·h", cylinder, "fill-amber-300"],
+    ["Cono π·r²·h ÷ 3", cone, "fill-cyan-300"],
+    ["Esfera 4·π·r³ ÷ 3", sphere, "fill-rose-300"],
+  ];
+  const scale = 44 / 8;
+  return (
+    <>
+      <Slider id={`${id}-r`} label="Radio r (cm)" value={r} min={1} max={8} onChange={setR} />
+      <Slider id={`${id}-h`} label="Altura h del cilindro y del cono (cm)" value={h} min={1} max={16} onChange={setH} />
+      <svg role="img" viewBox="0 0 320 150" className="w-full max-w-md rounded-xl bg-slate-950"
+        aria-label={`Radio ${r} cm y altura ${h} cm: cilindro ${num(cylinder)} cm³, cono ${num(cone)} cm³ (un tercio), esfera ${num(sphere)} cm³.`}>
+        {(() => {
+          const rw = r * scale,
+            hh = Math.min(110, h * 6.5);
+          return (
+            <>
+              <rect x={60 - rw} y={130 - hh} width={2 * rw} height={hh} className="fill-amber-300/30 stroke-amber-300" />
+              <ellipse cx={60} cy={130 - hh} rx={rw} ry={5} className="fill-amber-300/40 stroke-amber-300" />
+              <path d={`M${160 - rw},130 L160,${130 - hh} L${160 + rw},130 Z`} className="fill-cyan-300/30 stroke-cyan-300" />
+              <ellipse cx={160} cy={130} rx={rw} ry={5} className="fill-none stroke-cyan-300" />
+              <circle cx={262} cy={130 - rw} r={rw} className="fill-rose-300/30 stroke-rose-300" />
+              <ellipse cx={262} cy={130 - rw} rx={rw} ry={4} className="fill-none stroke-rose-300" strokeDasharray="3 3" />
+            </>
+          );
+        })()}
+      </svg>
+      <div className="space-y-2" aria-hidden="true">
+        {bars.map(([label, value, color]) => (
+          <div key={label} className="flex items-center gap-2 text-xs">
+            <span className="w-32 shrink-0 text-slate-300">{label}</span>
+            <svg viewBox="0 0 200 12" className="h-3 w-full max-w-xs"><rect width={(value / max) * 200} height={12} rx={3} className={color} /></svg>
+          </div>
+        ))}
+      </div>
+      <p className="font-mono text-sm">
+        Cilindro: {num(cylinder)} cm³ · Cono: {num(cone)} cm³ · Esfera: {num(sphere)} cm³
+      </p>
+      <p className="text-sm text-slate-300">
+        Con la misma base y altura, tres conos llenan el cilindro. Duplica el radio y observa: el cono y el cilindro se multiplican por 4 (r²), la esfera por 8 (r³).
+        {h === 2 * r && " Ahora h = 2r: la esfera ocupa exactamente 2/3 del cilindro que la envuelve."}
+      </p>
+    </>
+  );
+}
+
+/** Tabla de doble entrada: probabilidades condicionadas en cada sentido. */
+export function TwoWayVisual({ id }: { id: string }) {
+  const [f4, setF4] = useState(12);
+  const [v4, setV4] = useState(8);
+  const [f5, setF5] = useState(6);
+  const [v5, setV5] = useState(14);
+  const total = f4 + v4 + f5 + v5;
+  const frac = (a: number, b: number) => (b ? `${a}/${b} = ${num(a / b)}` : "sin casos");
+  const pV = total ? (v4 + v5) / total : 0,
+    pV5 = f5 + v5 ? v5 / (f5 + v5) : 0;
+  const independent = total > 0 && f5 + v5 > 0 && Math.abs(pV - pV5) < 1e-9;
+  return (
+    <>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div>
+          <Slider id={`${id}-f4`} label="4.° · fútbol" value={f4} min={0} max={20} onChange={setF4} />
+          <Slider id={`${id}-v4`} label="4.° · vóley" value={v4} min={0} max={20} onChange={setV4} />
+        </div>
+        <div>
+          <Slider id={`${id}-f5`} label="5.° · fútbol" value={f5} min={0} max={20} onChange={setF5} />
+          <Slider id={`${id}-v5`} label="5.° · vóley" value={v5} min={0} max={20} onChange={setV5} />
+        </div>
+      </div>
+      <table className="w-full max-w-md text-left text-sm">
+        <caption className="sr-only">Estudiantes por grado y deporte preferido</caption>
+        <thead>
+          <tr className="border-b border-slate-600"><th className="p-2" scope="col">Grado</th><th className="p-2" scope="col">Fútbol</th><th className="p-2" scope="col">Vóley</th><th className="p-2" scope="col">Total</th></tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-slate-800"><th className="p-2" scope="row">4.°</th><td className="p-2">{f4}</td><td className="p-2">{v4}</td><td className="p-2">{f4 + v4}</td></tr>
+          <tr className="border-b border-slate-800"><th className="p-2" scope="row">5.°</th><td className="p-2">{f5}</td><td className="bg-cyan-950/60 p-2 font-bold text-cyan-200">{v5}</td><td className="bg-amber-950/40 p-2">{f5 + v5}</td></tr>
+          <tr><th className="p-2" scope="row">Total</th><td className="p-2">{f4 + f5}</td><td className="bg-rose-950/40 p-2">{v4 + v5}</td><td className="p-2">{total}</td></tr>
+        </tbody>
+      </table>
+      <p className="font-mono text-sm">
+        P(vóley | 5.°) = {frac(v5, f5 + v5)}
+        <br />P(5.° | vóley) = {frac(v5, v4 + v5)}
+        <br />P(vóley) = {frac(v4 + v5, total)}
+      </p>
+      <p className="text-sm text-slate-300">
+        El numerador es el mismo ({v5}, celda cian); cambia el grupo: los de 5.° (ámbar) o los de vóley (rosa).
+        {independent
+          ? " Ahora P(vóley | 5.°) = P(vóley): el grado no cambia la preferencia (independientes)."
+          : " Prueba a que P(vóley | 5.°) sea igual a P(vóley): entonces grado y deporte serían independientes."}
+      </p>
+    </>
+  );
+}

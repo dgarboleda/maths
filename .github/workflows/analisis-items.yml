@@ -47,7 +47,7 @@ jobs:
           MINIMO: ${{ inputs.minimo || '10' }}
         run: |
           set -euo pipefail
-          args=(--salida informes --minimo "$MINIMO")
+          args=(--salida informes --minimo "$MINIMO" --calibracion informes/calibrationData.ts)
           if [ -n "${DESDE:-}" ]; then args+=(--desde "$DESDE"); fi
           npm run analisis:items -- "${args[@]}"
           cat informes/analisis-items-*.md >> "$GITHUB_STEP_SUMMARY"

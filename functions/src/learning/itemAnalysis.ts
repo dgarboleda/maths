@@ -1,4 +1,5 @@
 import { errorText, eventOutcome, findQuestion, type EvidenceEvent } from "./diagnosis";
+import type { CalibrationData } from "./calibration";
 import type { Lesson } from "./types";
 
 /** Evento con el perfil al que pertenece (seudónimo: solo se usa para
@@ -155,6 +156,48 @@ export function stageSummary(items: ItemStats[]) {
   return [...byStage].map(([stage, s]) => ({ stage, ...s, rate: s.n ? s.firstCorrect / s.n : null }));
 }
 
+/** Resumen por clase: dónde el programa resulta más fácil o más difícil. */
+export function lessonSummary(items: ItemStats[]) {
+  const byLesson = new Map<string, { n: number; firstCorrect: number; withHints: number; flagged: number }>();
+  for (const item of items) {
+    const s = byLesson.get(item.lessonId) ?? { n: 0, firstCorrect: 0, withHints: 0, flagged: 0 };
+    s.n += item.n;
+    s.firstCorrect += item.firstCorrect;
+    s.withHints += item.withHints;
+    if (item.flags.length) s.flagged++;
+    byLesson.set(item.lessonId, s);
+  }
+  return [...byLesson]
+    .map(([lessonId, s]) => ({ lessonId, ...s, rate: s.n ? s.firstCorrect / s.n : null }))
+    .sort((a, b) => (a.rate ?? 1) - (b.rate ?? 1));
+}
+
+/**
+ * Datos de calibración para el repaso diario: solo preguntas con al menos
+ * `minResponses` primeras respuestas. Devuelve el módulo TypeScript listo
+ * para `functions/src/learning/calibrationData.ts`.
+ */
+export function calibrationData(items: ItemStats[], minResponses: number, generatedAt: string): CalibrationData {
+  const entries = items
+    .filter((i) => i.n >= minResponses)
+    .sort((a, b) => a.lessonId.localeCompare(b.lessonId) || a.questionId.localeCompare(b.questionId))
+    .map((i) => [`${i.lessonId}|${i.questionId}`, { n: i.n, p: Math.round((i.firstCorrect / i.n) * 1000) / 1000 }] as const);
+  return { generatedAt, minResponses, items: Object.fromEntries(entries) };
+}
+
+export function calibrationModule(data: CalibrationData): string {
+  return [
+    "/* Archivo generado por `npm run analisis:items -- --calibracion <ruta>` a",
+    " * partir de `learningEvidence` (solo agregados, sin datos personales). Para",
+    " * actualizarlo, copia el archivo generado aquí y publica en un PR.",
+    " * Vacío = el repaso diario rota los problemas sin datos de dificultad. */",
+    'import type { CalibrationData } from "./calibration";',
+    "",
+    `export const CALIBRATION: CalibrationData = ${JSON.stringify(data, null, 2)};`,
+    "",
+  ].join("\n");
+}
+
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
 /** Informe legible (Markdown) sin datos personales: solo agregados. */
@@ -169,6 +212,12 @@ export function itemReportMarkdown(items: ItemStats[], profiles: number, generat
     "| Etapa | Primeras respuestas | Correctas al primer intento |",
     "| --- | --- | --- |",
     ...stageSummary(items).map((s) => `| ${s.stage} | ${s.n} | ${pct(s.firstCorrect, s.n)} |`),
+    "",
+    "## Por clase (de la más difícil a la más fácil)",
+    "",
+    "| Clase | Primeras respuestas | Correctas al primer intento | Con pistas | Preguntas con alertas |",
+    "| --- | --- | --- | --- | --- |",
+    ...lessonSummary(items).map((s) => `| ${s.lessonId} | ${s.n} | ${pct(s.firstCorrect, s.n)} | ${pct(s.withHints, s.n)} | ${s.flagged} |`),
     "",
     "## Preguntas con alertas",
     "",

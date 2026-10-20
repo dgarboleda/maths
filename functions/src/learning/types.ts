@@ -78,7 +78,10 @@ export type Visual =
   | "transform"
   | "interest"
   | "sequence"
-  | "distance";
+  | "distance"
+  | "vertex"
+  | "solids"
+  | "two-way";
 export type UnitId =
   | "numeros"
   | "fracciones"

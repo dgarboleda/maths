@@ -248,6 +248,8 @@ test("los gráficos dinámicos de la clase responden, son accesibles y caben en 
     ["interes-compuesto", /el compuesto da 593,74 soles más/],
     ["progresiones", /Primeros 8 términos: 2, 5, 8/],
     ["distancia-punto-medio", /A\(−3, −2\) y B\(3, 6\)/],
+    ["funcion-cuadratica", /Parábola y = \(x − 2\)² − 3, abre hacia arriba/],
+    ["volumen-conos-esferas", /Radio 3 cm y altura 6 cm/],
   ] as const) {
     await page.goto(`/jugar/${childId}/aprende/${lessonId}`);
     await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
@@ -262,6 +264,16 @@ test("los gráficos dinámicos de la clase responden, son accesibles y caben en 
     const results = await new AxeBuilder({ page }).include("main").analyze();
     expect(results.violations).toEqual([]);
   }
+  // La tabla de doble entrada no es un gráfico: se lee como tabla y recalcula.
+  await page.goto(`/jugar/${childId}/aprende/probabilidad-condicional`);
+  await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+  const explore = page.getByRole("region", { name: "Explora la idea" });
+  await expect(explore.getByText("P(vóley | 5.°) = 14/20 = 0,7")).toBeVisible();
+  await explore.getByRole("slider", { name: /5\.° · vóley/ }).press("ArrowRight");
+  await expect(explore.getByText("P(vóley | 5.°) = 15/21 = 0,71")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await explore.screenshot({ path: test.info().outputPath("probabilidad-condicional.png") });
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
 });
 
 test("los puntos de los gráficos se arrastran con el puntero y actualizan el modelo", async ({

@@ -7,6 +7,7 @@
  * Uso:
  *   npm run functions:build
  *   FIREBASE_PROJECT_ID=<proyecto> npm run analisis:items -- [--desde 2026-10-01] [--salida informes] [--minimo 10]
+ *     [--calibracion informes/calibrationData.ts] [--minimo-calibracion 30]
  * Credenciales: Application Default Credentials (`gcloud auth application-default login`)
  * o FIRESTORE_EMULATOR_HOST para el emulador.
  */
@@ -63,3 +64,9 @@ writeFileSync(csv, analysis.itemReportCsv(items));
 const flagged = items.filter((i) => i.flags.length).length;
 console.log(`${events.length} eventos de ${profiles.size} perfiles · ${items.length} preguntas · ${flagged} con alertas.`);
 console.log(`Informe: ${md}\nDatos: ${csv}`);
+const calibrationPath = arg("calibracion");
+if (calibrationPath) {
+  const data = analysis.calibrationData(items, Number(arg("minimo-calibracion", "30")), stamp);
+  writeFileSync(calibrationPath, analysis.calibrationModule(data));
+  console.log(`Calibración: ${Object.keys(data.items).length} preguntas con datos suficientes → ${calibrationPath}`);
+}

@@ -1,6 +1,8 @@
 import { CONTENT_VERSION } from "./defineLesson";
 import { getLesson, LESSONS } from "./catalog";
 import { independent, LearningError } from "./engine";
+import { dailyTarget, pickCalibrated, type CalibrationData } from "./calibration";
+import { CALIBRATION } from "./calibrationData";
 import { summarizeMisconceptions, type EvidenceEvent } from "./diagnosis";
 import { isAnswerCorrect } from "./questions";
 import type { DailyReviewState, DailyStreak, LearningAction, Lesson, Question, ResponseEvidence } from "./types";
@@ -138,6 +140,7 @@ export function planDaily(
   support: Set<string>,
   now: number,
   focus: Map<string, number | null> = new Map(),
+  calibration: CalibrationData["items"] = CALIBRATION.items,
 ): DailyReviewState["items"] {
   const entry = (id: string) => state.schedule[id];
   const focused = eligible.filter((id) => focus.has(id));
@@ -158,6 +161,7 @@ export function planDaily(
     lessons.push(queue.splice(i < 0 ? 0 : i, 1)[0]);
   }
   const used = new Map<string, number>();
+  const chosen = new Map<string, string[]>();
   return lessons.map((lesson) => {
     const bank = pool(lesson),
       k = used.get(lesson.id) ?? 0;
@@ -167,9 +171,18 @@ export function planDaily(
     // Con un error que se repite, una forma de la misma tarea para atacarlo.
     const task = focus.get(lesson.id);
     const targeted = task === undefined || task === null ? [] : bank.filter((q) => q.task === task);
-    if (targeted.length && k === 0)
-      return { lessonId: lesson.id, questionId: targeted[turn % targeted.length].id, focus: true };
-    const question = bank[turn % bank.length];
+    if (targeted.length && k === 0) {
+      const question = targeted[turn % targeted.length];
+      chosen.set(lesson.id, [question.id]);
+      return { lessonId: lesson.id, questionId: question.id, focus: true };
+    }
+    // Entre los próximos tres de la rotación, el de dificultad observada más
+    // cercana al objetivo de su caja (sin datos: el primero, como siempre).
+    const taken = new Set(chosen.get(lesson.id) ?? []);
+    const options = [0, 1, 2].map((i) => bank[(turn + i) % bank.length]).filter((q) => !taken.has(q.id));
+    const question = pickCalibrated(options.length ? options : [bank[turn % bank.length]], lesson.id,
+      dailyTarget(entry(lesson.id)?.box ?? 0), calibration);
+    chosen.set(lesson.id, [...taken, question.id]);
     return { lessonId: lesson.id, questionId: question.id };
   });
 }
