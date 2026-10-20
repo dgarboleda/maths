@@ -127,7 +127,7 @@ export function AvatarPickerDialog({ parentId, child, onClose, onSaved }: { pare
                     )}
                   </div>
                   <span className="truncate text-[11px] font-bold text-slate-200">{avatar.label}</span>
-                  {saving === avatar.id && <span className="text-[10px] text-slate-400">Guardando…</span>}
+                  {saving === avatar.id && <span className="text-xs text-slate-400">Guardando…</span>}
                 </button>
               );
             })}

@@ -201,7 +201,7 @@ export function LinearVisual({ id }: { id: string }) {
             <path d={curve(f, [-1, 5], s, 2)} className="fill-none stroke-cyan-300" strokeWidth={2.5} />
             {/* Triángulo de pendiente: avanzar 1 y subir (o bajar) la pendiente. */}
             <path d={`M${s.sx(1)},${s.sy(f(1))} H${s.sx(2)} V${s.sy(f(2))}`} className="fill-none stroke-amber-300" strokeWidth={2} strokeDasharray="4 3" />
-            <text x={s.sx(1.5)} y={s.sy(f(1)) + (slope >= 0 ? 12 : -5)} textAnchor="middle" className="fill-amber-200 text-[10px]">+1</text>
+            <text x={s.sx(1.5)} y={s.sy(f(1)) + (slope >= 0 ? 12 : -5)} textAnchor="middle" className="fill-amber-200 text-[12px]">+1</text>
             <text x={s.sx(2) + 4} y={(s.sy(f(1)) + s.sy(f(2))) / 2 + 3} className="fill-amber-200 text-[11px]">{slope >= 0 ? "+" : ""}{num(slope)}</text>
             <Handle x={s.sx(0)} y={s.sy(intercept)} className="fill-rose-300"
               onDrag={(_, py) => setIntercept(snap(s.iy(py), -5, 10))} />

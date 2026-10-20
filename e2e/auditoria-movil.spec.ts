@@ -219,8 +219,8 @@ test("auditoría móvil · pantallas generales", async ({ page }, testInfo) => {
   const report: { screen: string; findings: Finding[]; axe: string[] }[] = [];
   let shot = 0;
   const audit = async (screen: string) => {
-    await page.waitForLoadState("networkidle").catch(() => {});
-    await page.waitForTimeout(400);
+    // Firestore mantiene conexiones abiertas: «networkidle» nunca llega.
+    await page.waitForTimeout(1500);
     const findings = await measure(page);
     const axe = (await new AxeBuilder({ page }).include("main").analyze()).violations.map(
       (v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(" | ")}`,
@@ -235,6 +235,8 @@ test("auditoría móvil · pantallas generales", async ({ page }, testInfo) => {
     await page.goto(path);
     await audit(`familia ${path}`);
   }
+  // Volver a la elección de perfil, donde empieza el acceso del estudiante.
+  await page.goto("/perfiles");
   const childId = await entrarAlEspacio(page, profile.nombre, profile.pin);
   await sembrarClasesTerminadas(correo, childId, ["enteros-recta", "enteros-suma-resta", "razones"]);
   const base = `/jugar/${childId}`;

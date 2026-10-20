@@ -33,6 +33,7 @@ export function lessonArcadeState(exercise: LessonExercise | undefined) {
 /** Tamaño del enunciado en los minijuegos: los problemas con contexto son
  *  largos y, con la letra grande, empujan el tablero fuera de la pantalla. */
 export function gamePromptSize(prompt: string): string {
+  if (prompt.length > 180) return "text-base sm:text-lg";
   return prompt.length > 110 ? "text-lg sm:text-xl" : prompt.length > 60 ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl";
 }
 

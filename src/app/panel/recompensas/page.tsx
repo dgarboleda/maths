@@ -156,7 +156,7 @@ export default function RecompensasPage() {
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="mb-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white"
+              className="mb-3 min-h-11 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white"
             >
               Registrar solicitud de canje
             </button>
