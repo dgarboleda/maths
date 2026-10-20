@@ -27,6 +27,9 @@ import {
   InterestVisual,
   SequenceVisual,
   DistanceVisual,
+  VertexVisual,
+  SolidsVisual,
+  TwoWayVisual,
   TrigVisual,
 } from "./AdvancedVisuals";
 
@@ -197,6 +200,9 @@ const OWN_VISUALS: Partial<Record<Visual, (props: { id: string }) => React.JSX.E
   interest: InterestVisual,
   sequence: SequenceVisual,
   distance: DistanceVisual,
+  vertex: VertexVisual,
+  solids: SolidsVisual,
+  "two-way": TwoWayVisual,
 };
 
 export function LearningVisual({ kind }: { kind: Visual }) {

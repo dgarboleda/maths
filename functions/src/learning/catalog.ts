@@ -22,7 +22,14 @@ import {
   TRANSFORMATION_LESSONS,
   TRIGONOMETRY_LESSONS,
 } from "./upperGrades";
-import { COORDINATE_LESSONS, INTEREST_LESSONS, SEQUENCE_LESSONS } from "./advancedTopics";
+import {
+  CONDITIONAL_LESSONS,
+  COORDINATE_LESSONS,
+  INTEREST_LESSONS,
+  QUADRATIC_FUNCTION_LESSONS,
+  SEQUENCE_LESSONS,
+  SOLID_LESSONS,
+} from "./advancedTopics";
 import type { Lesson, UnitId } from "./types";
 
 export const LEARNING_UNITS = [
@@ -75,6 +82,7 @@ export const LESSONS: Lesson[] = [
   ...EXPRESSION_LESSONS,
   ...SEQUENCE_LESSONS,
   ...QUADRATIC_LESSONS,
+  ...QUADRATIC_FUNCTION_LESSONS,
   ...SYSTEM_LESSONS,
   ...EXPONENTIAL_LESSONS,
   ...ANGLE_LESSONS,
@@ -82,10 +90,12 @@ export const LESSONS: Lesson[] = [
   ...SIMILARITY_LESSONS,
   ...TRANSFORMATION_LESSONS,
   ...COORDINATE_LESSONS,
+  ...SOLID_LESSONS,
   ...TRIGONOMETRY_LESSONS,
   ...DATA_LESSONS,
   ...SPREAD_LESSONS,
   ...COUNTING_LESSONS,
+  ...CONDITIONAL_LESSONS,
 ];
 export function getLesson(id: string): Lesson | undefined {
   return LESSONS.find((lesson) => lesson.id === id);

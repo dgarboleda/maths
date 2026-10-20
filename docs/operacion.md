@@ -19,6 +19,8 @@ No lo rotes sin plan: los hashes v2 dejarían de coincidir y habría que restabl
 
 **Migración:** los enlaces anteriores (sin clave) dejan de funcionar y muestran que hay que pedir uno nuevo. Al publicar, avisa a las familias de que vuelvan a compartir el enlace desde Ajustes. El contrato de los callables cambió: Functions y Worker anuncian el **protocolo 4** y deben desplegarse desde la misma revisión.
 
+**Tres clases más y calibración del repaso (protocolo 12):** Functions conoce `funcion-cuadratica`, `volumen-conos-esferas` y `probabilidad-condicional` (49 clases). El repaso diario elige problemas con `calibrationData.ts` (vacío hasta que haya datos: sin cambio de comportamiento). Sin migración. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 12.
+
 **Rachas, errores en el repaso y tres clases nuevas (protocolo 11):** Functions conoce `interes-compuesto`, `progresiones` y `distancia-punto-medio` (46 clases), y el repaso diario lee las últimas 300 respuestas del perfil al empezar (consulta por `createdAt`, índice automático) para priorizar errores que se repiten; guarda la racha en `learningProgress/diario`. Sin migración. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 11.
 
 **Repaso espaciado diario (protocolo 10):** Functions acepta `lessonId: "diario"` (acciones `begin`, `answer`, `hint` y `next`; `reveal` se rechaza), decide qué clases entran leyendo el avance y la ubicación del perfil, y guarda la agenda en `learningProgress/diario`. La primera sesión terminada de cada día de Lima da 2 estrellas. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 10.
@@ -42,6 +44,8 @@ gcloud iam service-accounts add-iam-policy-binding maths-analisis@$PROJECT.iam.g
   --role roles/iam.workloadIdentityUser \
   --member "principalSet://iam.googleapis.com/projects/$NUM/locations/global/workloadIdentityPools/github/attribute.repository/dgarboleda/maths"
 ```
+
+**Calibrar con los datos.** El flujo genera además `informes/calibrationData.ts` (también en local con `--calibracion informes/calibrationData.ts [--minimo-calibracion 30]`). Para aplicarlo: revisa el informe (sección «Por clase» y alertas), copia el archivo a `functions/src/learning/calibrationData.ts`, abre un PR (las pruebas del catálogo y del repaso deben pasar) y despliega frontend y Functions desde la misma revisión. Las alertas «muy difícil», «errores no previstos» y «respuesta frecuente no prevista» se corrigen editando la pregunta (enunciado, opciones o `errors`), no con la calibración.
 
 Valores de las variables: `GCP_WORKLOAD_IDENTITY_PROVIDER = projects/<NUM>/locations/global/workloadIdentityPools/github/providers/maths` y `GCP_ANALYSIS_SERVICE_ACCOUNT = maths-analisis@<proyecto>.iam.gserviceaccount.com`. La cuenta solo lee Firestore; la condición del proveedor limita el acceso a este repositorio. Los artefactos de un repositorio público son descargables por usuarios con acceso de lectura: el informe solo contiene agregados por pregunta y el número de perfiles.
 
