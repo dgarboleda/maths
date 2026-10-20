@@ -24,12 +24,15 @@ const BUTTON_CLASS =
 export function TouchDPad({
   onMove,
   inline = false,
+  repeat = true,
 }: {
   onMove: (dx: number, dy: number) => void;
   /** En flujo, debajo del tablero (minijuegos), en vez de flotar sobre una
    *  escena a pantalla completa: superpuesto tapaba la cuadrícula y el
    *  enunciado. */
   inline?: boolean;
+  /** Desactivar en juegos donde cada pulsación debe mover un solo casillero. */
+  repeat?: boolean;
 }) {
   const timerRef = useRef<number | null>(null);
   // La repetición llama siempre a la versión más reciente: con un cierre
@@ -48,7 +51,7 @@ export function TouchDPad({
   function start(dx: number, dy: number) {
     stop();
     onMoveRef.current(dx, dy);
-    timerRef.current = window.setInterval(() => onMoveRef.current(dx, dy), REPEAT_MS);
+    if (repeat) timerRef.current = window.setInterval(() => onMoveRef.current(dx, dy), REPEAT_MS);
   }
 
   useEffect(() => stop, []); // limpia el intervalo si el D-pad se desmonta con un botón presionado

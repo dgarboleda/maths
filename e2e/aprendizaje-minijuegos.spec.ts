@@ -230,3 +230,75 @@ test("Cajas: por turnos, la caja empujada hasta el camión es la respuesta", asy
   expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
   await expect(page.getByRole("heading", { name: "¡Caja entregada!" })).toBeVisible();
 });
+
+test("Laberinto en móvil: un toque es un paso, el fantasma espera y pisar un número guarda su valor", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "móvil", "Recorrido de los controles táctiles del laberinto.");
+  test.setTimeout(180_000);
+  const question = await conceptThenNumeric(page, "fraccion-cantidad", "numberpac");
+  const board = page.locator("main [data-numberpac-board]");
+  let direction: "derecha" | "abajo" | undefined;
+  // Busca una salida sin número para observar al fantasma antes de responder.
+  for (let attempt = 0; attempt < 8; attempt++) {
+    await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+    const right = board.locator('[data-cell-x="1"][data-cell-y="0"]');
+    const down = board.locator('[data-cell-x="0"][data-cell-y="1"]');
+    if ((await right.getAttribute("data-value")) === null) direction = "derecha";
+    else if ((await down.getAttribute("data-value")) === null) direction = "abajo";
+    if (direction) break;
+    await page.reload();
+  }
+  expect(direction).toBeDefined();
+  await expect(board.locator(":scope > div")).toHaveCount(25);
+  let answers = 0;
+  page.on("request", (request) => {
+    if (request.url().endsWith("/recordLearningAction") && request.postDataJSON()?.data?.action?.kind === "answer") answers++;
+  });
+  await page.waitForTimeout(1200);
+  await expect(board).toHaveAttribute("data-ghost-x", "4");
+  await expect(board).toHaveAttribute("data-ghost-y", "4");
+  const button = page.getByRole("button", { name: direction === "derecha" ? "Mover a la derecha" : "Mover abajo", exact: true });
+  await button.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  const box = await button.boundingBox();
+  expect(box).not.toBeNull();
+  const touch = await page.context().newCDPSession(page);
+  await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 }] });
+  await page.waitForTimeout(500); // mantener pulsado tampoco repite
+  await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect(board).toHaveAttribute("data-player-x", direction === "derecha" ? "1" : "0");
+  await expect(board).toHaveAttribute("data-player-y", direction === "abajo" ? "1" : "0");
+  await expect(board).not.toHaveAttribute("data-ghost-y", "4", { timeout: 8000 });
+  expect(answers).toBe(0);
+  await page.screenshot({ path: testInfo.outputPath("laberinto-movil-tablero.png"), fullPage: true });
+  const state = await board.evaluate((element) => ({
+    x: Number(element.getAttribute("data-player-x")), y: Number(element.getAttribute("data-player-y")),
+    gx: Number(element.getAttribute("data-ghost-x")), gy: Number(element.getAttribute("data-ghost-y")),
+    numbers: [...element.querySelectorAll("[data-value]")].map((cell) => ({ x: Number(cell.getAttribute("data-cell-x")), y: Number(cell.getAttribute("data-cell-y")), value: cell.getAttribute("data-value")! })),
+  }));
+  type Point = { x: number; y: number };
+  const queue: { cell: Point; path: Point[] }[] = [{ cell: state, path: [] }];
+  const seen = new Set([`${state.x},${state.y}`]);
+  let path: Point[] = [], chosen: string | undefined;
+  while (queue.length) {
+    const next = queue.shift()!;
+    const number = state.numbers.find((n) => n.x === next.cell.x && n.y === next.cell.y);
+    if (number) { path = next.path; chosen = number.value; break; }
+    for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+      const cell = { x: next.cell.x + dx, y: next.cell.y + dy }, key = `${cell.x},${cell.y}`;
+      if (cell.x < 0 || cell.x > 4 || cell.y < 0 || cell.y > 4 || seen.has(key) || (cell.x === state.gx && cell.y === state.gy)) continue;
+      seen.add(key); queue.push({ cell, path: [...next.path, cell] });
+    }
+  }
+  expect(chosen).toBeDefined();
+  const saved = savedAnswer(page);
+  let position: Point = state;
+  for (const cell of path) {
+    const name = cell.x > position.x ? "Mover a la derecha" : cell.x < position.x ? "Mover a la izquierda" : cell.y > position.y ? "Mover abajo" : "Mover arriba";
+    await page.getByRole("button", { name, exact: true }).tap();
+    position = cell;
+  }
+  const result = (await (await saved).json()).result;
+  expect(result.progress.responses[`practice:${question.id}`]).toMatchObject({ response: chosen, attempts: 1 });
+  expect(result.stars).toBe(0);
+  expect(answers).toBe(1);
+  await page.screenshot({ path: testInfo.outputPath("laberinto-movil.png"), fullPage: true });
+});

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { NumberPacGeneric } from "./NumberPacGeneric";
+import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import * as problemModule from "@/lib/problem";
 
 /**
@@ -10,10 +11,6 @@ import * as problemModule from "@/lib/problem";
  * fila) coloca los pellets de forma determinística: la celda libre
  * inmediatamente adyacente al jugador siempre es una de las elegidas.
  *
- * El cambio de dirección acá es un `ref` (`dirRef`), no estado — igual que
- * en `SnakeGeneric` — así que, a diferencia de `FroggerGeneric`/
- * `RunnerGeneric`, un `keydown` sobre `window` NO necesita `act()`
- * asíncrono para surtir efecto en el próximo tick.
  */
 vi.mock("@/lib/gameSound", () => ({ playSound: () => {} }));
 vi.mock("@/lib/confetti", () => ({ triggerConfetti: () => {} }));
@@ -35,29 +32,11 @@ vi.mock("@/lib/problem", async (importOriginal) => {
   return { ...actual, shuffle: (arr: unknown[]) => arr, choiceSet: vi.fn() };
 });
 
-function fireKey(code: string) {
-  window.dispatchEvent(new KeyboardEvent("keydown", { code }));
+async function fireKey(code: string) {
+  await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { code })); });
 }
 
-/** Avanza el tiempo falso en varias llamadas separadas — cada llamada a
- *  `advanceTimersByTimeAsync` dispara un solo frame de
- *  `requestAnimationFrame` bajo timers falsos (lección de Fase 37/38). */
-async function advanceMs(totalMs: number, stepMs = 500) {
-  for (let elapsed = 0; elapsed < totalMs; elapsed += stepMs) {
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(stepMs);
-    });
-  }
-}
-
-/**
- * Avanza en pasos chicos y corta apenas `predicate()` da `true` — evita
- * pasarse de largo cuando no se puede predecir con precisión cuántos ticks
- * (del jugador y del fantasma, que corren a ritmos distintos) caben en una
- * ventana fija: con un jugador/fantasma moviéndose de forma continua,
- * "cuánto tiempo hace falta para exactamente un evento" no es fácil de
- * acertar a mano — cortar en cuanto ocurre sí lo es.
- */
+/** Espera al fantasma con pasos cortos y se detiene en el primer evento. */
 async function advanceUntil(predicate: () => boolean, maxMs = 15000, stepMs = 100) {
   for (let elapsed = 0; elapsed < maxMs; elapsed += stepMs) {
     await act(async () => {
@@ -103,7 +82,7 @@ describe("NumberPacGeneric", () => {
     const { container } = render(<NumberPacGeneric moduleId="test-module" soundOn={false} onAnswer={onAnswer} onWin={onWin} />);
     fireEvent.click(screen.getByText("¡Empezar!"));
 
-    fireKey("ArrowRight"); // la celda (1,0), adyacente al jugador, siempre es un pellet
+    await fireKey("ArrowRight"); // la celda (1,0), adyacente al jugador, siempre es un pellet
     await advanceUntil(() => onAnswer.mock.calls.length >= 1);
 
     expect(onAnswer).toHaveBeenCalledTimes(1);
@@ -122,14 +101,8 @@ describe("NumberPacGeneric", () => {
     const { container } = render(<NumberPacGeneric moduleId="test-module" soundOn={false} onAnswer={onAnswer} onWin={onWin} />);
     fireEvent.click(screen.getByText("¡Empezar!"));
 
-    // El fantasma arranca en la esquina opuesta y rebota solo en su propia
-    // fila (columna variable, fila fija) — bajar hasta esa fila en la misma
-    // columna de partida (x=0) no cruza ningún pellet (todos aparecen en la
-    // fila 0 en la primera ronda), y tarde o temprano el fantasma pasa por
-    // x=0 en su rebote. Se corta apenas ocurre la primera colisión: el
-    // jugador y el fantasma se mueven a ritmos distintos y no es predecible
-    // a mano cuántos ticks de cada uno caben en una ventana fija.
-    fireKey("ArrowDown");
+    // Baja por la columna libre, sin recoger números, y espera a la patrulla.
+    for (let i = 0; i < 4; i++) await fireKey("ArrowDown");
     await advanceUntil(() => !container.textContent?.includes("Vidas: 3"));
 
     expect(onWin).not.toHaveBeenCalled();
@@ -145,8 +118,7 @@ describe("NumberPacGeneric", () => {
     render(<NumberPacGeneric moduleId="test-module" soundOn={false} onAnswer={onAnswer} onWin={onWin} onGameOver={onGameOver} />);
     fireEvent.click(screen.getByText("¡Empezar!"));
 
-    fireKey("ArrowRight");
-    await advanceMs(10000);
+    for (let i = 0; i < 3; i++) await fireKey("ArrowRight");
 
     expect(screen.getByText("¡Buen intento!")).toBeInTheDocument();
     expect(onWin).not.toHaveBeenCalled();
@@ -162,12 +134,79 @@ describe("NumberPacGeneric", () => {
     render(<NumberPacGeneric moduleId="test-module" soundOn={false} onAnswer={onAnswer} onWin={onWin} onGameOver={onGameOver} />);
     fireEvent.click(screen.getByText("¡Empezar!"));
 
-    fireKey("ArrowRight");
-    await advanceMs(10000);
+    for (let i = 0; i < 3; i++) await fireKey("ArrowRight");
 
     expect(onWin).toHaveBeenCalledTimes(1);
     expect(onGameOver).toHaveBeenCalledWith(3);
     expect(onAnswer.mock.calls.every(([correct]) => correct === true)).toBe(true);
     expect(screen.getByText("¡Laberinto resuelto!")).toBeInTheDocument();
   });
+  test("una flecha mueve exactamente un casillero y el personaje no avanza solo", async () => {
+    vi.useFakeTimers();
+    mockAllCorrect();
+    const { container } = render(<NumberPacGeneric moduleId="test-module" soundOn={false} onAnswer={vi.fn(async () => 0)} />);
+    fireEvent.click(screen.getByText("¡Empezar!"));
+    const board = container.querySelector("[data-numberpac-board]")!;
+    await fireKey("ArrowDown");
+    expect(board).toHaveAttribute("data-player-y", "1");
+    await advanceUntil(() => false, 1000, 100);
+    expect(board).toHaveAttribute("data-player-y", "1");
+    await fireKey("ArrowDown");
+    expect(board).toHaveAttribute("data-player-y", "2");
+  });
+
+  test("el fantasma espera un paso válido y después patrulla otras filas", async () => {
+    vi.useFakeTimers();
+    mockAllCorrect();
+    const { container } = render(<NumberPacGeneric moduleId="test-module" soundOn={false} onAnswer={vi.fn(async () => 0)} />);
+    fireEvent.click(screen.getByText("¡Empezar!"));
+    const board = container.querySelector("[data-numberpac-board]")!;
+    await advanceUntil(() => false, 3000, 100);
+    expect(board).toHaveAttribute("data-ghost-x", "4");
+    expect(board).toHaveAttribute("data-ghost-y", "4");
+    await fireKey("ArrowLeft"); // la pared no es un primer paso
+    await advanceUntil(() => false, 1000, 100);
+    expect(board).toHaveAttribute("data-ghost-x", "4");
+    await fireKey("ArrowDown");
+    await advanceUntil(() => board.getAttribute("data-ghost-y") !== "4");
+    expect(board).toHaveAttribute("data-ghost-y", "3");
+    expect(board).toHaveAttribute("data-ghost-x", "0");
+  });
+
+  test("pisar un número envía ese valor una sola vez, también con varios toques rápidos", async () => {
+    vi.useFakeTimers();
+    const onResponse = vi.fn(() => new Promise<boolean>(() => {}));
+    const exercise: LessonExercise = {
+      problem: { id: "q", kind: "lesson-practice", prompt: "De −5 a 3, ¿cuánto subió?", answer: 8, difficulty: 1, inputType: "integer", choices: [8, 7, 9, 10, 2] },
+      onResponse, solved: false, paused: false, disabled: false, timed: false, input: null,
+    };
+    const { container } = render(<NumberPacGeneric moduleId="test-module" soundOn={false} onAnswer={vi.fn(async () => 0)} exercise={exercise} />);
+    fireEvent.click(screen.getByText("¡Empezar!"));
+    const tile = container.querySelector('[data-cell-x="1"][data-cell-y="0"]')!;
+    expect(tile).toHaveTextContent("8");
+    await fireKey("ArrowRight");
+    await fireKey("ArrowRight");
+    expect(onResponse).toHaveBeenCalledExactlyOnceWith(8);
+    const board = container.querySelector("[data-numberpac-board]")!;
+    expect(board).toHaveAttribute("data-player-x", "1");
+    expect(tile).toHaveTextContent("🟡");
+    await advanceUntil(() => false, 2000, 100);
+    expect(onResponse).toHaveBeenCalledTimes(1);
+  });
+
+  test("mantener un botón táctil no duplica el paso ni la respuesta", async () => {
+    vi.useFakeTimers();
+    mockAllCorrect();
+    const onAnswer = vi.fn(async () => 0);
+    const { container } = render(<NumberPacGeneric moduleId="test-module" soundOn={false} onAnswer={onAnswer} />);
+    fireEvent.click(screen.getByText("¡Empezar!"));
+    const right = screen.getByRole("button", { name: "Mover a la derecha" });
+    await act(async () => { fireEvent.pointerDown(right); });
+    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(true);
+    await advanceUntil(() => false, 1000, 100);
+    fireEvent.pointerUp(right);
+    expect(onAnswer).toHaveBeenCalledTimes(1);
+    expect(container.querySelector("[data-numberpac-board]")).toHaveAttribute("data-player-x", "1");
+  });
+
 });

@@ -181,7 +181,7 @@ test("Laberinto: comer un número envía su valor", async () => {
   expect(data.onResponse).not.toHaveBeenCalled();
   expect(screen.getByText(AWAITING_INPUT)).toBeInTheDocument();
   key("ArrowRight");
-  tick(400); // de (0,0) a (1,0), donde está -4
+  // El paso a (1,0), donde está -4, es inmediato.
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-4);
   expect(screen.queryByText(/Vidas/)).not.toBeInTheDocument();
