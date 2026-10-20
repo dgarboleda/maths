@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
@@ -73,25 +73,34 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [sessionSeen, setSessionSeen] = useState<string[]>([]);
+  const sessionSeenRef = useRef<string[]>([]);
   const [preferredIdea, setPreferredIdea] = useState<string>();
+  const [assisted, setAssisted] = useState(false);
   const raw = useSyncExternalStore(subscribeSeen, () => readSeen(childId), () => "[]");
   const seen = new Set([...parseSeen(raw), ...sessionSeen]);
   const novel = help.ideas.find((idea) => idea.symbol && !seen.has(idea.id));
   const id = useId();
+  const markSeen = useCallback((ideaId: string) => {
+    const previous = new Set([...parseSeen(readSeen(childId)), ...sessionSeenRef.current]);
+    if (previous.has(ideaId)) return;
+    const next = [...previous, ideaId].slice(-100);
+    sessionSeenRef.current = next;
+    setSessionSeen(next);
+    try {
+      localStorage.setItem(storageKey(childId), JSON.stringify(next));
+      window.dispatchEvent(new Event("maths-help-seen"));
+    } catch { /* El almacenamiento bloqueado no impide consultar la ayuda. */ }
+  }, [childId]);
   async function show() {
     if (pending.current || disabled) return;
     pending.current = true;
     setBusy(true);
     setError(false);
+    const recordsAssistance = Boolean(onOpen);
     try {
       if (onOpen && !(await onOpen())) { setError(true); return; }
       setPreferredIdea(novel?.id);
-      const next = [...new Set([...seen, ...help.ideas.map((idea) => idea.id)])].slice(-100);
-      setSessionSeen(next);
-      try {
-        localStorage.setItem(storageKey(childId), JSON.stringify(next));
-        window.dispatchEvent(new Event("maths-help-seen"));
-      } catch { /* El modo privado o el almacenamiento lleno no bloquean la ayuda. */ }
+      setAssisted(recordsAssistance);
       onChange(true);
     } catch { setError(true); } finally { pending.current = false; setBusy(false); }
   }
@@ -116,13 +125,13 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
         </button>
         {onOpen && <span id={`${id}-warning`} className="sr-only">Consultar cuenta como ayuda en esta comprobación.</span>}
       </div>
-      {open && createPortal(<HelpPanel id={id} help={help} preferredIdea={preferredIdea} onClose={close} assisted={Boolean(onOpen)} />, document.body)}
+      {open && createPortal(<HelpPanel id={id} help={help} preferredIdea={preferredIdea} onClose={close} assisted={assisted} onIdeaSeen={markSeen} />, document.body)}
     </>
   );
 }
 
-function HelpPanel({ id, help, preferredIdea, onClose, assisted }: {
-  id: string; help: ScreenHelp; preferredIdea?: string; onClose: () => void; assisted: boolean;
+function HelpPanel({ id, help, preferredIdea, onClose, assisted, onIdeaSeen }: {
+  id: string; help: ScreenHelp; preferredIdea?: string; onClose: () => void; assisted: boolean; onIdeaSeen: (id: string) => void;
 }) {
   const { dialogRef, handleKeyDown } = useDialogFocus(onClose);
   const ideas = [...help.ideas.filter((idea) => idea.id === preferredIdea), ...help.ideas.filter((idea) => idea.id !== preferredIdea)];
@@ -136,7 +145,9 @@ function HelpPanel({ id, help, preferredIdea, onClose, assisted }: {
           <button type="button" aria-label="Cerrar explicación" className={styles.close} onClick={onClose}><X size={20} aria-hidden="true" /></button>
         </header>
         <p id={`${id}-description`} className={styles.description}>{help.description}</p>
-        {ideas.map((idea, index) => <details key={idea.id} className={styles.idea} open={index === 0 ? true : undefined}>
+        {ideas.map((idea, index) => <details key={idea.id} className={styles.idea} open={index === 0 ? true : undefined}
+          ref={(element) => { if (element?.open) onIdeaSeen(idea.id); }}
+          onToggle={(event) => { if (event.currentTarget.open) onIdeaSeen(idea.id); }}>
           <summary>{idea.symbol && <span className={styles.symbol} aria-hidden="true">{idea.symbol}</span>}{idea.title}</summary>
           <p>{idea.meaning}</p>
           {idea.example && <p className={styles.example}><strong>Por ejemplo:</strong> {idea.example}</p>}

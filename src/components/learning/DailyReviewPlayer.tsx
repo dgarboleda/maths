@@ -71,8 +71,8 @@ export function DailyReviewPlayer({ childId }: { childId: string }) {
     <LearningShell childId={childId} title="Repasar hoy" eyebrow="Repaso espaciado de todas tus clases"
       help={help}
       helpDisabled={mutation.blocked}
-      onHelpOpen={current && help && help.ideas.length > 0 ? async () => !state.responses[current.question.id]?.attempts && !state.responses[current.question.id]?.hintsUsed
-        ? run({ kind: "hint", questionId: current.question.id }) : true : undefined}>
+      onHelpOpen={current && help && help.ideas.length > 0 && !state.responses[current.question.id]?.attempts && !state.responses[current.question.id]?.hintsUsed
+        ? () => run({ kind: "hint", questionId: current.question.id }) : undefined}>
       <div className="max-w-3xl space-y-5">
         <SaveNotice busy={mutation.busy} error={mutation.error} retry={mutation.retry} />
         <h2 ref={heading} tabIndex={-1} className="text-lg font-bold text-cyan-200 outline-none">

@@ -28,6 +28,9 @@ test("el foco explica el primer valor absoluto, recuerda la consulta y guarda la
   const dialog = page.getByRole("dialog", { name: "Una idea, paso a paso" });
   await expect(dialog.getByText(/Las dos barras se leen/)).toBeVisible();
   await expect(dialog.getByText(/\|−4\| = 4 y \|4\| = 4/)).toBeVisible();
+  const consulted = await page.evaluate((id) => JSON.parse(localStorage.getItem(`maths:help:v1:${id}`) ?? "[]"), childId);
+  expect(consulted).toContain("absolute");
+  expect(consulted).not.toContain("negative"); // La segunda definición sigue cerrada.
   expect((await new AxeBuilder({ page }).include('[role="dialog"]').analyze()).violations).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath("foco-valor-absoluto.png"), fullPage: true });
   await page.keyboard.press("Escape");
@@ -53,5 +56,6 @@ test("el foco explica el primer valor absoluto, recuerda la consulta y guarda la
   });
   await trigger.click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByText("Esta consulta cuenta como ayuda en la comprobación. Puedes seguir aprendiendo a tu ritmo.")).toHaveCount(0);
   expect(repeated).toBe(0);
 });

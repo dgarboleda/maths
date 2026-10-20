@@ -105,8 +105,8 @@ export function LessonPlayer({
       eyebrow="Una idea que puedes comprender y usar"
       help={requestedStage && !launched ? undefined : help}
       helpDisabled={mutation.blocked}
-      onHelpOpen={!(requestedStage && !launched) && help.ideas.length > 0 && question && ["diagnostic", "check", "review"].includes(progress.stage)
-        ? async () => helpIsAssistance ? run({ kind: "hint", questionId: question.id }) : true : undefined}
+      onHelpOpen={!(requestedStage && !launched) && help.ideas.length > 0 && question && helpIsAssistance
+        ? () => run({ kind: "hint", questionId: question.id }) : undefined}
     >
       <Link
         href={`/jugar/${childId}/aprende`}

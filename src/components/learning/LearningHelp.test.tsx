@@ -84,3 +84,29 @@ test("la ayuda funciona aunque el navegador bloquee el almacenamiento", async ()
     expect(screen.queryByRole("button", { name: /Qué significa \|x\|/ })).not.toBeInTheDocument();
   } finally { read.mockRestore(); write.mockRestore(); }
 });
+
+test("las definiciones cerradas conservan el aviso de símbolo nuevo hasta que se abren", async () => {
+  const user = userEvent.setup();
+  render(setup({ help: { ...help, ideas: ideasForText("|−6| = 6, √9 y π") } }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  expect(JSON.parse(localStorage.getItem("maths:help:v1:ana")!)).toEqual(["absolute"]);
+  await user.click(screen.getByText("Raíz cuadrada", { selector: "summary" }));
+  await waitFor(() => expect(JSON.parse(localStorage.getItem("maths:help:v1:ana")!)).toEqual(["absolute", "root"]));
+  await user.click(screen.getByRole("button", { name: "Entendido, seguir" }));
+  expect(screen.getByRole("button", { name: /Qué significa π/ })).toBeInTheDocument();
+});
+
+test("confirma la ayuda de esa consulta y no avisa que se registrará otra al volver a abrir", async () => {
+  const user = userEvent.setup();
+  let finish!: (saved: boolean) => void;
+  const guard = vi.fn(() => new Promise<boolean>((resolve) => { finish = resolve; }));
+  const view = render(setup({ onOpen: guard }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  view.rerender(setup()); // La respuesta del servidor ya confirmó la ayuda.
+  await act(async () => finish(true));
+  expect(screen.getByText(/Esta consulta cuenta como ayuda/)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Entendido, seguir" }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  expect(screen.queryByText(/Esta consulta cuenta como ayuda/)).not.toBeInTheDocument();
+  expect(guard).toHaveBeenCalledOnce();
+});

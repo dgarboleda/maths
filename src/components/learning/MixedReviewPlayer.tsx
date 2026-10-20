@@ -91,8 +91,8 @@ export function MixedReviewPlayer({
       eyebrow="Decide qué idea usar en cada problema"
       help={help}
       helpDisabled={mutation.blocked}
-      onHelpOpen={current && help && help.ideas.length > 0 ? async () => !state.responses[current.question.id]?.attempts && !state.responses[current.question.id]?.hintsUsed
-        ? run({ kind: "hint", questionId: current.question.id }) : true : undefined}
+      onHelpOpen={current && help && help.ideas.length > 0 && !state.responses[current.question.id]?.attempts && !state.responses[current.question.id]?.hintsUsed
+        ? () => run({ kind: "hint", questionId: current.question.id }) : undefined}
     >
       <Link
         href={`/jugar/${childId}/aprende#unit-${unit.id}`}
