@@ -217,7 +217,11 @@ test("Bloques: el rebote lateral alcanza la respuesta apuntada y se guarda una s
   const target = labels.indexOf("1/3");
   expect(target).toBeGreaterThanOrEqual(0);
   for (let col = 2; col !== target; col += Math.sign(target - col)) await page.keyboard.press(target > col ? "ArrowRight" : "ArrowLeft");
-  await page.getByRole("button", { name: "Rebote →", exact: true }).click();
+  const shotStyle = page.getByRole("button", { name: "Rebote →", exact: true });
+  await shotStyle.focus();
+  await page.keyboard.press("Space");
+  await expect(shotStyle).toHaveAttribute("aria-pressed", "true");
+  await expect(board).toHaveAttribute("data-held", "true");
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await testInfo.attach("bloques", { body: await page.screenshot(), contentType: "image/png" });
   const answer = savedAnswer(page);

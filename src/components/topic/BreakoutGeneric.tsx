@@ -439,7 +439,8 @@ export function BreakoutGeneric({
             </div>
 
             {lesson && (
-              <div role="group" aria-label="Tipo de tiro" className="flex flex-wrap justify-center gap-2">
+              <div role="group" aria-label="Tipo de tiro" className="flex flex-wrap justify-center gap-2"
+                onKeyDown={(event) => { if (event.code === "Space") event.stopPropagation(); }}>
                 {([["direct", "Directo"], ["left", "Rebote ←"], ["right", "Rebote →"]] as const).map(([style, label]) => <button key={style} type="button" aria-pressed={shotStyle === style} disabled={!held || frozen} onClick={() => setShotStyle(style)} className="min-h-11 rounded-xl border border-violet-400 px-3 text-sm aria-pressed:bg-violet-700 disabled:opacity-50">{label}</button>)}
               </div>
             )}

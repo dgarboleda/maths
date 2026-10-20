@@ -297,6 +297,20 @@ test("Invasión: la pausa congela un disparo y varias pulsaciones solo envían l
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
 });
 
+test("Bloques: espacio sobre un selector de tiro permite su activación nativa sin lanzar", () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const view = render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const button = screen.getByRole("button", { name: "Rebote →" });
+  fireEvent.keyDown(button, { key: " ", code: "Space" });
+  tick(2_000);
+  expect(view.container.querySelector("[data-breakout-board]")).toHaveAttribute("data-held", "true");
+  expect(data.onResponse).not.toHaveBeenCalled();
+  fireEvent.click(button); // Activación que el navegador produce al soltar espacio.
+  expect(button).toHaveAttribute("aria-pressed", "true");
+});
+
 test("Estanque: un salto no se puede repetir durante el vuelo y el cocodrilo sigue mientras esperas en la orilla", () => {
   vi.useFakeTimers();
   const data = exercise();
