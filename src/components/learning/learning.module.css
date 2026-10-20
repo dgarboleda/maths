@@ -5,7 +5,7 @@
     rgb(76 29 149 / 14%),
     transparent 48%
   );
-  padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(11rem + env(safe-area-inset-bottom));
 }
 
 .shell :focus-visible {
@@ -17,7 +17,7 @@
 }
 
 .shell :is(a, button, input, select, textarea, summary) {
-  scroll-margin-bottom: calc(7rem + env(safe-area-inset-bottom));
+  scroll-margin-bottom: calc(11rem + env(safe-area-inset-bottom));
 }
 
 .navigation {
@@ -68,11 +68,11 @@
 
 @media (min-width: 640px) {
   .shell {
-    padding-bottom: 4rem;
+    padding-bottom: 6rem;
   }
 
   .shell :is(a, button, input, select, textarea, summary) {
-    scroll-margin-bottom: 1rem;
+    scroll-margin-bottom: 6rem;
   }
 
   .navigation {

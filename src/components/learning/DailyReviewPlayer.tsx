@@ -34,6 +34,7 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import { QuestionActivity } from "./LessonPlayer";
+import { questionHelp } from "@/lib/learning/screenHelp";
 
 /**
  * Repaso espaciado diario: problemas breves de clases de distintas unidades,
@@ -65,8 +66,13 @@ export function DailyReviewPlayer({ childId }: { childId: string }) {
   const doneToday = state.rewardDay === limaDay(now);
   const streak = streakToday(state, now);
   const focused = current && state.items[state.index]?.focus;
+  const help = current ? questionHelp(current.lesson, current.question) : undefined;
   return (
-    <LearningShell childId={childId} title="Repasar hoy" eyebrow="Repaso espaciado de todas tus clases">
+    <LearningShell childId={childId} title="Repasar hoy" eyebrow="Repaso espaciado de todas tus clases"
+      help={help}
+      helpDisabled={mutation.blocked}
+      onHelpOpen={current && help && help.ideas.length > 0 && !state.responses[current.question.id]?.attempts && !state.responses[current.question.id]?.hintsUsed
+        ? () => run({ kind: "hint", questionId: current.question.id }) : undefined}>
       <div className="max-w-3xl space-y-5">
         <SaveNotice busy={mutation.busy} error={mutation.error} retry={mutation.retry} />
         <h2 ref={heading} tabIndex={-1} className="text-lg font-bold text-cyan-200 outline-none">
