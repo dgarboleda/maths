@@ -24,7 +24,6 @@ import {
   limaDay,
   streakToday,
   PERU_MAP,
-  recommendedLesson,
   STAGE_LABELS,
   type LearningProgress,
   type MixedReviewState,
@@ -43,6 +42,7 @@ import {
 } from "./LearningShell";
 import styles from "./learning.module.css";
 import { Avatar } from "@/components/world/Avatar";
+import { nextStudyLesson, plannedLessonIds } from "@/lib/learning/studyPlan";
 import { getProfileAvatar } from "@/lib/profileAvatars";
 
 export const unitStyles: Record<
@@ -121,11 +121,7 @@ export function LearningHome({
   const reviewedToday = data.daily?.rewardDay === limaDay(now);
   const reviewStreak = streakToday(data.daily, now);
   const streakLabel = reviewStreak.current > 0 ? ` · 🔥 ${reviewStreak.current}` : "";
-  const unfinished = recommendedLesson(
-    new Set(LESSONS.filter((l) => data.progress[l.id]?.completedAt).map((l) => l.id)),
-    placed,
-  );
-  const next = getLesson(active?.lessonId ?? "") ?? unfinished ?? LESSONS[0];
+  const next = nextStudyLesson(data.progress, data.placement, data.child.learningPlan);
   const completed = LESSONS.filter(
     (lesson) => data.progress[lesson.id]?.completedAt,
   ).length;
@@ -296,11 +292,8 @@ export function LearningHome({
                   <span className={unitStyles[unit.id].accent}>
                     0{index + 1}
                   </span>
-                  {unit.id === "fracciones"
-                    ? "Fracciones"
-                    : unit.id === "proporcionalidad"
-                      ? "Proporcionalidad"
-                      : "Álgebra"}
+                  {unit.title}
+
                 </Link>
               ))}
             </nav>
@@ -511,25 +504,10 @@ export function LearningHome({
             ))}
           </div>
         )}
-        <details className="border-t border-slate-800 pt-5 text-sm text-slate-400">
-          <summary className="w-fit cursor-pointer py-3 font-semibold text-slate-300">
-            Más actividades para explorar
-          </summary>
-          <div className="mt-2 flex flex-col items-start gap-2">
-            <Link
-              href={`${base}/mapa`}
-              className="inline-flex min-h-11 items-center py-2 underline underline-offset-4"
-            >
-              Mundos de tu familia y actividades adicionales
-            </Link>
-            <Link
-              href={`${base}/evaluacion`}
-              className="inline-flex min-h-11 items-center py-2 underline underline-offset-4"
-            >
-              Evaluación curricular ampliada · opcional
-            </Link>
-          </div>
-        </details>
+        <div className="border-t border-slate-800 pt-5 text-sm text-slate-300">
+          <Link href={`${base}/mapa`} className={secondaryButton}>Mapa de mi aprendizaje</Link>
+          {plannedLessonIds(data.child.learningPlan).length > 0 && <p className="mt-3">Tu familia ha elegido {plannedLessonIds(data.child.learningPlan).length} clases prioritarias. Sus bases y el resto de clases siguen disponibles.</p>}
+        </div>
       </div>
     </LearningShell>
   );

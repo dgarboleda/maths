@@ -47,7 +47,7 @@ export function WorldMapTab({
   const orphanLevels = levels.filter((l) => !world.nodes.some((n) => n.levelId === l.id));
   // Estado puramente visual: sin niños/progreso real acá, todo se ve como
   // "disponible" salvo lo que ya no tiene desafíos que resolver — no busca
-  // reemplazar el mapa del jugador (`/jugar/{childId}/mapa`), solo dar una
+  // reemplazar el mapa del jugador (`/jugar/{childId}/mapa-anterior`), solo dar una
   // referencia de color mientras se arma el grafo.
   const previewState = worldGraphState(world, Object.fromEntries(levelsById), {}, 0);
 

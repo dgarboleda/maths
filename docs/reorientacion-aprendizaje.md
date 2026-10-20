@@ -2,7 +2,7 @@
 
 ## Propósito y alcance de esta entrega
 
-El acceso principal ofrece un programa incluido de 43 lecciones en 7 unidades, con un repaso mixto y una aventura por unidad, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. El país de referencia es **Perú**: cada clase tiene una correspondencia orientativa con el Currículo Nacional de la Educación Básica (ver [Correspondencia con el CNEB](#correspondencia-con-el-cneb-perú)).
+El acceso principal ofrece un programa incluido de 49 lecciones en 7 unidades, con un repaso mixto y una aventura por unidad, sin evaluación obligatoria ni preparación de niveles por parte de la familia. Público de referencia: adolescentes de 12–17 años que necesitan consolidar fundamentos; la entrada se determina por conocimientos y necesidades, no por edad. El país de referencia es **Perú**: cada clase tiene una correspondencia orientativa con el Currículo Nacional de la Educación Básica (ver [Correspondencia con el CNEB](#correspondencia-con-el-cneb-perú)).
 
 La entrega implementa el producto y los instrumentos del piloto. **No se ha realizado una revisión docente independiente ni un estudio con adolescentes.** El estado editorial de las lecciones es `pending-teacher-review`. Las comprobaciones automáticas verifican contratos, ejemplos de cálculo, accesibilidad, persistencia y reglas; no acreditan eficacia educativa ni una equivalencia oficial de grados o PISA.
 
@@ -35,7 +35,7 @@ El currículo se organiza en siete unidades para estudiantes de 12 a 17 años qu
 
 Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales, un modelo visual manipulable y bancos de tareas. Hay 106 ejemplos desarrollados y 1568 instancias de actividades (32 por lección), organizadas en familias y formas paralelas; ese conteo no equivale a 1568 competencias ni a 1568 problemas de estructura distinta.
 
-**Decisión sobre el catálogo anterior.** Los 67 módulos con generador no se retiran: alimentan los Mundos y niveles que las familias ya construyeron, y la práctica libre. El programa de clases los sustituye como recorrido principal y cada lección enlaza los módulos que cubre (`legacyModuleIds`). Los temas del catálogo anterior que siguen sin clase quedan como práctica: los de primaria (sumas hasta 1000, tablas, valor posicional) no corresponden al público de 12 a 17 años; decimales, notación científica, ángulos, semejanza y ecuaciones cuadráticas ya tienen clase propia.
+**Decisión sobre el catálogo anterior.** Sus módulos y generadores se conservan en el Archivo de actividades anteriores para abrir las creaciones existentes. El recorrido principal y la práctica integrada utilizan las clases y su evidencia actual; `legacyModuleIds` ofrece enlaces de compatibilidad, sin convertir el dominio anterior en nuevas acreditaciones. El mapa educativo se genera automáticamente y la familia puede priorizar clases en Plan de estudio. Véase [Un solo recorrido de aprendizaje](aprendizaje-unificado.md).
 
 ### Repaso mixto por unidad
 

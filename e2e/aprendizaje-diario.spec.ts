@@ -39,4 +39,7 @@ test("repaso diario: entra desde el inicio, cruza unidades y agenda la próxima 
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await page.goto(base);
   await expect(page.getByRole("link", { name: /Repaso de hoy hecho/ })).toBeVisible();
+  await page.goto("/panel");
+  await expect(page.getByRole("region", { name: "Progreso de Alex", exact: true }).getByText(/^1 día de repaso/)).toBeVisible();
+
 });

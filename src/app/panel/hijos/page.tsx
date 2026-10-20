@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Flame, Play, Star, Swords, UserRoundPlus } from "lucide-react";
+import { Check, Flame, Play, Star, UserRoundPlus } from "lucide-react";
 import { useFamily, type ChildDoc } from "@/components/family/FamilyProvider";
-import { useChildDashboard } from "@/lib/family/useChildDashboard";
+import { useLearningDashboard } from "@/lib/family/useLearningDashboard";
+import { LESSONS } from "@/lib/learning/domain";
 import { ageFromBirthDate } from "@/lib/family/age";
 import { Avatar } from "@/components/world/Avatar";
 
@@ -48,8 +49,8 @@ export default function HijosPage() {
 }
 
 function ChildCard({ child }: { child: ChildDoc }) {
-  const { parentId, selectedChildId, setSelectedChildId } = useFamily();
-  const dashboard = useChildDashboard(parentId, child.id);
+  const { selectedChildId, setSelectedChildId } = useFamily();
+  const dashboard = useLearningDashboard(child.id);
   const selected = selectedChildId === child.id;
   const age = ageFromBirthDate(child.birthDate);
 
@@ -75,7 +76,7 @@ function ChildCard({ child }: { child: ChildDoc }) {
           <h2 className="font-display text-lg font-bold leading-tight text-white">{child.name}</h2>
           {age !== null && <p className="text-xs text-slate-400">{age} años</p>}
           <p className="mt-1 inline-flex rounded-full bg-slate-800/60 px-2.5 py-0.5 text-[11px] font-bold text-slate-200">
-            Nivel {dashboard.level}
+            {dashboard.completed} de {LESSONS.length} clases
           </p>
         </div>
       </header>
@@ -89,30 +90,14 @@ function ChildCard({ child }: { child: ChildDoc }) {
         <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-orange-300">
           <Flame className="size-3.5" aria-hidden="true" />
           {dashboard.streak} días
-          <span className="sr-only">de racha</span>
+          <span className="sr-only">de racha de repaso</span>
         </li>
         <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-slate-200">
-          {dashboard.masteryGlobal} % dominio
+          {dashboard.autonomous} comprobaciones autónomas
         </li>
       </ul>
 
-      <div className="mt-3 rounded-xl bg-slate-800/50 p-3">
-        {dashboard.currentMission ? (
-          <>
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-cyan-300">
-              <Swords className="size-3.5" aria-hidden="true" />
-              {dashboard.currentMission.zoneName}
-            </p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-100">
-              <span aria-hidden="true">{dashboard.currentMission.icon} </span>
-              {dashboard.currentMission.title}
-            </p>
-            <p className="mt-1 text-xs text-slate-400">{dashboard.currentMission.progressLabel}</p>
-          </>
-        ) : (
-          <p className="text-sm font-semibold text-emerald-300">✓ Todas las misiones completadas</p>
-        )}
-      </div>
+      <p className="mt-3 text-sm text-cyan-200">Siguiente idea: {dashboard.nextLesson.title}</p>
 
       <div className="mt-3 flex flex-wrap gap-2">
         <button

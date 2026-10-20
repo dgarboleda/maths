@@ -13,7 +13,7 @@ import { Avatar } from "@/components/world/Avatar";
 import { SectionCard } from "@/components/family/ui";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
 import { AvatarPickerDialog } from "@/components/family/AvatarPickerDialog";
-import { BackupPanel } from "@/components/family/BackupPanel";
+import Link from "next/link";
 
 export default function AjustesPage() {
   const { user } = useAuth();
@@ -111,8 +111,9 @@ export default function AjustesPage() {
       )}
 
       {parentId && (
-        <SectionCard title="Respaldo" icon={<DatabaseBackup className="size-4" aria-hidden="true" />}>
-          <BackupPanel parentId={parentId} />
+        <SectionCard title="Archivo de actividades anteriores" icon={<DatabaseBackup className="size-4" aria-hidden="true" />}>
+          <p className="text-sm text-slate-300">Consulta tus creaciones, avatares personalizados y respaldos anteriores. El programa de clases funciona sin preparar mundos ni niveles.</p>
+          <Link href="/panel/archivo" className="mt-3 inline-flex min-h-11 items-center text-cyan-200 underline">Abrir archivo</Link>
         </SectionCard>
       )}
 

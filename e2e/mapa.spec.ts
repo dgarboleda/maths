@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 import { idDeHijo, otorgarDominio, sembrarMundoDeEjemplo, sembrarNivelConTerminal, sesionDeHijo } from "./utilidades";
 
 /**
- * Hub del jugador (`/mapa`) — Fase 28 (docs/plan-jugabilidad.md §2). Antes
+ * Hub del jugador (`/mapa-anterior`) — Fase 28 (docs/plan-jugabilidad.md §2). Antes
  * de esta fase, boss, diario, tienda y zonas solo eran alcanzables desde
  * `ciudad-central-legacy`, una ruta sin ningún enlace de producción: un
  * niño jugando normal nunca llegaba ahí. Esta prueba entra directo a
- * `/mapa` (un mundo real, sembrado en Firestore, sin pasar por la ruta
+ * `/mapa-anterior` (un mundo real, sembrado en Firestore, sin pasar por la ruta
  * legacy) y confirma que esas superficies están reconectadas y navegan.
  */
 test.describe("Hub del jugador", () => {
@@ -15,7 +15,7 @@ test.describe("Hub del jugador", () => {
     const childId = idDeHijo(page);
     await sembrarMundoDeEjemplo(correo);
 
-    await page.goto(`/jugar/${childId}/mapa`);
+    await page.goto(`/jugar/${childId}/mapa-anterior`);
     // Barra superior reconectada: título del mundo (antes solo lo mostraba
     // ciudad-central-legacy) y nombre del hijo.
     await expect(page.getByRole("heading", { name: "Math Quest" })).toBeVisible();
@@ -26,7 +26,7 @@ test.describe("Hub del jugador", () => {
     await page.getByRole("link", { name: "Geometría" }).click();
     await expect(page).toHaveURL(/\/geometria$/);
     await page.goBack();
-    await expect(page).toHaveURL(/\/mapa$/);
+    await expect(page).toHaveURL(/\/mapa-anterior$/);
 
     // Boss Challenge: el único enlace de producción antes de esta fase
     // vivía en ciudad-central-legacy.
@@ -54,7 +54,7 @@ test.describe("Hub del jugador", () => {
     // El nombre accesible del nodo ("Ciudad Central") coincide con el de la
     // zona narrativa de Aritmética (mismo nombre por guion): se busca por
     // `href` en vez de por nombre para no ambigüar entre ambos enlaces.
-    await page.goto(`/jugar/${childId}/mapa`);
+    await page.goto(`/jugar/${childId}/mapa-anterior`);
     await page.locator(`a[href="/jugar/${childId}/nivel/${levelId}"]`).click();
     await expect(page).toHaveURL(new RegExp(`/nivel/${levelId}$`));
 
@@ -63,7 +63,7 @@ test.describe("Hub del jugador", () => {
     // agregar un segundo botón "Base" redundante — este ya cumple el "un
     // toque desde dentro de un nivel" que pedía la fase).
     await page.getByRole("link", { name: "Ciudad Central" }).click();
-    await expect(page).toHaveURL(new RegExp(`/mapa$`));
+    await expect(page).toHaveURL(new RegExp(`/mapa-anterior$`));
   });
 
   test("allowReplay: false deja de mostrar como enlace un nodo ya completado (Fase 29)", async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe("Hub del jugador", () => {
     await otorgarDominio(correo, childId, ["aritmetica-d1"]);
     const { levelId } = await sembrarNivelConTerminal(correo, "aritmetica-d1", { allowReplay: false });
 
-    await page.goto(`/jugar/${childId}/mapa`);
+    await page.goto(`/jugar/${childId}/mapa-anterior`);
     await expect(page.getByText("Completado")).toBeVisible();
     await expect(page.locator(`a[href="/jugar/${childId}/nivel/${levelId}"]`)).toHaveCount(0);
   });

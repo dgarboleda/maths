@@ -4,14 +4,15 @@ import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import { Check, Gift, Medal, Star, X } from "lucide-react";
 import { useFamily } from "@/components/family/FamilyProvider";
-import { useChildDashboard, type RequestDoc } from "@/lib/family/useChildDashboard";
+import { useLearningDashboard } from "@/lib/family/useLearningDashboard";
+import type { RequestDoc } from "@/lib/family/useChildDashboard";
 import { getFirebase } from "@/lib/firebase";
 import { awardStars } from "@/lib/starLedger";
 import { ChildSwitcher, EmptyState, SectionCard, SkeletonRows } from "@/components/family/ui";
 
 export default function RecompensasPage() {
   const { parentId, selectedChild, selectedChildId, loadingChildren } = useFamily();
-  const dashboard = useChildDashboard(parentId, selectedChildId);
+  const dashboard = useLearningDashboard(selectedChildId ?? "");
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -119,9 +120,9 @@ export default function RecompensasPage() {
       </SectionCard>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <SectionCard title="Logros e insignias educativas" icon={<Medal className="size-4" aria-hidden="true" />}>
+        <SectionCard title="Logros educativos" icon={<Medal className="size-4" aria-hidden="true" />}>
           <p className="mb-3 text-xs text-slate-400">
-            Se ganan aprendiendo: misiones completadas y módulos dominados. No se compran.
+            Se muestran a partir de las clases, comprobaciones y repasos guardados. No se compran.
           </p>
           {dashboard.loading ? (
             <SkeletonRows rows={3} />

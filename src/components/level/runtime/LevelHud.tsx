@@ -46,7 +46,7 @@ export function LevelHud({
           // vuelta a él — el botón "atrás" parecería no hacer nada. El mapa
           // del jugador sí es una pantalla real y estable, nunca rebota de
           // vuelta al nivel del que se sale.
-          <Link href={`/jugar/${childId}/mapa`} className={badgeClassName}>
+          <Link href={`/jugar/${childId}/mapa-anterior`} className={badgeClassName}>
             <ArrowLeft className="size-4 shrink-0" aria-hidden="true" />
             {levelName}
           </Link>

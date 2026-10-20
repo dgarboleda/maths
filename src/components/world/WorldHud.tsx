@@ -40,7 +40,7 @@ export function WorldTopBar({
   childId: string;
   childName: string;
   /** Fase 28 (docs/plan-jugabilidad.md §2): antes hardcodeado a "Ciudad
-   *  Central". El hub (`/mapa`) pasa `world.story.title`; la ruta legacy
+   *  Central". El hub (`/mapa-anterior`) pasa `world.story.title`; la ruta legacy
    *  no pasa nada y conserva el literal de siempre. */
   title?: string;
   stars: number | null;

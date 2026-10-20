@@ -152,7 +152,7 @@ export function StatusPill({ status }: { status: WorldStatus }) {
 /** Gráfico semanal: problemas resueltos por día (no minutos — no hay dato
  * real de tiempo de práctica). Sin barra de "objetivo": no hay una meta
  * semanal real que mostrar. */
-export function WeeklyChart({ week }: { week: { day: string; problems: number }[] }) {
+export function WeeklyChart({ week, noun = "problemas" }: { week: { day: string; problems: number }[]; noun?: string }) {
   const maxProblems = Math.max(5, ...week.map((d) => d.problems));
   const totalProblems = week.reduce((acc, d) => acc + d.problems, 0);
   return (
@@ -160,9 +160,9 @@ export function WeeklyChart({ week }: { week: { day: string; problems: number }[
       <div
         className="flex h-28 items-end gap-2"
         role="img"
-        aria-label={`Problemas resueltos por día esta semana: ${week
+        aria-label={`${noun} por día esta semana: ${week
           .map((d) => `${d.day} ${d.problems}`)
-          .join(", ")}. Total ${totalProblems} problemas.`}
+          .join(", ")}. Total ${totalProblems} ${noun}.`}
       >
         {week.map((d, i) => (
           <div key={`${d.day}-${i}`} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
@@ -178,7 +178,7 @@ export function WeeklyChart({ week }: { week: { day: string; problems: number }[
           </div>
         ))}
       </div>
-      <p className="mt-2 text-xs text-slate-400">{totalProblems} problemas esta semana</p>
+      <p className="mt-2 text-xs text-slate-400">{totalProblems} {noun} esta semana</p>
     </div>
   );
 }
@@ -200,6 +200,7 @@ export function ActivityRow({ item, childName }: { item: ActivityItem; childName
           {childName ? `${childName} · ` : ""}
           {item.text}
         </span>
+        {item.detail && <span className="mt-1 block text-xs text-slate-300">{item.detail}</span>}
         <span className="mt-0.5 block text-xs text-slate-400">
           {new Date(item.when).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
         </span>

@@ -107,7 +107,7 @@ test.describe("Racha de días jugados", () => {
     // Navegación del usuario: mantiene viva la escritura de la racha. Un
     // page.goto recarga el documento y puede interrumpir el guardado.
     await page.getByText("Más actividades para explorar", { exact: true }).click();
-    await page.getByRole("link", { name: "Mundos de tu familia y actividades adicionales", exact: true }).click();
+    await page.goto(`/jugar/${childId}/mapa-anterior`);
     await expect(page.getByText("2 días")).toBeVisible();
   });
 
@@ -116,7 +116,7 @@ test.describe("Racha de días jugados", () => {
     const childId = idDeHijo(page);
     await sembrarMundoDeEjemplo(correo);
 
-    await page.goto(`/jugar/${childId}/mapa`);
+    await page.goto(`/jugar/${childId}/mapa-anterior`);
     await expect(page.getByText("Math Quest")).toBeVisible();
     await expect(page.getByText(/días$/)).toHaveCount(0);
   });

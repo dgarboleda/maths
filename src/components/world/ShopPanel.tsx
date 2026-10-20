@@ -28,20 +28,23 @@ export function ShopPanel({
   maxStars,
   requests,
   onClose,
+  learningMode = false,
 }: {
   parentId: string;
   childId: string;
   maxStars: number;
   requests: RequestDoc[];
   onClose: () => void;
+  learningMode?: boolean;
 }) {
   const [showForm, setShowForm] = useState(false);
+  const currency = learningMode ? "estrellas" : "AXIA";
 
   return (
-    <WorldDialog icon="🏪" title="Tienda de la ciudad" subtitle={`Tienes ${maxStars} AXIA`} onClose={onClose}>
+    <WorldDialog icon="🏪" title={learningMode ? "Mis estrellas y premios" : "Tienda de la ciudad"} subtitle={`Tienes ${maxStars} ${currency}`} onClose={onClose}>
       <div className="space-y-4">
         <p className="text-sm italic text-slate-300">
-          —Aquí no se paga con monedas: se paga con lo que aprendiste. Dime qué quieres y lo hablo con tu familia.
+          {learningMode ? "Las estrellas reconocen tu participación. Puedes proponer un premio a tu familia; los premios no cambian tus evidencias ni desbloquean clases." : "—Aquí no se paga con monedas: se paga con lo que aprendiste. Dime qué quieres y lo hablo con tu familia."}
         </p>
 
         {!showForm && (
@@ -60,6 +63,7 @@ export function ShopPanel({
             parentId={parentId}
             childId={childId}
             maxStars={maxStars}
+            currency={currency}
             onDone={() => setShowForm(false)}
           />
         )}
@@ -72,7 +76,7 @@ export function ShopPanel({
                 className="flex items-center justify-between gap-2 rounded-xl border border-indigo-500/20 bg-slate-950/50 px-3 py-2 text-sm"
               >
                 <span className="text-slate-200">
-                  {r.rewardLabel} · {r.starsSpent} AXIA
+                  {r.rewardLabel} · {r.starsSpent} {currency}
                 </span>
                 <span
                   className={
@@ -99,11 +103,13 @@ function RedeemForm({
   childId,
   maxStars,
   onDone,
+  currency,
 }: {
   parentId: string;
   childId: string;
   maxStars: number;
   onDone: () => void;
+  currency: string;
 }) {
   const [rewardLabel, setRewardLabel] = useState("");
   const [starsSpent, setStarsSpent] = useState("");
@@ -115,11 +121,11 @@ function RedeemForm({
     setError(null);
     const amount = parseInt(starsSpent, 10);
     if (!Number.isInteger(amount) || amount <= 0) {
-      setError("Ingresa una cantidad válida de AXIA.");
+      setError(`Ingresa una cantidad válida de ${currency}.`);
       return;
     }
     if (amount > maxStars) {
-      setError(`Solo tienes ${maxStars} AXIA disponibles.`);
+      setError(`Solo tienes ${maxStars} ${currency} disponibles.`);
       return;
     }
     if (!rewardLabel.trim()) {
@@ -158,12 +164,12 @@ function RedeemForm({
           value={rewardLabel}
           maxLength={120}
           onChange={(e) => setRewardLabel(e.target.value)}
-          placeholder="Ej. 800 Robux"
+          placeholder="Ej. elegir un juego en familia"
           className="rounded-xl border-2 border-indigo-500/30 bg-slate-900 px-3 py-2 font-normal text-slate-100 placeholder:text-slate-500 focus:border-violet-400"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm font-bold text-indigo-200">
-        ¿Cuánta AXIA? (tienes {maxStars})
+        Cantidad de {currency} (tienes {maxStars})
         <input
           inputMode="numeric"
           value={starsSpent}

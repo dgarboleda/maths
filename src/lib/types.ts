@@ -29,6 +29,8 @@ export interface ChildProfile {
    *  nueva. `useResolvedAvatar` decide si sigue vigente (puede haberse
    *  vuelto a bloquear, o haberse borrado del catálogo). */
   avatarId?: string;
+  /** Prioridades de la familia sobre el catálogo incluido; no concede dominio. */
+  learningPlan?: { lessonIds: string[] };
   /** Ids sintéticos de `StoryBeat[]` ya vistos ("world:intro",
    *  "world:outro", "chapter:{id}:intro" — ver `gameworld/storyProgress.ts`,
    *  Fase 30, docs/plan-jugabilidad.md §4). Array corto, aditivo: nunca se
