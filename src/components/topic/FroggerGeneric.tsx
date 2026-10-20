@@ -21,6 +21,12 @@ const START_ROW = GOAL * 2; // fila segura de partida
 const OBSTACLE_TICK_BASE_MS = 500;
 const OBSTACLE_TICK_STEP_MS = -60;
 const OBSTACLE_TICK_FLOOR_MS = 220;
+/** En la clase el obstáculo va más lento: cruzar no debe depender de reflejos. */
+const LESSON_OBSTACLE_TICK_MS = 900;
+
+/** Qué pasó al chocar en la clase, dicho con precisión: no hubo respuesta. */
+export const FROGGER_MISS =
+  "Te alcanzó el obstáculo y volviste a la orilla: fue un choque, no una respuesta, así que no cuenta. Cruza el carril cuando el obstáculo esté lejos.";
 
 type Phase = "start" | "playing" | "over";
 
@@ -99,7 +105,9 @@ export function FroggerGeneric({
   const busyRef = useRef(false); // true mientras se espera onAnswer
 
   const wave = waveIndex(correctCount, 1);
-  const obstacleTickMs = scaleWithWave(OBSTACLE_TICK_BASE_MS, OBSTACLE_TICK_STEP_MS, wave, OBSTACLE_TICK_FLOOR_MS);
+  const obstacleTickMs = exercise
+    ? LESSON_OBSTACLE_TICK_MS
+    : scaleWithWave(OBSTACLE_TICK_BASE_MS, OBSTACLE_TICK_STEP_MS, wave, OBSTACLE_TICK_FLOOR_MS);
 
   function spawnCheckpoint() {
     const nextProblem = generateProblem();
@@ -196,6 +204,7 @@ export function FroggerGeneric({
     if (busyRef.current || controlsDisabled || shownPhase !== "playing") return;
     const newRow = Math.max(0, row - 1);
     if (newRow === row) return;
+    setReflexMiss(false);
     setRow(newRow);
     if (isObstacleRow(newRow)) {
       obstacleDirRef.current = 1;
@@ -313,7 +322,7 @@ export function FroggerGeneric({
               />
             </div>
 
-            {exercise ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-sky-700 bg-sky-950/80 p-3 text-sm">
+            {exercise ? <ReflexNotice show={reflexMiss} message={FROGGER_MISS} /> : <div className="flex items-center justify-between rounded-xl border border-sky-700 bg-sky-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
               </span>
@@ -337,28 +346,33 @@ export function FroggerGeneric({
               {inObstacleRow ? "¡Esquiva el obstáculo!" : "Ponte bajo el nenúfar correcto y salta hacia arriba"}
             </p>
 
-            <div
-              aria-hidden="true"
-              className="mx-auto grid w-full max-w-sm gap-1 overflow-hidden rounded-2xl border-2 border-sky-700 bg-slate-900 p-2"
-              style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
-            >
-              {Array.from({ length: COLS }, (_, col) => (
-                <div
-                  key={col}
-                  className={`${reducedMotion ? "" : "transition-colors duration-150"} flex aspect-square items-center justify-center rounded-lg text-sm font-bold ${
-                    inObstacleRow
-                      ? col === obstacleX
-                        ? "bg-red-600 text-white"
-                        : "bg-slate-800 text-slate-500"
-                      : "bg-lime-800/60 text-lime-100"
-                  }`}
-                >
-                  {frogX === col && <span aria-hidden="true">🐸</span>}
-                  {!inObstacleRow && candidates[col] !== undefined && (
-                    <span className={frogX === col ? "ml-0.5 text-xs" : ""}>{lessonLabel(exercise, candidates[col])}</span>
-                  )}
-                </div>
-              ))}
+            {/* Tres filas a la vista: nenúfares (meta), carril con el
+                obstáculo y orilla. La rana se dibuja en la fila donde está,
+                para que nunca parezca parada sobre un nenúfar que no eligió. */}
+            <div aria-hidden="true" data-board="" data-frog-col={frogX} data-frog-lane={inObstacleRow ? "carril" : "orilla"}
+              className="mx-auto w-full max-w-sm space-y-1 overflow-hidden rounded-2xl border-2 border-sky-700 bg-slate-900 p-2">
+              <div className="grid w-full max-w-sm gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+                {Array.from({ length: COLS }, (_, col) => (
+                  <div key={col} className="flex aspect-[4/3] items-center justify-center rounded-lg bg-lime-800/60 text-sm font-bold text-lime-100">
+                    {candidates[col] !== undefined && lessonLabel(exercise, candidates[col])}
+                  </div>
+                ))}
+              </div>
+              <div className="grid w-full gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+                {Array.from({ length: COLS }, (_, col) => (
+                  <div key={col}
+                    className={`${reducedMotion ? "" : "transition-colors duration-150"} flex aspect-[4/3] items-center justify-center rounded-lg ${col === obstacleX ? (inObstacleRow ? "bg-red-600" : "bg-red-900/60") : "bg-slate-800"}`}>
+                    {inObstacleRow && frogX === col && "🐸"}
+                  </div>
+                ))}
+              </div>
+              <div className="grid w-full gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+                {Array.from({ length: COLS }, (_, col) => (
+                  <div key={col} className="flex aspect-[4/3] items-center justify-center rounded-lg bg-sky-950">
+                    {!inObstacleRow && frogX === col && "🐸"}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <TouchDPad inline onMove={onTouchMove} />

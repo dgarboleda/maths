@@ -8,7 +8,8 @@ import { InvadersGeneric } from "./InvadersGeneric";
 import { BreakoutGeneric } from "./BreakoutGeneric";
 import { TopoGeneric } from "./TopoGeneric";
 import { CajasGeneric } from "./CajasGeneric";
-import { AWAITING_INPUT, REFLEX_MISS } from "@/lib/minigames/lessonArcade";import { FroggerGeneric } from "./FroggerGeneric";
+import { AWAITING_INPUT, REFLEX_MISS } from "@/lib/minigames/lessonArcade";
+import { FroggerGeneric, FROGGER_MISS } from "./FroggerGeneric";
 import { CoheteGeneric } from "./CoheteGeneric";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 
@@ -60,8 +61,13 @@ test("Estanque: la pausa congela el juego, chocar no cuenta y un guardado fallid
   view.rerender(<FroggerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: false }} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   key("ArrowUp");
-  tick(2_100); // el obstáculo va y vuelve hasta la rana
-  expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
+  // En la clase el obstáculo avanza cada 900 ms: va y vuelve hasta la rana.
+  tick(900 * 3);
+  expect(screen.queryByText(FROGGER_MISS)).not.toBeInTheDocument();
+  tick(900 * 2);
+  expect(screen.getByText(FROGGER_MISS)).toBeInTheDocument();
+  // La rana vuelve a la orilla, debajo del carril: no queda sobre un nenúfar.
+  expect(view.container.querySelector("[data-board]")).toHaveAttribute("data-frog-lane", "orilla");
   expect(data.onResponse).not.toHaveBeenCalled();
   key("ArrowUp");
   key("ArrowUp");
