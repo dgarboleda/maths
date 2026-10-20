@@ -19,20 +19,23 @@ import {
   TreeVisual,
   VolumeVisual,
 } from "./ShapeVisuals";
-import {
-  BoxplotVisual,
-  CountingVisual,
-  ExponentialVisual,
-  SystemVisual,
-  TransformVisual,
-  InterestVisual,
-  SequenceVisual,
-  DistanceVisual,
-  VertexVisual,
-  SolidsVisual,
-  TwoWayVisual,
-  TrigVisual,
-} from "./AdvancedVisuals";
+// Las clases básicas no necesitan descargar los modelos avanzados.
+const advancedVisual = (name: keyof typeof import("./AdvancedVisuals")) =>
+  dynamic<{ id: string }>(() => import("./AdvancedVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const BoxplotVisual = advancedVisual("BoxplotVisual");
+const CountingVisual = advancedVisual("CountingVisual");
+const ExponentialVisual = advancedVisual("ExponentialVisual");
+const SystemVisual = advancedVisual("SystemVisual");
+const TransformVisual = advancedVisual("TransformVisual");
+const InterestVisual = advancedVisual("InterestVisual");
+const SequenceVisual = advancedVisual("SequenceVisual");
+const DistanceVisual = advancedVisual("DistanceVisual");
+const VertexVisual = advancedVisual("VertexVisual");
+const SolidsVisual = advancedVisual("SolidsVisual");
+const TwoWayVisual = advancedVisual("TwoWayVisual");
+const TrigVisual = advancedVisual("TrigVisual");
 
 // Los modelos de números se cargan aparte: solo los usan cinco clases y así
 // no pesan en el resto (presupuesto de JS de la clase en Lighthouse).
