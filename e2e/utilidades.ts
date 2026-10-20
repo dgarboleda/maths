@@ -51,15 +51,9 @@ export async function crearHijo(
  * completa (ver `entrarAlPerfil` vs. `entrarAPerfilSinEvaluar`). */
 async function confirmarPin(page: Page, nombre: string, pin: string): Promise<void> {
   await page.getByRole("button", { name: `Entrar al perfil de ${nombre}` }).click();
-  const campoPin = page.getByLabel(`PIN de ${nombre}`);
-  await campoPin.fill(pin);
-  // Enter en vez de clic en "Entrar": en emulación táctil móvil, enfocar el
-  // campo de PIN dispara a veces un ajuste de zoom del navegador que
-  // desplaza el layout viewport (ver useDialogFocus) — un clic por
-  // coordenadas puede quedar sin blanco durante esa ventana, mientras que
-  // enviar el formulario con Enter (lo que hace cualquier teclado numérico
-  // real al pulsar "Ir"/"Hecho") no depende de dónde cayó el botón en
-  // pantalla.
+  const campoPin = page.getByRole("textbox", { name: `PIN de ${nombre}` });
+  await campoPin.pressSequentially(pin);
+  // El indicador acepta teclado físico sin campos editables ni teclado móvil.
   await campoPin.press("Enter");
 }
 

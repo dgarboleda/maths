@@ -53,8 +53,8 @@ test("elige los tres personajes al crear perfiles, conserva el avatar y lo compa
     await expect(card.getByRole("img", { name: "Noa", exact: true })).toHaveAttribute("src", "/avatars/sonrisa.jpg");
     await card.click();
     await expect(child.getByRole("dialog").getByRole("img", { name: "Noa", exact: true })).toHaveAttribute("src", "/avatars/sonrisa.jpg");
-    await child.getByLabel("PIN de Noa").fill("1234");
-    await child.getByLabel("PIN de Noa").press("Enter");
+    await child.getByRole("textbox", { name: "PIN de Noa" }).pressSequentially("1234");
+    await child.getByRole("textbox", { name: "PIN de Noa" }).press("Enter");
     await expect(child.getByRole("img", { name: "Avatar de Noa" })).toHaveAttribute("src", "/avatars/sonrisa.jpg");
     await child.reload();
     await expect(child.getByRole("img", { name: "Avatar de Noa" })).toHaveAttribute("src", "/avatars/sonrisa.jpg");

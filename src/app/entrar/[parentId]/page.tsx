@@ -1,20 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signInWithCustomToken } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
 import { getFirebase, getFirebaseFunctions } from "@/lib/firebase";
 import { accessKeyFromHash } from "@/lib/pin";
 import { Avatar } from "@/components/world/Avatar";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
+import { ChildPinEntry } from "@/components/family/ChildPinEntry";
 
 interface PublicChild {
   id: string;
   name: string;
   avatarId?: string;
 }
-
-const KEYPAD = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
 /**
  * Puerta de entrada del hijo SIN la sesión del padre en el mismo
@@ -145,7 +144,7 @@ function PinDialog({
   const [checking, setChecking] = useState(false);
   const [shakes, setShakes] = useState(0);
   const pinId = `pin-${child.id}`;
-  const pinInputRef = useRef<HTMLInputElement>(null);
+  const pinInputRef = useRef<HTMLDivElement>(null);
 
   function handleClose() {
     onClose();
@@ -157,8 +156,7 @@ function PinDialog({
     if (shakes > 0) pinInputRef.current?.focus();
   }, [shakes]);
 
-  async function handleConfirm(e?: FormEvent) {
-    e?.preventDefault();
+  async function handleConfirm() {
     if (pin.length !== 4 || checking) return;
     setChecking(true);
     setError(null);
@@ -201,16 +199,6 @@ function PinDialog({
     }
   }
 
-  function press(d: string) {
-    if (checking) return;
-    setError(null);
-    if (d === "borrar") {
-      setPin((p) => p.slice(0, -1));
-    } else if (pin.length < 4) {
-      setPin((p) => p + d);
-    }
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 backdrop-blur-sm sm:p-6">
       <div
@@ -222,69 +210,16 @@ function PinDialog({
         onKeyDown={handleKeyDown}
         className="family-panel anim-rise flex w-64 flex-col items-center gap-3 rounded-2xl p-5 focus:outline-none"
       >
-        <form onSubmit={handleConfirm} className="flex w-full flex-col items-center gap-3">
+        <div className="flex w-full flex-col items-center gap-3">
           <Avatar avatarId={child.avatarId} className="h-16 rounded-full" title={child.name} />
-
-          <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
-            PIN de {child.name}
-            <input
-              key={shakes}
-              ref={pinInputRef}
-              id={pinId}
-              type="password"
-              inputMode="numeric"
-              maxLength={4}
-              value={pin}
-              onChange={(e) => {
-                setError(null);
-                setPin(e.target.value.replace(/\D/g, ""));
-              }}
-              className={`family-input mt-1.5 h-10 w-24 text-center text-lg tracking-[0.6em]${
-                error ? " anim-shake has-error" : ""
-              }`}
-            />
-          </label>
-
-          <span role="alert" className="min-h-4 text-center text-xs font-semibold text-red-300">
-            {error ?? ""}
-          </span>
-
-          <div
-            role="group"
-            aria-label={`Teclado numérico para ${child.name}`}
-            className="grid grid-cols-3 gap-1.5"
-          >
-            {KEYPAD.map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => press(d)}
-                className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
-              >
-                {d}
-              </button>
-            ))}
-            <span aria-hidden="true" />
-            <button
-              type="button"
-              onClick={() => press("0")}
-              className="family-keycap min-h-9 min-w-9 rounded-lg font-display text-sm font-bold"
-            >
-              0
-            </button>
-            <button
-              type="button"
-              onClick={() => press("borrar")}
-              aria-label="Borrar último dígito"
-              className="family-keycap grid min-h-9 min-w-9 place-items-center rounded-lg text-xs"
-            >
-              ⌫
-            </button>
-          </div>
+          <ChildPinEntry id={pinId} childName={child.name} pin={pin} entryRef={pinInputRef}
+            disabled={checking} error={error} shakes={shakes} onConfirm={() => void handleConfirm()}
+            onChange={(next) => { setError(null); setPin(next); }} />
 
           <div className="flex gap-4 text-xs">
             <button
-              type="submit"
+              type="button"
+              onClick={() => void handleConfirm()}
               disabled={pin.length !== 4 || checking}
               className="font-bold text-cyan-300 underline-offset-2 hover:underline disabled:opacity-40"
             >
@@ -298,7 +233,7 @@ function PinDialog({
               Cancelar
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

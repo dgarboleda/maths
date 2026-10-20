@@ -12,11 +12,14 @@ test("un navegador sin la sesión del padre entra con el callable real y su PIN"
     const child = await context.newPage();
     await child.goto(link);
     await child.getByRole("button", { name: "Entrar al perfil de Sofía" }).click();
-    const pin = child.getByLabel("PIN de Sofía");
-    await pin.fill("0000");
-    await pin.press("Enter");
+    const pin = child.getByRole("textbox", { name: "PIN de Sofía" });
+    const dialog = child.getByRole("dialog", { name: "PIN de Sofía" });
+    await expect(dialog.locator("input, textarea, [contenteditable], form")).toHaveCount(0);
+    for (let i = 0; i < 4; i++) await dialog.getByRole("button", { name: "0", exact: true }).click();
+    await dialog.getByRole("button", { name: "Entrar", exact: true }).click();
     await expect(child.getByText("PIN incorrecto", { exact: true })).toBeVisible();
-    await pin.fill("1234");
+    await expect(pin).toBeFocused();
+    await pin.pressSequentially("1234");
     await pin.press("Enter");
     await expect(child).toHaveURL(/\/jugar\/[^/]+$/);
     await expect(child.getByRole("heading", { name: "Hola, Sofía. ¿Qué vamos a descubrir?" })).toBeVisible();
