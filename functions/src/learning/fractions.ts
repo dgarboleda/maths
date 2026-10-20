@@ -163,7 +163,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           "q1",
           `Una barra tiene ${den} partes iguales y ${num} están marcadas. Escribe la fracción marcada.`,
           num / den,
-          [`Hay ${num} partes marcadas de ${den}: ${num}/${den}.`],
+          [`Hay ${num} partes marcadas de ${den} → ${num}/${den}.`],
           [
             "Identifica el total de partes iguales.",
             "El total va en el denominador; las marcadas, en el numerador.",
@@ -201,7 +201,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           units,
           [
             `Cada ${den}/${den} completa una unidad.`,
-            `${den * units} partes forman ${den * units} ÷ ${den} = ${units} grupos de ${den}: ${units} unidades.`,
+            `${den * units} partes forman ${den * units} ÷ ${den} = ${units} grupos de ${den} → ${units} unidades.`,
           ],
           [
             "Piensa cuántas partes de tamaño 1/" + den + " forman una unidad.",
@@ -490,7 +490,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           `¿Qué fracción es mayor: ${p}/${q} o ${r}/${s}? Escribe la mayor.`,
           bigger,
           [
-            `Con denominador común ${q * s}: ${p}/${q} = ${p * s}/${q * s} y ${r}/${s} = ${r * q}/${q * s}.`,
+            `Con denominador común ${q * s} → ${p}/${q} = ${p * s}/${q * s} y ${r}/${s} = ${r * q}/${q * s}.`,
             `Ahora las partes tienen el mismo tamaño; la mayor es ${bigger === p / q ? `${p}/${q}` : `${r}/${s}`}.`,
           ],
           [
@@ -539,7 +539,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           a / b,
           [
             `La fracción es ${(tank / b) * a}/${tank}.`,
-            `Dividiendo ambos términos entre ${tank / b}: ${a}/${b}.`,
+            `Dividiendo ambos términos entre ${tank / b} → ${a}/${b}.`,
           ],
           [
             "La parte va en el numerador y el total en el denominador.",
@@ -719,7 +719,7 @@ export const FRACTION_LESSONS: Lesson[] = [
             ["No: 0,25% es 25", "25 sería 2500%. Dividir entre cien, no multiplicar."],
           ],
           1,
-          "p% significa p/100: 0,25% = 0,0025, mientras que 0,25 = 25%.",
+          "p% significa p/100 → 0,25% = 0,0025, mientras que 0,25 = 25%.",
         ),
         c(
           "q4",
@@ -750,7 +750,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           `Escribe ${dec(decimal)} como porcentaje. Introduce el número que va antes de %.`,
           p,
           [
-            `Multiplica ${dec(decimal)} por 100: ${p}.`,
+            `Multiplica ${dec(decimal)} por 100 → ${p}.`,
             `La representación es ${p}%.`,
           ],
           [
@@ -1123,7 +1123,7 @@ export const FRACTION_LESSONS: Lesson[] = [
               },
               {
                 value: taken * den,
-                feedback: `Multiplicaste por ${den} sin dividir antes entre ${num}: ${taken} ocupa ${num} partes, no una.`,
+                feedback: `Multiplicaste por ${den} sin dividir antes entre ${num} → ${taken} ocupa ${num} partes, no una.`,
               },
             ],
           },

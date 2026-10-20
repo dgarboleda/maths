@@ -398,7 +398,7 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
       "app",
       "En un colegio, 3 personas conocen una noticia. Cada día, cada persona que la conoce se la cuenta a 2 personas nuevas, así que el número de personas que la conocen se triplica. ¿Cuántos días deben pasar para que la conozcan más de 2000 personas?",
       6,
-      ["Personas al cabo de n días: 3 · 3ⁿ.", "Día 5: 3 · 243 = 729. Día 6: 3 · 729 = 2187.", "Al sexto día se superan las 2000 personas."],
+      ["Personas al cabo de n días: 3 · 3ⁿ.", "Día 5 → 3 · 243 = 729. Día 6 → 3 · 729 = 2187.", "Al sexto día se superan las 2000 personas."],
       ["El factor diario es 3.", "Prueba día por día: 9, 27, 81…", "Busca el primer día con más de 2000."],
       {
         intent: "transfer",
@@ -1133,7 +1133,7 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
           "q5",
           `En un videojuego, un personaje está en ${pt(x, y)} y se mueve ${moveX(a)} y ${moveY(b)}. ¿Cuál es su nueva coordenada x?`,
           x + a,
-          [`Moverse a la ${a > 0 ? "derecha suma" : "izquierda resta"}: ${sg(x)} ${a > 0 ? "+" : "−"} ${Math.abs(a)} = ${sg(x + a)}.`],
+          [`Moverse a la ${a > 0 ? "derecha suma" : "izquierda resta"} → ${sg(x)} ${a > 0 ? "+" : "−"} ${Math.abs(a)} = ${sg(x + a)}.`],
           ["El movimiento horizontal cambia la x.", "Derecha suma; izquierda resta.", `${sg(x)} ${a > 0 ? "+" : "−"} ${Math.abs(a)}.`],
           {
             intent: "transfer",

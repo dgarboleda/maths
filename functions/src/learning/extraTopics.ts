@@ -220,7 +220,7 @@ export const DECIMAL_LESSONS: Lesson[] = [
       {
         title: "Multiplicar: cuenta los decimales",
         paragraphs: [
-          "2,4 × 0,3: multiplica 24 × 3 = 72 y coloca tantos decimales como sumen los factores (1 + 1 = 2): 0,72.",
+          "2,4 × 0,3: multiplica 24 × 3 = 72 y coloca tantos decimales como sumen los factores (1 + 1 = 2) → 0,72.",
           "Estima: 2,4 × 0,3 es algo menos que la tercera parte de 2,4. Multiplicar por un número menor que 1 da un resultado menor.",
         ],
         formula: "2,4 × 0,3 = 0,72",
@@ -316,7 +316,7 @@ export const DECIMAL_LESSONS: Lesson[] = [
           `Un compañero calcula ${fmt(b)} × ${fmt(b)} = ${fmt(r6(b * b * 10))}. ¿Qué falla?`,
           [
             ["Nada, está bien", `Estima: ${fmt(b)} × ${fmt(b)} es menor que ${fmt(b)}, porque se toma una parte.`],
-            `Faltan decimales: cada factor aporta ${pdec(b)}, el resultado lleva ${2 * pdec(b)}: ${fmt(r6(b * b))}`,
+            `Faltan decimales: cada factor aporta ${pdec(b)}, el resultado lleva ${2 * pdec(b)} → ${fmt(r6(b * b))}`,
             ["Debía sumar", "Es una multiplicación."],
           ],
           1,
@@ -594,7 +594,7 @@ export const SIMILARITY_LESSONS: Lesson[] = [
       ], "La sala ocupa 48 m²."),
     ],
     diagnostic: [
-      n("d-1", "Completa: 3:4 = 9:__.", 12, ["Factor 3: 4 × 3 = 12."], ["Busca el factor.", "3 × 3 = 9.", "4 × 3."], { step: true }),
+      n("d-1", "Completa: 3:4 = 9:__.", 12, ["Factor 3 → 4 × 3 = 12."], ["Busca el factor.", "3 × 3 = 9.", "4 × 3."], { step: true }),
       n("d-2", "¿Cuántos cm hay en 7 m?", 700, ["1 m = 100 cm."], ["1 m = 100 cm.", "7 × 100.", "700."]),
       c("d-3", "Si un cuadrado de lado 2 pasa a lado 4, ¿su área…?", ["se duplica", "se multiplica por 4", "no cambia"], 1, "De 4 a 16: por 4."),
     ],
@@ -755,13 +755,13 @@ export const QUADRATIC_LESSONS: Lesson[] = [
       ], "Las soluciones son 2 y 3."),
       ex("Una parcela rectangular tiene 4 m más de largo que de ancho y 45 m² de área. ¿Cuál es su ancho?", [
         ["x(x + 4) = 45", "Área = ancho × largo."],
-        ["x² + 4x − 45 = 0 → (x + 9)(x − 5) = 0", "Números que suman 4 y multiplican −45: 9 y −5."],
+        ["x² + 4x − 45 = 0 → (x + 9)(x − 5) = 0", "Números que suman 4 y multiplican −45 → 9 y −5."],
         ["x = 5 (x = −9 no es una longitud)", "Interpretamos en el contexto."],
       ], "El ancho mide 5 m y el largo 9 m."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es (−6)²?", 36, ["(−6) × (−6) = 36."], ["Multiplica −6 por sí mismo.", "Dos negativos dan positivo.", "36."]),
-      n("d-2", "Desarrolla x(x + 4): ¿cuál es el coeficiente de x?", 4, ["x · x + x · 4 = x² + 4x."], ["Distributiva.", "x × 4 = 4x.", "4."]),
+      n("d-2", "Desarrolla x(x + 4). ¿Cuál es el coeficiente de x?", 4, ["x · x + x · 4 = x² + 4x."], ["Distributiva.", "x × 4 = 4x.", "4."]),
       c("d-3", "Si a × b = 0, entonces…", ["a y b son 0", "al menos uno de los dos es 0", "a = b"], 1, "Un producto es 0 si alguno de sus factores es 0."),
     ],
     questions(v) {
@@ -815,7 +815,7 @@ export const QUADRATIC_LESSONS: Lesson[] = [
           "q3",
           `Resuelve x² − ${r1 + r2}x + ${r1 * r2} = 0. Escribe la solución mayor.`,
           Math.max(r1, r2),
-          [`Números que suman ${r1 + r2} y multiplican ${r1 * r2}: ${r1} y ${r2}.`, `(x − ${r1})(x − ${r2}) = 0 → x = ${r1} o x = ${r2}.`],
+          [`Números que suman ${r1 + r2} y multiplican ${r1 * r2} → ${r1} y ${r2}.`, `(x − ${r1})(x − ${r2}) = 0 → x = ${r1} o x = ${r2}.`],
           [`Busca dos números con suma ${r1 + r2} y producto ${r1 * r2}.`, "Factoriza.", "Producto nulo."],
           { errors: [{ value: -Math.max(r1, r2), feedback: "Revisa los signos: si suman positivo y multiplican positivo, ambos son positivos." }] },
         ),

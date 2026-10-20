@@ -42,7 +42,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "Para evaluar, reemplaza la letra por su valor entre paréntesis y respeta el orden de las operaciones: si x = −4, 2x − 3 = 2 × (−4) − 3 = −11.",
           "3x significa 3 × x; x² significa x × x.",
         ],
-        formula: "x = −4: 2x − 3 = 2 × (−4) − 3 = −11",
+        formula: "x = −4 → 2x − 3 = 2 × (−4) − 3 = −11",
       },
       {
         title: "Solo se reúnen términos semejantes",
@@ -62,7 +62,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       ex("Reduce 6x + 4 − 2x − 9.", [
         ["(6x − 2x) + (4 − 9)", "Agrupamos términos semejantes."],
         ["4x + (−5)", "Operamos cada grupo por separado."],
-        ["4x − 5", "Comprobación con x = 1: 6 + 4 − 2 − 9 = −1 y 4 − 5 = −1."],
+        ["4x − 5", "Comprobación con x = 1 → 6 + 4 − 2 − 9 = −1 y 4 − 5 = −1."],
       ], "La expresión reducida tiene el mismo valor para cualquier x."),
     ],
     diagnostic: [
@@ -81,7 +81,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
               "q0",
               `¿Por qué ${c1}x + ${c2} no se puede escribir como ${c1 + c2}x?`,
               [
-                [`Sí se puede: se suman los números`, `Prueba con x = 10: ${c1}x + ${c2} = ${c1 * 10 + c2}, pero ${c1 + c2}x = ${(c1 + c2) * 10}.`],
+                [`Sí se puede: se suman los números`, `Prueba con x = 10 → ${c1}x + ${c2} = ${c1 * 10 + c2}, pero ${c1 + c2}x = ${(c1 + c2) * 10}.`],
                 `Porque ${c1}x y ${c2} no son términos semejantes`,
                 ["Porque está prohibido sumar con letras", "Sí se suman términos con la misma letra: 3x + 2x = 5x."],
               ],
@@ -155,7 +155,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q6",
           `Ana tiene x cromos. Ben tiene ${q} más que ${m === 2 ? "el doble" : m === 3 ? "el triple" : "el cuádruple"} de Ana (${m}x + ${q}) y Cata tiene ${r} menos que Ana (x − ${r}). Si x = ${val}, ¿cuántos cromos tienen entre los tres?`,
           val + (m * val + q) + (val - r),
-          [`Total: x + (${m}x + ${q}) + (x − ${r}) = ${m + 2}x${t(q - r)}.`, `Con x = ${val}: ${m + 2} × ${val}${t(q - r)} = ${val + (m * val + q) + (val - r)}.`],
+          [`Total: x + (${m}x + ${q}) + (x − ${r}) = ${m + 2}x${t(q - r)}.`, `Con x = ${val} → ${m + 2} × ${val}${t(q - r)} = ${val + (m * val + q) + (val - r)}.`],
           ["Escribe la expresión del total.", "Reduce los términos semejantes.", `Evalúa en x = ${val}.`],
           {
             intent: "transfer",
@@ -206,7 +206,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       {
         title: "Multiplicar una suma",
         paragraphs: [
-          "3(x + 4) son tres grupos de (x + 4): x + 4 + x + 4 + x + 4 = 3x + 12. El 3 multiplica a cada término del paréntesis.",
+          "3(x + 4) son tres grupos de (x + 4) → x + 4 + x + 4 + x + 4 = 3x + 12. El 3 multiplica a cada término del paréntesis.",
           "Piensa en un rectángulo de altura 3 y base x + 4: su área es 3 × x más 3 × 4.",
         ],
         formula: "a(x + b) = ax + ab",
@@ -232,13 +232,13 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       ex("Desarrolla 5(2x − 3).", [
         ["5 × 2x = 10x", "El 5 multiplica al primer término."],
         ["5 × (−3) = −15", "Y también al segundo, con su signo."],
-        ["10x − 15", "Comprobación con x = 1: 5(2 − 3) = −5 y 10 − 15 = −5."],
+        ["10x − 15", "Comprobación con x = 1 → 5(2 − 3) = −5 y 10 − 15 = −5."],
       ], "5(2x − 3) = 10x − 15."),
       ex("Resuelve 3(x + 4) = 27.", [
         ["3x + 12 = 27", "Desarrollamos el paréntesis."],
         ["3x = 15", "Restamos 12 a ambos lados."],
         ["x = 5", "Comprobación: 3(5 + 4) = 27."],
-      ], "También podía dividirse primero entre 3: x + 4 = 9."),
+      ], "También podía dividirse primero entre 3 → x + 4 = 9."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 4 × (2 + 5)?", 28, ["2 + 5 = 7; 4 × 7 = 28."], ["Paréntesis primero.", "4 × 7.", "28."]),
@@ -303,9 +303,9 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q4",
           `Un compañero escribe ${a}(x + ${b}) = ${a}x + ${b}. ¿Qué falla?`,
           [
-            ["Nada, está bien", `Con x = 1: ${a}(1 + ${b}) = ${a * (1 + b)}, pero ${a} + ${b} = ${a + b}.`],
+            ["Nada, está bien", `Con x = 1 → ${a}(1 + ${b}) = ${a * (1 + b)}, pero ${a} + ${b} = ${a + b}.`],
             ["Debía sumar los números: " + (a + b) + "x", "Tampoco: no son términos semejantes."],
-            `El ${a} multiplica también al ${b}: ${a}x + ${a * b}`,
+            `El ${a} multiplica también al ${b} → ${a}x + ${a * b}`,
           ],
           2,
           "La distributiva aplica el factor a cada término del paréntesis.",
@@ -326,7 +326,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q6",
           `Resuelve ${qa}(x − ${qb}) = ${qt}.`,
           qt / qa + qb,
-          [`Divide entre ${qa}: x − ${qb} = ${fmt(qt / qa)}.`, `Suma ${qb}: x = ${fmt(qt / qa + qb)}.`, `Comprobación: ${qa}(${fmt(qt / qa + qb)} − ${qb}) = ${qt}.`],
+          [`Divide entre ${qa} → x − ${qb} = ${fmt(qt / qa)}.`, `Suma ${qb} → x = ${fmt(qt / qa + qb)}.`, `Comprobación: ${qa}(${fmt(qt / qa + qb)} − ${qb}) = ${qt}.`],
           ["Puedes desarrollar o dividir ambos lados entre el factor.", `Divide ${qt} entre ${qa}.`, `Después suma ${qb}.`],
           {
             intent: "transfer",
@@ -415,7 +415,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
     ],
     diagnostic: [
       n("d-1", "Resuelve 3x + 4 = 19.", 5, ["3x = 15; x = 5."], ["Resta 4.", "Divide entre 3.", "5."]),
-      n("d-2", "Desarrolla 2(x + 6): ¿cuál es el término sin x?", 12, ["2 × 6 = 12."], ["El 2 multiplica a ambos términos.", "2 × 6.", "12."]),
+      n("d-2", "Desarrolla 2(x + 6). ¿Cuál es el término sin x?", 12, ["2 × 6 = 12."], ["El 2 multiplica a ambos términos.", "2 × 6.", "12."]),
       c("d-3", "¿Qué conserva una igualdad?", ["Restar 2x solo a un lado", "Restar 2x a ambos lados", "Cambiar x por 2"], 1, "La misma operación en ambos lados."),
     ],
     questions(v) {
@@ -453,7 +453,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q1",
           `Resuelve ${a}x + ${b} = ${cc}x + ${d}.`,
           x,
-          [`Resta ${cc}x: ${a - cc}x + ${b} = ${d}.`, `Resta ${b}: ${a - cc}x = ${d - b}.`, `x = ${x}. Comprobación: ${a * x + b} = ${cc * x + d}.`],
+          [`Resta ${cc}x: ${a - cc}x + ${b} = ${d}.`, `Resta ${b} → ${a - cc}x = ${d - b}.`, `x = ${x}. Comprobación: ${a * x + b} = ${cc * x + d}.`],
           [`Reúne la x restando ${cc}x a ambos lados.`, `Queda ${a - cc}x + ${b} = ${d}.`, `Resuelve la ecuación de dos pasos.`],
           { errors: [{ value: (d - b) / (a + cc), feedback: `Sumaste los coeficientes. Al restar ${cc}x a ambos lados queda ${a - cc}x.` }] },
         ),
@@ -577,12 +577,12 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       ex("Resuelve 5x − 3 ≤ 22.", [
         ["5x ≤ 25", "Sumamos 3 a ambos lados."],
         ["x ≤ 5", "Dividimos entre 5, que es positivo."],
-        ["x = 5: 22 ≤ 22 ✓", "El límite se incluye porque la desigualdad es ≤."],
+        ["x = 5 → 22 ≤ 22 ✓", "El límite se incluye porque la desigualdad es ≤."],
       ], "Todos los números menores o iguales que 5."),
       ex("Resuelve 10 − 3x > 1.", [
         ["−3x > −9", "Restamos 10 a ambos lados."],
         ["x < 3", "Dividimos entre −3 e invertimos el sentido."],
-        ["x = 0: 10 > 1 ✓; x = 4: −2 > 1 ✗", "Comprobamos un valor de cada lado."],
+        ["x = 0 → 10 > 1 ✓; x = 4 → −2 > 1 ✗", "Comprobamos un valor de cada lado."],
       ], "Todos los números menores que 3."),
     ],
     diagnostic: [
@@ -654,7 +654,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q4",
           `Un compañero resuelve −${na}x > ${nc} y escribe x > −${nc / na}. ¿Qué falla?`,
           [
-            ["Nada, está bien", `Prueba x = 0: −${na} × 0 > ${nc} es falso, aunque 0 > −${nc / na}.`],
+            ["Nada, está bien", `Prueba x = 0 → −${na} × 0 > ${nc} es falso, aunque 0 > −${nc / na}.`],
             `Al dividir entre −${na} debía invertir el sentido: x < −${nc / na}`,
             [`Debía restar ${na}`, `−${na}x es un producto: se deshace dividiendo.`],
           ],
@@ -729,7 +729,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
         title: "Cambio constante",
         paragraphs: [
           "Un depósito tiene 20 L y recibe 5 L por minuto: 20, 25, 30, 35… Cada minuto, y aumenta 5. Esa es una relación lineal.",
-          "Se escribe y = 5x + 20: 5 es la pendiente (cambio por minuto) y 20 el valor inicial (litros a los 0 minutos).",
+          "Se escribe y = 5x + 20 → 5 es la pendiente (cambio por minuto) y 20 el valor inicial (litros a los 0 minutos).",
         ],
         formula: "y = mx + b",
       },

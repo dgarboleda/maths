@@ -107,6 +107,20 @@ describe("Contrato editorial del programa inicial", () => {
     expect(getLesson("modelar-ecuaciones")!.practice[6].answer).toBe(6); // 11 y 21 por 1 y 3 h
   });
 
+  test("los dos puntos nunca separan números: en Perú «:» también es división", () => {
+    // «30 − 5 × 2: 5 × 2» se lee como una división. Entre expresiones se usa
+    // «→» o una frase; la razón «3:4» (sin espacio) sigue permitida.
+    const ambiguous = /[\d)²³]\s*:\s+[−\-\d(x√¿]/;
+    for (const l of LESSONS) {
+      const texts: string[] = [];
+      for (const q of [...l.diagnostic, ...l.guided, ...l.practice, ...l.checks.flat(), ...l.review, ...l.mixed, l.application])
+        texts.push(q.prompt, ...q.solution, ...q.hints, ...(q.choices?.flatMap((c) => [c.label, c.feedback ?? ""]) ?? []), ...(q.errors?.map((e) => e.feedback) ?? []));
+      for (const s of l.sections) texts.push(...s.paragraphs, s.formula ?? "");
+      for (const e of l.examples) texts.push(e.prompt, e.conclusion, ...e.steps.flatMap((s) => [s.math, s.why]));
+      for (const text of texts) expect(text, l.id).not.toMatch(ambiguous);
+    }
+  });
+
   test("las formas paralelas no repiten respuestas ni posiciones", () => {
     for (const l of LESSONS) {
       const [a, b] = l.checks;

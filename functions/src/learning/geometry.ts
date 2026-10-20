@@ -562,14 +562,14 @@ export const GEOMETRY_LESSONS: Lesson[] = [
         title: "Áreas sobre los lados",
         paragraphs: [
           "En un triángulo rectángulo, el cuadrado construido sobre la hipotenusa tiene la misma área que los dos cuadrados de los catetos juntos: c² = a² + b².",
-          "Con catetos 3 y 4: 9 + 16 = 25, y la hipotenusa mide √25 = 5.",
+          "Con catetos 3 y 4 → 9 + 16 = 25, y la hipotenusa mide √25 = 5.",
         ],
         formula: "c² = a² + b²",
       },
       {
         title: "Hallar un cateto",
         paragraphs: [
-          "Si conoces la hipotenusa y un cateto, resta: a² = c² − b². Con c = 13 y b = 5: 169 − 25 = 144, a = 12.",
+          "Si conoces la hipotenusa y un cateto, resta: a² = c² − b². Con c = 13 y b = 5 → 169 − 25 = 144, a = 12.",
           "La hipotenusa siempre es el lado mayor: si te da un cateto más largo que la hipotenusa, revisa las cuentas.",
         ],
         formula: "a² = c² − b²",
@@ -666,7 +666,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
           "q5",
           `Un cable va desde lo alto de un poste de ${a} m hasta un punto del suelo a ${b} m de la base. ¿Cuánto mide el cable?`,
           cc,
-          [`Catetos ${a} y ${b}: ${a * a} + ${b * b} = ${cc * cc}.`, `Cable: √${cc * cc} = ${cc} m.`],
+          [`Catetos ${a} y ${b} → ${a * a} + ${b * b} = ${cc * cc}.`, `Cable: √${cc * cc} = ${cc} m.`],
           ["El poste y el suelo forman un ángulo recto.", "El cable es la hipotenusa.", "Usa c² = a² + b²."],
           { intent: "transfer", unit: "m", errors: [{ value: a + b, feedback: "El cable no es la suma de las distancias: es la hipotenusa." }] },
         ),

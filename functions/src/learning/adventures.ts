@@ -175,7 +175,7 @@ const receta: AdventureDef = {
     const scale = (name: string, base: number, value: number, unit: string) =>
       value === base + 6
         ? `Sumaste 6 a ${name}, pero las cantidades no crecen sumando: pasar de 4 a 10 personas multiplica todo por 10/4 = 2,5.`
-        : `${name[0].toUpperCase()}${name.slice(1)}: ${value} ${unit} no corresponde a 10 personas. Calcula cuánto toca a 1 persona (${base} ÷ 4) y multiplica por 10.`;
+        : `${name[0].toUpperCase()}${name.slice(1)} → ${value} ${unit} no corresponde a 10 personas. Calcula cuánto toca a 1 persona (${base} ÷ 4) y multiplica por 10.`;
     if (!goals[0]) return { goals, feedback: scale("la harina", 200, harina, "g") };
     if (!goals[1]) return { goals, feedback: scale("la leche", 300, leche, "ml") };
     if (!goals[2]) return { goals, feedback: scale("los huevos", 2, huevos, "huevos") };
