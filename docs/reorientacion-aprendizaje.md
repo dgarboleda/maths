@@ -251,7 +251,7 @@ de esta entrega.
 
 ## Auditoría de usabilidad en móvil
 
-`e2e/auditoria-movil.spec.ts` y `e2e/auditoria-visuales.spec.ts` (solo con `AUDITORIA=1`, fuera de CI) recorren en un Pixel 7 cada clase pantalla por pantalla —diagnóstico, explicación, ejemplos, guiada, práctica con los nueve juegos y comprobación— y las pantallas generales del estudiante y de la familia. Anotan en `test-results/auditoria/*/hallazgos.json` desbordes, texto recortado o menor de 12 px, objetivos táctiles menores de 44 px, violaciones de axe y juegos cuyo enunciado y controles no caben a la vez en la pantalla, con capturas. La prueba del catálogo además impide «:» entre números (en Perú también es división) y `defineLesson` aplica la tipografía común: miles con espacio fijo («45 000 000», no «45.000.000») y signo «−».
+`e2e/auditoria-movil.spec.ts` y `e2e/auditoria-visuales.spec.ts` (solo con `AUDITORIA=1`, fuera de CI) recorren en un Pixel 7 cada clase pantalla por pantalla —diagnóstico, explicación, ejemplos, guiada, práctica con los nueve juegos y comprobación— y las pantallas generales del estudiante y de la familia. Anotan en `informes/auditoria/*/hallazgos.json` desbordes, texto recortado o menor de 12 px, objetivos táctiles menores de 44 px, violaciones de axe y juegos cuyo enunciado y controles no caben a la vez en la pantalla, con capturas. La prueba del catálogo además impide «:» entre números (en Perú también es división) y `defineLesson` aplica la tipografía común: miles con espacio fijo («45 000 000», no «45.000.000») y signo «−».
 
 ## Auditoría del catálogo anterior
 

@@ -9,7 +9,7 @@ import { crearHijo, entrarAlEspacio, registrarPadre, sembrarClasesTerminadas } f
  * Auditoría de usabilidad en móvil (no corre en CI: `AUDITORIA=1`). Recorre
  * cada clase pantalla por pantalla —diagnóstico, explicación, ejemplos,
  * guiada, práctica con los nueve minijuegos y comprobación— y anota en
- * `test-results/auditoria/*.json` desbordes, recortes, objetivos táctiles
+ * `informes/auditoria/*/hallazgos.json` desbordes, recortes, objetivos táctiles
  * pequeños, texto diminuto, violaciones de axe y juegos que no caben en la
  * pantalla. Guarda capturas de las pantallas con hallazgos.
  */
@@ -17,7 +17,7 @@ test.skip(!process.env.AUDITORIA, "Auditoría manual: AUDITORIA=1");
 test.describe.configure({ mode: "parallel" });
 test.use({ actionTimeout: 10_000 });
 
-const OUT = join("test-results", "auditoria");
+const OUT = join("informes", "auditoria");
 const GAMES = ["frogger", "cohete", "snake", "runner", "numberpac", "invaders", "breakout", "topos", "cajas"] as const;
 
 interface Finding { type: string; detail: string; extra?: string }

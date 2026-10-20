@@ -13,7 +13,7 @@ import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 test.skip(!process.env.AUDITORIA, "Auditoría manual: AUDITORIA=1");
 test.use({ actionTimeout: 10_000 });
 
-const OUT = join("test-results", "auditoria-visuales");
+const OUT = join("informes", "auditoria-visuales");
 
 test("visuales y fórmulas de todas las clases en móvil", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "móvil", "Solo en móvil");
