@@ -25,6 +25,7 @@ test("plan, mapa e informe usan las clases actuales sin cargar el sistema anteri
   await expect(page.getByText(/Plan guardado\./)).toBeVisible();
   await page.reload();
   await expect(page.getByRole("checkbox", { name: /^Ángulos y polígonos/ })).toBeChecked();
+  await page.screenshot({ path: testInfo.outputPath("plan-estudio.png") });
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await page.goto(base);
   await expect(page.getByRole("link", { name: "Comenzar mi siguiente clase", exact: true })).toHaveAttribute("href", `${base}/aprende/angulos`);
@@ -38,6 +39,8 @@ test("plan, mapa e informe usan las clases actuales sin cargar el sistema anteri
   await page.getByRole("button", { name: /estrellas · Mis premios/ }).click();
   await expect(page.getByRole("heading", { name: "Mis estrellas y premios", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Salir", exact: true }).click();
+  await expect(page.getByRole("button", { name: /estrellas · Mis premios/ })).toBeFocused();
+  await page.screenshot({ path: testInfo.outputPath("mapa-educativo-inicio.png") });
   await page.screenshot({ path: testInfo.outputPath("mapa-educativo.png"), fullPage: true });
   await page.goto("/panel");
   const card = page.getByRole("region", { name: "Progreso de Alex", exact: true });

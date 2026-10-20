@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Compass, Flag, Map, RotateCcw } from "lucide-react";
 import { ADVENTURES, dailyDue, dailyEligible, initialDaily, LEARNING_UNITS, LESSONS, learningStatus } from "@/lib/learning/domain";
 import { useLearningData } from "@/lib/learning/useLearningData";
@@ -20,6 +20,7 @@ export function LearningMap({ childId }: { childId: string }) {
   const now = useLearningClock();
   const stars = useTotalStars(data.parentId, childId);
   const [rewardsOpen, setRewardsOpen] = useState(false);
+  const rewardsTrigger = useRef<HTMLButtonElement>(null);
   if (data.loading) return <LearningLoading />;
   if (data.error || !data.child) return <LearningLoadError message={data.error ?? "No encontramos este perfil."} />;
   const base = `/jugar/${childId}`;
@@ -35,8 +36,8 @@ export function LearningMap({ childId }: { childId: string }) {
           <p className="mt-3 text-slate-300">Cada parada te lleva a una clase con explicación, ejemplos y práctica. Puedes explorar cualquier ruta o volver a sus bases.</p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link href={`${base}/aprende/${next.id}`} className={primaryButton}>Siguiente idea: {next.title}</Link>
-            {due > 0 && <Link href={`${base}/aprende/diario`} className={secondaryButton}><RotateCcw size={18} aria-hidden="true" />Repasar hoy · {due} ideas</Link>}
-            <button type="button" className={secondaryButton} disabled={stars === null} onClick={() => setRewardsOpen(true)}>⭐ {stars ?? "…"} estrellas · Mis premios</button>
+            {due > 0 && <Link href={`${base}/aprende/diario`} className={secondaryButton}><RotateCcw size={18} aria-hidden="true" />Repasar hoy · {due} {due === 1 ? "idea" : "ideas"}</Link>}
+            <button ref={rewardsTrigger} type="button" className={secondaryButton} disabled={stars === null} onClick={() => setRewardsOpen(true)}>⭐ {stars ?? "…"} estrellas · Mis premios</button>
           </div>
         </section>
         <ol className="space-y-7">
@@ -74,7 +75,7 @@ export function LearningMap({ childId }: { childId: string }) {
           })}
         </ol>
       </div>
-      {rewardsOpen && data.parentId && <LearningRewards parentId={data.parentId} childId={childId} stars={stars ?? 0} onClose={() => setRewardsOpen(false)} />}
+      {rewardsOpen && data.parentId && <LearningRewards parentId={data.parentId} childId={childId} stars={stars ?? 0} onClose={() => { setRewardsOpen(false); rewardsTrigger.current?.focus({ preventScroll: true }); }} />}
     </LearningShell>
   );
 }

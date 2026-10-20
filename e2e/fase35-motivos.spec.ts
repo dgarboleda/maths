@@ -106,7 +106,8 @@ test.describe("Racha de días jugados", () => {
 
     // Navegación del usuario: mantiene viva la escritura de la racha. Un
     // page.goto recarga el documento y puede interrumpir el guardado.
-    await page.getByText("Más actividades para explorar", { exact: true }).click();
+    await page.getByRole("link", { name: "Mapa de mi aprendizaje", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Mapa de mi aprendizaje", exact: true })).toBeVisible();
     await page.goto(`/jugar/${childId}/mapa-anterior`);
     await expect(page.getByText("2 días")).toBeVisible();
   });
