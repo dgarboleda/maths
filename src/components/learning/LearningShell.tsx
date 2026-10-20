@@ -12,6 +12,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import styles from "./learning.module.css";
+import { LearningHelpProvider } from "./LearningHelp";
+import { navigationHelp, type ScreenHelp } from "@/lib/learning/screenHelp";
 
 export const primaryButton =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition-colors hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-50";
@@ -22,11 +24,17 @@ export function LearningShell({
   childId,
   title,
   eyebrow,
+  help,
+  onHelpOpen,
+  helpDisabled,
   children,
 }: {
   childId: string;
   title: string;
   eyebrow?: string;
+  help?: ScreenHelp;
+  onHelpOpen?: () => Promise<boolean>;
+  helpDisabled?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -38,6 +46,7 @@ export function LearningShell({
     { href: `${base}/aventura`, text: "Aventura", icon: Compass },
   ];
   return (
+    <LearningHelpProvider childId={childId} help={help ?? navigationHelp(pathname)} onOpen={onHelpOpen} disabled={helpDisabled}>
     <main
       id="contenido"
       tabIndex={-1}
@@ -97,6 +106,7 @@ export function LearningShell({
         </div>
       </div>
     </main>
+    </LearningHelpProvider>
   );
 }
 

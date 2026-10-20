@@ -27,6 +27,8 @@ import {
   useLearningData,
 } from "@/lib/learning/useLearningData";
 import { useLearningClock } from "@/lib/learning/useLearningClock";
+import { lessonScreenHelp } from "@/lib/learning/screenHelp";
+import { useLearningHelpOpen } from "./LearningHelp";
 import {
   LearningLoading,
   LearningLoadError,
@@ -93,11 +95,18 @@ export function LessonPlayer({
   const requestedAvailable =
     requestedStage !== "review" ||
     (progress.reviewDueAt !== null && progress.reviewDueAt <= now);
+  const helpIsAssistance = question && ["diagnostic", "check", "review"].includes(progress.stage) &&
+    !evidence?.correct && !evidence?.revealed && !(evidence && evidence.attempts > 0) && !evidence?.hintsUsed;
+  const help = lessonScreenHelp(lesson, progress, question);
   return (
     <LearningShell
       childId={childId}
       title={lesson.title}
       eyebrow="Una idea que puedes comprender y usar"
+      help={requestedStage && !launched ? undefined : help}
+      helpDisabled={mutation.blocked}
+      onHelpOpen={!(requestedStage && !launched) && help.ideas.length > 0 && question && ["diagnostic", "check", "review"].includes(progress.stage)
+        ? async () => helpIsAssistance ? run({ kind: "hint", questionId: question.id }) : true : undefined}
     >
       <Link
         href={`/jugar/${childId}/aprende`}
@@ -377,10 +386,11 @@ export function QuestionActivity({
   const [game] = useState(pickPracticeGame);
   // Vía accesible: quien no pueda o no quiera jugar responde por escrito.
   const [writing, setWriting] = useState(false);
+  const helpOpen = useLearningHelpOpen();
   const problem = useMemo(() => lessonProblem(question), [question]);
   const arcade = progress.stage === "practice" && !writing && problem !== null;
   const errorPaused = Boolean(evidence && !evidence.correct && evidence.attempts > acknowledgedAttempts);
-  const paused = manuallyPaused || errorPaused;
+  const paused = manuallyPaused || errorPaused || helpOpen;
   const assessment = ["diagnostic", "check", "review"].includes(progress.stage);
   const silentCheck = ["check", "review"].includes(progress.stage);
   const locked = Boolean(

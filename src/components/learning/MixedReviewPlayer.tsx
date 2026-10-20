@@ -32,6 +32,7 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import { QuestionActivity } from "./LessonPlayer";
+import { questionHelp } from "@/lib/learning/screenHelp";
 
 /**
  * Repaso intercalado de una unidad: problemas de varias clases terminadas,
@@ -82,11 +83,16 @@ export function MixedReviewPlayer({
   );
   const session = mixedQuestions(state);
   const current = state.stage === "active" ? session[state.index] : undefined;
+  const help = current ? questionHelp(current.lesson, current.question) : undefined;
   return (
     <LearningShell
       childId={childId}
       title={`Repaso mixto: ${unit.title}`}
       eyebrow="Decide qué idea usar en cada problema"
+      help={help}
+      helpDisabled={mutation.blocked}
+      onHelpOpen={current && help && help.ideas.length > 0 ? async () => !state.responses[current.question.id]?.attempts && !state.responses[current.question.id]?.hintsUsed
+        ? run({ kind: "hint", questionId: current.question.id }) : true : undefined}
     >
       <Link
         href={`/jugar/${childId}/aprende#unit-${unit.id}`}

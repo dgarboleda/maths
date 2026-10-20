@@ -268,6 +268,13 @@ test("Laberinto en mÃ³vil: un toque es un paso, el fantasma espera y pisar un nÃ
   await expect(board).toHaveAttribute("data-player-y", direction === "abajo" ? "1" : "0");
   await expect(board).not.toHaveAttribute("data-ghost-y", "4", { timeout: 8000 });
   expect(answers).toBe(0);
+  await page.getByRole("button", { name: "Entender esta pantalla", exact: true }).click();
+  const pausedBoard = await board.evaluate((element) => ["data-player-x", "data-player-y", "data-ghost-x", "data-ghost-y"].map((attribute) => element.getAttribute(attribute)));
+  await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(1200);
+  expect(await board.evaluate((element) => ["data-player-x", "data-player-y", "data-ghost-x", "data-ghost-y"].map((attribute) => element.getAttribute(attribute)))).toEqual(pausedBoard);
+  expect(answers).toBe(0);
+  await page.getByRole("button", { name: "Entendido, seguir" }).click();
   await page.screenshot({ path: testInfo.outputPath("laberinto-movil-tablero.png"), fullPage: true });
   const state = await board.evaluate((element) => ({
     x: Number(element.getAttribute("data-player-x")), y: Number(element.getAttribute("data-player-y")),
