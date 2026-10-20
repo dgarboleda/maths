@@ -811,3 +811,31 @@ body {
   outline-offset: 3px;
   border-radius: 0.375rem;
 }
+
+/* Movimiento decorativo acotado: los números mantienen su columna y orden. */
+@keyframes arcade-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes arcade-hop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.12); }
+}
+@keyframes arcade-road {
+  to { background-position: -64px 0; }
+}
+.arcade-hover { animation: arcade-float 2s ease-in-out infinite; }
+.arcade-hop { animation: arcade-hop 180ms ease-out; }
+.arcade-stars {
+  background-image: radial-gradient(#c4b5fd70 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.arcade-road {
+  background-image: repeating-linear-gradient(90deg, transparent 0 42px, #cbd5e120 42px 56px, transparent 56px 64px);
+  background-size: 64px 100%;
+  animation: arcade-road 0.8s linear infinite;
+}
+.arcade-paused, .arcade-paused * { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) {
+  .arcade-hover, .arcade-hop, .arcade-road { animation: none; }
+}

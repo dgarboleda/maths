@@ -8,6 +8,7 @@ import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
 import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
+import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
@@ -90,11 +91,15 @@ export function FroggerGeneric({
   const [legacyProblem, setProblem] = useState<Problem>(generateProblem);
   const problem = exercise?.problem ?? legacyProblem;
   const [candidates, setCandidates] = useState<number[]>([]);
-  const [obstacleX, setObstacleX] = useState(CENTER_COL);
+  const [obstacleX, setObstacleX] = useState(COLS - 1);
+  const [moving, setMoving] = useState(false);
+  const [hopping, setHopping] = useState(false);
+  const hopRef = useRef(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
   const shownPhase = exercise?.solved ? "over" : phase;
+  const promptFocus = useArcadeFocus(shownPhase === "playing");
   const shownCount = exercise ? Number(exercise.solved) : correctCount;
   const shownWin = exercise ? exercise.solved : win;
   const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused);
@@ -109,11 +114,14 @@ export function FroggerGeneric({
     ? LESSON_OBSTACLE_TICK_MS
     : scaleWithWave(OBSTACLE_TICK_BASE_MS, OBSTACLE_TICK_STEP_MS, wave, OBSTACLE_TICK_FLOOR_MS);
 
-  function spawnCheckpoint() {
+  function spawnCheckpoint(count = correctCount) {
     const nextProblem = generateProblem();
     const spread = Math.max(8, COLS * 2);
     setProblem(nextProblem);
     setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, COLS));
+    setObstacleX(count % 2 ? 0 : COLS - 1);
+    obstacleDirRef.current = count % 2 ? 1 : -1;
+    accRef.current = 0;
   }
 
   function endGame(didWin: boolean, finalCount: number) {
@@ -133,7 +141,10 @@ export function FroggerGeneric({
     setReflexMiss(false);
     setRow(startRow);
     setFrogX(CENTER_COL);
-    setObstacleX(CENTER_COL);
+    setObstacleX(COLS - 1);
+    setMoving(false);
+    setHopping(false);
+    hopRef.current = 0;
     obstacleDirRef.current = 1;
     accRef.current = 0;
     busyRef.current = false;
@@ -170,7 +181,7 @@ export function FroggerGeneric({
         endGame(true, next);
         return;
       }
-      spawnCheckpoint();
+      spawnCheckpoint(next);
       busyRef.current = false;
       return;
     }
@@ -182,6 +193,8 @@ export function FroggerGeneric({
   }
 
   function handleHit() {
+    hopRef.current = 0;
+    setHopping(false);
     playSound("wrong", soundOn);
     if (exercise) {
       // Chocar es un fallo de reflejos: sin vidas ni respuesta, vuelve a la orilla.
@@ -201,44 +214,63 @@ export function FroggerGeneric({
   }
 
   function handleUp() {
-    if (busyRef.current || controlsDisabled || shownPhase !== "playing") return;
+    if (busyRef.current || controlsDisabled || shownPhase !== "playing" || hopRef.current > 0) return;
     const newRow = Math.max(0, row - 1);
     if (newRow === row) return;
     setReflexMiss(false);
+    setMoving(true);
+    hopRef.current = 180;
+    setHopping(true);
     setRow(newRow);
     if (isObstacleRow(newRow)) {
-      obstacleDirRef.current = 1;
-      setObstacleX(CENTER_COL);
-      accRef.current = 0;
+      if (frogX === obstacleX) handleHit();
     } else if (isCheckpointRow(newRow)) {
       resolveCheckpoint(frogX);
     }
   }
 
   function handleDown() {
-    if (busyRef.current || controlsDisabled || shownPhase !== "playing") return;
+    if (busyRef.current || controlsDisabled || shownPhase !== "playing" || hopRef.current > 0) return;
     const newRow = Math.min(startRow, row + 1);
     if (newRow === row) return;
     setRow(newRow);
+    setMoving(true);
+    hopRef.current = 180;
+    setHopping(true);
     if (isObstacleRow(newRow)) {
-      obstacleDirRef.current = 1;
-      setObstacleX(CENTER_COL);
-      accRef.current = 0;
+      if (frogX === obstacleX) handleHit();
     }
   }
 
   function handleLeft() {
-    if (busyRef.current || controlsDisabled || shownPhase !== "playing") return;
-    setFrogX((x) => Math.max(0, x - 1));
+    if (busyRef.current || controlsDisabled || shownPhase !== "playing" || hopRef.current > 0) return;
+    const next = Math.max(0, frogX - 1);
+    if (next === frogX) return;
+    setFrogX(next);
+    setMoving(true);
+    hopRef.current = 180;
+    setHopping(true);
+    if (isObstacleRow(row) && next === obstacleX) handleHit();
   }
   function handleRight() {
-    if (busyRef.current || controlsDisabled || shownPhase !== "playing") return;
-    setFrogX((x) => Math.min(COLS - 1, x + 1));
+    if (busyRef.current || controlsDisabled || shownPhase !== "playing" || hopRef.current > 0) return;
+    const next = Math.min(COLS - 1, frogX + 1);
+    if (next === frogX) return;
+    setFrogX(next);
+    setMoving(true);
+    hopRef.current = 180;
+    setHopping(true);
+    if (isObstacleRow(row) && next === obstacleX) handleHit();
   }
 
   useGameLoop(
     (dtMs) => {
-      if (busyRef.current || !isObstacleRow(row)) return;
+      if (busyRef.current) return;
+      if (hopRef.current > 0) {
+        hopRef.current = Math.max(0, hopRef.current - Math.min(dtMs, 50));
+        if (hopRef.current === 0) setHopping(false);
+      }
+      if (!moving) return;
       accRef.current += dtMs;
       if (accRef.current < obstacleTickMs) return;
       accRef.current -= obstacleTickMs;
@@ -250,7 +282,7 @@ export function FroggerGeneric({
       }
       obstacleDirRef.current = dir;
       setObstacleX(next);
-      if (next === frogX) handleHit();
+      if (isObstacleRow(row) && next === frogX) handleHit();
     },
     { running: shownPhase === "playing" && !controlsDisabled },
   );
@@ -271,7 +303,7 @@ export function FroggerGeneric({
   const inObstacleRow = isObstacleRow(row);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-sky-500 bg-slate-950 p-6 text-white shadow-2xl">
+    <div className={`relative overflow-hidden rounded-3xl border-4 border-sky-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${controlsDisabled ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -300,7 +332,7 @@ export function FroggerGeneric({
               ¡Empezar!
             </button>
             <p className="text-xs text-sky-300">
-              Usa las flechas del teclado (o los botones) para saltar.{exercise && " En esta clase, chocar con el obstáculo no cuenta como respuesta."}
+              Un toque, un salto. Observa el cocodrilo y cruza por el hueco.{exercise && " Puedes leer con calma hasta tu primer salto. Chocar no cuenta como respuesta."}
             </p>
           </div>
         )}
@@ -337,7 +369,7 @@ export function FroggerGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200`}>
+              <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200 outline-none`}>
                 {problem.prompt}
               </p>
             </div>
@@ -349,11 +381,11 @@ export function FroggerGeneric({
             {/* Tres filas a la vista: nenúfares (meta), carril con el
                 obstáculo y orilla. La rana se dibuja en la fila donde está,
                 para que nunca parezca parada sobre un nenúfar que no eligió. */}
-            <div aria-hidden="true" data-board="" data-frog-col={frogX} data-frog-lane={inObstacleRow ? "carril" : "orilla"}
+            <div aria-hidden="true" data-board="" data-frog-col={frogX} data-frog-lane={inObstacleRow ? "carril" : "orilla"} data-hopping={hopping} data-obstacle-col={obstacleX}
               className="mx-auto w-full max-w-sm space-y-1 overflow-hidden rounded-2xl border-2 border-sky-700 bg-slate-900 p-2">
               <div className="grid w-full max-w-sm gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
-                  <div key={col} className="flex aspect-[4/3] items-center justify-center rounded-lg bg-lime-800/60 text-sm font-bold text-lime-100">
+                  <div key={col} className="arcade-hover flex aspect-[4/3] items-center justify-center rounded-[40%] border-b-4 border-lime-900 bg-lime-700/70 text-sm font-bold text-lime-100" style={{ animationDelay: `${-col * 0.3}s` }}>
                     {candidates[col] !== undefined && lessonLabel(exercise, candidates[col])}
                   </div>
                 ))}
@@ -362,20 +394,20 @@ export function FroggerGeneric({
                 {Array.from({ length: COLS }, (_, col) => (
                   <div key={col}
                     className={`${reducedMotion ? "" : "transition-colors duration-150"} flex aspect-[4/3] items-center justify-center rounded-lg ${col === obstacleX ? (inObstacleRow ? "bg-red-600" : "bg-red-900/60") : "bg-slate-800"}`}>
-                    {inObstacleRow && frogX === col && "🐸"}
+                    {col === obstacleX ? <span className="text-2xl">🐊</span> : inObstacleRow && frogX === col ? <span className={hopping ? "arcade-hop text-2xl" : "text-2xl"}>🐸</span> : <span className="text-sky-400/60">≈</span>}
                   </div>
                 ))}
               </div>
               <div className="grid w-full gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
                   <div key={col} className="flex aspect-[4/3] items-center justify-center rounded-lg bg-sky-950">
-                    {!inObstacleRow && frogX === col && "🐸"}
+                    {!inObstacleRow && frogX === col && <span className={hopping ? "arcade-hop text-2xl" : "text-2xl"}>🐸</span>}
                   </div>
                 ))}
               </div>
             </div>
 
-            <TouchDPad inline onMove={onTouchMove} />
+            <TouchDPad inline repeat={false} onMove={onTouchMove} />
           </div>
         )}
 

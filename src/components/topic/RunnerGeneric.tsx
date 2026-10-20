@@ -8,6 +8,7 @@ import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
 import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
+import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
@@ -29,7 +30,8 @@ type Phase = "start" | "playing" | "over";
  * que `CoheteGeneric`/`SnakeGeneric`/`FroggerGeneric`. Avance automático
  * continuo (primer minijuego de esta serie donde `useGameLoop` mueve algo
  * más que un obstáculo decorativo: la cuenta regresiva hasta la próxima
- * puerta) — el jugador solo elige el carril, nunca detiene el avance.
+ * puerta). En la clase, el primer carril da la salida. El turbo permite
+ * acortar voluntariamente el recorrido; no altera premios ni corrección.
  *
  * A diferencia de Frogger, acá NO hay un obstáculo aparte: la única
  * consecuencia posible es cruzar la puerta en el carril correcto o
@@ -79,6 +81,8 @@ export function RunnerGeneric({
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
+  const [racing, setRacing] = useState(false);
+  const [turbo, setTurbo] = useState(false);
 
   // Cuenta regresiva "caliente": autoridad real de cuándo llega la próxima
   // puerta. Un `requestAnimationFrame` puede disparar muchos ticks dentro de
@@ -100,6 +104,8 @@ export function RunnerGeneric({
     setProblem(nextProblem);
     setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, LANES));
     if (exercise) setLane(NO_LANE);
+    setRacing(!lesson);
+    setTurbo(false);
     const wave = waveIndex(countForWave, 1);
     const total = scaleWithWave(GATE_TIME_BASE_MS, GATE_TIME_STEP_MS, wave, GATE_TIME_FLOOR_MS);
     setGateTotalMs(total);
@@ -181,7 +187,7 @@ export function RunnerGeneric({
 
   useGameLoop(
     (dtMs) => {
-      if (busyRef.current) return;
+      if (busyRef.current || !racing) return;
       remainingRef.current -= dtMs;
       if (remainingRef.current <= 0) {
         resolveGate();
@@ -194,15 +200,27 @@ export function RunnerGeneric({
 
   const laneCount = lesson ? candidates.length || LANES : LANES;
   function moveLaneUp() {
-    if (busyRef.current || frozen) return;
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
     setLane((l) => Math.max(0, l - 1));
+    setRacing(true);
   }
   function moveLaneDown() {
-    if (busyRef.current || frozen) return;
-    setLane((l) => Math.min(laneCount - 1, l + 1));
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
+    setLane((l) => l === NO_LANE ? 0 : Math.min(laneCount - 1, l + 1));
+    setRacing(true);
   }
 
-  useArrowKeys({ up: moveLaneUp, down: moveLaneDown }, { enabled: phase === "playing" && !frozen && !solved });
+  function boost() {
+    if (busyRef.current || frozen || solved || phase !== "playing" || lane === NO_LANE) return;
+    // Acelerar es voluntario: ninguna recompensa depende de la velocidad.
+    remainingRef.current = Math.min(remainingRef.current, 650);
+    setRemainingMs(remainingRef.current);
+    setTurbo(true);
+    setRacing(true);
+    playSound("click", soundOn);
+  }
+
+  useArrowKeys({ up: moveLaneUp, down: moveLaneDown, action: boost }, { enabled: phase === "playing" && !frozen && !solved });
 
   function onTouchMove(dx: number, dy: number) {
     if (dy < 0 || dx < 0) moveLaneUp();
@@ -210,13 +228,14 @@ export function RunnerGeneric({
   }
 
   const shownPhase = solved ? "over" : phase;
+  const promptFocus = useArcadeFocus(shownPhase === "playing");
   const shownCount = lesson ? Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
   const gateApproachPct = Math.min(100, ((gateTotalMs - remainingMs) / gateTotalMs) * 100);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-6 text-white shadow-2xl">
+    <div className={`relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen || !racing ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -225,9 +244,9 @@ export function RunnerGeneric({
 
       <div className="relative z-10 mx-auto max-w-md text-center">
         <h2 className="mb-2 bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-3xl font-extrabold text-transparent">
-          🏃 Autopista de resultados
+          🏎️ Autopista de resultados
         </h2>
-        <p className="mb-6 text-sm text-amber-200">¡Cambia de carril para cruzar la puerta con el resultado correcto!</p>
+        <p className="mb-4 text-sm text-amber-200">¡Cambia de carril y activa el turbo hacia el resultado correcto!</p>
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
@@ -242,7 +261,7 @@ export function RunnerGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-amber-300">Usa las flechas arriba/abajo (o los botones) para cambiar de carril.{lesson && " En esta clase empiezas fuera de los carriles: elige uno con las flechas antes de que llegue la puerta. Si no eliges, no cuenta como respuesta."}</p>
+            <p className="text-xs text-amber-300">Flechas arriba/abajo para cambiar de carril · espacio para el turbo.{lesson && " Lee con calma: la carrera empieza cuando eliges el primer carril."}</p>
           </div>
         )}
 
@@ -278,7 +297,7 @@ export function RunnerGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-orange-200`}>
+              <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-orange-200 outline-none`}>
                 {problem.prompt}
               </p>
             </div>
@@ -294,25 +313,29 @@ export function RunnerGeneric({
               />
             </div>
 
-            <div aria-hidden="true" className="mx-auto flex w-full max-w-sm flex-col gap-1">
+            <p role="status" className="text-sm font-semibold text-amber-200">{!racing ? "Lee el problema y elige tu ruta. Tú das la salida." : turbo ? "¡Turbo activado! Aún puedes cambiar de carril." : "¡En marcha! Cambia de carril o acelera con el turbo."}</p>
+            <div aria-hidden="true" data-runner-board="" data-lane={lane} data-racing={racing} className="arcade-road relative mx-auto w-full max-w-sm overflow-hidden rounded-2xl border-2 border-amber-500/70 bg-slate-900 p-2">
               {lesson && lane === NO_LANE && (
                 <div className="flex h-10 items-center justify-center gap-2 rounded-lg border border-dashed border-amber-400 text-sm font-bold text-amber-200">
-                  <span>🏃</span> Elige un carril con las flechas
+                  <span>🏎️</span> Elige un carril con las flechas
                 </div>
               )}
               {Array.from({ length: laneCount }, (_, row) => (
                 <div
                   key={row}
-                  className={`${reducedMotion ? "" : "transition-colors duration-150"} flex h-12 items-center justify-between rounded-lg border px-4 font-bold ${
-                    lane === row ? "border-amber-300 bg-amber-800/60 text-amber-100" : "border-slate-700 bg-slate-900 text-slate-400"
+                  className={`${reducedMotion ? "" : "transition-colors duration-150"} relative flex h-14 items-center rounded-lg border-b border-dashed font-bold ${
+                    lane === row ? "border-amber-300 bg-amber-800/40 text-amber-100" : "border-slate-500/60 text-slate-200"
                   }`}
                 >
-                  <span>{lane === row ? "🏃" : ""}</span>
-                  <span className="text-lg">{candidates[row] === undefined ? "" : lessonLabel(exercise, candidates[row])}</span>
+                  <span className="absolute left-1 text-3xl">{lane === row ? "🏎️" : ""}</span>
+                  {turbo && lane === row && <span className="absolute left-0 text-lg">🔥</span>}
+                  <span data-choice-label="" className="absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-sm text-cyan-100 shadow-lg" style={{ left: `${74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : lessonLabel(exercise, candidates[row])}</span>
                 </div>
               ))}
             </div>
 
+            <button type="button" onClick={boost} disabled={frozen || lane === NO_LANE || turbo}
+              className="min-h-11 rounded-xl border-2 border-amber-200 bg-amber-400 px-6 font-bold text-slate-950 disabled:opacity-50">Turbo · cruzar ⚡</button>
             <TouchDPad inline onMove={onTouchMove} />
           </div>
         )}
