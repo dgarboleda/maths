@@ -9,7 +9,7 @@ import { crearHijo, entrarAlEspacio, registrarPadre, sembrarClasesTerminadas } f
  * Auditoría de usabilidad en móvil (no corre en CI: `AUDITORIA=1`). Recorre
  * cada clase pantalla por pantalla —diagnóstico, explicación, ejemplos,
  * guiada, práctica con los nueve minijuegos y comprobación— y anota en
- * `informes/auditoria/*/hallazgos.json` desbordes, recortes, objetivos táctiles
+ * `informes/auditoria/<clase>/hallazgos.json` desbordes, recortes, objetivos táctiles
  * pequeños, texto diminuto, violaciones de axe y juegos que no caben en la
  * pantalla. Guarda capturas de las pantallas con hallazgos.
  */
