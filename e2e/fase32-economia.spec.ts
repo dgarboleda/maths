@@ -22,7 +22,8 @@ test.describe("El niño elige su avatar", () => {
     await page.goto(`/jugar/${childId}/mapa`);
     const retrato = page.getByRole("button", { name: `Cambiar el avatar de ${nombre}` });
     await expect(retrato).toBeVisible();
-    await expect(retrato.locator("img")).toHaveAttribute("src", /avatar\.webp/);
+    // Los perfiles nuevos ya eligen un personaje incluido al crearse.
+    await expect(retrato.locator("img")).toHaveAttribute("src", /animo\.jpg/);
 
     await retrato.click();
     const dialogo = page.getByRole("dialog", { name: `Avatar de ${nombre}` });
