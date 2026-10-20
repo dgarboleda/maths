@@ -21,7 +21,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
       "La reserva se llena desde varias fuentes que informan en fracciones distintas. Para saber cuánto hay en total, las partes deben ser del mismo tamaño.",
     prerequisites: ["fracciones-equivalentes"],
     legacyModuleIds: ["aritmetica-fracciones-2", "aritmetica-mcd-mcm"],
-    visual: "equivalence",
+    visual: "fraction-sum",
     vocabulary: [
       { term: "Denominador común", meaning: "Un múltiplo de ambos denominadores; permite expresar las fracciones con partes del mismo tamaño." },
       { term: "Mínimo común múltiplo", meaning: "El menor múltiplo común; da las fracciones más sencillas." },
@@ -188,7 +188,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
       "Para repartir la reserva en envases y calcular partes de partes, hay que multiplicar y dividir fracciones con sentido.",
     prerequisites: ["fraccion-cantidad", "fracciones-suma-resta"],
     legacyModuleIds: ["aritmetica-fracciones-mult-div"],
-    visual: "quantity",
+    visual: "fraction-product",
     vocabulary: [
       { term: "Inverso", meaning: "La fracción que multiplicada por otra da 1: el inverso de 3/4 es 4/3." },
       { term: "Fracción de una fracción", meaning: "2/3 de 3/4 es 2/3 × 3/4." },

@@ -178,7 +178,7 @@ export function BoxplotVisual({ id }: { id: string }) {
         <rect x={sx(q1)} y={64} width={Math.max(1, sx(q3) - sx(q1))} height={32} className="fill-amber-300/25 stroke-amber-300" strokeWidth={2} />
         <line x1={sx(med)} x2={sx(med)} y1={64} y2={96} className="stroke-white" strokeWidth={3} />
         {[0, 10, 20, 30, 40].map((t) => (
-          <text key={t} x={sx(t)} y={122} textAnchor="middle" className="fill-slate-400 text-[9px]">{t}</text>
+          <text key={t} x={sx(t)} y={122} textAnchor="middle" className="fill-slate-400 text-[11px]">{t}</text>
         ))}
         <Handle x={sx(extreme)} y={30} r={3} className="fill-transparent"
           onDrag={(px) => setExtreme(snap(((px - 16) / 288) * (hi - lo) + lo, 0, 40))} />
@@ -224,7 +224,7 @@ export function CountingVisual({ id }: { id: string }) {
           const counted = i !== j && (ordered === "con" || i < j);
           return (
             <span key={`${r}${c}`} aria-hidden="true"
-              className={`grid size-7 place-items-center text-[10px] ${i === j ? "bg-slate-900 text-slate-600" : counted ? "bg-amber-300 font-bold text-slate-950" : "bg-slate-800 text-slate-400"}`}>
+              className={`grid size-7 place-items-center text-[10px] ${i === j ? "bg-slate-900 text-slate-400" : counted ? "bg-amber-300 font-bold text-slate-950" : "bg-slate-800 text-slate-400"}`}>
               {r}{c}
             </span>
           );

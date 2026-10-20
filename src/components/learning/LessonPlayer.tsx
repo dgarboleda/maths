@@ -328,7 +328,7 @@ export function LessonPlayer({
           )}
           {!["check", "review"].includes(progress.stage) && (
             <details className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
-              <summary className="cursor-pointer font-bold">
+              <summary className="flex min-h-11 cursor-pointer items-center font-bold">
                 Palabras de esta clase
               </summary>
               <dl className="mt-4 space-y-3">

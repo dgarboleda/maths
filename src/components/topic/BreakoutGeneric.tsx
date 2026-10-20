@@ -12,7 +12,7 @@ import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import { findHitBlock, hitsPaddle, paddleBounceVx, stepBall, type Ball } from "./breakoutPhysics";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const FIELD_WIDTH = 100; // unidades porcentuales, no píxeles — ver breakoutPhysics.ts
 const BALL_SIZE = 4;
@@ -379,7 +379,7 @@ export function BreakoutGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className="text-2xl font-black text-violet-200 sm:text-3xl">
+              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-violet-200`}>
                 {problem.prompt}
               </p>
             </div>

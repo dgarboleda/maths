@@ -101,7 +101,7 @@ export function Plane({
       {ticks(x0, x1, xStep).map((t) => (
         <g key={`x${t}`}>
           <line x1={sx(t)} x2={sx(t)} y1={PAD} y2={H - PAD} className="stroke-slate-800" />
-          <text x={sx(t)} y={H - PAD + 14} textAnchor="middle" className="fill-slate-400 text-[9px]">
+          <text x={sx(t)} y={H - PAD + 14} textAnchor="middle" className="fill-slate-400 text-[11px]">
             {num(t)}
           </text>
         </g>
@@ -109,7 +109,7 @@ export function Plane({
       {ticks(y0, y1, yStep).map((t) => (
         <g key={`y${t}`}>
           <line x1={PAD} x2={W - PAD} y1={sy(t)} y2={sy(t)} className="stroke-slate-800" />
-          <text x={PAD - 4} y={sy(t) + 3} textAnchor="end" className="fill-slate-400 text-[9px]">
+          <text x={PAD - 4} y={sy(t) + 3} textAnchor="end" className="fill-slate-400 text-[11px]">
             {num(t)}
           </text>
         </g>
@@ -177,7 +177,7 @@ export function Toggle({
     <div role="group" aria-label={label} className="flex flex-wrap gap-2">
       {options.map(([key, text]) => (
         <button key={key} type="button" aria-pressed={value === key} onClick={() => onChange(key)}
-          className={`min-h-11 rounded-xl border px-4 text-sm font-semibold ${value === key ? "border-cyan-300 bg-cyan-300 text-slate-950" : "border-slate-600 bg-slate-900 text-slate-100"}`}>
+          className={`min-h-11 min-w-11 rounded-xl border px-4 text-sm font-semibold ${value === key ? "border-cyan-300 bg-cyan-300 text-slate-950" : "border-slate-600 bg-slate-900 text-slate-100"}`}>
           {text}
         </button>
       ))}
@@ -202,7 +202,7 @@ export function LinearVisual({ id }: { id: string }) {
             {/* Triángulo de pendiente: avanzar 1 y subir (o bajar) la pendiente. */}
             <path d={`M${s.sx(1)},${s.sy(f(1))} H${s.sx(2)} V${s.sy(f(2))}`} className="fill-none stroke-amber-300" strokeWidth={2} strokeDasharray="4 3" />
             <text x={s.sx(1.5)} y={s.sy(f(1)) + (slope >= 0 ? 12 : -5)} textAnchor="middle" className="fill-amber-200 text-[10px]">+1</text>
-            <text x={s.sx(2) + 4} y={(s.sy(f(1)) + s.sy(f(2))) / 2 + 3} className="fill-amber-200 text-[10px]">{slope >= 0 ? "+" : ""}{num(slope)}</text>
+            <text x={s.sx(2) + 4} y={(s.sy(f(1)) + s.sy(f(2))) / 2 + 3} className="fill-amber-200 text-[11px]">{slope >= 0 ? "+" : ""}{num(slope)}</text>
             <Handle x={s.sx(0)} y={s.sy(intercept)} className="fill-rose-300"
               onDrag={(_, py) => setIntercept(snap(s.iy(py), -5, 10))} />
             <Handle x={s.sx(1)} y={s.sy(f(1))}
@@ -349,7 +349,7 @@ export function InequalityVisual({ id }: { id: string }) {
         {Array.from({ length: 21 }, (_, i) => i - 10).map((t) => (
           <g key={t}>
             <line x1={sx(t)} x2={sx(t)} y1={26} y2={34} className="stroke-slate-500" />
-            {t % 2 === 0 && <text x={sx(t)} y={50} textAnchor="middle" className="fill-slate-400 text-[9px]">{num(t)}</text>}
+            {t % 2 === 0 && <text x={sx(t)} y={50} textAnchor="middle" className="fill-slate-400 text-[11px]">{num(t)}</text>}
           </g>
         ))}
         <line x1={sx(bound)} x2={right ? 300 : 20} y1={30} y2={30} className="stroke-cyan-300" strokeWidth={5} />

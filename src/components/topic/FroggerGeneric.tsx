@@ -11,7 +11,7 @@ import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
+import { lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
@@ -337,7 +337,7 @@ export function FroggerGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className="text-2xl font-black text-lime-200 sm:text-3xl">
+              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200`}>
                 {problem.prompt}
               </p>
             </div>

@@ -402,7 +402,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       "Un vehículo de rescate desciende a velocidad constante. Para saber dónde estará hay que multiplicar con negativos.",
     prerequisites: ["enteros-suma-resta"],
     legacyModuleIds: ["aritmetica-d10", "aritmetica-d5", "aritmetica-d6"],
-    visual: "integers",
+    visual: "integer-product",
     vocabulary: [
       { term: "Regla de los signos", meaning: "Signos iguales dan positivo; signos distintos dan negativo." },
       { term: "Cociente", meaning: "Resultado de una división." },
@@ -571,7 +571,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       "Las hojas de cálculo de la central combinan varias operaciones. Si se calculan en otro orden, el resultado cambia.",
     prerequisites: ["enteros-producto-cociente"],
     legacyModuleIds: ["aritmetica-jerarquia", "logica-d5"],
-    visual: "equation",
+    visual: "order",
     vocabulary: [
       { term: "Prioridad", meaning: "Orden convenido: paréntesis, potencias, multiplicaciones y divisiones, sumas y restas." },
       { term: "De izquierda a derecha", meaning: "Entre operaciones del mismo nivel, se calcula en el orden en que aparecen." },
@@ -743,7 +743,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       "Las placas solares son cuadradas y los depósitos cúbicos. Para dimensionarlos hay que pasar del área o el volumen a la medida del lado.",
     prerequisites: ["jerarquia-operaciones"],
     legacyModuleIds: ["aritmetica-potencias", "aritmetica-raices"],
-    visual: "area",
+    visual: "square-root",
     vocabulary: [
       { term: "Potencia", meaning: "Multiplicación repetida de un mismo factor: 2⁴ = 2 × 2 × 2 × 2." },
       { term: "Raíz cuadrada", meaning: "El número no negativo que elevado al cuadrado da el valor: √49 = 7." },

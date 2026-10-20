@@ -11,7 +11,7 @@ import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
@@ -271,7 +271,7 @@ export function InvadersGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p id={promptId} className="text-2xl font-black text-indigo-200 sm:text-3xl">
+              <p id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-indigo-200`}>
                 {problem.prompt}
               </p>
             </div>

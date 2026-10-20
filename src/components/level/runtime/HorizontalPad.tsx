@@ -95,7 +95,7 @@ export function HorizontalPad({
         <button
           type="button"
           aria-label={actionLabel}
-          className="pointer-events-auto rounded-full border border-red-400/40 bg-red-600/80 px-5 py-3 text-xs font-bold uppercase tracking-wide text-white shadow-lg active:bg-red-700"
+          className="pointer-events-auto min-h-11 rounded-full border border-red-400/40 bg-red-600/80 px-5 py-3 text-xs font-bold uppercase tracking-wide text-white shadow-lg active:bg-red-700"
           onPointerDown={onAction}
         >
           {actionLabel}

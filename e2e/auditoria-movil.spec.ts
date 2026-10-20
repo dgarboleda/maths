@@ -87,9 +87,11 @@ async function measure(page: Page): Promise<Finding[]> {
   });
 }
 
-function questionFor(lesson: Lesson, text: string): Question | undefined {
-  const all = [...lesson.diagnostic, ...lesson.guided, ...lesson.practice, ...lesson.checks.flat(), ...lesson.review, ...lesson.mixed, lesson.application];
+function questionFor(lesson: Lesson, text: string, expected?: Question): Question | undefined {
   const norm = (s: string) => s.replace(/\s+/g, " ").trim();
+  // Varias formas paralelas comparten enunciado: primero la esperada.
+  if (expected && norm(expected.prompt) === norm(text)) return expected;
+  const all = [...lesson.diagnostic, ...lesson.guided, ...lesson.practice, ...lesson.checks.flat(), ...lesson.review, ...lesson.mixed, lesson.application];
   return all.find((q) => norm(q.prompt) === norm(text));
 }
 
@@ -127,8 +129,13 @@ for (const [lessonIndex, lesson] of LESSONS.entries()) {
         await click("Reanudar partida").catch(() => {});
       }
       if (q.choices) {
-        const label = q.choices.find((c) => c.id === q.answer)!.label;
-        await page.getByRole("radio", { name: label, exact: true }).check();
+        // Formas paralelas con el mismo enunciado: vale la opción correcta visible.
+        const all = [...lesson.guided, ...lesson.practice, ...lesson.checks.flat()].filter((o) => o.prompt === q.prompt && o.choices);
+        const labels = [q, ...all].map((o) => o.choices!.find((c) => c.id === o.answer)!.label);
+        for (const label of labels) {
+          const radio = page.getByRole("radio", { name: label, exact: true });
+          if (await radio.count()) { await radio.check(); break; }
+        }
       } else await page.getByRole("textbox", { name: /Tu respuesta/ }).fill(String(q.answer));
       await click(submit);
     };
@@ -169,7 +176,7 @@ for (const [lessonIndex, lesson] of LESSONS.entries()) {
     for (let i = 0; i < lesson.practice.length; i++) {
       await activity(i, lesson.practice.length);
       await page.waitForTimeout(300);
-      const q = questionFor(lesson, await visiblePrompt()) ?? lesson.practice[i];
+      const q = questionFor(lesson, await visiblePrompt(), lesson.practice[i]) ?? lesson.practice[i];
       const game = q.format !== "choice" ? GAMES[(lessonIndex + i) % GAMES.length] : null;
       await audit(`práctica ${i + 1}${game ? ` · ${game} inicio` : ""}`);
       if (game) {
@@ -191,7 +198,8 @@ for (const [lessonIndex, lesson] of LESSONS.entries()) {
     for (let i = 0; i < 5; i++) {
       await activity(i, 5);
       await expect(page.locator("main legend").first()).toBeVisible();
-      const q = questionFor(lesson, await visiblePrompt());
+      const prompt = await visiblePrompt();
+      const q = questionFor(lesson, prompt, lesson.checks.map((c) => c[i]).find((c) => c.prompt.replace(/\s+/g, " ").trim() === prompt.replace(/\s+/g, " ").trim()));
       expect(q, `pregunta visible de la comprobación ${i + 1}`).toBeTruthy();
       await audit(`comprobación ${i + 1}`);
       await answer(q!, "Registrar mi respuesta");

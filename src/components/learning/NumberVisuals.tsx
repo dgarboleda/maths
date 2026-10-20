@@ -144,7 +144,7 @@ export function IntegerProductVisual({ id }: { id: string }) {
   const result = k * n;
   const step = k < 0 ? -n : n;
   const W = 320,
-    x = (v: number) => 10 + ((v + 30) / 60) * (W - 20);
+    x = (v: number) => 20 + ((v + 30) / 60) * (W - 40);
   const jumps = Array.from({ length: Math.abs(k) }, (_, i) => [i * step, (i + 1) * step]);
   return (
     <>
@@ -152,7 +152,7 @@ export function IntegerProductVisual({ id }: { id: string }) {
       <Slider id={`${id}-n`} label="Tamaño de cada grupo (segundo factor)" value={n} min={-6} max={6} onChange={setN} />
       <svg role="img" viewBox={`0 0 ${W} 80`} className="w-full max-w-md rounded-xl bg-slate-950"
         aria-label={`${sg(k)} por ${sg(n)}: ${Math.abs(k)} saltos de ${sg(step)} desde 0 llegan a ${sg(result)}.`}>
-        <line x1={10} x2={W - 10} y1={52} y2={52} className="stroke-slate-500" />
+        <line x1={20} x2={W - 20} y1={52} y2={52} className="stroke-slate-500" />
         {Array.from({ length: 13 }, (_, i) => -30 + i * 5).map((t) => (
           <g key={t}>
             <line x1={x(t)} x2={x(t)} y1={47} y2={57} className="stroke-slate-500" />
@@ -247,7 +247,7 @@ export function SquareRootVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         {perfect
           ? `${area} casillas forman un cuadrado exacto de lado ${n}: la raíz cuadrada es el lado.`
-          : `${area} no es un cuadrado perfecto: ${n}² = ${n * n} se queda corto (sobran ${area - n * n}, en ámbar) y ${n + 1}² = ${(n + 1) ** 2} se pasa. ${num(Math.sqrt(area))} es una aproximación de √${area}.`}
+          : `${area} no es un cuadrado perfecto: ${n}² = ${n * n} se queda corto (${area - n * n === 1 ? "sobra 1" : `sobran ${area - n * n}`}, en ámbar) y ${n + 1}² = ${(n + 1) ** 2} se pasa. ${num(Math.sqrt(area))} es una aproximación de √${area}.`}
       </p>
     </>
   );
