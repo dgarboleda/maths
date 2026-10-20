@@ -64,6 +64,9 @@ export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruG
   trigonometria: { competency: "forma", grade: 4 },
   "estadistica-dispersion": { competency: "datos", grade: 3 },
   combinatoria: { competency: "datos", grade: 5 },
+  "interes-compuesto": { competency: "cantidad", grade: 4 },
+  progresiones: { competency: "regularidad", grade: 3 },
+  "distancia-punto-medio": { competency: "forma", grade: 4 },
 };
 
 export function peruGradeLabel(grade: PeruGrade): string {

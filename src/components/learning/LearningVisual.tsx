@@ -24,6 +24,9 @@ import {
   ExponentialVisual,
   SystemVisual,
   TransformVisual,
+  InterestVisual,
+  SequenceVisual,
+  DistanceVisual,
   TrigVisual,
 } from "./AdvancedVisuals";
 
@@ -191,6 +194,9 @@ const OWN_VISUALS: Partial<Record<Visual, (props: { id: string }) => React.JSX.E
   boxplot: BoxplotVisual,
   counting: CountingVisual,
   transform: TransformVisual,
+  interest: InterestVisual,
+  sequence: SequenceVisual,
+  distance: DistanceVisual,
 };
 
 export function LearningVisual({ kind }: { kind: Visual }) {

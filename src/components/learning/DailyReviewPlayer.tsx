@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { ArrowRight, CalendarCheck, Check, X } from "lucide-react";
+import { ArrowRight, CalendarCheck, Check, Flame, Target, X } from "lucide-react";
 import {
   DAILY_ID,
   DAILY_INTERVALS,
@@ -16,6 +16,7 @@ import {
   isAnswerCorrect,
   LESSONS,
   limaDay,
+  streakToday,
   type DailyReviewState,
   type LearningAction,
 } from "@/lib/learning/domain";
@@ -62,6 +63,8 @@ export function DailyReviewPlayer({ childId }: { childId: string }) {
   const session = dailyQuestions(state);
   const current = state.stage === "active" ? session[state.index] : undefined;
   const doneToday = state.rewardDay === limaDay(now);
+  const streak = streakToday(state, now);
+  const focused = current && state.items[state.index]?.focus;
   return (
     <LearningShell childId={childId} title="Repasar hoy" eyebrow="Repaso espaciado de todas tus clases">
       <div className="max-w-3xl space-y-5">
@@ -73,6 +76,12 @@ export function DailyReviewPlayer({ childId }: { childId: string }) {
               ? "Resultado del repaso"
               : "Antes de empezar"}
         </h2>
+        {focused && (
+          <p className="flex items-center gap-2 rounded-xl bg-violet-950/40 p-3 text-sm text-violet-100">
+            <Target size={16} aria-hidden="true" />
+            Este problema vuelve porque un error de esta clase se repitió. Revísalo con calma.
+          </p>
+        )}
         {current ? (
           <QuestionActivity
             key={`${state.sessions}:${state.index}`}
@@ -86,6 +95,7 @@ export function DailyReviewPlayer({ childId }: { childId: string }) {
         ) : (
           <section className="space-y-4 rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-7">
             {state.stage === "summary" && state.lastResult && <DailySummary state={state} />}
+            <StreakNote streak={streak} />
             {eligible.length === 0 ? (
               <p className="rounded-xl bg-amber-950/30 p-4 text-sm text-amber-100">
                 Termina tu primera clase (o la evaluación de ubicación) para tener algo que repasar.
@@ -108,7 +118,7 @@ export function DailyReviewPlayer({ childId }: { childId: string }) {
                 <p className="text-xs leading-relaxed text-slate-400">
                   {doneToday
                     ? "Ya ganaste las estrellas del repaso de hoy; repasar más sigue ayudando a recordar."
-                    : "La primera sesión terminada del día da 2 estrellas."}
+                    : "La primera sesión terminada del día da 2 estrellas; a los 7, 14 y 30 días seguidos, 3 más."}
                 </p>
               </>
             )}
@@ -121,6 +131,30 @@ export function DailyReviewPlayer({ childId }: { childId: string }) {
         )}
       </div>
     </LearningShell>
+  );
+}
+
+function StreakNote({ streak }: { streak: ReturnType<typeof streakToday> }) {
+  if (streak.current === 0 && streak.best === 0) return null;
+  return (
+    <p className="flex flex-wrap items-center gap-2 rounded-xl bg-orange-950/40 p-4 text-sm text-orange-100">
+      <Flame size={16} aria-hidden="true" />
+      <span className="font-bold">
+        {streak.current} {streak.current === 1 ? "día seguido" : "días seguidos"} repasando
+      </span>
+      <span>
+        {streak.doneToday
+          ? streak.nextMilestone
+            ? `· faltan ${streak.nextMilestone - streak.current} para los ${streak.nextMilestone}.`
+            : "· ¡racha máxima de premios!"
+          : streak.usesFreeze
+            ? "· ayer no repasaste: hoy usas el comodín de la semana para mantenerla."
+            : streak.atRisk
+              ? "· repasa hoy para mantenerla."
+              : "· empieza hoy una racha nueva."}
+      </span>
+      {streak.best > streak.current && <span className="text-orange-200/80">Mejor racha: {streak.best}.</span>}
+    </p>
   );
 }
 

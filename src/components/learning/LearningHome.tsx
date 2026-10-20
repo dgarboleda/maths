@@ -22,6 +22,7 @@ import {
   dailyEligible,
   initialDaily,
   limaDay,
+  streakToday,
   PERU_MAP,
   recommendedLesson,
   STAGE_LABELS,
@@ -116,6 +117,8 @@ export function LearningHome({
   const reviewable = dailyEligible(data.progress, placed?.mastered ?? []);
   const dueToday = dailyDue(data.daily ?? initialDaily(), reviewable, now).length;
   const reviewedToday = data.daily?.rewardDay === limaDay(now);
+  const reviewStreak = streakToday(data.daily, now);
+  const streakLabel = reviewStreak.current > 0 ? ` · 🔥 ${reviewStreak.current}` : "";
   const unfinished = recommendedLesson(
     new Set(LESSONS.filter((l) => data.progress[l.id]?.completedAt).map((l) => l.id)),
     placed,
@@ -191,10 +194,11 @@ export function LearningHome({
                   className={`${secondaryButton} mt-4 w-full sm:w-auto`}
                 >
                   {reviewedToday
-                    ? "Repaso de hoy hecho ✓ · repasar más"
+                    ? `Repaso de hoy hecho ✓${streakLabel} · repasar más`
                     : dueToday > 0
-                      ? `Repasar hoy · ${dueToday} ${dueToday === 1 ? "idea" : "ideas"}`
-                      : "Repasar hoy · adelantar un repaso"}
+                      ? `Repasar hoy · ${dueToday} ${dueToday === 1 ? "idea" : "ideas"}${streakLabel}`
+                      : `Repasar hoy · adelantar un repaso${streakLabel}`}
+                  {reviewStreak.atRisk && <span className="sr-only">. Tu racha de repaso sigue si repasas hoy.</span>}
                 </Link>
               )}
               {placed ? (

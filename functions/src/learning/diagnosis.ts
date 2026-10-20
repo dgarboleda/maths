@@ -129,6 +129,8 @@ export interface Misconception {
   /** Después del último error, respondió bien al primer intento la misma
    *  tarea (en cualquiera de sus formas). */
   resolved: boolean;
+  /** Tarea de la última vez: las formas paralelas comparten tarea. */
+  task: number | null;
 }
 
 /** Diagnóstico de un evento: el guardado por el servidor o, en eventos
@@ -151,7 +153,7 @@ export function summarizeMisconceptions(
   getLesson: (id: string) => Lesson | undefined,
 ): { misconceptions: Misconception[]; unexpected: Record<string, number> } {
   const sorted = [...events].sort((a, b) => a.at - b.at);
-  const groups = new Map<string, Misconception & { task: number | null }>();
+  const groups = new Map<string, Misconception>();
   const solvedAt = new Map<string, number>();
   const unexpected: Record<string, number> = {};
   for (const event of sorted) {
@@ -194,9 +196,9 @@ export function summarizeMisconceptions(
       });
   }
   const misconceptions = [...groups.values()]
-    .map(({ task, ...m }) => ({
+    .map((m) => ({
       ...m,
-      resolved: (solvedAt.get(`${m.lessonId}#${task}`) ?? 0) > m.lastAt,
+      resolved: (solvedAt.get(`${m.lessonId}#${m.task}`) ?? 0) > m.lastAt,
     }))
     .sort((a, b) => Number(a.resolved) - Number(b.resolved) || b.count - a.count || b.lastAt - a.lastAt);
   return { misconceptions, unexpected };

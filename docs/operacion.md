@@ -19,11 +19,31 @@ No lo rotes sin plan: los hashes v2 dejarían de coincidir y habría que restabl
 
 **Migración:** los enlaces anteriores (sin clave) dejan de funcionar y muestran que hay que pedir uno nuevo. Al publicar, avisa a las familias de que vuelvan a compartir el enlace desde Ajustes. El contrato de los callables cambió: Functions y Worker anuncian el **protocolo 4** y deben desplegarse desde la misma revisión.
 
+**Rachas, errores en el repaso y tres clases nuevas (protocolo 11):** Functions conoce `interes-compuesto`, `progresiones` y `distancia-punto-medio` (46 clases), y el repaso diario lee las últimas 300 respuestas del perfil al empezar (consulta por `createdAt`, índice automático) para priorizar errores que se repiten; guarda la racha en `learningProgress/diario`. Sin migración. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 11.
+
 **Repaso espaciado diario (protocolo 10):** Functions acepta `lessonId: "diario"` (acciones `begin`, `answer`, `hint` y `next`; `reveal` se rechaza), decide qué clases entran leyendo el avance y la ubicación del perfil, y guarda la agenda en `learningProgress/diario`. La primera sesión terminada de cada día de Lima da 2 estrellas. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 10.
 
 **Clases de 3.° a 5.° de secundaria (protocolo 9):** seis clases nuevas (sistemas, crecimiento exponencial, trigonometría, dispersión, conteo y transformaciones; 43 en total). Functions debe conocer sus identificadores para registrar avance y la ubicación las incluye. Despliega frontend y Functions con `npm run deploy` desde la misma revisión y comprueba que `verify:deployment` anuncia el protocolo 9.
 
 **Ubicación, diagnóstico de errores y CNEB (protocolo 8):** Functions acepta la evaluación de ubicación (`lessonId: "ubicacion"`, acciones `begin`, `answer` y `skip`) y guarda el diagnóstico de cada respuesta en `learningEvidence`. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 8. El análisis de preguntas se ejecuta aparte: `npm run functions:build && FIREBASE_PROJECT_ID=<proyecto> npm run analisis:items -- --desde AAAA-MM-DD` con credenciales de administración (`gcloud auth application-default login`); el informe queda en `informes/` (ignorado por Git) y solo contiene agregados.
+
+**Análisis de preguntas en GitHub Actions (sin claves).** El flujo `Análisis de preguntas` (`.github/workflows/analisis-items.yml`) corre el día 1 de cada mes y a demanda (Actions → Análisis de preguntas → Run workflow, con `desde` y `minimo` opcionales). Publica el informe en el resumen de la ejecución y como artefacto durante 30 días. Se autentica con Workload Identity Federation, sin claves de cuenta de servicio, y se omite mientras falten estas **variables** del repositorio (Settings → Secrets and variables → Actions → Variables; no son secretos): `FIREBASE_PROJECT_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER` y `GCP_ANALYSIS_SERVICE_ACCOUNT`. Configuración única, desde una sesión con permisos de administración del proyecto:
+
+```sh
+PROJECT=<proyecto>; NUM=$(gcloud projects describe $PROJECT --format='value(projectNumber)')
+gcloud iam service-accounts create maths-analisis --project $PROJECT --display-name "Análisis de preguntas (solo lectura)"
+gcloud projects add-iam-policy-binding $PROJECT --member "serviceAccount:maths-analisis@$PROJECT.iam.gserviceaccount.com" --role roles/datastore.viewer
+gcloud iam workload-identity-pools create github --project $PROJECT --location global
+gcloud iam workload-identity-pools providers create-oidc maths --project $PROJECT --location global --workload-identity-pool github \
+  --issuer-uri https://token.actions.githubusercontent.com \
+  --attribute-mapping "google.subject=assertion.sub,attribute.repository=assertion.repository" \
+  --attribute-condition "assertion.repository == 'dgarboleda/maths'"
+gcloud iam service-accounts add-iam-policy-binding maths-analisis@$PROJECT.iam.gserviceaccount.com --project $PROJECT \
+  --role roles/iam.workloadIdentityUser \
+  --member "principalSet://iam.googleapis.com/projects/$NUM/locations/global/workloadIdentityPools/github/attribute.repository/dgarboleda/maths"
+```
+
+Valores de las variables: `GCP_WORKLOAD_IDENTITY_PROVIDER = projects/<NUM>/locations/global/workloadIdentityPools/github/providers/maths` y `GCP_ANALYSIS_SERVICE_ACCOUNT = maths-analisis@<proyecto>.iam.gserviceaccount.com`. La cuenta solo lee Firestore; la condición del proveedor limita el acceso a este repositorio. Los artefactos de un repositorio público son descargables por usuarios con acceso de lectura: el informe solo contiene agregados por pregunta y el número de perfiles.
 
 **Aventuras por unidad y 37 lecciones (protocolo 7):** Functions acepta los identificadores de las siete aventuras y valida cada plan con las entradas de su definición; el frontend sin ese Functions no puede guardar las aventuras nuevas. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 7.
 
