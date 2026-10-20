@@ -12,6 +12,7 @@ import type { SkillProgress } from "@/lib/types";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
 import type { ChildDoc } from "./FamilyProvider";
+import { ProfileAvatarSelector } from "./ProfileAvatarSelector";
 
 /**
  * Elegir el avatar de un hijo — Fase 19 (docs/level-editor-plan-v2.md §6.3).
@@ -23,6 +24,7 @@ export function AvatarPickerDialog({ parentId, child, onClose, onSaved }: { pare
   const { dialogRef, handleKeyDown } = useDialogFocus(onClose);
   const totalStars = useTotalStars(parentId, child.id);
   const [world, setWorld] = useState<GameWorld | null>(null);
+  const [worldLoaded, setWorldLoaded] = useState(false);
   const [levels, setLevels] = useState<LevelDefinition[]>([]);
   const [progressBySkill, setProgressBySkill] = useState<Record<string, SkillProgress>>({});
   const [saving, setSaving] = useState<string | null>(null);
@@ -51,6 +53,9 @@ export function AvatarPickerDialog({ parentId, child, onClose, onSaved }: { pare
       .catch((err) => {
         console.error("No se pudo cargar el catálogo de avatares", err);
         if (!cancelled) setError("No se pudo cargar el catálogo de avatares.");
+      })
+      .finally(() => {
+        if (!cancelled) setWorldLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -84,11 +89,15 @@ export function AvatarPickerDialog({ parentId, child, onClose, onSaved }: { pare
         aria-labelledby="avatar-picker-titulo"
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="w-full max-w-md rounded-2xl border border-indigo-500/30 bg-slate-900 p-5 focus:outline-none"
+        className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-indigo-500/30 bg-slate-900 p-5 focus:outline-none"
       >
         <h2 id="avatar-picker-titulo" className="text-sm font-bold text-white">
           Avatar de {child.name}
         </h2>
+
+        <div className="mt-4">
+          <ProfileAvatarSelector value={saving ?? child.avatarId ?? ""} disabled={saving !== null} onChange={(id) => void choose(id)} />
+        </div>
 
         {error && (
           <p role="alert" className="mt-2 rounded-lg border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-xs text-rose-200">
@@ -96,16 +105,16 @@ export function AvatarPickerDialog({ parentId, child, onClose, onSaved }: { pare
           </p>
         )}
 
-        {!world ? (
+        {!worldLoaded ? (
           <p role="status" className="mt-3 text-xs text-slate-400">
-            Cargando…
+            Cargando otros avatares…
           </p>
         ) : avatars.length === 0 ? (
-          <p className="mt-3 text-xs text-slate-400">Todavía no hay avatares en el catálogo del Mundo. Creá alguno desde el Editor de Mundo.</p>
+          <p className="mt-3 text-xs text-slate-400">Los personajes incluidos están disponibles desde el principio.</p>
         ) : (
           <div className="mt-4 grid grid-cols-3 gap-2">
             {avatars.map((avatar) => {
-              const unlocked = avatarUnlocked(avatar, world, levelsById, progressBySkill, totalStars ?? 0);
+              const unlocked = Boolean(world && avatarUnlocked(avatar, world, levelsById, progressBySkill, totalStars ?? 0));
               const selected = child.avatarId === avatar.id;
               return (
                 <button

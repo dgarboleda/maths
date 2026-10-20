@@ -192,6 +192,7 @@ function ChildResumenEntry({
         <Avatar
           variant="headshot"
           title={child.name}
+          avatarId={child.avatarId}
           className="size-14 shrink-0 rounded-full border-2 border-indigo-500/30"
         />
         <div className="min-w-0 flex-1">

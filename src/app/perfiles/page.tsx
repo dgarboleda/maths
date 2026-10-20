@@ -11,6 +11,8 @@ import { confirmChildPin, setChildPin } from "@/lib/pin";
 import { Avatar } from "@/components/world/Avatar";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
 import type { ChildProfile } from "@/lib/types";
+import { PROFILE_AVATARS } from "@/lib/profileAvatars";
+import { ProfileAvatarSelector } from "@/components/family/ProfileAvatarSelector";
 
 interface ChildDoc extends ChildProfile {
   id: string;
@@ -196,7 +198,7 @@ function ChildCard({ child }: { child: ChildDoc }) {
       className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3 md:gap-3 md:p-4"
     >
       <span className="grid size-16 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30 md:size-20">
-        <Avatar className="h-11 md:h-14" title={child.name} />
+        <Avatar avatarId={child.avatarId} className="h-11 md:h-14 rounded-full" title={child.name} />
       </span>
       <span className="font-display text-sm font-bold text-white md:text-base">{child.name}</span>
     </button>
@@ -290,7 +292,7 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
         className="family-panel anim-rise flex w-64 flex-col items-center gap-3 rounded-2xl p-5 focus:outline-none"
       >
         <form onSubmit={handleConfirm} className="flex w-full flex-col items-center gap-3">
-          <Avatar className="h-16" title={child.name} />
+          <Avatar avatarId={child.avatarId} className="h-16 rounded-full" title={child.name} />
 
           <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
             PIN de {child.name}
@@ -382,6 +384,7 @@ function NewChildForm({
   const [birthDate, setBirthDate] = useState("");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [avatarId, setAvatarId] = useState<string>(PROFILE_AVATARS[0].id);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -406,6 +409,7 @@ function NewChildForm({
       const created = await addDoc(childrenCollection, {
         name,
         birthDate,
+        avatarId,
         createdAt: serverTimestamp(),
       });
       // El hash del PIN lo escribe Functions; si falla, no dejar un perfil
@@ -433,6 +437,7 @@ function NewChildForm({
   return (
     <form onSubmit={handleSubmit} className="family-panel flex flex-col gap-4 rounded-2xl p-6">
       <h2 className="font-display text-base font-bold text-white">Nuevo perfil</h2>
+      <ProfileAvatarSelector value={avatarId} onChange={setAvatarId} disabled={submitting} />
       <label className="flex flex-col gap-1 text-sm text-indigo-200">
         Nombre
         <input required value={name} onChange={(e) => setName(e.target.value)} className="family-input" />

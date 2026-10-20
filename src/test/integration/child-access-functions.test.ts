@@ -4,6 +4,23 @@ import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { anonymousApp, call, createFamily, deleteApp } from "./familyFixture";
 
 describe("acceso infantil — callables reales", () => {
+  test("el enlace comparte solo avatares incluidos y descarta URLs o identificadores privados", async () => {
+    const family = await createFamily();
+    const guest = await anonymousApp();
+    try {
+      for (const avatarId of ["maths-animo", "maths-sonrisa", "maths-saludo"]) {
+        await updateDoc(family.profile, { avatarId });
+        expect(await call(guest, "listChildrenPublic", { parentId: family.parentId, accessKey: family.accessKey }))
+          .toEqual({ children: [{ id: family.childId, name: "Sofía", avatarId }] });
+      }
+      for (const avatarId of ["https://privado.test/foto.jpg", "avatar-personalizado"]) {
+        await updateDoc(family.profile, { avatarId });
+        expect(await call(guest, "listChildrenPublic", { parentId: family.parentId, accessKey: family.accessKey }))
+          .toEqual({ children: [{ id: family.childId, name: "Sofía" }] });
+      }
+    } finally { await Promise.all([deleteApp(family.app), deleteApp(guest)]); }
+  });
+
   test("la lista pública exige la clave del enlace y nunca incluye el hash ni la fecha de nacimiento", async () => {
     const family = await createFamily();
     const guest = await anonymousApp();

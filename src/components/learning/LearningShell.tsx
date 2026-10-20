@@ -27,6 +27,7 @@ export function LearningShell({
   help,
   onHelpOpen,
   helpDisabled,
+  portrait,
   children,
 }: {
   childId: string;
@@ -35,6 +36,7 @@ export function LearningShell({
   help?: ScreenHelp;
   onHelpOpen?: () => Promise<boolean>;
   helpDisabled?: boolean;
+  portrait?: ReactNode;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -99,9 +101,12 @@ export function LearningShell({
               {eyebrow}
             </p>
           )}
-          <h1 className="max-w-4xl text-balance font-display text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
-            {title}
-          </h1>
+          <div className="flex items-start gap-4">
+            {portrait}
+            <h1 className="min-w-0 max-w-4xl text-balance font-display text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
+              {title}
+            </h1>
+          </div>
           <div className="mt-6">{children}</div>
         </div>
       </div>

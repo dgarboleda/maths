@@ -42,6 +42,7 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import styles from "./learning.module.css";
+import { Avatar } from "@/components/world/Avatar";
 
 export const unitStyles: Record<
   UnitId,
@@ -149,6 +150,7 @@ export function LearningHome({
       childId={childId}
       title={title}
       eyebrow={view === "home" ? "Tu espacio de matemáticas" : "Tu biblioteca"}
+      portrait={view === "home" ? <Avatar avatarId={data.child.avatarId} title={`Avatar de ${data.child.name}`} className="size-16 rounded-2xl border border-cyan-300/25" /> : undefined}
     >
       <div className="space-y-8 sm:space-y-10">
         {view === "home" ? (

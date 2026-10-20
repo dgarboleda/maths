@@ -23,7 +23,7 @@ export interface ChildProfile {
    * creados antes de esta función: se trata como "pendiente" pero sin
    * forzar nada — ver /jugar/[childId]/page.tsx. */
   placementStatus?: PlacementStatus;
-  /** `AvatarDef.id` elegido del catálogo del Mundo (Fase 19,
+  /** ID del catálogo incluido (`profileAvatars`) o `AvatarDef.id` del Mundo (Fase 19,
    *  docs/level-editor-plan-v2.md §6.3) — preferencia de perfil, no progreso
    *  académico ni estado de mundo, por eso vive acá y no en una colección
    *  nueva. `useResolvedAvatar` decide si sigue vigente (puede haberse

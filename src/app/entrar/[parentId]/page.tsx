@@ -11,6 +11,7 @@ import { useDialogFocus } from "@/components/world/useDialogFocus";
 interface PublicChild {
   id: string;
   name: string;
+  avatarId?: string;
 }
 
 const KEYPAD = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
@@ -115,7 +116,7 @@ export default function EntrarPage() {
                 className="family-tile flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl p-3 md:gap-3 md:p-4"
               >
                 <span className="grid size-16 place-items-center rounded-full bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30 md:size-20">
-                  <Avatar className="h-11 md:h-14" title={child.name} />
+                  <Avatar avatarId={child.avatarId} className="h-11 md:h-14 rounded-full" title={child.name} />
                 </span>
                 <span className="font-display text-sm font-bold text-white md:text-base">{child.name}</span>
               </button>
@@ -222,7 +223,7 @@ function PinDialog({
         className="family-panel anim-rise flex w-64 flex-col items-center gap-3 rounded-2xl p-5 focus:outline-none"
       >
         <form onSubmit={handleConfirm} className="flex w-full flex-col items-center gap-3">
-          <Avatar className="h-16" title={child.name} />
+          <Avatar avatarId={child.avatarId} className="h-16 rounded-full" title={child.name} />
 
           <label htmlFor={pinId} className="text-center text-sm font-bold text-white">
             PIN de {child.name}

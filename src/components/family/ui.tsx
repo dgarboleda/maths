@@ -250,7 +250,7 @@ export function ChildSwitcher() {
               selected ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white" : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
             }`}
           >
-            <Avatar variant="headshot" title={c.name} className="size-6 rounded-full border border-indigo-500/30" />
+            <Avatar variant="headshot" avatarId={c.avatarId} title={c.name} className="size-6 rounded-full border border-indigo-500/30" />
             {c.name}
           </button>
         );
