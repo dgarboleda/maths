@@ -91,4 +91,33 @@ describe("CajasGeneric", () => {
     expect(screen.getByText("¡Caja entregada!")).toBeInTheDocument();
     expect(problemModule.choiceSet).toHaveBeenCalled();
   });
+
+  test("Z funciona con el foco fuera del juego y respeta escritura y atajos", () => {
+    const onAnswer = vi.fn(async () => 0);
+    const { unmount } = render(<div>
+      <button type="button">Control externo</button>
+      <input aria-label="Notas" />
+      <div contentEditable suppressContentEditableWarning><span>Texto editable</span></div>
+      <CajasGeneric moduleId="test-module" soundOn={false} onAnswer={onAnswer} />
+    </div>);
+    fireEvent.click(screen.getByText("¡Empezar!"));
+    const board = document.querySelector("[data-sokoban-board]")!;
+    key("ArrowRight");
+    const external = screen.getByRole("button", { name: "Control externo" });
+    external.focus();
+    for (const modifier of ["ctrlKey", "metaKey", "altKey", "repeat", "isComposing"]) {
+      fireEvent.keyDown(external, { code: "KeyZ", [modifier]: true });
+      expect(board).toHaveAttribute("data-player-x", "4");
+    }
+    fireEvent.keyDown(screen.getByLabelText("Notas"), { code: "KeyZ" });
+    fireEvent.keyDown(screen.getByText("Texto editable"), { code: "KeyZ" });
+    expect(board).toHaveAttribute("data-player-x", "4");
+    fireEvent.keyDown(external, { code: "KeyZ" });
+    expect(board).toHaveAttribute("data-player-x", "3");
+    expect(onAnswer).not.toHaveBeenCalled();
+    unmount();
+    const event = new KeyboardEvent("keydown", { code: "KeyZ", cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
 });

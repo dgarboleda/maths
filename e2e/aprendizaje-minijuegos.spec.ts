@@ -309,6 +309,11 @@ test("Cajas Sokoban: paredes, deshacer, pausa y entrega elegida sin premiar movi
   await expect(board).toHaveAttribute("data-player-x", "4");
   await expect(page.getByRole("button", { name: "Reiniciar cajas", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Reanudar partida", exact: true }).click();
+  if (!mobile) {
+    await page.keyboard.press("z"); // foco en el control externo de reanudar
+    await expect(board).toHaveAttribute("data-player-x", "3");
+    await press("R");
+  }
   await page.getByRole("button", { name: "Reiniciar cajas", exact: true }).click();
   await expect(board).toHaveAttribute("data-player-x", "3");
   expect(await board.locator("[data-box-id]").allTextContents()).toEqual(cells);

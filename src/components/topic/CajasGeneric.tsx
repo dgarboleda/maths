@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { choiceSet, type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
@@ -187,6 +187,21 @@ export function CajasGeneric({
     setNotice("Almacén reiniciado. Conservas la misma pregunta y las mismas cajas.");
   }
 
+  // Igual que las flechas, Z sigue funcionando con el foco en los controles
+  // externos de pausa. Nunca intercepta la escritura ni atajos del navegador.
+  useEffect(() => {
+    if (phase !== "playing" || frozen || solved) return;
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target;
+      if (event.code !== "KeyZ" || event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.isComposing) return;
+      if (target instanceof HTMLElement && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+      event.preventDefault();
+      undo();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
   useArrowKeys(
     {
       up: () => move("U"),
@@ -209,8 +224,7 @@ export function CajasGeneric({
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6"
-      onKeyDown={(event) => { if (event.code === "KeyZ" && !event.ctrlKey && !event.metaKey && !event.repeat) { event.preventDefault(); undo(); } }}>
+    <div className="relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
