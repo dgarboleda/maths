@@ -2,7 +2,7 @@
 
 Al crear un hijo en `/perfiles`, la familia puede elegir entre Ánimo, Sonrisa y Saludo. La elección se guarda con el perfil en el campo `avatarId`, que ya existía. Los perfiles anteriores mantienen su avatar predeterminado. Se puede cambiar en Ajustes → Avatar.
 
-Los retratos aparecen en el selector de perfiles, el diálogo de PIN, el inicio del alumno y las pantallas familiares. El catálogo incluido tiene prioridad cuando el perfil lo elige; los avatares personalizados del Mundo conservan sus reglas de desbloqueo. El personaje que camina por los niveles conserva su sprite: estas ilustraciones son retratos.
+Los retratos aparecen en el selector de perfiles, el diálogo de PIN, el inicio del alumno y las pantallas familiares. El retrato del inicio se añade únicamente para los personajes incluidos, sin sustituir una selección personalizada por un retrato genérico ni cargar el catálogo del Mundo. El catálogo incluido tiene prioridad cuando el perfil lo elige; los avatares personalizados del Mundo conservan sus reglas de desbloqueo. El personaje que camina por los niveles conserva su sprite: estas ilustraciones son retratos.
 
 Las tres imágenes proporcionadas se sirven desde `public/avatars/`, sin modificarlas ni subirlas a Storage. El encuadre del retrato se hace con CSS en `Avatar.tsx`. No se usa un servicio de transformación de imágenes. El catálogo compartido está en `functions/src/profileAvatars.ts` y se reexporta al frontend.
 

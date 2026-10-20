@@ -33,5 +33,12 @@ test.describe("El niño elige su avatar", () => {
 
     // Sin recargar: el retrato del HUD ya muestra el elegido.
     await expect(retrato.locator("img")).toHaveAttribute("src", /nia-portrait\.webp/);
+
+    // El inicio no sustituye el avatar personalizado por el retrato de fábrica.
+    await page.goto(`/jugar/${childId}`);
+    await expect(page.getByRole("heading", { name: `Hola, ${nombre}. ¿Qué vamos a descubrir?` })).toBeVisible();
+    await expect(page.getByRole("img", { name: `Avatar de ${nombre}` })).toHaveCount(0);
+    await page.goto(`/jugar/${childId}/mapa`);
+    await expect(retrato.locator("img")).toHaveAttribute("src", /nia-portrait\.webp/);
   });
 });
