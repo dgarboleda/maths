@@ -321,7 +321,7 @@ export const DATA_LESSONS: Lesson[] = [
         ),
         n(
           "q6",
-          `Una bolsa tiene ${r2} fichas rojas, ${b2} azules y ${g2} verdes. ¿Cuántas fichas verdes hay que añadir para que la probabilidad de sacar verde sea 1/2?`,
+          `Una bolsa tiene ${r2} ${r2 === 1 ? "ficha roja" : "fichas rojas"}, ${b2} ${b2 === 1 ? "azul" : "azules"} y ${g2} ${g2 === 1 ? "verde" : "verdes"}. ¿Cuántas fichas verdes hay que añadir para que la probabilidad de sacar verde sea 1/2?`,
           r2 + b2 - g2,
           [`Para P(verde) = 1/2, las verdes deben ser tantas como las demás: ${r2 + b2}.`, `Hay que añadir ${r2 + b2} − ${g2} = ${r2 + b2 - g2}.`],
           ["P = 1/2 significa que la mitad de las fichas son verdes.", `Las no verdes son ${r2 + b2}.`, "Iguala las verdes a las no verdes."],

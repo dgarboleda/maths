@@ -27,33 +27,67 @@ export interface LessonExercise {
   onResponse: (value: number) => Promise<boolean>;
 }
 
-function choiceLabel(value: number, fraction: boolean): string {
-  if (fraction && !Number.isInteger(value)) {
-    for (let denominator = 2; denominator <= 100; denominator++) {
-      const numerator = Math.round(value * denominator);
-      if (Math.abs(numerator / denominator - value) < 1e-8)
-        return `${numerator}/${denominator}`;
-    }
+const EPS = 1e-9;
+
+/** Fracción n/d equivalente (d ≤ 100), o null si no existe. */
+function asFraction(value: number): [number, number] | null {
+  for (let d = 1; d <= 100; d++) {
+    const n = Math.round(value * d);
+    if (Math.abs(n / d - value) < EPS) return [n, d];
   }
-  return String(value).replace(".", ",");
+  return null;
 }
 
+/** Cifras decimales (0–3) con que se escribe exactamente, o null. */
+function decimals(value: number): number | null {
+  for (let k = 0; k <= 3; k++) if (Math.abs(Math.round(value * 10 ** k) / 10 ** k - value) < EPS) return k;
+  return null;
+}
+
+const minus = (text: string) => text.replace(/^-/, "−");
+
+/**
+ * Cinco valores para el juego: la respuesta, los errores razonados del
+ * contenido y, si faltan, vecinos plausibles. Solo valores que se leen bien
+ * (enteros, hasta 3 decimales o fracciones de denominador ≤ 100) y dentro del
+ * dominio del problema: una probabilidad entre 0 y 1; sin negativos
+ * inventados si el enunciado no los tiene.
+ */
 export function lessonProblem(question: Question): Problem | null {
   if (question.format === "choice" || typeof question.answer !== "number")
     return null;
   const answer = question.answer;
-  const values = new Set<number>([answer]);
-  // Primero se aprovechan los errores razonados del contenido de la clase.
+  const answerDecimals = decimals(answer);
+  const fraction =
+    !Number.isInteger(answer) &&
+    asFraction(answer) !== null &&
+    (answerDecimals === null || /fracci[oó]n/i.test(question.prompt));
+  const probability = answer >= 0 && answer <= 1 && /probabilidad|\bP\((?![\s−\-\d])/i.test(question.prompt);
+  const negativesAllowed = answer < 0 || /[−-]\s?\d/.test(question.prompt);
+  const readable = (v: number) => Number.isFinite(v) && (fraction ? asFraction(v) !== null : decimals(v) !== null);
+  const values: number[] = [answer];
+  const add = (v: number) => {
+    if (values.length < 5 && readable(v) && !values.some((o) => Math.abs(o - v) < 1e-8)) values.push(v);
+  };
+  // Primero se aprovechan los errores razonados del contenido de la clase
+  // (una probabilidad imposible no sirve de alternativa en el juego).
   for (const error of question.errors ?? [])
-    if (typeof error.value === "number" && Number.isFinite(error.value))
-      values.add(error.value);
-  const step = Number.isInteger(answer) ? 1 : 0.25;
-  for (let i = 1; values.size < 5; i++) {
-    values.add(Number((answer + i * step).toFixed(10)));
-    if (values.size < 5)
-      values.add(Number((answer - i * step).toFixed(10)));
-  }
-  const choices = shuffle([...values].slice(0, 5));
+    if (typeof error.value === "number" && (!probability || (error.value >= 0 && error.value <= 1))) add(error.value);
+  const den = fraction ? asFraction(answer)![1] : 1;
+  // Vecinos a una distancia proporcional al tamaño: 7234,56 no compite con 7234,61.
+  const scale = Math.abs(answer) >= 100 ? 10 ** (Math.floor(Math.log10(Math.abs(answer))) - 2) : 0;
+  const step = fraction ? 1 / den : Math.max(scale, answerDecimals === 0 ? 1 : answerDecimals === 1 ? 0.1 : 0.05);
+  const plausible = (v: number) =>
+    (negativesAllowed || v >= 0) && (!probability || (v >= 0 && v <= 1));
+  // Si el dominio es estrecho (una probabilidad cerca de 0 o 1), se prueba
+  // con pasos más finos antes de aceptar valores fuera de él.
+  for (const [factor, strict] of [[1, true], [1 / 2, true], [1 / 4, true], [1, false]] as const)
+    for (let i = 1; values.length < 5 && i <= 60; i++)
+      for (const v of [answer + i * step * factor, answer - i * step * factor]) {
+        const rounded = fraction ? v : Number(v.toFixed(6));
+        if (!strict || plausible(rounded)) add(rounded);
+      }
+  const choices = shuffle(values);
   return {
     id: question.id,
     kind: "lesson-practice",
@@ -62,6 +96,12 @@ export function lessonProblem(question: Question): Problem | null {
     answer,
     inputType: "decimal",
     choices,
-    choiceLabels: choices.map((value) => choiceLabel(value, /fracci[oó]n/i.test(question.prompt))),
+    choiceLabels: choices.map((value) => {
+      if (fraction && !Number.isInteger(value)) {
+        const [n, d] = asFraction(value)!;
+        return minus(`${n}/${d}`);
+      }
+      return minus(String(Number(value.toFixed(3))).replace(".", ","));
+    }),
   };
 }

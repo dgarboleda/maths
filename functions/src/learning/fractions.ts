@@ -233,13 +233,13 @@ export const FRACTION_LESSONS: Lesson[] = [
           `Una ruta está dividida en ${den} tramos iguales. Ya reparaste ${num}. ¿Qué fracción de la ruta falta reparar?`,
           (den - num) / den,
           [
-            `Faltan ${den} − ${num} = ${den - num} tramos.`,
+            `${den - num === 1 ? "Falta" : "Faltan"} ${den} − ${num} = ${den - num} ${den - num === 1 ? "tramo" : "tramos"}.`,
             `Cada tramo vale 1/${den}; falta ${den - num}/${den} de la ruta.`,
           ],
           [
             "La unidad es la ruta completa.",
             "Resta los tramos reparados al total.",
-            `Faltan ${den - num} de ${den} tramos.`,
+            `${den - num === 1 ? "Falta" : "Faltan"} ${den - num} de ${den} tramos.`,
           ],
           {
             intent: "transfer",
@@ -524,12 +524,12 @@ export const FRACTION_LESSONS: Lesson[] = [
           a * k,
           [
             `Cada parte contiene ${b * k} ÷ ${b} = ${k} litros.`,
-            `${a} partes contienen ${a} × ${k} = ${a * k} litros; ${a}/${b} = ${a * k}/${b * k}.`,
+            `${a} ${a === 1 ? "parte contiene" : "partes contienen"} ${a} × ${k} = ${a * k} litros; ${a}/${b} = ${a * k}/${b * k}.`,
           ],
           [
             "Relaciona la fracción con las marcas del sensor.",
             `Una de las ${b} partes ocupa ${k} marcas.`,
-            `Toma ${a} grupos de ${k} marcas.`,
+            `Toma ${a} ${a === 1 ? "grupo" : "grupos"} de ${k} marcas.`,
           ],
           { intent: "transfer", unit: "litros" },
         ),
@@ -1017,7 +1017,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           [
             `Calcula primero 1/${den} del total.`,
             `${total} ÷ ${den} = ${part}.`,
-            `Toma ${num} grupos de ${part}.`,
+            `Toma ${num} ${num === 1 ? "grupo" : "grupos"} de ${part}.`,
           ],
           {
             errors: [

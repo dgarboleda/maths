@@ -26,6 +26,30 @@ type Draft = Omit<
   editorial?: Lesson["editorial"];
 };
 
+/**
+ * Tipografía común a todo el catálogo (los textos se generan con plantillas y
+ * `toLocaleString`): los miles se separan con un espacio fijo, no con punto
+ * —con coma decimal, «10.000» se confunde con un decimal—, y un guion delante
+ * de un número es el signo menos «−».
+ */
+export function typeset(text: string): string {
+  let out = text;
+  for (let i = 0; i < 3; i++) out = out.replace(/(\d)\.(\d{3})(?!\d)/g, "$1\u00a0$2");
+  return out.replace(/(^|[\s(=])-(?=\d)/g, "$1−");
+}
+
+/** Campos que no son texto para leer (identificadores y claves). */
+const RAW_KEYS = new Set(["id", "answer", "unitId", "visual", "format", "intent", "prerequisites", "legacyModuleIds", "status", "revisionDate", "version", "task"]);
+
+function typesetDeep<T>(value: T, key = ""): T {
+  if (RAW_KEYS.has(key)) return value;
+  if (typeof value === "string") return typeset(value) as T;
+  if (Array.isArray(value)) return value.map((v) => typesetDeep(v)) as T;
+  if (value && typeof value === "object")
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, typesetDeep(v, k)])) as T;
+  return value;
+}
+
 function hash(text: string): number {
   let h = 2166136261;
   for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
@@ -47,7 +71,9 @@ export function arrangeChoices(question: Question, seed: string): Question {
   return { ...question, choices };
 }
 
-export function defineLesson(draft: Draft): Lesson {
+export function defineLesson(raw: Draft): Lesson {
+  const questionsRaw = raw.questions;
+  const draft: Draft = { ...typesetDeep({ ...raw, questions: undefined }), questions: (v: number) => typesetDeep(questionsRaw(v)) };
   const { questions, editorial, application, diagnostic, ...content } = draft;
   const arrange = (q: Question) => arrangeChoices(q, content.id);
   const bank = (variant: number, prefix: string, indexes: number[]) => {

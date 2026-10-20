@@ -200,14 +200,14 @@ test("Invasión: aterrizar no cuenta; disparar envía la columna apuntada", asyn
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
 });
 
-test("Bloques: un rebote contra un bloque incorrecto o perder la pelota no cuentan", () => {
+test("Bloques en la clase: la pelota espera sobre la paleta y nada se responde solo", () => {
   vi.useFakeTimers();
   const data = exercise();
   render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   tick(5_000);
-  expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
   expect(data.onResponse).not.toHaveBeenCalled();
+  expect(screen.queryByText(REFLEX_MISS)).not.toBeInTheDocument();
   expect(screen.queryByText(/Vidas/)).not.toBeInTheDocument();
 });
 
@@ -221,16 +221,23 @@ test.each([
   expect(await axe(container)).toHaveNoViolations();
 });
 
-test("Bloques en la clase: golpear con el borde de la paleta desvía la pelota hacia otras columnas", () => {
+test("Bloques en la clase: el lanzamiento apuntado envía el bloque elegido, correcto o no", async () => {
   vi.useFakeTimers();
-  const data = exercise();
-  const { container } = render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  const data = exercise({ onResponse: vi.fn(async () => false) });
+  render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
-  key("ArrowLeft"); // la pelota caerá sobre el borde derecho de la paleta
-  const ball = container.querySelector<HTMLElement>(".bg-yellow-300")!;
-  const startX = parseFloat(ball.style.left);
-  tick(3_000);
-  expect(Math.abs(parseFloat(ball.style.left) - startX)).toBeGreaterThan(10);
+  // Cinco bloques en una fila: la paleta empieza bajo el central (−2).
+  key("ArrowLeft"); // bajo −3
+  fireEvent.click(screen.getByRole("button", { name: "Lanzar la pelota" }));
+  tick(2_000);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-3);
+  // La pelota vuelve a la paleta: se puede apuntar de nuevo.
+  key("ArrowRight");
+  key("ArrowUp");
+  tick(2_000);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenLastCalledWith(-2);
 });
 
 test("Topos: que un topo se esconda no cuenta; tocarlo envía su valor", async () => {

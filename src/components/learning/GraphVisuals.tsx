@@ -5,7 +5,8 @@ import { useId, useState, type ReactNode } from "react";
 /** Formato de números para leer en voz alta y en pantalla (signo menos tipográfico). */
 export const num = (x: number) =>
   (x < 0 ? "−" : "") +
-  Math.abs(x).toLocaleString("es", { maximumFractionDigits: 2 });
+  // Miles con espacio fijo: con coma decimal, «12.000» parecería un decimal.
+  Math.abs(x).toLocaleString("es", { maximumFractionDigits: 2 }).replace(/\./g, "\u00a0");
 
 export interface Scale {
   sx: (x: number) => number;
