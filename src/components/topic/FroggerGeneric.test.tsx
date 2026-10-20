@@ -41,6 +41,9 @@ async function fireKey(code: string) {
   await act(async () => {
     window.dispatchEvent(new KeyboardEvent("keydown", { code }));
   });
+  if (vi.isFakeTimers()) {
+    for (let i = 0; i < 5; i++) await act(async () => { await vi.advanceTimersByTimeAsync(50); });
+  } else await act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
 }
 
 /** Los 5 nenúfares valen la respuesta correcta — cualquier columna resuelve

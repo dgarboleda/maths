@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { InvadersGeneric } from "./InvadersGeneric";
 import * as problemModule from "@/lib/problem";
@@ -40,6 +40,7 @@ function shootButton() {
 
 async function shoot() {
   fireEvent.click(shootButton());
+  for (let i = 0; i < 10; i++) await act(async () => { await vi.advanceTimersByTimeAsync(50); });
   await act(async () => {}); // deja resolver la promesa de onAnswer
 }
 
@@ -58,6 +59,7 @@ function mockAllWrong() {
 }
 
 describe("InvadersGeneric", () => {
+  beforeEach(() => vi.useFakeTimers());
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();

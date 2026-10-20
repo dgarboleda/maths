@@ -36,9 +36,13 @@ async function cross(page: Page, label: string) {
   const frog = Number(await page.locator("main [data-board]").getAttribute("data-frog-col"));
   const found = cells.indexOf(label);
   const target = found < 0 ? frog : found;
-  for (let col = frog; col !== target; col += Math.sign(target - col))
+  for (let col = frog; col !== target; col += Math.sign(target - col)) {
     await page.keyboard.press(target > col ? "ArrowRight" : "ArrowLeft");
+    await expect(page.locator("main [data-board]")).toHaveAttribute("data-hopping", "false");
+  }
+  await expect.poll(async () => Math.abs(Number(await page.locator("main [data-board]").getAttribute("data-obstacle-col")) - target)).toBeGreaterThanOrEqual(2);
   await page.keyboard.press("ArrowUp");
+  await expect(page.locator("main [data-board]")).toHaveAttribute("data-hopping", "false");
   await page.keyboard.press("ArrowUp");
 }
 
@@ -159,7 +163,7 @@ test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; s
   await expect(page.getByText(/Vidas/)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   // La formación es decorativa (aria-hidden): se lee para saber dónde apuntar.
-  const columns = await page.locator("main div.grid.px-2").first().locator(":scope > div").allTextContents();
+  const columns = await page.locator("main [data-invaders-board] [data-choice-label]").allTextContents();
   const target = columns.findIndex((label) => label.trim() === "1/3");
   expect(target).toBeGreaterThanOrEqual(0);
   for (let col = 2; col !== target; col += Math.sign(target - col))
@@ -173,6 +177,46 @@ test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; s
   await expect(page.getByRole("heading", { name: "¡Invasión repelida!" })).toBeVisible();
 });
 
+test("Autopista: elegir carril y usar el turbo guarda el resultado de la clase", async ({ page }, testInfo) => {
+  const q = await conceptThenNumeric(page, "fracciones-unidad", "runner");
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  const board = page.locator("main [data-runner-board]");
+  await expect(board).toHaveAttribute("data-racing", "false");
+  const labels = await board.locator("[data-choice-label]").allTextContents();
+  const target = labels.indexOf("1/3");
+  expect(target).toBeGreaterThanOrEqual(0);
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  await testInfo.attach("autopista", { body: await page.screenshot(), contentType: "image/png" });
+  for (let i = 0; i <= target; i++) await page.keyboard.press("ArrowDown");
+  await expect(board).toHaveAttribute("data-lane", String(target));
+  const answer = savedAnswer(page);
+  await page.getByRole("button", { name: "Turbo · cruzar ⚡", exact: true }).click();
+  const saved = (await (await answer).json()).result;
+  expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
+  expect(saved.stars).toBe(0);
+  await expect(page.getByRole("heading", { name: "¡Llegaste a la meta!" })).toBeVisible();
+});
+
+test("Bloques: el rebote lateral alcanza la respuesta apuntada y se guarda una sola vez", async ({ page }, testInfo) => {
+  const q = await conceptThenNumeric(page, "fracciones-unidad", "breakout");
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  const board = page.locator("main [data-breakout-board]");
+  const labels = await board.locator("[data-choice-label]").allTextContents();
+  const target = labels.indexOf("1/3");
+  expect(target).toBeGreaterThanOrEqual(0);
+  for (let col = 2; col !== target; col += Math.sign(target - col)) await page.keyboard.press(target > col ? "ArrowRight" : "ArrowLeft");
+  await page.getByRole("button", { name: "Rebote →", exact: true }).click();
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  await testInfo.attach("bloques", { body: await page.screenshot(), contentType: "image/png" });
+  const answer = savedAnswer(page);
+  await page.getByRole("button", { name: "Lanzar la pelota", exact: true }).click();
+  const saved = (await (await answer).json()).result;
+  expect(saved.progress.responses[`practice:${q.id}`]).toMatchObject({ correct: true, attempts: 1 });
+  expect(saved.stars).toBe(0);
+  await expect(page.getByRole("heading", { name: "¡Muro derribado!" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test("Estanque en móvil: el D-pad táctil queda debajo del tablero y permite responder", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "móvil", "El D-pad solo se muestra en pantallas táctiles pequeñas.");
   const q = await conceptThenNumeric(page, "fraccion-cantidad", "frogger");
@@ -183,10 +227,14 @@ test("Estanque en móvil: el D-pad táctil queda debajo del tablero y permite re
   expect(padBox!.y).toBeGreaterThanOrEqual(boardBox!.y + boardBox!.height);
   const frog = Number(await board.getAttribute("data-frog-col"));
   const target = (await pondLabels(page)).indexOf(String(q.answer));
-  for (let col = frog; col !== target; col += Math.sign(target - col))
+  for (let col = frog; col !== target; col += Math.sign(target - col)) {
     await page.getByRole("button", { name: target > col ? "Mover a la derecha" : "Mover a la izquierda" }).click();
+    await expect(board).toHaveAttribute("data-hopping", "false");
+  }
+  await expect.poll(async () => Math.abs(Number(await board.getAttribute("data-obstacle-col")) - target)).toBeGreaterThanOrEqual(2);
   const answer = savedAnswer(page);
   await page.getByRole("button", { name: "Mover arriba" }).click();
+  await expect(board).toHaveAttribute("data-hopping", "false");
   await page.getByRole("button", { name: "Mover arriba" }).click();
   const saved = (await (await answer).json()).result.progress;
   expect(saved.responses[`practice:${q.id}`]).toMatchObject({ response: String(q.answer), correct: true });

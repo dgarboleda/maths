@@ -42,6 +42,7 @@ test("Estanque con obstáculo: llegar al nenúfar envía su valor una vez y solo
   const view = render(<FroggerGeneric moduleId="" soundOn={false} onAnswer={legacy} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   key("ArrowUp"); // al carril del obstáculo
+  tick(250);
   key("ArrowUp"); // al estanque, en la columna central: -2
   key("ArrowUp");
   expect(onResponse).toHaveBeenCalledExactlyOnceWith(-2);
@@ -62,18 +63,22 @@ test("Estanque: la pausa congela el juego, chocar no cuenta y un guardado fallid
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   key("ArrowUp");
   // En la clase el obstáculo avanza cada 900 ms: va y vuelve hasta la rana.
-  tick(900 * 3);
+  tick(900);
   expect(screen.queryByText(FROGGER_MISS)).not.toBeInTheDocument();
   tick(900 * 2);
   expect(screen.getByText(FROGGER_MISS)).toBeInTheDocument();
   // La rana vuelve a la orilla, debajo del carril: no queda sobre un nenúfar.
   expect(view.container.querySelector("[data-board]")).toHaveAttribute("data-frog-lane", "orilla");
   expect(data.onResponse).not.toHaveBeenCalled();
+  tick(900); // el cocodrilo deja libre la columna central
   key("ArrowUp");
+  tick(250);
   key("ArrowUp");
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledTimes(1);
+  tick(250);
   key("ArrowUp");
+  tick(250);
   key("ArrowUp");
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledTimes(2);
@@ -155,19 +160,20 @@ test("Serpiente: en pausa no se mueve ni responde", () => {
   expect(data.onResponse).not.toHaveBeenCalled();
 });
 
-test("Carrera: se empieza fuera de los carriles; sin elegir no cuenta y la primera flecha elige el primero", async () => {
+test("Carrera: leer no activa el reloj; la primera flecha da la salida y el turbo acorta la espera", async () => {
   vi.useFakeTimers();
   const data = exercise();
   render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   expect(screen.getByText("Elige un carril con las flechas")).toBeInTheDocument();
   tick(2600);
-  expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
+  expect(screen.queryByText(REFLEX_MISS)).not.toBeInTheDocument();
   expect(data.onResponse).not.toHaveBeenCalled();
   key("ArrowDown"); // fuera → carril 0
   key("ArrowDown");
   key("ArrowDown"); // carril 2, donde está -2
-  tick(2600);
+  key("Space");
+  tick(750);
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
 });
@@ -192,10 +198,16 @@ test("Invasión: aterrizar no cuenta; disparar envía la columna apuntada", asyn
   const data = exercise();
   render(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  tick(5_000);
+  expect(data.onResponse).not.toHaveBeenCalled();
+  key("ArrowLeft");
+  key("ArrowRight");
   tick(900 * 5);
   expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
   expect(data.onResponse).not.toHaveBeenCalled();
   key("Space"); // columna central: -2
+  expect(data.onResponse).not.toHaveBeenCalled();
+  tick(400);
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
 });
@@ -238,6 +250,59 @@ test("Bloques en la clase: el lanzamiento apuntado envía el bloque elegido, cor
   tick(2_000);
   await act(async () => {});
   expect(data.onResponse).toHaveBeenLastCalledWith(-2);
+});
+
+test.each(["Rebote ←", "Rebote →"])("Bloques: %s conserva el destino al pausar y no permite doble lanzamiento", async (style) => {
+  vi.useFakeTimers();
+  const data = exercise({ onResponse: vi.fn(async () => false) });
+  const view = render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  key("ArrowLeft"); // apunta a −3, una respuesta incorrecta deliberada
+  fireEvent.click(screen.getByRole("button", { name: style }));
+  key("Space");
+  key("Space");
+  tick(150);
+  view.rerender(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
+  tick(5_000);
+  expect(data.onResponse).not.toHaveBeenCalled();
+  view.rerender(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  key("ArrowRight"); // la paleta no cambia de destino durante el vuelo
+  tick(2_000);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-3);
+});
+
+test("Invasión: la pausa congela un disparo y varias pulsaciones solo envían la columna original", async () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const view = render(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  key("Space");
+  key("Space");
+  tick(150);
+  view.rerender(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
+  key("ArrowRight");
+  tick(5_000);
+  expect(data.onResponse).not.toHaveBeenCalled();
+  view.rerender(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  tick(400);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
+});
+
+test("Estanque: un salto no se puede repetir durante el vuelo y el cocodrilo sigue mientras esperas en la orilla", () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const view = render(<FroggerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const board = view.container.querySelector("[data-board]")!;
+  key("ArrowLeft");
+  key("ArrowLeft");
+  expect(board).toHaveAttribute("data-frog-col", "1");
+  tick(1_000);
+  expect(board).toHaveAttribute("data-obstacle-col", "3");
+  expect(board).toHaveAttribute("data-frog-lane", "orilla");
+  expect(data.onResponse).not.toHaveBeenCalled();
 });
 
 test("Topos: que un topo se esconda no cuenta; tocarlo envía su valor", async () => {

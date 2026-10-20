@@ -13,6 +13,7 @@ import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import { findHitBlock, hitsPaddle, paddleBounceVx, stepBall, type Ball } from "./breakoutPhysics";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { pointOnRoute, routeLength, shotRoute, type ShotPoint, type ShotStyle } from "@/lib/minigames/aimedShot";
 
 const FIELD_WIDTH = 100; // unidades porcentuales, no píxeles — ver breakoutPhysics.ts
 const BALL_SIZE = 4;
@@ -51,7 +52,7 @@ interface Block {
 const LESSON_COLS = 5;
 const LESSON_W = FIELD_WIDTH / LESSON_COLS;
 const LESSON_ROW_Y = 14;
-const LESSON_SPEED = 90;
+const LESSON_SPEED = 150;
 
 function buildBlocks(values: number[], lesson = false): Block[] {
   if (lesson)
@@ -108,10 +109,8 @@ export function BreakoutGeneric({
   bestScore?: number | null;
   /** Se llama al agotar las vidas o al ganar, con los bloques acertados. */
   onGameOver?: (correctCount: number) => void;
-  /** Modo clase: lanzamiento apuntado. La pelota espera sobre la paleta; el
-   *  estudiante la coloca bajo un bloque y la lanza en línea recta: el bloque
-   *  que rompe es su respuesta (correcta o no). Sin rebotes al azar, nada se
-   *  responde solo. */
+  /** Modo clase: lanzamiento apuntado, directo o con rebote lateral. La guía
+   * conserva el bloque elegido; el vuelo nunca genera otra respuesta. */
   exercise?: LessonExercise;
 }) {
   const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
@@ -129,6 +128,8 @@ export function BreakoutGeneric({
   const [paddleX, setPaddleX] = useState(paddleStart);
   /** Clase: la pelota descansa sobre la paleta hasta que se lanza. */
   const [held, setHeld] = useState(true);
+  const [shotStyle, setShotStyle] = useState<ShotStyle>("direct");
+  const flightRef = useRef<{ route: ShotPoint[]; elapsed: number; duration: number; block: Block } | null>(null);
   const [lives, setLives] = useState(LIVES_START);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
@@ -184,6 +185,8 @@ export function BreakoutGeneric({
     setReflexMiss(false);
     busyRef.current = false;
     setHeld(true);
+    setShotStyle("direct");
+    flightRef.current = null;
     setPaddleX(paddleStart);
     setLives(LIVES_START);
     setCorrectCount(0);
@@ -250,7 +253,12 @@ export function BreakoutGeneric({
   function launch() {
     if (!lesson || !held || busyRef.current || frozen || solved || phase !== "playing") return;
     playSound("click", soundOn);
-    ballRef.current = { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE, vx: 0, vy: -LESSON_SPEED };
+    const block = blocks.find((b) => paddleX + paddleWidth / 2 >= b.x && paddleX + paddleWidth / 2 < b.x + b.w);
+    if (!block) return;
+    const start = { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE };
+    const route = shotRoute(start, { x: block.x + block.w / 2 - BALL_SIZE / 2, y: block.y + block.h - 0.1 }, shotStyle, FIELD_WIDTH - BALL_SIZE);
+    flightRef.current = { route, elapsed: 0, duration: Math.max(450, routeLength(route) / LESSON_SPEED * 1000), block };
+    ballRef.current = { ...start, vx: 0, vy: 0 };
     setHeld(false);
   }
 
@@ -261,6 +269,19 @@ export function BreakoutGeneric({
         // Sobre la paleta, siguiéndola, hasta el lanzamiento.
         ballRef.current = { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE, vx: 0, vy: 0 };
         syncBallDom();
+        return;
+      }
+      if (lesson) {
+        const flight = flightRef.current;
+        if (!flight) return;
+        flight.elapsed += Math.min(dtMs, 50);
+        const progress = Math.min(1, flight.elapsed / flight.duration);
+        ballRef.current = { ...pointOnRoute(flight.route, progress), vx: 0, vy: 0 };
+        syncBallDom();
+        if (progress === 1) {
+          flightRef.current = null;
+          void resolveBlock(flight.block);
+        }
         return;
       }
       const dtSec = dtMs / 1000;
@@ -297,10 +318,12 @@ export function BreakoutGeneric({
   );
 
   function moveLeft() {
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
     if (lesson && !held) return;
     setPaddleX((x) => Math.max(0, x - paddleStep));
   }
   function moveRight() {
+    if (busyRef.current || frozen || solved || phase !== "playing") return;
     if (lesson && !held) return;
     setPaddleX((x) => Math.min(FIELD_WIDTH - paddleWidth, x + paddleStep));
   }
@@ -311,9 +334,11 @@ export function BreakoutGeneric({
   const shownCount = lesson ? Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
+  const preview = lesson ? shotRoute({ x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE },
+    { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: LESSON_ROW_Y + BLOCK_H }, shotStyle, FIELD_WIDTH - BALL_SIZE) : [];
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-6 text-white shadow-2xl">
+    <div className={`relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -324,7 +349,7 @@ export function BreakoutGeneric({
         <h2 className="mb-2 bg-gradient-to-r from-orange-300 to-violet-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🧱 Bloques numéricos
         </h2>
-        <p className="mb-6 text-sm text-orange-200">¡Rompe el bloque con el resultado correcto sin dejar caer la pelota!</p>
+        <p className="mb-4 text-sm text-orange-200">{lesson ? "¡Apunta al resultado y elige un tiro directo o con rebote!" : "¡Rompe el bloque con el resultado correcto sin dejar caer la pelota!"}</p>
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
@@ -341,7 +366,7 @@ export function BreakoutGeneric({
             </button>
             <p className="text-xs text-orange-300">
               {lesson
-                ? "Mueve la paleta bajo el bloque con tu respuesta y lanza la pelota (flecha arriba, espacio o el botón): sube en línea recta y el bloque que rompe es tu respuesta."
+                ? "Mueve la paleta bajo tu respuesta. Elige tiro directo o rebote lateral, mira la guía y lanza con espacio, flecha arriba o el botón."
                 : "Usa las flechas (o los botones) para mover la paleta; golpea con un borde para dirigir la pelota."}
             </p>
           </div>
@@ -386,12 +411,15 @@ export function BreakoutGeneric({
 
             <div
               aria-hidden="true"
-              className="relative mx-auto aspect-[4/3] w-full max-w-sm overflow-hidden rounded-2xl border-2 border-orange-700 bg-slate-900"
+              data-breakout-board="" data-held={held} data-shot-style={shotStyle}
+              className="arcade-stars relative mx-auto aspect-[4/3] w-full max-w-sm overflow-hidden rounded-2xl border-2 border-orange-700 bg-slate-900"
             >
+              {lesson && held && <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full"><polyline points={preview.map((point) => `${point.x + BALL_SIZE / 2},${point.y + BALL_SIZE / 2}`).join(" ")} fill="none" stroke="#c4b5fd" strokeWidth="0.6" strokeDasharray="2 2" /></svg>}
               {blocks.map((b) => (
                 <div
                   key={b.id}
-                  className="absolute flex items-center justify-center rounded-sm border border-orange-950 bg-slate-800 text-xs font-bold text-orange-200"
+                  data-choice-label=""
+                  className={`absolute flex items-center justify-center rounded-lg border-2 text-sm font-bold text-orange-100 ${lesson && paddleX + paddleWidth / 2 >= b.x && paddleX + paddleWidth / 2 < b.x + b.w ? "border-violet-200 bg-violet-700 shadow-lg shadow-violet-500/50" : "border-orange-500/50 bg-orange-950"}`}
                   style={{ left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` }}
                 >
                   {lessonLabel(exercise, b.value)}
@@ -399,7 +427,7 @@ export function BreakoutGeneric({
               ))}
               <div
                 ref={ballElRef}
-                className={`${reducedMotion ? "" : "transition-[left,top] duration-75"} absolute rounded-full bg-yellow-300`}
+                className="absolute rounded-full bg-yellow-300 shadow-[0_0_12px_3px_#fbbf24]"
                 style={{ width: `${BALL_SIZE}%`, height: `${BALL_SIZE}%` }}
               />
               <div
@@ -408,6 +436,11 @@ export function BreakoutGeneric({
               />
             </div>
 
+            {lesson && (
+              <div role="group" aria-label="Tipo de tiro" className="flex flex-wrap justify-center gap-2">
+                {([["direct", "Directo"], ["left", "Rebote ←"], ["right", "Rebote →"]] as const).map(([style, label]) => <button key={style} type="button" aria-pressed={shotStyle === style} disabled={!held || frozen} onClick={() => setShotStyle(style)} className="min-h-11 rounded-xl border border-violet-400 px-3 text-sm aria-pressed:bg-violet-700 disabled:opacity-50">{label}</button>)}
+              </div>
+            )}
             {lesson && (
               <button type="button" onClick={launch} disabled={!held || frozen}
                 className="min-h-11 rounded-xl border-2 border-violet-300 bg-violet-600 px-6 font-bold text-white disabled:opacity-50">
