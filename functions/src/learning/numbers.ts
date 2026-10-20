@@ -42,7 +42,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       {
         title: "Más a la derecha, mayor",
         paragraphs: [
-          "De dos números, es mayor el que está más a la derecha. Por eso −2 > −7: −2 está más cerca del cero por la izquierda.",
+          "De dos números, es mayor el que está más a la derecha. Por eso −2 > −7 → −2 está más cerca del cero por la izquierda.",
           "Con negativos, la cifra mayor no indica el número mayor: −7 tiene más unidades que −2, pero está más a la izquierda.",
         ],
         formula: "−7 < −2 < 0 < 3",
@@ -357,7 +357,7 @@ export const NUMBER_LESSONS: Lesson[] = [
           "q6",
           `La temperatura pasó de ${sg(t1)} °C a ${sg(t2)} °C. ¿Cuál fue la variación (final − inicial)?`,
           t2 - t1,
-          [`Variación = ${sg(t2)} − ${p(t1)} = ${sg(t2)} + ${-t1 >= 0 ? -t1 : `(${sg(-t1)})`}.`, `= ${sg(t2 - t1)}: ${t2 - t1 > 0 ? "subió" : "bajó"} ${Math.abs(t2 - t1)} grados.`],
+          [`Variación = ${sg(t2)} − ${p(t1)} = ${sg(t2)} + ${-t1 >= 0 ? -t1 : `(${sg(-t1)})`}.`, `= ${sg(t2 - t1)} → ${t2 - t1 > 0 ? "subió" : "bajó"} ${Math.abs(t2 - t1)} grados.`],
           ["La variación es final menos inicial.", `Escribe ${sg(t2)} − ${p(t1)}.`, "Restar un negativo es sumar su opuesto."],
           {
             intent: "transfer",
@@ -374,7 +374,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       "app",
       "El balance de energía de la central empieza en −15 unidades. Recibe 40 de la presa, consume 32 y le devuelven una deuda de −6 (se cancela una deuda de 6). ¿Cuál es el balance final?",
       -1,
-      ["−15 + 40 = 25.", "25 − 32 = −7.", "Cancelar una deuda de 6 es restar −6: −7 − (−6) = −1."],
+      ["−15 + 40 = 25.", "25 − 32 = −7.", "Cancelar una deuda de 6 es restar −6 → −7 − (−6) = −1."],
       ["Traduce cada movimiento a una suma o resta.", "Cancelar una deuda aumenta el balance.", "Calcula paso a paso desde −15."],
       {
         intent: "transfer",
@@ -411,7 +411,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       {
         title: "Multiplicar es sumar grupos iguales",
         paragraphs: [
-          "3 × (−4) son tres grupos de −4: −4 − 4 − 4 = −12. Un positivo por un negativo da negativo.",
+          "3 × (−4) son tres grupos de −4 → −4 − 4 − 4 = −12. Un positivo por un negativo da negativo.",
           "Multiplicar por −1 da el opuesto: −1 × 5 = −5. Por eso (−3) × 4 = −(3 × 4) = −12.",
         ],
         formula: "3 × (−4) = −12",
@@ -657,7 +657,7 @@ export const NUMBER_LESSONS: Lesson[] = [
         ),
         n(
           "q2",
-          `Completa el primer paso de ${t} − ${m} × ${q}: ${m} × ${q} = __.`,
+          `En ${t} − ${m} × ${q}, la multiplicación va primero. Completa ese primer paso: ${m} × ${q} = __.`,
           m * q,
           [`${m} × ${q} = ${m * q}; después, ${t} − ${m * q} = ${t - m * q}.`],
           ["La multiplicación va primero.", `Multiplica ${m} por ${q}.`, `${m * q}.`],
@@ -855,7 +855,7 @@ export const NUMBER_LESSONS: Lesson[] = [
             [`Los exponentes se multiplican: 3${sup(e1 * e2)}`, "Los exponentes se multiplican al elevar una potencia, no al multiplicar dos."],
           ],
           1,
-          `Son ${e1} + ${e2} factores iguales a 3: 3 elevado a ${e1 + e2}.`,
+          `Son ${e1} + ${e2} factores iguales a 3 → 3 elevado a ${e1 + e2}.`,
         ),
         n(
           "q5",

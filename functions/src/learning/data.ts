@@ -448,7 +448,7 @@ export const DATA_LESSONS: Lesson[] = [
           "q1",
           `Se lanzan dos dados. ¿Cuál es la probabilidad de que la suma sea ${target}?`,
           ways / 36,
-          [`Casos con suma ${target}: ${ways}.`, `P = ${ways}/36 = ${fmt(ways / 36)}.`],
+          [`Casos con suma ${target} → ${ways}.`, `P = ${ways}/36 = ${fmt(ways / 36)}.`],
           ["Haz una tabla de 6 × 6.", `Marca las casillas que suman ${target}.`, `Divide entre 36.`],
           { errors: [{ value: 1 / 11, feedback: "Las 11 sumas posibles no son igual de probables: cuenta casillas en la tabla de 36." }] },
         ),

@@ -184,7 +184,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         ),
         n(
           "q2",
-          `Completa la comprobación para x = ${x}: x + ${b} = ${x} + ${b} = __.`,
+          `Comprueba si x = ${x} cumple la igualdad. Completa: x + ${b} = ${x} + ${b} = __.`,
           total,
           [`Sustituir x por ${x} da ${x} + ${b} = ${total}.`],
           [
@@ -435,7 +435,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           `Resuelve ${m}x = ${m * x}. Escribe el valor de x.`,
           x,
           [
-            `Divide entre ${m}: x = ${m * x} ÷ ${m} = ${x}.`,
+            `Divide entre ${m} → x = ${m * x} ÷ ${m} = ${x}.`,
             `Comprueba: ${m} × ${x} = ${m * x}.`,
           ],
           [
@@ -547,7 +547,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
       ],
       [
         "Define x como la temperatura al anochecer.",
-        "Bajar 9 grados es restar 9: x − 9 = −4.",
+        "Bajar 9 grados es restar 9 → x − 9 = −4.",
         "Deshaz la resta sumando 9.",
       ],
       {
@@ -669,7 +669,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
       ),
       n(
         "d-3",
-        "Comprueba x = 4: ¿cuánto vale 2x + 3?",
+        "Si x = 4, ¿cuánto vale 2x + 3?",
         11,
         ["2 × 4 + 3 = 8 + 3 = 11."],
         ["Sustituye la letra.", "Multiplica antes de sumar.", "8 + 3 = 11."],
@@ -733,8 +733,8 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           `Resuelve ${m}x + ${b} = ${total}.`,
           x,
           [
-            `Resta ${b}: ${m}x = ${m * x}.`,
-            `Divide entre ${m}: x = ${x}.`,
+            `Resta ${b} → ${m}x = ${m * x}.`,
+            `Divide entre ${m} → x = ${x}.`,
             `Comprueba: ${m} × ${x} + ${b} = ${total}.`,
           ],
           [
@@ -779,7 +779,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           sx,
           [
             `Suma ${sb} a ambos lados: ${sm}x = ${sm * sx}.`,
-            `Divide entre ${sm}: x = ${sx}.`,
+            `Divide entre ${sm} → x = ${sx}.`,
           ],
           [
             "Una resta se deshace sumando.",
@@ -820,8 +820,8 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           `Un depósito se divide en ${dm} partes iguales. A una de ellas se le añaden ${db} litros y queda con ${dt}. El modelo es x/${dm} + ${db} = ${dt}. ¿Cuántos litros tenía el depósito?`,
           dm * (dt - db),
           [
-            `Resta ${db}: x/${dm} = ${dt - db}.`,
-            `Multiplica por ${dm}: x = ${dm * (dt - db)}.`,
+            `Resta ${db} → x/${dm} = ${dt - db}.`,
+            `Multiplica por ${dm} → x = ${dm * (dt - db)}.`,
             `Comprueba: ${dm * (dt - db)} ÷ ${dm} + ${db} = ${dt}.`,
           ],
           [
@@ -846,7 +846,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
       60,
       [
         "Modelo: 5x + 40 = 340, donde x es el peso de una caja.",
-        "Resta 40: 5x = 300. Divide entre 5: x = 60.",
+        "Resta 40 → 5x = 300. Divide entre 5 → x = 60.",
         "Comprobación: 5 × 60 + 40 = 340.",
       ],
       [
@@ -1116,7 +1116,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           f,
           [
             `${h2 - h1 === 1 ? "La hora" : `Las ${h2 - h1} horas`} de diferencia ${h2 - h1 === 1 ? "cuesta" : "cuestan"} ${c2} − ${c1} = ${c2 - c1}: el precio por hora es ${c2 - c1} ÷ ${h2 - h1} = ${p}.`,
-            `Con ${h1} ${h1 === 1 ? "hora" : "horas"}: ${p} × ${h1} + f = ${c1}, así que f = ${c1 - p * h1}.`,
+            `Con ${h1} ${h1 === 1 ? "hora" : "horas"} → ${p} × ${h1} + f = ${c1}, así que f = ${c1 - p * h1}.`,
           ],
           [
             "La tarifa fija es igual en ambas facturas; la diferencia viene solo de las horas.",

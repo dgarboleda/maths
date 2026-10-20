@@ -136,7 +136,7 @@ export const INVERSE_LESSONS: Lesson[] = [
           "q5",
           `Un premio de ${prize} créditos se reparte en partes iguales entre ${p1} equipos. Si fueran ${p2} equipos, ¿cuánto recibiría cada uno?`,
           prize / p2,
-          [`Con ${p1} equipos, cada uno recibe ${prize / p1}.`, `Con ${p2}: ${prize} ÷ ${p2} = ${prize / p2}.`],
+          [`Con ${p1} equipos, cada uno recibe ${prize / p1}.`, `Con ${p2} → ${prize} ÷ ${p2} = ${prize / p2}.`],
           ["El total a repartir no cambia.", "Más equipos, menos para cada uno.", `Divide ${prize} entre ${p2}.`],
           {
             intent: "transfer",

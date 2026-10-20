@@ -63,15 +63,15 @@ export const INTEREST_LESSONS: Lesson[] = [
         ["Comprobación: 80 + 80 + 80 = 240", "Con interés simple, el interés de cada año es siempre el mismo."],
       ], "El monto es S/ 2240."),
       ex("Los mismos S/ 2000 al 4% compuesto anual durante 3 años. ¿Cuál es el monto?", [
-        ["Año 1: 2000 · 1,04 = 2080", "Multiplicar por 1,04 suma el 4% en un solo paso."],
-        ["Año 2: 2080 · 1,04 = 2163,2", "El interés del segundo año se calcula sobre 2080, no sobre 2000."],
-        ["Año 3: 2163,2 · 1,04 = 2249,728 ≈ 2249,73", "Es lo mismo que 2000 · 1,04³; sale casi 10 soles más que con interés simple."],
+        ["Año 1 → 2000 · 1,04 = 2080", "Multiplicar por 1,04 suma el 4% en un solo paso."],
+        ["Año 2 → 2080 · 1,04 = 2163,2", "El interés del segundo año se calcula sobre 2080, no sobre 2000."],
+        ["Año 3 → 2163,2 · 1,04 = 2249,728 ≈ 2249,73", "Es lo mismo que 2000 · 1,04³; sale casi 10 soles más que con interés simple."],
       ], "El monto es unos S/ 2249,73."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es el 10% de 450?", 45, ["450 ÷ 10 = 45."], ["El 10% es dividir entre 10.", "450 ÷ 10.", "45."]),
       n("d-2", "¿Cuánto es 1,05 × 200?", 210, ["1,05 × 200 = 200 + 10 = 210."], ["1 × 200 = 200.", "0,05 × 200 = 10.", "Suma."]),
-      c("d-3", "Un precio de 100 soles sube 10% y luego otro 10%. ¿Cuánto cuesta al final?", ["121 soles", "120 soles", "110 soles"], 0, "El segundo 10% se aplica sobre 110: 110 + 11 = 121."),
+      c("d-3", "Un precio de 100 soles sube 10% y luego otro 10%. ¿Cuánto cuesta al final?", ["121 soles", "120 soles", "110 soles"], 0, "El segundo 10% se aplica sobre 110 → 110 + 11 = 121."),
     ],
     questions(v) {
       const [p1, r1, t1] = [[1000, 5, 3], [2000, 4, 2], [1500, 6, 4], [800, 10, 3], [2500, 8, 2], [1200, 5, 5]][v],
@@ -258,7 +258,7 @@ export const SEQUENCE_LESSONS: Lesson[] = [
       ], "Ahorró 220 soles."),
     ],
     diagnostic: [
-      n("d-1", "Continúa la secuencia: 3, 7, 11, 15, __", 19, ["Se suma 4: 15 + 4 = 19."], ["¿Cuánto aumenta de un número al siguiente?", "Aumenta 4.", "15 + 4."]),
+      n("d-1", "Continúa la secuencia: 3, 7, 11, 15, __", 19, ["Se suma 4 → 15 + 4 = 19."], ["¿Cuánto aumenta de un número al siguiente?", "Aumenta 4.", "15 + 4."]),
       n("d-2", "¿Cuánto es 2⁵?", 32, ["2 · 2 · 2 · 2 · 2 = 32."], ["Multiplica 2 por sí mismo 5 veces.", "2 · 2 · 2 = 8.", "8 · 2 · 2."]),
       c("d-3", "¿Qué expresión da el término de la posición n en 5, 10, 15, 20…?", ["5n", "n + 5", "5 + 5 + n"], 0, "Cada término es 5 veces su posición."),
     ],
@@ -439,7 +439,7 @@ export const COORDINATE_LESSONS: Lesson[] = [
     ],
     diagnostic: [
       n("d-1", "Un triángulo rectángulo tiene catetos de 6 y 8. ¿Cuánto mide la hipotenusa?", 10, ["√(36 + 64) = √100 = 10."], ["Eleva cada cateto al cuadrado.", "Suma: 36 + 64.", "Saca la raíz cuadrada."]),
-      n("d-2", "¿Cuánto es −2 − 5?", -7, ["Desde −2 se retroceden 5: −7."], ["Ubica −2 en la recta.", "Restar 5 es moverse 5 a la izquierda.", "−7."]),
+      n("d-2", "¿Cuánto es −2 − 5?", -7, ["Desde −2 se retroceden 5 → −7."], ["Ubica −2 en la recta.", "Restar 5 es moverse 5 a la izquierda.", "−7."]),
       c("d-3", "¿En qué cuadrante está el punto (−2, 3)?", ["Segundo (II)", "Primero (I)", "Cuarto (IV)"], 0, "x negativa y y positiva: segundo cuadrante."),
     ],
     questions(v) {
@@ -595,7 +595,7 @@ export const QUADRATIC_FUNCTION_LESSONS: Lesson[] = [
         title: "Encontrar el vértice",
         paragraphs: [
           "En y = x² + bx + c, el vértice está en x = −b ÷ 2: es el punto medio entre las dos raíces, porque la parábola es simétrica.",
-          "Para y = x² − 6x + 5: x = 3 y y = 9 − 18 + 5 = −4. El valor mínimo es −4.",
+          "Para y = x² − 6x + 5 → x = 3 y y = 9 − 18 + 5 = −4. El valor mínimo es −4.",
         ],
         formula: "x_v = −b ÷ (2a)",
       },
@@ -772,7 +772,7 @@ export const SOLID_LESSONS: Lesson[] = [
       {
         title: "La esfera",
         paragraphs: [
-          "Una esfera de radio r ocupa dos tercios del cilindro que la envuelve (radio r y altura 2r): (2/3) · π · r² · 2r = (4/3) · π · r³.",
+          "Una esfera de radio r ocupa dos tercios del cilindro que la envuelve (radio r y altura 2r) → (2/3) · π · r² · 2r = (4/3) · π · r³.",
           "Como el radio está al cubo, al duplicar el radio el volumen se multiplica por 2³ = 8.",
         ],
         formula: "V_esfera = 4 · π · r³ ÷ 3",
@@ -1077,7 +1077,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
       "app",
       "En un colegio, el 60% de los estudiantes llega en bus y el 40% caminando. Llega tarde el 10% de los que van en bus y el 25% de los que caminan. Si un estudiante llegó tarde, ¿qué probabilidad hay de que haya ido en bus? Escríbela como decimal.",
       0.375,
-      ["De cada 100: 60 en bus (6 tarde) y 40 caminando (10 tarde).", "Llegan tarde 6 + 10 = 16.", "P(bus | tarde) = 6/16 = 0,375."],
+      ["De cada 100 → 60 en bus (6 tarde) y 40 caminando (10 tarde).", "Llegan tarde 6 + 10 = 16.", "P(bus | tarde) = 6/16 = 0,375."],
       ["Imagina 100 estudiantes.", "Cuenta cuántos llegan tarde en cada grupo.", "Divide entre todos los que llegan tarde."],
       {
         intent: "transfer",

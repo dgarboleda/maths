@@ -165,7 +165,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           "q2",
           `Completa: ${a}:${b} = ${a * k}:__.`,
           b * k,
-          [`Multiplica ambos términos por ${k}: ${b} × ${k} = ${b * k}.`],
+          [`Multiplica ambos términos por ${k} → ${b} × ${k} = ${b * k}.`],
           [
             "Una razón equivalente conserva el factor entre ambas cantidades.",
             `El primer término se multiplicó por ${k}.`,
@@ -246,7 +246,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           best,
           [
             `A: ${p}/(${p} + ${q}) = ${p}/${p + q}. B: ${r}/(${r} + ${s}) = ${r}/${r + s}.`,
-            `Con denominador común ${(p + q) * (r + s)}: ${p * (r + s)} frente a ${r * (p + q)}; la mayor es ${best === shareA ? `${p}/${p + q}` : `${r}/${r + s}`}.`,
+            `Con denominador común ${(p + q) * (r + s)} → ${p * (r + s)} frente a ${r * (p + q)}; la mayor es ${best === shareA ? `${p}/${p + q}` : `${r}/${r + s}`}.`,
           ],
           [
             "Compara la parte azul respecto del total de cada mezcla, no las cantidades sueltas.",
@@ -1011,7 +1011,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             [`De ${delta}, la rebaja`, "La rebaja es lo que se compara, no la referencia."],
           ],
           1,
-          `El descuento ${delta} se compara con el precio inicial ${base}: ${delta}/${base} = ${p}%.`,
+          `El descuento ${delta} se compara con el precio inicial ${base} → ${delta}/${base} = ${p}%.`,
         ),
         c(
           "q4",

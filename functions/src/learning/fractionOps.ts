@@ -67,7 +67,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
     diagnostic: [
       n("d-1", "Completa: 1/3 = __/12.", 4, ["3 × 4 = 12; 1 × 4 = 4."], ["Busca el factor del denominador.", "12 ÷ 3 = 4.", "Multiplica 1 por 4."], { step: true }),
       c("d-2", "¿Cuánto es 2/9 + 5/9?", ["7/18", "7/9", "10/9"], 1, "Con el mismo denominador se suman los numeradores."),
-      n("d-3", "¿Cuál es el menor múltiplo común de 4 y 6?", 12, ["Múltiplos de 4: 4, 8, 12…; de 6: 6, 12…"], ["Escribe los múltiplos de cada uno.", "Busca el primero que se repite.", "12."]),
+      n("d-3", "¿Cuál es el menor múltiplo común de 4 y 6?", 12, ["Múltiplos de 4 → 4, 8, 12…; de 6 → 6, 12…"], ["Escribe los múltiplos de cada uno.", "Busca el primero que se repite.", "12."]),
     ],
     questions(v) {
       const [a, b, cc, d] = [[1, 2, 1, 3], [2, 3, 1, 4], [3, 4, 1, 6], [2, 5, 1, 3], [1, 4, 5, 6], [3, 8, 1, 6]][v],
@@ -161,7 +161,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
       "app",
       "Tres paneles solares cargan una batería: el primero aporta 1/4, el segundo 1/3 y el tercero 1/6 de su capacidad. ¿Qué fracción falta para llenarla?",
       1 / 4,
-      ["Denominador común 12: 3/12 + 4/12 + 2/12 = 9/12.", "Falta 12/12 − 9/12 = 3/12 = 1/4."],
+      ["Denominador común 12 → 3/12 + 4/12 + 2/12 = 9/12.", "Falta 12/12 − 9/12 = 3/12 = 1/4."],
       ["Suma primero los tres aportes.", "Usa 12 como denominador común.", "Resta el total a 1."],
       {
         intent: "transfer",
@@ -213,7 +213,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
       {
         title: "Simplifica y estima",
         paragraphs: [
-          "Puedes simplificar antes de multiplicar: 4/9 × 3/8 = (4 × 3)/(9 × 8); el 4 y el 8 comparten 4, el 3 y el 9 comparten 3: 1/6.",
+          "Puedes simplificar antes de multiplicar: 4/9 × 3/8 = (4 × 3)/(9 × 8); el 4 y el 8 comparten 4, el 3 y el 9 comparten 3 → 1/6.",
           "Estima siempre: 5 ÷ 2/3 debe ser mayor que 5; 5 × 2/3, menor.",
         ],
         formula: "4/9 × 3/8 = 1/6",
@@ -234,7 +234,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
     diagnostic: [
       n("d-1", "¿Cuánto es 1/2 de 10?", 5, ["10 ÷ 2 = 5."], ["Reparte en dos partes iguales.", "10 ÷ 2.", "5."]),
       c("d-2", "¿Cuántos medios caben en 3 unidades?", ["3", "6", "1,5"], 1, "Cada unidad tiene 2 medios: 3 × 2 = 6."),
-      n("d-3", "Simplifica 6/8: ¿cuál es el nuevo numerador?", 3, ["6 ÷ 2 = 3 y 8 ÷ 2 = 4."], ["Busca un divisor común.", "Ambos son pares.", "6 ÷ 2 = 3."]),
+      n("d-3", "Simplifica 6/8. ¿Cuál es el nuevo numerador?", 3, ["6 ÷ 2 = 3 y 8 ÷ 2 = 4."], ["Busca un divisor común.", "Ambos son pares.", "6 ÷ 2 = 3."]),
     ],
     questions(v) {
       const [a, b, cc, d] = [[2, 3, 3, 4], [1, 2, 4, 5], [3, 5, 2, 3], [3, 4, 2, 7], [2, 5, 5, 6], [5, 8, 2, 3]][v],
