@@ -226,6 +226,14 @@ export function LearningReport({
                   proceso: <strong className="text-cyan-200">{strength.growing}</strong> · por reforzar:{" "}
                   <strong className="text-amber-200">{strength.weak}</strong>.
                 </p>
+                {data.daily.streak && (
+                  <p className="mt-1">
+                    Racha de repaso: {data.daily.streak.current}{" "}
+                    {data.daily.streak.current === 1 ? "día seguido" : "días seguidos"} hasta el{" "}
+                    {new Date(`${data.daily.streak.lastDay}T12:00:00Z`).toLocaleDateString("es-PE")} · mejor racha:{" "}
+                    {data.daily.streak.best}. Saltarse un día se perdona una vez por semana.
+                  </p>
+                )}
               </div>
             );
           })()}

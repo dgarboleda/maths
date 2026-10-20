@@ -245,6 +245,9 @@ test("los gráficos dinámicos de la clase responden, son accesibles y caben en 
   for (const [lessonId, graph] of [
     ["funciones-lineales", /Recta y = 3x más 2/],
     ["angulos", /Dos rectas que se cortan: 60°/],
+    ["interes-compuesto", /el compuesto da 593,74 soles más/],
+    ["progresiones", /Primeros 8 términos: 2, 5, 8/],
+    ["distancia-punto-medio", /A\(−3, −2\) y B\(3, 6\)/],
   ] as const) {
     await page.goto(`/jugar/${childId}/aprende/${lessonId}`);
     await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
@@ -255,6 +258,7 @@ test("los gráficos dinámicos de la clase responden, son accesibles y caben en 
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
+    await explore.screenshot({ path: test.info().outputPath(`${lessonId}.png`) });
     const results = await new AxeBuilder({ page }).include("main").analyze();
     expect(results.violations).toEqual([]);
   }

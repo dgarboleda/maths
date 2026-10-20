@@ -17,7 +17,7 @@ import type {
   PlacementAction,
   PlacementState,
 } from "./learning/types";
-import { answerOutcome, findQuestion, type AnswerOutcome } from "./learning/diagnosis";
+import { answerOutcome, findQuestion, type AnswerOutcome, type EvidenceEvent } from "./learning/diagnosis";
 import {
   applyPlacementAction,
   placementCurrent,
@@ -32,8 +32,10 @@ import type { DailyReviewState, MixedReviewState } from "./learning/types";
 import {
   applyDailyAction,
   dailyEligible,
+  dailyFocus,
   dailyQuestions,
   DAILY_ID,
+  STREAK_MILESTONES,
   type DailyLessonInfo,
 } from "./learning/daily";
 import { readBalance } from "./stars";
@@ -208,6 +210,22 @@ export const recordLearningAction = onCall(
       .collection(adventure ? "learningMissions" : "learningProgress")
       .doc(lessonId);
     const event = child.collection("learningEvidence").doc(operationId);
+    // Errores recientes para priorizar el repaso diario. Se leen fuera de la
+    // transacción: no hace falta consistencia estricta para elegir problemas.
+    const recentEvidence: EvidenceEvent[] =
+      daily && action.kind === "begin"
+        ? (
+            await child.collection("learningEvidence").orderBy("createdAt", "desc").limit(300).get()
+          ).docs.map((doc) => {
+            const data = doc.data();
+            return {
+              lessonId: data.lessonId,
+              action: data.action ?? { kind: "" },
+              outcome: data.outcome,
+              at: data.createdAt?.toMillis?.() ?? 0,
+            };
+          })
+        : [];
     try {
       return await db.runTransaction(async (tx) => {
         const [profile, snapshot, previousEvent, allProgress, ...unitProgress] =
@@ -253,7 +271,7 @@ export const recordLearningAction = onCall(
             "El avance cambió en otra pestaña. Actualiza la página para continuar.",
           );
         const now = Date.now();
-        let dailyInput: { eligible: string[]; support: Set<string> } | null = null;
+        let dailyInput: { eligible: string[]; support: Set<string>; focus: Map<string, number | null> } | null = null;
         if (daily && allProgress) {
           const info: Record<string, DailyLessonInfo> = {};
           let mastered: string[] = [];
@@ -263,9 +281,11 @@ export const recordLearningAction = onCall(
             else if (getLesson(doc.id))
               info[doc.id] = { completedAt: data.completedAt ?? null, needsSupport: Boolean(data.needsSupport) };
           }
+          const eligible = dailyEligible(info, mastered);
           dailyInput = {
-            eligible: dailyEligible(info, mastered),
+            eligible,
             support: new Set(Object.keys(info).filter((id) => info[id].needsSupport)),
+            focus: dailyFocus(recentEvidence, eligible),
           };
         }
         const next = dailyInput
@@ -275,6 +295,7 @@ export const recordLearningAction = onCall(
               dailyInput.eligible,
               dailyInput.support,
               now,
+              dailyInput.focus,
             )
           : placement
           ? applyPlacementAction(
@@ -313,8 +334,11 @@ export const recordLearningAction = onCall(
           daily &&
           (next as DailyReviewState).rewardDay !== null &&
           (next as DailyReviewState).rewardDay !== (previous as DailyReviewState | undefined)?.rewardDay;
+        // Y un extra al alcanzar 7, 14 o 30 días seguidos.
+        const streakDays = (next as DailyReviewState).streak?.current ?? 0;
+        const milestone = dailyReward && STREAK_MILESTONES.includes(streakDays);
         const stars = daily
-          ? dailyReward ? 2 : 0
+          ? dailyReward ? 2 + (milestone ? 3 : 0) : 0
           : !placement && !done(previous) && done(next) ? (adventure ? 10 : 5) : 0;
         const outcome = outcomeOf(lessonId, action, previous, next);
         // Todas las lecturas deben preceder las escrituras en la transacción.

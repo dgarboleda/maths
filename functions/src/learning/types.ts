@@ -75,7 +75,10 @@ export type Visual =
   | "trig"
   | "boxplot"
   | "counting"
-  | "transform";
+  | "transform"
+  | "interest"
+  | "sequence"
+  | "distance";
 export type UnitId =
   | "numeros"
   | "fracciones"
@@ -236,7 +239,9 @@ export interface DailyReviewState {
   /** Por clase: caja (0–4), próxima fecha, último repaso y repasos hechos. */
   schedule: Record<string, { box: number; dueAt: number; lastAt: number; seen: number }>;
   stage: "idle" | "active" | "summary";
-  items: { lessonId: string; questionId: string }[];
+  /** `focus`: la clase entra por un error que se repite y la pregunta es de
+   *  la misma tarea. */
+  items: { lessonId: string; questionId: string; focus?: boolean }[];
   index: number;
   responses: Record<string, ResponseEvidence>;
   sessions: number;
@@ -245,5 +250,16 @@ export interface DailyReviewState {
   rewardDay: string | null;
   /** Inicio de la sesión actual: una clase sube como mucho una caja por sesión. */
   startedAt: number;
+  /** Días seguidos con una sesión terminada; ausente en agendas anteriores. */
+  streak?: DailyStreak;
   updatedAt: number;
+}
+
+export interface DailyStreak {
+  current: number;
+  best: number;
+  /** Último día (Lima) con sesión terminada. */
+  lastDay: string | null;
+  /** Semana (lunes, AAAA-MM-DD) en la que se usó el comodín. */
+  freezeWeek: string | null;
 }

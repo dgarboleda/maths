@@ -313,3 +313,139 @@ export function TransformVisual({ id }: { id: string }) {
     </>
   );
 }
+
+/** Mismo capital y tasa: interés simple (suma lo mismo) frente a compuesto
+ *  (multiplica por el mismo factor). */
+export function InterestVisual({ id }: { id: string }) {
+  const [capital, setCapital] = useState(1000);
+  const [rate, setRate] = useState(10);
+  const [years, setYears] = useState(10);
+  const simple = (t: number) => capital * (1 + (rate * t) / 100),
+    compound = (t: number) => capital * (1 + rate / 100) ** t;
+  const top = Math.max(compound(years), simple(years)) * 1.1;
+  const gap = compound(years) - simple(years);
+  return (
+    <>
+      <Slider id={`${id}-c`} label="Capital (soles)" value={capital} min={500} max={5000} step={500} onChange={setCapital} />
+      <Slider id={`${id}-r`} label="Tasa anual (%)" value={rate} min={1} max={25} onChange={setRate} />
+      <Slider id={`${id}-t`} label="Años" value={years} min={1} max={20} onChange={setYears} />
+      <p className="font-mono text-sm">
+        Simple: {num(capital)} · (1 + {rate} · {years} ÷ 100) = {num(simple(years))}
+        <br />
+        Compuesto: {num(capital)} · {num(1 + rate / 100)}<sup>{years}</sup> = {num(compound(years))}
+      </p>
+      <Plane x={[0, years]} y={[0, top]} xStep={years > 10 ? 2 : 1} yStep={Math.max(500, Math.ceil(top / 5 / 500) * 500)}
+        label={`Monto con interés simple (ámbar, recta) y compuesto (cian, curva) durante ${years} años al ${rate}%: al final el compuesto da ${num(gap)} soles más.`}>
+        {(s) => (
+          <>
+            <path d={curve(simple, [0, years], s, 2)} className="fill-none stroke-amber-300" strokeWidth={2} strokeDasharray="5 4" />
+            <path d={curve(compound, [0, years], s)} className="fill-none stroke-cyan-300" strokeWidth={2.5} />
+            <Handle x={s.sx(years)} y={s.sy(compound(years))} className="fill-cyan-300"
+              onDrag={(px) => setYears(snap(s.ix(px), 1, 20))} />
+          </>
+        )}
+      </Plane>
+      <p className="text-sm text-slate-300">
+        Diferencia al final: <strong>{num(gap)} soles</strong>. El simple gana {num((capital * rate) / 100)} cada año; el compuesto gana
+        cada año un poco más, porque el {rate}% se aplica a un monto que ya incluye intereses.
+      </p>
+    </>
+  );
+}
+
+/** Progresión aritmética (suma d) o geométrica (multiplica por r). */
+export function SequenceVisual({ id }: { id: string }) {
+  const [mode, setMode] = useState("aritmetica");
+  const [first, setFirst] = useState(2);
+  const [d, setD] = useState(3);
+  const [r, setR] = useState(2);
+  const arith = mode === "aritmetica";
+  const term = (n: number) => (arith ? first + (n - 1) * d : first * r ** (n - 1));
+  const ns = [1, 2, 3, 4, 5, 6, 7, 8];
+  const values = ns.map(term);
+  const lo = Math.min(0, ...values),
+    hi = Math.max(1, ...values) * 1.1;
+  return (
+    <>
+      <Toggle label="Tipo de progresión" value={mode} onChange={setMode}
+        options={[["aritmetica", "Aritmética (+ d)"], ["geometrica", "Geométrica (× r)"]]} />
+      <Slider id={`${id}-a`} label="Primer término a₁" value={first} min={1} max={10} onChange={setFirst} />
+      {arith ? (
+        <Slider id={`${id}-d`} label="Diferencia d" value={d} min={-4} max={8} onChange={setD} />
+      ) : (
+        <Slider id={`${id}-r`} label="Razón r" value={r} min={0.5} max={3} step={0.5} onChange={setR} />
+      )}
+      <p className="font-mono text-lg">
+        {arith ? `aₙ = ${first} + (n − 1) · ${num(d)}` : `aₙ = ${first} · ${num(r)}ⁿ⁻¹`}
+      </p>
+      <Plane x={[0, 9]} y={[lo, hi]} yStep={Math.max(1, Math.ceil((hi - lo) / 6))}
+        label={`Primeros 8 términos: ${values.map(num).join(", ")}. ${arith ? "Los puntos quedan alineados: crece lo mismo en cada paso." : "Los saltos cambian de tamaño: cada término es " + num(r) + " veces el anterior."}`}>
+        {(s) => (
+          <>
+            {ns.map((n) => <circle key={n} cx={s.sx(n)} cy={s.sy(term(n))} r={4} className="fill-cyan-300" />)}
+            <Handle x={s.sx(2)} y={s.sy(term(2))} className="fill-amber-300"
+              onDrag={(_, py) => {
+                const v = s.iy(py);
+                if (arith) setD(snap(v - first, -4, 8));
+                else setR(snap(v / first, 0.5, 3, 0.5));
+              }} />
+          </>
+        )}
+      </Plane>
+      <p className="text-sm text-slate-300">
+        {arith
+          ? `Suma de los 8 términos: 8 · (${first} + ${num(term(8))}) ÷ 2 = ${num((8 * (first + term(8))) / 2)}. Arrastra el segundo punto para cambiar la diferencia.`
+          : `De un término al siguiente se multiplica por ${num(r)}: ${r > 1 ? "los saltos crecen" : r < 1 ? "los saltos se achican" : "no cambia"}. Arrastra el segundo punto para cambiar la razón.`}
+      </p>
+    </>
+  );
+}
+
+/** Dos puntos: catetos Δx y Δy, distancia (hipotenusa) y punto medio. */
+export function DistanceVisual({ id }: { id: string }) {
+  const [ax, setAx] = useState(-3);
+  const [ay, setAy] = useState(-2);
+  const [bx, setBx] = useState(3);
+  const [by, setBy] = useState(6);
+  const dx = bx - ax,
+    dy = by - ay,
+    dist = Math.hypot(dx, dy),
+    mx = (ax + bx) / 2,
+    my = (ay + by) / 2;
+  return (
+    <>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div>
+          <Slider id={`${id}-ax`} label="A: x" value={ax} min={-6} max={6} onChange={setAx} />
+          <Slider id={`${id}-ay`} label="A: y" value={ay} min={-6} max={8} onChange={setAy} />
+        </div>
+        <div>
+          <Slider id={`${id}-bx`} label="B: x" value={bx} min={-6} max={6} onChange={setBx} />
+          <Slider id={`${id}-by`} label="B: y" value={by} min={-6} max={8} onChange={setBy} />
+        </div>
+      </div>
+      <p className="font-mono text-sm">
+        Δx = {num(dx)} · Δy = {num(dy)} · d = √({num(dx * dx)} + {num(dy * dy)}) {Number.isInteger(dist) ? "=" : "≈"} {num(dist)}
+        <br />M = ({num(mx)}, {num(my)})
+      </p>
+      <Plane x={[-6, 6]} y={[-6, 8]} xStep={2} yStep={2}
+        label={`A(${num(ax)}, ${num(ay)}) y B(${num(bx)}, ${num(by)}): catetos ${num(Math.abs(dx))} y ${num(Math.abs(dy))}, distancia ${num(dist)}, punto medio (${num(mx)}, ${num(my)}).`}>
+        {(s) => (
+          <>
+            <path d={`M${s.sx(ax)},${s.sy(ay)} L${s.sx(bx)},${s.sy(ay)} L${s.sx(bx)},${s.sy(by)}`} className="fill-none stroke-amber-300" strokeWidth={2} strokeDasharray="5 4" />
+            <line x1={s.sx(ax)} y1={s.sy(ay)} x2={s.sx(bx)} y2={s.sy(by)} className="stroke-cyan-300" strokeWidth={2.5} />
+            <circle cx={s.sx(mx)} cy={s.sy(my)} r={5} className="fill-rose-300" />
+            <Handle x={s.sx(ax)} y={s.sy(ay)} className="fill-emerald-300"
+              onDrag={(px, py) => { setAx(snap(s.ix(px), -6, 6)); setAy(snap(s.iy(py), -6, 8)); }} />
+            <Handle x={s.sx(bx)} y={s.sy(by)} className="fill-amber-300"
+              onDrag={(px, py) => { setBx(snap(s.ix(px), -6, 6)); setBy(snap(s.iy(py), -6, 8)); }} />
+          </>
+        )}
+      </Plane>
+      <p className="text-sm text-slate-300">
+        Los tramos ámbar son los catetos; el segmento cian es la hipotenusa: siempre más corto que |Δx| + |Δy| = {num(Math.abs(dx) + Math.abs(dy))},
+        salvo que los puntos estén en la misma fila o columna. El punto rosa promedia las coordenadas.
+      </p>
+    </>
+  );
+}

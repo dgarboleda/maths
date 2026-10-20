@@ -1,8 +1,9 @@
 import { CONTENT_VERSION } from "./defineLesson";
 import { getLesson, LESSONS } from "./catalog";
 import { independent, LearningError } from "./engine";
+import { summarizeMisconceptions, type EvidenceEvent } from "./diagnosis";
 import { isAnswerCorrect } from "./questions";
-import type { DailyReviewState, LearningAction, Lesson, Question, ResponseEvidence } from "./types";
+import type { DailyReviewState, DailyStreak, LearningAction, Lesson, Question, ResponseEvidence } from "./types";
 
 export const DAILY_ID = "diario";
 export const DAILY_SIZE = 6;
@@ -13,6 +14,72 @@ const DAY = 86_400_000;
 /** Fecha del día en Perú (UTC−5, sin horario de verano). */
 export function limaDay(now: number): string {
   return new Date(now - 5 * 3_600_000).toISOString().slice(0, 10);
+}
+
+/** Días de racha que dan un premio extra (una vez cada vez que se alcanzan). */
+export const STREAK_MILESTONES = [7, 14, 30];
+/** Repeticiones del mismo error, sin resolver, para que la clase vuelva antes. */
+export const FOCUS_MIN_ERRORS = 2;
+
+const dayNumber = (day: string) => Math.round(Date.parse(`${day}T00:00:00Z`) / DAY);
+/** Lunes de la semana del día dado (AAAA-MM-DD). */
+export function weekOf(day: string): string {
+  const n = dayNumber(day);
+  // El 1970-01-01 fue jueves: (n + 3) % 7 cuenta los días desde el lunes.
+  return new Date((n - ((n + 3) % 7)) * DAY).toISOString().slice(0, 10);
+}
+
+const NO_STREAK: DailyStreak = { current: 0, best: 0, lastDay: null, freezeWeek: null };
+
+/** Racha tras terminar una sesión el día `day`. Saltarse un solo día se
+ *  perdona una vez por semana (comodín); dos o más días la reinician. */
+export function advanceStreak(previous: DailyStreak | undefined, day: string): DailyStreak {
+  const s = previous ?? NO_STREAK;
+  if (s.lastDay === day) return s;
+  const gap = s.lastDay ? dayNumber(day) - dayNumber(s.lastDay) : Infinity;
+  const week = weekOf(day);
+  const freeze = gap === 2 && s.freezeWeek !== week;
+  const current = gap === 1 || freeze ? s.current + 1 : 1;
+  return {
+    current,
+    best: Math.max(s.best, current),
+    lastDay: day,
+    freezeWeek: freeze ? week : s.freezeWeek,
+  };
+}
+
+/** Racha vista hoy: sigue viva si se repasó hoy o ayer, o anteayer con el
+ *  comodín de la semana disponible. */
+export function streakToday(state: DailyReviewState | null | undefined, now: number) {
+  const s = state?.streak ?? NO_STREAK;
+  const today = limaDay(now);
+  const gap = s.lastDay ? dayNumber(today) - dayNumber(s.lastDay) : Infinity;
+  const freezeAvailable = s.freezeWeek !== weekOf(today);
+  const alive = gap <= 1 || (gap === 2 && freezeAvailable);
+  return {
+    current: alive ? s.current : 0,
+    best: s.best,
+    doneToday: gap === 0,
+    /** Hay que repasar hoy para no perderla. */
+    atRisk: alive && gap > 0 && s.current > 0,
+    usesFreeze: gap === 2 && alive,
+    freezeAvailable,
+    nextMilestone: STREAK_MILESTONES.find((m) => m > (alive ? s.current : 0)) ?? null,
+  };
+}
+
+/**
+ * Errores previstos que se repiten sin resolver (en clases, repasos y
+ * ubicación): esas clases vuelven antes al repaso, con una pregunta de la
+ * misma tarea. Devuelve clase → tarea.
+ */
+export function dailyFocus(events: EvidenceEvent[], eligible: string[]): Map<string, number | null> {
+  const allowed = new Set(eligible);
+  const focus = new Map<string, number | null>();
+  for (const m of summarizeMisconceptions(events, getLesson).misconceptions)
+    if (!m.resolved && m.count >= FOCUS_MIN_ERRORS && allowed.has(m.lessonId) && !focus.has(m.lessonId))
+      focus.set(m.lessonId, m.task);
+  return focus;
 }
 
 export function initialDaily(): DailyReviewState {
@@ -59,8 +126,9 @@ function pool(lesson: Lesson): Question[] {
 }
 
 /**
- * Prioridad: 1) vencidas, de la caja más baja a la más alta; 2) clases que
- * necesitan apoyo; 3) las que hace más tiempo no se repasan. Intercala
+ * Prioridad: 0) clases con un error que se repite; 1) vencidas, de la caja
+ * más baja a la más alta; 2) clases que necesitan apoyo; 3) las que hace más
+ * tiempo no se repasan. Intercala
  * unidades para que dos problemas seguidos no sean del mismo tema, y como
  * mucho dos por clase.
  */
@@ -69,15 +137,17 @@ export function planDaily(
   eligible: string[],
   support: Set<string>,
   now: number,
+  focus: Map<string, number | null> = new Map(),
 ): DailyReviewState["items"] {
   const entry = (id: string) => state.schedule[id];
-  const due = dailyDue(state, eligible, now).sort(
+  const focused = eligible.filter((id) => focus.has(id));
+  const due = dailyDue(state, eligible, now).filter((id) => !focus.has(id)).sort(
     (a, b) => (entry(a)?.box ?? 0) - (entry(b)?.box ?? 0) || (entry(a)?.dueAt ?? 0) - (entry(b)?.dueAt ?? 0),
   );
   const rest = eligible
-    .filter((id) => !due.includes(id))
+    .filter((id) => !due.includes(id) && !focus.has(id))
     .sort((a, b) => Number(support.has(b)) - Number(support.has(a)) || (entry(a)?.lastAt ?? 0) - (entry(b)?.lastAt ?? 0));
-  const ordered = [...due, ...rest];
+  const ordered = [...focused, ...due, ...rest];
   const picks = [...ordered, ...ordered].slice(0, DAILY_SIZE);
   // Intercalar unidades: de los pendientes, toma el primero de otra unidad.
   const lessons: Lesson[] = [];
@@ -93,7 +163,13 @@ export function planDaily(
       k = used.get(lesson.id) ?? 0;
     used.set(lesson.id, k + 1);
     const seen = entry(lesson.id)?.seen ?? 0;
-    const question = bank[(seen * 2 + k + state.sessions) % bank.length];
+    const turn = seen * 2 + k + state.sessions;
+    // Con un error que se repite, una forma de la misma tarea para atacarlo.
+    const task = focus.get(lesson.id);
+    const targeted = task === undefined || task === null ? [] : bank.filter((q) => q.task === task);
+    if (targeted.length && k === 0)
+      return { lessonId: lesson.id, questionId: targeted[turn % targeted.length].id, focus: true };
+    const question = bank[turn % bank.length];
     return { lessonId: lesson.id, questionId: question.id };
   });
 }
@@ -113,6 +189,7 @@ export function applyDailyAction(
   eligible: string[],
   support: Set<string>,
   now: number,
+  focus: Map<string, number | null> = new Map(),
 ): DailyReviewState {
   let base = previous ?? initialDaily();
   if (base.contentVersion !== CONTENT_VERSION)
@@ -127,7 +204,7 @@ export function applyDailyAction(
   if (action.kind === "begin") {
     if (eligible.length === 0)
       throw new LearningError("Termina una clase para empezar a repasar.");
-    state.items = planDaily(base, eligible, support, now);
+    state.items = planDaily(base, eligible, support, now, focus);
     state.stage = "active";
     state.index = 0;
     state.responses = {};
@@ -150,8 +227,9 @@ export function applyDailyAction(
     state.sessions = base.sessions + 1;
     state.stage = "summary";
     state.index = 0;
-    // Una sesión terminada por día cuenta para el premio.
+    // Una sesión terminada por día cuenta para el premio y la racha.
     state.rewardDay = limaDay(now);
+    state.streak = advanceStreak(base.streak, state.rewardDay);
     return state;
   }
   if (action.questionId !== current.question.id)

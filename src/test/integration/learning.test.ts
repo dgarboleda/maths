@@ -633,6 +633,7 @@ describe("Servicio educativo y reglas reales", () => {
       const first = await session();
       expect(first.stars).toBe(2);
       expect(first.state).toMatchObject({ stage: "summary", sessions: 1, lastResult: { correct: 4, total: 4 } });
+      expect(first.state.streak).toMatchObject({ current: 1, best: 1 });
       // Cada clase sube una sola caja por sesión.
       expect(first.state.schedule["razones"]).toMatchObject({ box: 1, seen: 2 });
       const evidence = await fs.getDoc(
@@ -652,6 +653,40 @@ describe("Servicio educativo y reglas reales", () => {
       await expect(
         fs.setDoc(saved.ref, { ...saved.data(), rewardDay: null }),
       ).rejects.toThrow();
+    } finally {
+      await deleteApp(family.app);
+    }
+  });
+
+  test("el repaso diario prioriza en el servidor la clase con un error que se repite", async () => {
+    const family = await createFamily();
+    try {
+      const revisions: Record<string, number> = {};
+      const send = async <T,>(lessonId: string, action: LearningAction) => {
+        const result = await call<{ progress: T & { revision: number }; stars: number }>(family.app, "recordLearningAction", {
+          parentId: family.parentId, childId: family.childId, lessonId,
+          expectedRevision: revisions[lessonId] ?? 0, operationId: crypto.randomUUID(), action,
+        });
+        revisions[lessonId] = result.progress.revision;
+        return result;
+      };
+      const lesson = getLesson("perimetro-area")!;
+      const question = lesson.practice[0];
+      const wrong = question.choices
+        ? question.choices.find((c) => c.id !== question.answer && c.feedback)!.id
+        : String(question.errors![0].value);
+      // El mismo error previsto dos veces en la práctica.
+      await send(lesson.id, { kind: "begin", stage: "practice" });
+      for (let i = 0; i < 2; i++)
+        await send(lesson.id, { kind: "answer", questionId: question.id, response: wrong });
+      for (const id of [lesson.id, "enteros-recta", "razones", "media-mediana-moda"]) {
+        await send(id, { kind: "begin", stage: "application" });
+        await send(id, { kind: "reveal", questionId: "m-1" });
+        await send(id, { kind: "next" });
+      }
+      const state = (await send<DailyReviewState>("diario", { kind: "begin", stage: "review" })).progress;
+      expect(state.items[0]).toMatchObject({ lessonId: lesson.id, focus: true });
+      expect(dailyQuestions(state)[0].question.task).toBe(question.task);
     } finally {
       await deleteApp(family.app);
     }

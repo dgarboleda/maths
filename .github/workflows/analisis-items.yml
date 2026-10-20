@@ -1,0 +1,58 @@
+name: Análisis de preguntas
+
+# Lee `learningEvidence` de producción en solo lectura y publica el informe
+# agregado (sin nombres, correos ni identificadores) como artefacto.
+# Autenticación sin claves: Workload Identity Federation hacia una cuenta de
+# servicio con `roles/datastore.viewer` (ver docs/operacion.md). Mientras las
+# variables del repositorio no existan, el trabajo se omite.
+on:
+  workflow_dispatch:
+    inputs:
+      desde:
+        description: "Primer día incluido (AAAA-MM-DD); vacío = todo"
+        required: false
+      minimo:
+        description: "Respuestas mínimas por pregunta para calificarla"
+        required: false
+        default: "10"
+  schedule:
+    # Día 1 de cada mes, 07:17 UTC (02:17 en Lima).
+    - cron: "17 7 1 * *"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  analisis:
+    name: Informe de preguntas
+    if: vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && vars.GCP_ANALYSIS_SERVICE_ACCOUNT != '' && vars.FIREBASE_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --prefix functions
+      - run: npm run functions:build
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_ANALYSIS_SERVICE_ACCOUNT }}
+      - name: Analizar
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          DESDE: ${{ inputs.desde }}
+          MINIMO: ${{ inputs.minimo || '10' }}
+        run: |
+          set -euo pipefail
+          args=(--salida informes --minimo "$MINIMO")
+          if [ -n "${DESDE:-}" ]; then args+=(--desde "$DESDE"); fi
+          npm run analisis:items -- "${args[@]}"
+          cat informes/analisis-items-*.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: analisis-items
+          path: informes/
+          retention-days: 30

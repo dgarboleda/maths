@@ -27,13 +27,13 @@ El currículo se organiza en siete unidades para estudiantes de 12 a 17 años qu
 | --- | --- |
 | Números enteros y operaciones | Enteros en la recta; sumar y restar enteros; multiplicar y dividir enteros; orden de las operaciones; potencias y raíces; notación científica |
 | Fracciones y representaciones | Unidad y significado; equivalencia y comparación; fracción–decimal–porcentaje; fracción de una cantidad; sumar y restar fracciones; multiplicar y dividir fracciones; operaciones con decimales |
-| Razones y proporcionalidad | Razones parte-parte y parte-total; tasa unitaria; proporcionalidad directa; cambios porcentuales; proporcionalidad inversa |
+| Razones y proporcionalidad | Razones parte-parte y parte-total; tasa unitaria; proporcionalidad directa; cambios porcentuales; proporcionalidad inversa; interés simple y compuesto |
 | Ecuaciones para resolver situaciones | Igualdad e incógnita; ecuaciones de un paso; ecuaciones de dos pasos; modelación y restricciones |
-| Expresiones, ecuaciones y funciones | Expresiones algebraicas; propiedad distributiva; incógnita en ambos lados; inecuaciones lineales; funciones lineales; ecuaciones cuadráticas; sistemas de dos ecuaciones; crecimiento exponencial |
-| Geometría y medida | Ángulos y polígonos; perímetro y área; longitud y área del círculo; volumen de prismas y cilindros; teorema de Pitágoras; semejanza y escalas; transformaciones en el plano; razones trigonométricas |
+| Expresiones, ecuaciones y funciones | Expresiones algebraicas; propiedad distributiva; incógnita en ambos lados; inecuaciones lineales; funciones lineales; progresiones aritméticas y geométricas; ecuaciones cuadráticas; sistemas de dos ecuaciones; crecimiento exponencial |
+| Geometría y medida | Ángulos y polígonos; perímetro y área; longitud y área del círculo; volumen de prismas y cilindros; teorema de Pitágoras; semejanza y escalas; transformaciones en el plano; distancia y punto medio en el plano; razones trigonométricas |
 | Datos y probabilidad | Media, mediana y moda; probabilidad de un suceso; experimentos compuestos; dispersión y diagramas de caja; técnicas de conteo |
 
-Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales, un modelo visual manipulable y bancos de tareas. Hay 94 ejemplos desarrollados y 1376 instancias de actividades (32 por lección), organizadas en familias y formas paralelas; ese conteo no equivale a 1376 competencias ni a 1376 problemas de estructura distinta.
+Cada lección contiene objetivo observable, propósito, prerrequisitos, vocabulario, tres secciones de clase, dos o tres ejemplos razonados, errores habituales, un modelo visual manipulable y bancos de tareas. Hay 100 ejemplos desarrollados y 1472 instancias de actividades (32 por lección), organizadas en familias y formas paralelas; ese conteo no equivale a 1472 competencias ni a 1472 problemas de estructura distinta.
 
 **Decisión sobre el catálogo anterior.** Los 67 módulos con generador no se retiran: alimentan los Mundos y niveles que las familias ya construyeron, y la práctica libre. El programa de clases los sustituye como recorrido principal y cada lección enlaza los módulos que cubre (`legacyModuleIds`). Los temas del catálogo anterior que siguen sin clase quedan como práctica: los de primaria (sumas hasta 1000, tablas, valor posicional) no corresponden al público de 12 a 17 años; decimales, notación científica, ángulos, semejanza y ecuaciones cuadráticas ya tienen clase propia.
 
@@ -75,6 +75,9 @@ Las representaciones interactivas incluyen barras de fracción y equivalencia, r
 | Probabilidad compuesta | Árbol con y sin reemplazo | Producto por rama; las ramas suman 1 |
 | Notación científica | Escala logarítmica de 10⁻⁶ a 10⁹ m | Cada paso multiplica por 10 |
 | Operaciones con decimales | Cuadrícula 10 × 10 | Décima × décima = centésima |
+| Interés simple y compuesto | Recta (simple) frente a curva (compuesto) con capital, tasa y años | El simple suma lo mismo cada año; el compuesto multiplica por (1 + r/100) |
+| Progresiones | Puntos aₙ con conmutador aritmética/geométrica | Diferencia constante / cociente constante |
+| Distancia y punto medio | Dos puntos arrastrables con catetos, hipotenusa y punto medio | d = √(Δx² + Δy²); M promedia las coordenadas |
 
 Todos tienen etiqueta textual que se actualiza con cada cambio, controles nativos operables con teclado y pruebas con axe (componentes y navegador, también en móvil). Los puntos clave (valor inicial y pendiente, raíces, límite de la desigualdad, extremo del ángulo, catetos, radio, vértice de la copia, posición en la escala) se arrastran con ratón, lápiz o dedo, y la cuadrícula decimal se pinta arrastrando; el arrastre es un atajo visual y el control deslizante equivalente sigue siendo la vía accesible.
 
@@ -104,10 +107,12 @@ La evaluación curricular ampliada anterior sigue disponible por decisión expl�
 Una cola diaria que cruza unidades para combatir el olvido (efecto de espaciado e intercalado). Entrada en el inicio («Repasar hoy») y ruta `/jugar/{perfil}/aprende/diario`.
 
 - **Qué entra:** clases terminadas y clases dominadas en la evaluación de ubicación. Lo decide el servidor con el avance guardado; el navegador no puede proponer clases.
-- **Prioridad:** 1) clases vencidas (caja más baja y vencimiento más antiguo primero), 2) clases con indicio de apoyo, 3) las vistas hace más tiempo. Hasta 6 problemas, como mucho 2 por clase, alternando unidades.
+- **Prioridad:** 0) clases con un error que se repite, 1) clases vencidas (caja más baja y vencimiento más antiguo primero), 2) clases con indicio de apoyo, 3) las vistas hace más tiempo. Hasta 6 problemas, como mucho 2 por clase, alternando unidades.
 - **Preguntas:** del repaso, el mixto y la segunda comprobación de cada clase; rotan entre sesiones.
 - **Agenda (Leitner):** cajas con intervalos de 1, 3, 7, 14 y 30 días. Acertar sin pistas sube una caja (como mucho una por clase y sesión); una pista o un error la devuelve a la primera. El desarrollo no se revela durante la sesión: aparece en el resumen.
-- **Estrellas:** 2 por la primera sesión terminada de cada día (hora de Lima, UTC−5). Repasar más no da más estrellas.
+- **Estrellas:** 2 por la primera sesión terminada de cada día (hora de Lima, UTC−5), y 3 más al alcanzar 7, 14 y 30 días seguidos. Repasar más el mismo día no da más estrellas.
+- **Racha de repaso:** días seguidos con una sesión terminada (`streak` en `learningProgress/diario`). Saltarse un solo día se perdona una vez por semana (comodín, semana de lunes a domingo); dos días o más la reinician. El inicio muestra la racha y el reproductor avisa si hoy hay que repasar para mantenerla. Es independiente de la racha de juego (`recordStreak`).
+- **Errores que se repiten:** al empezar, el servidor lee las últimas 300 respuestas del perfil y busca errores previstos sin resolver con al menos 2 repeticiones (mismo criterio que el panel familiar: queda resuelto al acertar al primer intento la misma tarea después del último error). Esas clases entran primero aunque no estén vencidas, y su primer problema es una forma de la misma tarea (`focus` en el ítem, con un aviso al estudiante).
 - **Datos:** `learningProgress/diario` (agenda por clase: caja, vencimiento, última vez, veces vista; sesiones y último resultado). Cada respuesta deja su diagnóstico en `learningEvidence` con `stage: "daily"` y la clase real, por lo que alimenta el panel de errores frecuentes y el análisis de preguntas.
 - **Informe familiar:** bloque «Repaso espaciado» con sesiones, último resultado y clases afianzadas (caja ≥ 3), en progreso (1–2) y por reforzar (0).
 
@@ -141,12 +146,12 @@ El servidor valida cada plan con el número de entradas y los rangos de su avent
 
 | Competencia | Clases |
 | --- | --- |
-| Resuelve problemas de cantidad | Enteros, orden de operaciones, potencias, notación científica, fracciones, decimales y porcentajes aplicados |
-| Resuelve problemas de regularidad, equivalencia y cambio | Razones, tasa, proporcionalidad directa e inversa, ecuaciones, expresiones, inecuaciones, funciones lineales y cuadráticas |
-| Resuelve problemas de forma, movimiento y localización | Ángulos, perímetro y área, círculo, volumen, Pitágoras y semejanza |
+| Resuelve problemas de cantidad | Enteros, orden de operaciones, potencias, notación científica, fracciones, decimales, porcentajes aplicados e interés simple y compuesto |
+| Resuelve problemas de regularidad, equivalencia y cambio | Razones, tasa, proporcionalidad directa e inversa, ecuaciones, expresiones, inecuaciones, progresiones, funciones lineales y cuadráticas |
+| Resuelve problemas de forma, movimiento y localización | Ángulos, perímetro y área, círculo, volumen, Pitágoras, semejanza, transformaciones y distancia y punto medio |
 | Resuelve problemas de gestión de datos e incertidumbre | Media, mediana y moda; probabilidad simple y compuesta |
 
-Las tarjetas de clase muestran el grado orientativo. El resultado de la ubicación indica, por competencia, el último grado cuyas clases (y las de grados anteriores) están todas dominadas o terminadas. El ciclo VII (3.° a 5.°) incluye sistemas de dos ecuaciones, transformaciones en el plano y dispersión y diagramas de caja (3.°); cuadráticas, trigonometría y probabilidad compuesta (4.°); crecimiento exponencial y técnicas de conteo (5.°). Siguen fuera del programa, entre otros: funciones cuadráticas como modelo, logaritmos, trigonometría en cualquier ángulo (ley de senos y cosenos), geometría analítica (distancia, pendiente y ecuación de la recta como tema propio), medidas de dispersión con desviación estándar y probabilidad condicional.
+Las tarjetas de clase muestran el grado orientativo. El resultado de la ubicación indica, por competencia, el último grado cuyas clases (y las de grados anteriores) están todas dominadas o terminadas. El ciclo VII (3.° a 5.°) incluye sistemas de dos ecuaciones, progresiones, transformaciones en el plano y dispersión y diagramas de caja (3.°); cuadráticas, interés simple y compuesto, distancia y punto medio, trigonometría y probabilidad compuesta (4.°); crecimiento exponencial y técnicas de conteo (5.°). Siguen fuera del programa, entre otros: funciones cuadráticas como modelo, logaritmos, trigonometría en cualquier ángulo (ley de senos y cosenos), ecuación de la recta y pendiente como tema de geometría analítica, medidas de dispersión con desviación estándar y probabilidad condicional.
 
 Las seis clases de 3.° a 5.° (`functions/src/learning/upperGrades.ts`) siguen el mismo contrato que el resto y tienen su modelo propio: dos rectas que se cortan o son paralelas (con el punto de corte arrastrable), exponencial frente a lineal desde el mismo inicio, triángulo rectángulo cuyo ángulo se arrastra y cuyo tamaño no cambia las razones, puntos con diagrama de caja y un dato extremo arrastrable, cuadrícula de combinaciones y parejas con y sin orden, y un triángulo en el plano que se traslada (arrastrando su imagen), se refleja o rota. Los contextos usan soles.
 
