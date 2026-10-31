@@ -1,3 +1,4 @@
+import "./runtimeOptions";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { initializeApp } from "firebase-admin/app";

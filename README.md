@@ -78,7 +78,7 @@ npm run verify:deployment
 
 Confirma primero los cambios en Git. `deploy` valida el código, construye ambos servicios y despliega **Functions, reglas, índices y Storage antes del frontend**. Por último compara las marcas de versión del Worker y Functions. Los índices nuevos deben haber terminado de construirse antes de usar la analítica.
 
-`npm run deploy:frontend` existe para una publicación deliberada del Worker únicamente; no actualiza Firebase. En Workers Builds, configura las seis variables públicas en **Settings → Build → Build variables and secrets**, tanto para Production como Preview, y coordina el despliegue de Firebase desde la misma revisión. Las variables de runtime del Worker no sustituyen las del build.
+`npm run deploy:frontend` existe para una publicación deliberada del Worker únicamente; no actualiza Firebase. En Workers Builds, configura las seis variables públicas (y `NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_KEY` cuando actives App Check) en **Settings → Build → Build variables and secrets**, tanto para Production como Preview, y coordina el despliegue de Firebase desde la misma revisión. Las variables de runtime del Worker no sustituyen las del build.
 
 El frontend usa Route Handlers para telemetría y estado de versión. La ruta `/api/dev/walkable-area` escribe fuentes exclusivamente con `NODE_ENV=development` y devuelve 404 en producción. No hay Server Actions. La caché incremental de OpenNext permanece desactivada hasta provisionar R2.
 

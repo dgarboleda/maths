@@ -56,7 +56,7 @@ export default function PrivacidadPage() {
         <h2>6. Cuánto tiempo</h2>
         <p>
           Mientras la cuenta exista. Al borrar un perfil o la cuenta, los datos se eliminan de forma inmediata y definitiva de la base de
-          datos; las copias de seguridad se eliminan en <Pendiente>plazo de rotación de respaldos</Pendiente>.
+          datos; las copias de seguridad se eliminan en <Pendiente>plazo de rotación de respaldos; 14 días con la configuración de docs/operacion.md</Pendiente>.
         </p>
       </section>
       <section>

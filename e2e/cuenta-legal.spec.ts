@@ -45,3 +45,18 @@ test("borrar la cuenta pide la contraseña y elimina el acceso", async ({ page }
   await page.getByRole("button", { name: "Entrar al panel" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Correo o contraseña incorrectos." })).toBeVisible();
 });
+
+test("las respuestas llevan cabeceras de seguridad y la CSP no bloquea nada de la app", async ({ page }) => {
+  const violaciones: string[] = [];
+  page.on("console", (msg) => { if (/Content Security Policy|Refused to/i.test(msg.text())) violaciones.push(msg.text()); });
+  const respuesta = await page.goto("/login");
+  const cabeceras = respuesta!.headers();
+  expect(cabeceras["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(cabeceras["x-content-type-options"]).toBe("nosniff");
+  expect(cabeceras["x-frame-options"]).toBe("DENY");
+  expect(cabeceras["x-powered-by"]).toBeUndefined();
+  // Recorrido con Auth, Firestore y Functions: cualquier origen no permitido aparecería aquí.
+  await registrarPadre(page);
+  await crearHijo(page, { nombre: "Ada" });
+  expect(violaciones).toEqual([]);
+});
