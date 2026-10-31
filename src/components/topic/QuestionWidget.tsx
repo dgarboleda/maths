@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import type { Problem } from "@/lib/problem";
 import { NumberLineInput } from "@/components/NumberLineInput";
 import { GroupTensInput } from "@/components/GroupTensInput";
@@ -69,7 +70,7 @@ export function QuestionWidget({
                 : "border-purple-300 bg-white text-purple-900 hover:bg-purple-100"
             }`}
           >
-            {problem.choiceLabels ? problem.choiceLabels[i] : choice}
+            <MathText text={problem.choiceLabels ? problem.choiceLabels[i] : String(choice)} />
           </button>
         ))}
       </div>

@@ -5,7 +5,7 @@ import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
-import { choiceSet, type Problem } from "@/lib/problem";
+import { type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -15,7 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, choiceLabel, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const LANES = 3;
 const CENTER_LANE = 1;
@@ -112,7 +112,7 @@ export function RunnerGeneric({
     const nextProblem = newProblem();
     const spread = Math.max(8, LANES * 2);
     setProblem(nextProblem);
-    setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, LANES));
+    setCandidates(exercise ? lessonValues(exercise) : arcadeValues(nextProblem, LANES, spread));
     if (exercise) setLane(NO_LANE);
     setRacing(!lesson);
     setTurbo(false);
@@ -222,7 +222,8 @@ export function RunnerGeneric({
     { running: phase === "playing" && !frozen && !solved },
   );
 
-  const laneCount = lesson ? candidates.length || LANES : LANES;
+  // Tantos carriles como opciones: un problema de dos opciones no deja carriles vacíos.
+  const laneCount = candidates.length || LANES;
   function laneAt(row: number) {
     return { x: 22, y: row < 0 ? 50 : ((row + 0.5) / laneCount) * 100 };
   }
@@ -341,7 +342,7 @@ export function RunnerGeneric({
                 </p>
               )}
               <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-orange-200 outline-none`}>
-                {problem.prompt}
+                <PromptText problem={problem} />
               </p>
             </div>
 
@@ -364,7 +365,7 @@ export function RunnerGeneric({
                 </div>
               )}
               {Array.from({ length: laneCount }, (_, row) => (
-                <button type="button" onClick={() => chooseLane(row)} aria-label={`Carril ${row + 1}: ${candidates[row] === undefined ? "" : lessonLabel(exercise, candidates[row])}`} aria-pressed={lane === row} disabled={frozen || pending}
+                <button type="button" onClick={() => chooseLane(row)} aria-label={`Carril ${row + 1}: ${candidates[row] === undefined ? "" : choiceLabel(problem, candidates[row])}`} aria-pressed={lane === row} disabled={frozen || pending}
                   key={row}
                   className={`${reducedMotion ? "" : "transition-colors duration-150"} relative flex h-16 w-full touch-manipulation items-center rounded-lg border-b border-dashed font-bold ${
                     lane === row ? "border-amber-300 bg-amber-800/40 text-amber-100" : "border-slate-500/60 text-slate-200"
@@ -372,7 +373,7 @@ export function RunnerGeneric({
                 >
                   <span aria-hidden="true" className="absolute left-1">{lane === row && <ArcadeSprite kind="car" className="size-14" />}</span>
                   {lane === row && racing && <span aria-hidden="true" className={`${turbo ? "arcade-trail text-lg" : "text-xs opacity-60"} absolute left-0`}>{turbo ? "🔥" : "💨"}</span>}
-                  <span data-choice-label="" className="arcade-value absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-cyan-100 shadow-lg transition-[left] duration-100 motion-reduce:transition-none" style={{ left: `${74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : lessonLabel(exercise, candidates[row])}</span>
+                  <span data-choice-label="" className="arcade-value absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-cyan-100 shadow-lg transition-[left] duration-100 motion-reduce:transition-none" style={{ left: `${74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : <ChoiceText problem={problem} value={candidates[row]} />}</span>
                 </button>
               ))}
               <ArcadeFxLayer fx={fx} />

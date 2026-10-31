@@ -79,3 +79,35 @@ Todas dan solo puntos arcade; ninguna envía respuestas ni cambia las opciones.
 ## Validación
 
 Pruebas unitarias de la puntuación (tramos de combo, récord, valores inválidos) y del hook (combo, retirada de efectos, corte de cadena, bonus y récord, celebración solo al resolver en la clase, sonido desactivado). Las pruebas existentes de los nueve juegos y de `LessonGames` siguen pasando sin cambios.
+
+# Cuarta revisión: congruencia entre preguntas y alternativas
+
+Auditoría de las 245 preguntas numéricas de práctica de las clases y de los 67 módulos del currículo que los niveles pueden asignar a cualquier minijuego. Queda fijada en `src/lib/minigames/arcadeCongruence.test.ts`.
+
+| Hallazgo | Alcance | Corrección |
+| --- | --- | --- |
+| Los módulos con opciones de texto (figuras, fracciones, lógica) guardan la respuesta como índice. En los minijuegos de los niveles se mostraban números sin relación con la pregunta (0, 3, 7…). | 10 módulos | `arcadeValues` usa las opciones propias del problema y `choiceLabel` muestra su texto. |
+| Con respuesta negativa, todas las alternativas generadas eran positivas: el signo delataba la correcta. | `aritmetica-d10`, `geometria-d8` | `choiceSet` admite negativos si la respuesta lo es y garantiza al menos otro. |
+| «Escribe como decimal la fracción 2/5» mostraba la opción correcta como «2/5», copiada del enunciado y en la forma contraria a la pedida. | Clases que piden decimal | `lessonProblem` respeta «como decimal» salvo «fracción o decimal». |
+| Los decimales del modo legado se mostraban con punto («22.1») y sin signo tipográfico. | 3 módulos | Misma presentación que las clases: coma decimal y «−». |
+| Un problema con menos opciones que casillas dejaba nenúfares o carriles vacíos que contaban como respuesta incorrecta. | Estanque, Autopista | Saltar a un nenúfar vacío no responde; hay tantos carriles como opciones. |
+
+Comprobaciones permanentes: cada etiqueta se corrige igual que el valor enviado, una sola opción correcta, sin etiquetas repetidas, se respeta la forma pedida (decimal o fracción), convertir no se resuelve copiando el enunciado, no hay negativos ni probabilidades fuera de [0, 1] inventados y, en el modo legado, la respuesta siempre está entre las opciones y su texto es el del problema.
+
+Se mantienen a propósito:
+
+- Los errores razonados del contenido, aunque estén fuera del dominio (−14 como lado, 9,6 unidades), porque su retroalimentación trabaja ese error.
+- Errores razonados que no se pueden escribir con exactitud (1/6 en una respuesta entera, 16,67 %), que siguen fuera de las alternativas.
+- Errata corregida: la vía escrita sí muestra la unidad («Tu respuesta (cm²)»). Los juegos la muestran ahora bajo el enunciado («Respuesta en cm²») en las 21 preguntas que la indican aparte.
+
+# Fórmulas escritas como en papel
+
+La notación en línea del contenido («3/4», «(1 × 2)/(2 × 2)», «√(81 + 144)», «10^?») se dibuja con fracciones apiladas, raíces con vínculo y exponentes (`src/lib/math/parseMath.ts`, `src/components/MathText.tsx`). No hace falta reescribir el contenido.
+
+- Se reconocen fracciones de números, letras con coeficiente («4x/4»), huecos («?/9», «__/12»), grupos entre paréntesis y raíces anidadas, como en la fórmula general de segundo grado. Las razones entre palabras («opuesto/hipotenusa») solo se apilan dentro de una fórmula, después de «=».
+- Quedan como texto las unidades («km/h», «L/min», «S/ 2000», «créditos/sensor»), las fechas, las razones en prosa y «f(x)/2». Se contrastó con los 16 535 textos que ve el estudiante.
+- Se usa HTML y CSS propios en lugar de MathML o KaTeX: se ve igual en todos los navegadores, no depende de una fuente matemática instalada y no añade dependencias.
+- Accesibilidad y pruebas: el dibujo es `aria-hidden` y pinta sus caracteres con `content: attr()`. El texto del documento sigue siendo el original («1/5»), así que lectores de pantalla, copiar y pegar y las búsquedas de las pruebas no cambian.
+- La raíz se dibuja con un trazo SVG que se estira con el contenido y se une a la barra superior; el contenido conserva la línea base del texto.
+- Explicación de las clases: párrafos, fórmula de cada idea y ejemplos, además de los textos de las ilustraciones interactivas (suma, producto y cociente de fracciones, fracciones equivalentes, cantidades, razones, probabilidad, raíces, Pitágoras, decimales, distancia y volúmenes). Esos textos combinaban JSX con valores (`{a}/{b}`) y ahora se arman como una sola cadena. En el diagrama de árbol, la probabilidad de cada rama se apila dentro del SVG. Las fórmulas ya no usan fuente monoespaciada, que separaba los símbolos.
+- Se aplica en clases (secciones, fórmulas, ejemplos, preguntas, opciones, pistas, retroalimentación y razonamiento), repasos, ubicación, ayuda de símbolos, los nueve minijuegos (enunciado y alternativas), la ronda de práctica, el cohete y las fichas del mundo.

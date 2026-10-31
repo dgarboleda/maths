@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import type { Problem } from "@/lib/problem";
 import { formatAnswer } from "@/lib/problem";
 import { getModule } from "@/lib/curriculum";
@@ -87,7 +88,7 @@ function AuthoredExamples({
               className="rounded-2xl border-2 border-purple-200 bg-white p-5 shadow-sm"
             >
               <p className="text-center text-xl font-bold text-purple-900">
-                {ex.prompt}
+                <MathText text={ex.prompt} />
               </p>
               <ol className="mt-4 space-y-2">
                 {ex.steps.slice(0, shown).map((step, i) => (
@@ -98,10 +99,10 @@ function AuthoredExamples({
                     <span className="mr-1.5 font-bold text-purple-700">
                       {i + 1}.
                     </span>
-                    {step.text}
+                    <MathText text={step.text} />
                     {step.math && (
                       <div className="mt-1 font-bold text-purple-800">
-                        {step.math}
+                        <MathText text={step.math} />
                       </div>
                     )}
                     {step.imageSrc && (
@@ -131,7 +132,7 @@ function AuthoredExamples({
                   role="status"
                   className="mt-3 text-center text-lg font-extrabold text-emerald-700"
                 >
-                  Respuesta: {ex.answerText || ex.answer}
+                  Respuesta: <MathText text={ex.answerText || String(ex.answer)} />
                 </p>
               )}
             </div>
@@ -177,13 +178,13 @@ function GeneratedExamples({
             key={ex.id}
             className="rounded-2xl border-2 border-purple-200 bg-white p-5 text-center shadow-sm"
           >
-            <p className="text-xl font-bold text-purple-900">{ex.prompt}</p>
+            <p className="text-xl font-bold text-purple-900"><MathText text={ex.prompt} /></p>
             {ex.hints && (
               <ol className="mt-3 space-y-2 text-left text-sm text-slate-700">
                 {ex.hints.slice(0, revealed[ex.id] ?? 0).map((step, i) => (
                   <li key={i} className="rounded-xl bg-purple-50 p-3">
                     <span className="font-bold">{i + 1}. </span>
-                    {step}
+                    <MathText text={step} />
                   </li>
                 ))}
               </ol>
@@ -193,7 +194,7 @@ function GeneratedExamples({
                 role="status"
                 className="mt-3 text-lg font-extrabold text-emerald-700"
               >
-                Respuesta: {formatAnswer(ex, ex.answer)}
+                Respuesta: <MathText text={String(formatAnswer(ex, ex.answer))} />
               </p>
             ) : (
               <button

@@ -5,7 +5,7 @@ import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, cellAt, useArcadeFx } 
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
-import { choiceSet, shuffle, type Problem } from "@/lib/problem";
+import { shuffle, type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -16,7 +16,7 @@ import { MAZE_SIZE, mazeWall, mazeChoiceCells, nextMazeGhost, reachableMaze } fr
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const GRID_SIZE = MAZE_SIZE;
 const GOAL = 3; // pellets correctos para ganar
@@ -171,7 +171,7 @@ export function NumberPacGeneric({
   function spawnRound(currentPlayer: Cell, currentGhost: Cell) {
     const nextProblem = newProblem();
     const spread = Math.max(8, pelletCount * 2);
-    const values = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, pelletCount);
+    const values = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, pelletCount, spread);
     const free = pickFreeCells([START_CELL, currentPlayer, currentGhost]);
     const cells = mazeChoiceCells(currentPlayer, free, values.length);
     const reachable = reachableMaze(currentPlayer, [...cells, currentGhost]);
@@ -455,7 +455,7 @@ export function NumberPacGeneric({
                 </p>
               )}
               <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-fuchsia-200 outline-none`}>
-                {problem.prompt}
+                <PromptText problem={problem} />
               </p>
             </div>
 
@@ -475,7 +475,7 @@ export function NumberPacGeneric({
                   <div key={index} data-cell-x={x} data-cell-y={y} data-value={pellet?.value} data-wall={mazeWall({ x, y }) || undefined} data-power={powerPellet?.x === x && powerPellet.y === y || undefined} className={`relative min-h-0 min-w-0 ${mazeWall({ x, y }) ? "arcade-maze-wall" : eatenDots.has(`${x},${y}`) ? "" : "arcade-maze-floor"}`}>
                     {pellet && (
                       <span className={`arcade-value absolute inset-[8%] z-20 flex justify-center rounded-xl border-2 border-amber-300 bg-amber-950 font-bold text-amber-100 shadow-lg ${ghost.x === x && ghost.y === y ? "items-end pb-1" : "items-center"}`}>
-                        {lessonLabel(exercise, pellet.value)}
+                        <ChoiceText problem={problem} value={pellet.value} />
                       </span>
                     )}
                     {powerPellet?.x === x && powerPellet.y === y && (

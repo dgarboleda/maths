@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import { lcm } from "@/lib/aritmeticaMcdMcm";
 import { MiniSlider, Formula } from "./shared";
 
@@ -54,15 +55,15 @@ export function FraccionesDistintoDenomConcept() {
 
       <div className="space-y-3 rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
         <div className="text-left text-sm font-bold text-purple-800">
-          {clampedN1}/{d1}
+          <MathText text={`${clampedN1}/${d1}`} />
         </div>
         <Bar denominator={d1} filled={clampedN1} />
         <div className="text-left text-sm font-bold text-purple-800">
-          {clampedN2}/{d2}
+          <MathText text={`${clampedN2}/${d2}`} />
         </div>
         <Bar denominator={d2} filled={clampedN2} />
         <div className="text-left text-sm font-bold text-purple-800">
-          Convertidas a /{common}: {scaled1}/{common} + {scaled2}/{common}
+          <MathText text={`Convertidas a denominador ${common}: ${scaled1}/${common} + ${scaled2}/${common}`} />
         </div>
         <Bar denominator={common} filled={Math.min(sum, common)} />
       </div>

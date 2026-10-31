@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { MathText } from "@/components/MathText";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import type { ModuleDef } from "@/lib/curriculum";
-import { isCorrectAnswer, type Problem } from "@/lib/problem";
+import { formatAnswer, isCorrectAnswer, type Problem } from "@/lib/problem";
 import type { SkillProgress } from "@/lib/types";
 import { recordModuleAttempt } from "@/lib/attemptRecorder";
 import { QuestionWidget } from "@/components/topic/QuestionWidget";
@@ -227,7 +228,7 @@ export function MultiModuleChallenge({
       </div>
 
       <p id={promptId} className="text-center text-xl font-extrabold text-slate-100">
-        {problem.prompt}
+        <MathText text={problem.prompt} />
       </p>
 
       {!feedback && <QuestionWidget problem={problem} onSubmit={submit} promptId={promptId} />}
@@ -236,7 +237,7 @@ export function MultiModuleChallenge({
         {feedback && (
           <div className="flex flex-col items-center gap-3">
             <p className={feedback.correct ? "font-bold text-emerald-300" : "font-bold text-red-300"}>
-              {feedback.correct ? "¡Correcto! 🎉" : `La respuesta era ${problem.answer}.`}
+              {feedback.correct ? "¡Correcto! 🎉" : <>La respuesta era <MathText text={String(formatAnswer(problem, problem.answer))} />.</>}
             </p>
             <button
               type="button"

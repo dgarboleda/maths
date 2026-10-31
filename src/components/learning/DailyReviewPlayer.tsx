@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MathText } from "@/components/MathText";
 import { useEffect, useRef } from "react";
 import { ArrowRight, CalendarCheck, Check, Flame, Target, X } from "lucide-react";
 import {
@@ -187,14 +188,14 @@ function DailySummary({ state }: { state: DailyReviewState }) {
                 {lesson.title} · vuelve en {DAILY_INTERVALS[box]} {DAILY_INTERVALS[box] === 1 ? "día" : "días"}
                 <span className="sr-only">{ok ? "recordada sin ayuda" : correct ? "con ayuda" : "por revisar"}</span>
               </p>
-              <p className="mt-2 font-semibold text-white">{question.prompt}</p>
+              <p className="mt-2 font-semibold text-white"><MathText text={question.prompt} /></p>
               {!correct && evidence?.response && (
-                <p className="mt-2 text-sm text-amber-100">{errorFeedback(question, evidence.response)}</p>
+                <p className="mt-2 text-sm text-amber-100"><MathText text={errorFeedback(question, evidence.response)} /></p>
               )}
               <details className="mt-2 text-sm text-slate-300">
                 <summary className="cursor-pointer font-semibold text-cyan-200">Ver el razonamiento</summary>
                 <ol className="mt-2 list-decimal space-y-1 pl-5">
-                  {question.solution.map((step) => <li key={step}>{step}</li>)}
+                  {question.solution.map((step) => <li key={step}><MathText text={step} /></li>)}
                 </ol>
               </details>
             </li>

@@ -16,6 +16,8 @@ export interface Problem {
   /** Etiqueta a mostrar por cada choice, en el mismo orden (para opciones no numéricas: símbolos, formas...). */
   choiceLabels?: string[];
   inputType: InputType;
+  /** Unidad de la respuesta, si la pregunta la indica aparte del enunciado (cm², soles…). */
+  unit?: string;
   /** numberLine: recta de lineMin a lineMax, el token arranca en startValue. */
   lineMin?: number;
   lineMax?: number;
@@ -101,9 +103,13 @@ export function formatAnswer(problem: Problem, answer: number): string | number 
  *  pantalla que una ficha de opción múltiple normal. */
 export function choiceSet(answer: number, spread: number, count = 3): number[] {
   const options = new Set<number>([answer]);
+  // Con una respuesta negativa, al menos otra alternativa también lo es.
+  if (answer < 0 && count > 1) options.add(answer - randInt(1, Math.max(1, spread)));
   while (options.size < count) {
     const candidate = answer + randInt(-spread, spread);
-    if (candidate >= 0) options.add(candidate);
+    // Sin negativos inventados, salvo que la respuesta lo sea: si no, el
+    // signo delataría cuál es la correcta.
+    if (candidate >= 0 || answer < 0) options.add(candidate);
   }
   return shuffle([...options]);
 }

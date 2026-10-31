@@ -58,10 +58,15 @@ export function lessonProblem(question: Question): Problem | null {
     return null;
   const answer = question.answer;
   const answerDecimals = decimals(answer);
+  // Se respeta la forma que pide el enunciado: «Escribe como decimal la
+  // fracción 2/5» se responde con 0,4, no copiando 2/5.
+  const asksDecimal =
+    /\b(?:como|en|forma)\s+(?:un\s+|número\s+)*decimal\b/i.test(question.prompt) &&
+    !/fracci[oó]n\s+o\s+decimal|decimal\s+o\s+fracci[oó]n/i.test(question.prompt);
   const fraction =
     !Number.isInteger(answer) &&
     asFraction(answer) !== null &&
-    (answerDecimals === null || /fracci[oó]n/i.test(question.prompt));
+    (answerDecimals === null || (!asksDecimal && /fracci[oó]n/i.test(question.prompt)));
   const probability = answer >= 0 && answer <= 1 && /probabilidad|\bP\((?![\s−\-\d])/i.test(question.prompt);
   const negativesAllowed = answer < 0 || /[−-]\s?\d/.test(question.prompt);
   const readable = (v: number) => Number.isFinite(v) && (fraction ? asFraction(v) !== null : decimals(v) !== null);
@@ -95,6 +100,7 @@ export function lessonProblem(question: Question): Problem | null {
     prompt: question.prompt,
     answer,
     inputType: "decimal",
+    ...(question.unit ? { unit: question.unit } : {}),
     choices,
     choiceLabels: choices.map((value) => {
       if (fraction && !Number.isInteger(value)) {

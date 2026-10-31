@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import { MiniSlider, SliderPair, Formula } from "./shared";
 import { quadraticText } from "@/lib/algebra";
 
@@ -315,9 +316,7 @@ function SquareRootPart() {
   return (
     <>
       <p className="text-slate-600">
-        x² significa x × x. Si c es positivo, la ecuación x² = c tiene dos soluciones reales: √c y −√c,
-        porque ambos números dan c al elevarlos al cuadrado. La raíz √c nombra solo la raíz no negativa.
-        Geométricamente, un lado de un cuadrado debe ser no negativo, por lo que en ese contexto elegimos √c.
+        <MathText text="x² significa x × x. Si c es positivo, la ecuación x² = c tiene dos soluciones reales: √c y −√c, porque ambos números dan c al elevarlos al cuadrado. La raíz √c nombra solo la raíz no negativa. Geométricamente, un lado de un cuadrado debe ser no negativo, por lo que en ese contexto elegimos √c." />
       </p>
       <div className="rounded-2xl border-2 border-purple-100 bg-purple-50 p-6">
         <MiniSlider label="x (el lado del cuadrado)" value={root} setValue={setRoot} min={1} max={12} />

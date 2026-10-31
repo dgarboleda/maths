@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { MathText } from "@/components/MathText";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
@@ -418,7 +419,7 @@ function AskingScreen({
 
         <div className="world-screen-glass mt-4 rounded-2xl p-5 text-center">
           <p id={promptId} className="text-xl font-extrabold text-slate-50 sm:text-2xl">
-            {problem.prompt}
+            <MathText text={problem.prompt} />
           </p>
 
           {!feedback && (
@@ -435,7 +436,7 @@ function AskingScreen({
                 <p className="font-mono text-lg font-bold text-emerald-300">✓ ¡Correcto! 🎉</p>
               ) : (
                 <p className="font-mono text-lg font-bold text-amber-200">
-                  Casi — la respuesta era {formatAnswer(problem, feedback.answer)}
+                  Casi — la respuesta era <MathText text={String(formatAnswer(problem, feedback.answer))} />
                 </p>
               )}
               <button
