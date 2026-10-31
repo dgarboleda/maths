@@ -31,6 +31,7 @@ import {
 import { useLearningClock } from "@/lib/learning/useLearningClock";
 import { lessonScreenHelp } from "@/lib/learning/screenHelp";
 import { useLearningHelpOpen } from "./LearningHelp";
+import { AnswerResult } from "./AnswerResult";
 import {
   LearningLoading,
   LearningLoadError,
@@ -814,11 +815,7 @@ function LessonSummary({
                   className="border-t border-slate-700 pt-3 text-sm"
                 >
                   <p className="font-bold"><MathText text={q.prompt} /></p>
-                  <p className="mt-2 text-slate-400">
-                    {e?.firstCorrect && !e.hintsUsed && !e.revealed
-                      ? "Resuelta de forma autónoma"
-                      : "Para seguir trabajando con apoyo"}
-                  </p>
+                  <AnswerResult evidence={e} />
                   <p className="mt-2 leading-relaxed text-slate-200">
                     <MathText text={q.explanation} />
                   </p>
