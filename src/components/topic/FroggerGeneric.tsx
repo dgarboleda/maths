@@ -371,6 +371,7 @@ export function FroggerGeneric({
 
   return (
     <div ref={cabinetRef} data-game="frogger" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-sky-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${controlsDisabled ? "arcade-paused" : ""}`}>
+      {exercise?.controls}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"

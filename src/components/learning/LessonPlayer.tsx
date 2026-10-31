@@ -578,28 +578,12 @@ export function QuestionActivity({
           {exercise.round !== undefined && exercise.round > 0 && (
             <p className="text-sm text-cyan-100">Aciertos anteriores en esta práctica: {exercise.round}. El reto se adapta a tu avance.</p>
           )}
-          {!canNext && (
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                className={secondaryButton}
-                disabled={disabled}
-                onClick={() => {
-                  if (paused) {
-                    resumeArcade();
-                  } else setManuallyPaused(true);
-                }}
-              >
-                {paused ? "Reanudar partida" : "Pausar partida"}
-              </button>
-              {game === "cohete" && (
+          {!canNext && game === "cohete" && (
                 <label className="flex min-h-11 items-center gap-2 text-sm text-slate-200">
                   <input type="checkbox" checked={timed} disabled={disabled}
                     onChange={(event) => setTimed(event.target.checked)} />
                   Reto con tiempo (opcional)
                 </label>
-              )}
-            </div>
           )}
           {paused && !canNext && (
             <p role="status" className="rounded-xl bg-cyan-950/50 p-4 text-cyan-100">
@@ -608,7 +592,8 @@ export function QuestionActivity({
                 : "Partida en pausa. Puedes pensar o consultar las ayudas antes de continuar."}
             </p>
           )}
-          <LessonArcade mode={game} exercise={exercise} />
+          <LessonArcade mode={game} exercise={exercise} showPause={!canNext}
+            onTogglePause={() => { if (paused) resumeArcade(); else setManuallyPaused(true); }} />
           <button
             type="button"
             className="min-h-11 text-sm font-bold text-cyan-200 underline"

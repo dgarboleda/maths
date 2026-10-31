@@ -306,6 +306,7 @@ export function SnakeGeneric({
 
   return (
     <div ref={cabinetRef} data-game="snake" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-emerald-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
+      {exercise?.controls}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"

@@ -36,6 +36,11 @@ function exercise(overrides: Partial<LessonExercise> = {}): LessonExercise {
   };
 }
 
+test.each([FroggerGeneric, CoheteGeneric, SnakeGeneric, RunnerGeneric, NumberPacGeneric, InvadersGeneric, BreakoutGeneric, TopoGeneric, CajasGeneric])("los controles de la clase aparecen dentro del tablero", (Game) => {
+  const { container } = render(<Game moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={exercise({ controls: <button>Control de prueba</button> })} />);
+  expect(container.querySelector("[data-game]")).toContainElement(screen.getByRole("button", { name: "Control de prueba" }));
+});
+
 test("Estanque con obstáculo: llegar al nenúfar envía su valor una vez y solo celebra lo guardado", async () => {
   vi.useFakeTimers();
   let complete!: (saved: boolean) => void;

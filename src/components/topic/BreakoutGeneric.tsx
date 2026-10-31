@@ -372,6 +372,7 @@ export function BreakoutGeneric({
 
   return (
     <div ref={cabinetRef} data-game="breakout" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen ? "arcade-paused" : ""}`}>
+      {exercise?.controls}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"

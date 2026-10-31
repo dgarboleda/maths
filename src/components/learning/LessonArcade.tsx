@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Volume2, VolumeX } from "lucide-react";
+import { Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { useSoundPreference } from "@/lib/useSoundPreference";
 import type { LessonExercise, PracticeGame } from "@/lib/minigames/lessonExercise";
 
@@ -48,32 +48,46 @@ const noLegacyReward = async () => 0;
 export function LessonArcade({
   mode,
   exercise,
+  onTogglePause,
+  showPause,
 }: {
   mode: PracticeGame;
   exercise: LessonExercise;
+  onTogglePause: () => void;
+  showPause: boolean;
 }) {
   const Game = GAMES[mode];
   // Los efectos arcade siguen la preferencia de sonido de toda la app.
   const [soundOn, toggleSound] = useSoundPreference();
   return (
-    <div className="space-y-2">
-      <div className="flex justify-end">
+    <Game
+      moduleId=""
+      soundOn={soundOn}
+      onAnswer={noLegacyReward}
+      exercise={{ ...exercise, controls: (
+      <div className="relative z-20 mb-2 flex justify-end gap-2">
+        {showPause && <button
+          type="button"
+          onClick={onTogglePause}
+          disabled={exercise.disabled}
+          aria-label={exercise.paused ? "Reanudar partida" : "Pausar partida"}
+          title={exercise.paused ? "Reanudar partida" : "Pausar partida"}
+          className="grid size-11 place-items-center rounded-xl border border-slate-500 bg-slate-900/90 text-slate-100 hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:opacity-50"
+        >
+          {exercise.paused ? <Play size={20} aria-hidden="true" /> : <Pause size={20} aria-hidden="true" />}
+        </button>}
         <button
           type="button"
           onClick={toggleSound}
           aria-pressed={soundOn}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-600 px-3 text-sm font-bold text-slate-200"
+          aria-label="Sonido del juego"
+          title="Sonido del juego"
+          className="grid size-11 place-items-center rounded-xl border border-slate-500 bg-slate-900/90 text-slate-100 hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
         >
-          {soundOn ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
-          Sonido del juego
+          {soundOn ? <Volume2 size={20} aria-hidden="true" /> : <VolumeX size={20} aria-hidden="true" />}
         </button>
       </div>
-      <Game
-        moduleId=""
-        soundOn={soundOn}
-        onAnswer={noLegacyReward}
-        exercise={exercise}
-      />
-    </div>
+      ) }}
+    />
   );
 }

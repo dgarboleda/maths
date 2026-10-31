@@ -92,6 +92,13 @@ test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar d
   await page.getByRole("radio", { name: conceptual.choices!.find((c) => c.id === conceptual.answer)!.label, exact: true }).check();
   await page.getByRole("button", { name: "Comprobar mi respuesta", exact: true }).click();
   await page.getByRole("button", { name: "Siguiente actividad", exact: true }).click();
+  const cabinet = page.locator('[data-game="frogger"]');
+  await expect(cabinet.getByRole("button", { name: "Pausar partida" })).toBeVisible();
+  const sound = cabinet.getByRole("button", { name: "Sonido del juego" });
+  const initialSound = await sound.getAttribute("aria-pressed");
+  await sound.click();
+  await expect(sound).toHaveAttribute("aria-pressed", initialSound === "true" ? "false" : "true");
+  await sound.click();
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
   const q = lesson.practice[1];
   await expectGameInView(page);
