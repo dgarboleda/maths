@@ -19,6 +19,13 @@ export function reachableMaze(start: MazeCell, numbers: readonly MazeCell[] = []
   return seen;
 }
 
+/** Un escudo adicional debe alcanzarse sin atravesar una respuesta ni al fantasma. */
+export function mazeShieldCell(player: MazeCell, ghost: MazeCell, answers: readonly MazeCell[], available: readonly MazeCell[]): MazeCell | undefined {
+  const forbidden = new Set([player, ghost, ...answers].map(mazeKey));
+  const reachable = reachableMaze(player, [...answers, ghost]);
+  return available.find((cell) => !mazeWall(cell) && !forbidden.has(mazeKey(cell)) && reachable.has(mazeKey(cell)));
+}
+
 /** Búsqueda acotada a 21 casillas y cinco opciones, solo al preparar ronda.
  * El orden se baraja fuera; la búsqueda no conoce valores ni la solución. */
 export function mazeChoiceCells(start: MazeCell, available: readonly MazeCell[], count: number): MazeCell[] {

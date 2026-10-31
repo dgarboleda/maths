@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { getLesson } from "../src/lib/learning/domain";
+import { getLesson, parseNumber } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 import { SOKOBAN_SOLUTIONS } from "../src/test/sokobanSolutions";
 
@@ -65,6 +65,23 @@ async function expectGameInView(page: Page) {
   expect(box!.y).toBeGreaterThanOrEqual(-1);
   expect(box!.y).toBeLessThan(80);
 }
+
+test("Estanque: dos preguntas seguidas mantienen un cruce de dos saltos", async ({ page }) => {
+  const first = await conceptThenNumeric(page, "fracciones-unidad", "frogger");
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  const firstLabel = (await pondLabels(page)).find((label) => parseNumber(label) === first.answer)!;
+  const firstSaved = savedAnswer(page);
+  await cross(page, firstLabel);
+  expect((await (await firstSaved).json()).result.progress.responses[`practice:${first.id}`].correct).toBe(true);
+  await page.getByRole("button", { name: "Siguiente actividad", exact: true }).click();
+  const second = getLesson("fracciones-unidad")!.practice[2];
+  await expect(page.locator("main [data-board]")).toBeVisible();
+  const secondLabel = (await pondLabels(page)).find((label) => parseNumber(label) === second.answer)!;
+  expect(secondLabel).toBeTruthy();
+  const secondSaved = savedAnswer(page);
+  await cross(page, secondLabel);
+  expect((await (await secondSaved).json()).result.progress.responses[`practice:${second.id}`].correct).toBe(true);
+});
 
 test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar dominio", async ({ page }) => {
   const lesson = await practice(page, "fraccion-cantidad", "frogger");
@@ -174,6 +191,7 @@ test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; s
   await expect(page.getByText(/Vidas/)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   // En móvil se apunta directamente; el teclado sigue disponible en escritorio.
+  await expect(page.locator("main [data-invaders-board] [data-choice-label]")).toHaveCount(5);
   const columns = await page.locator("main [data-invaders-board] [data-choice-label]").allTextContents();
   const target = columns.findIndex((label) => label.trim() === "1/3");
   expect(target).toBeGreaterThanOrEqual(0);
@@ -190,6 +208,10 @@ test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; s
   expect(saved.progress.checkPassedAt).toBeNull();
   expect(saved.stars).toBe(0);
   await expect(page.getByRole("heading", { name: "¡Invasión repelida!" })).toBeVisible();
+  await page.getByRole("button", { name: "Siguiente actividad", exact: true }).click();
+  await expect(page.locator("main [data-invaders-board]")).toBeVisible();
+  await expect(page.getByText(getLesson("fracciones-unidad")!.practice[2].prompt, { exact: true })).toBeVisible();
+  await expect.poll(async () => Number(await page.locator("main [data-arcade-score]").getAttribute("data-arcade-score"))).toBeGreaterThanOrEqual(500);
 });
 
 test("Autopista: elegir carril y usar el turbo guarda el resultado de la clase", async ({ page }, testInfo) => {

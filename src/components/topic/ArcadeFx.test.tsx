@@ -3,6 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 import { useEffect, useRef } from "react";
 import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx, type ArcadeFx } from "./ArcadeFx";
 import { readArcadeBest, resetArcadeBestCache } from "@/lib/minigames/arcadeScore";
+import { createArcadeSession, type ArcadeSession } from "@/lib/minigames/lessonExercise";
 
 const sounds: string[] = [];
 vi.mock("@/lib/gameSound", () => ({ playSound: (type: string, enabled: boolean) => enabled && sounds.push(type) }));
@@ -16,9 +17,9 @@ function Capture({ value }: { value: ArcadeFx }) {
   });
   return null;
 }
-function Harness({ solved = false, soundOn = true }: { solved?: boolean; soundOn?: boolean }) {
+function Harness({ solved = false, soundOn = true, session }: { solved?: boolean; soundOn?: boolean; session?: ArcadeSession }) {
   const cabinetRef = useRef<HTMLDivElement>(null);
-  const fx = useArcadeFx({ game: "snake", soundOn, solved, cabinetRef });
+  const fx = useArcadeFx({ game: "snake", soundOn, solved, cabinetRef, session });
   return (
     <div ref={cabinetRef}>
       <Capture value={fx} />
@@ -103,5 +104,20 @@ describe("useArcadeFx", () => {
       fx.oops();
     });
     expect(sounds).toEqual([]);
+  });
+
+  test("conserva los puntos al pasar a otra pregunta de la misma sesión", () => {
+    const session = createArcadeSession();
+    const first = render(<Harness session={session} />);
+    act(() => fx.start());
+    act(() => fx.award(40));
+    first.rerender(<Harness session={session} solved />);
+    expect(session.begin("snake")).toBe(540);
+    first.unmount();
+    render(<Harness session={session} />);
+    act(() => fx.start());
+    expect(fx.score).toBe(540);
+    act(() => fx.award(10));
+    expect(session.begin("snake")).toBe(550);
   });
 });

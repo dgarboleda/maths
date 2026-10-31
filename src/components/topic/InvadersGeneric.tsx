@@ -15,6 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
 import { lessonArcadeState, choiceLabel, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
@@ -75,7 +76,7 @@ export function InvadersGeneric({
 }) {
   const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
-  const goal = lesson ? 1 : GOAL;
+  const goal = lesson ? (exercise?.rounds ?? 1) : GOAL;
   const [reflexMiss, setReflexMiss] = useState(false);
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
@@ -85,9 +86,13 @@ export function InvadersGeneric({
   const [waveRow, setWaveRow] = useState(0);
   const wavePct = Math.min(100, (waveRow / (ROWS - 1)) * 100);
   const [lives, setLives] = useState(LIVES_START);
+  const [shield, setShield] = useState(3);
+  const [recovery, setRecovery] = useState(0);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
   const [candidates, setCandidates] = useState<number[]>([]);
+  const [revealed, setRevealed] = useState(0);
+  const revealRef = useRef({ count: 0, elapsed: 0 });
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
@@ -97,7 +102,7 @@ export function InvadersGeneric({
   const shotEl = useRef<HTMLDivElement>(null);
 
   const cabinetRef = useRef<HTMLDivElement>(null);
-  const fx = useArcadeFx({ game: "invaders", soundOn, solved: exercise?.solved, cabinetRef });
+  const fx = useArcadeFx({ game: "invaders", soundOn, solved: exercise?.solved, cabinetRef, session: exercise?.session });
   const [capsule, setCapsule] = useState<{ col: number; pct: number } | null>(null);
   const capsuleRef = useRef<{ col: number; elapsed: number; paint: number } | null>(null);
   const capsuleWaitRef = useRef(0);
@@ -105,7 +110,9 @@ export function InvadersGeneric({
   const waveAccRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
 
-  const wave = waveIndex(correctCount, WAVE_SIZE);
+  const accumulatedDamage = 3 - shield + (exercise?.failedAttempts ?? 0);
+  const shownShield = 3 - accumulatedDamage % 3;
+  const wave = Math.max(0, waveIndex(exercise?.round ?? correctCount, WAVE_SIZE) - recovery - Math.floor(accumulatedDamage / 3));
   const waveTickMs = scaleWithWave(WAVE_TICK_BASE_MS, WAVE_TICK_STEP_MS, wave, WAVE_TICK_FLOOR_MS);
 
   function spawnWave() {
@@ -113,6 +120,8 @@ export function InvadersGeneric({
     const spread = Math.max(8, COLS * 2);
     setProblem(nextProblem);
     setCandidates(exercise ? lessonValues(exercise) : arcadeValues(nextProblem, COLS, spread));
+    revealRef.current = { count: lesson ? 1 : COLS, elapsed: 0 };
+    setRevealed(lesson ? 1 : COLS);
     setWaveRow(0);
     setShotCol(null);
     setMoving(!lesson);
@@ -131,12 +140,16 @@ export function InvadersGeneric({
     }
   }
 
+  useContinueArcade(exercise, start);
+
   function start() {
     if (frozen) return;
     playSound("click", soundOn);
     setReflexMiss(false);
     setShipCol(CENTER_COL);
     setLives(LIVES_START);
+    setShield(3);
+    setRecovery(0);
     setCorrectCount(0);
     setStarsThisRound(0);
     setWin(false);
@@ -203,7 +216,7 @@ export function InvadersGeneric({
   function handleShoot() {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
     playSound("pop", soundOn);
-    if (candidates[shipCol] === undefined) return;
+    if (candidates[shipCol] === undefined || (lesson && shipCol >= revealed)) return;
     // La respuesta queda fijada al disparar; esperar al impacto nunca cambia
     // el valor elegido ni permite enviar dos respuestas por una pulsación.
     busyRef.current = true;
@@ -251,6 +264,15 @@ export function InvadersGeneric({
         return;
       }
       if (busyRef.current) return;
+      if (lesson && revealRef.current.count < candidates.length) {
+        revealRef.current.elapsed += dtMs;
+        if (revealRef.current.elapsed >= 650) {
+          revealRef.current.elapsed -= 650;
+          revealRef.current.count++;
+          setRevealed(revealRef.current.count);
+        }
+        return;
+      }
       if (!moving) return;
       tickCapsule(dtMs);
       waveAccRef.current += dtMs;
@@ -261,6 +283,10 @@ export function InvadersGeneric({
         if (lesson) {
           // Aterrizó sin disparo: fallo de reflejos, la oleada vuelve arriba.
           fx.oops({ x: 50, y: 60 }, "¡Aterrizaron!");
+          if (shield <= 1) {
+            setShield(3);
+            setRecovery((level) => level + 1);
+          } else setShield(shield - 1);
           setReflexMiss(true);
           spawnWave();
         } else resolveWave(false); // llegó abajo sin que la dispararan a tiempo
@@ -292,7 +318,7 @@ export function InvadersGeneric({
 
   const shownPhase = solved ? "over" : phase;
   const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
-  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownCount = lesson ? (exercise?.round ?? 0) + Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
@@ -305,7 +331,7 @@ export function InvadersGeneric({
       />
 
       <ArcadeFxLayer fx={fx} scope="cabinet" />
-      <div className="relative z-10 mx-auto max-w-md text-center">
+      <div className="relative z-10 mx-auto max-w-2xl text-center">
         <h2 className="mb-2 bg-gradient-to-r from-red-300 to-indigo-400 bg-clip-text text-3xl font-extrabold text-transparent">
           👾 Invasión numérica
         </h2>
@@ -322,7 +348,7 @@ export function InvadersGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-red-300">Flechas para pilotar · espacio para disparar.{lesson && " Lee con calma: la oleada espera tu primer movimiento. Si aterriza, puedes reintentar."}</p>
+              <p className="text-xs text-red-300">Flechas para pilotar · espacio para disparar.{lesson && " Las naves aparecen poco a poco. La oleada espera a que aparezcan todas y a tu primer movimiento."}</p>
           </div>
         )}
 
@@ -344,7 +370,7 @@ export function InvadersGeneric({
             </div>
 
             <ArcadeScoreBar fx={fx} />
-            {lesson ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-red-700 bg-red-950/80 p-3 text-sm">
+            {lesson ? <><p className="text-sm text-indigo-100" aria-live="polite">Escudo: {shownShield}/3{recovery > 0 || accumulatedDamage >= 3 ? " · velocidad reducida" : ""}</p><ReflexNotice show={reflexMiss} /></> : <div className="flex items-center justify-between rounded-xl border border-red-700 bg-red-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
               </span>
@@ -353,6 +379,7 @@ export function InvadersGeneric({
               </span>
             </div>}
             {lesson && !moving && !reflexMiss && <p className="text-sm text-indigo-200">Lee y apunta con calma. Tú inicias la acción.</p>}
+            {lesson && revealed < candidates.length && <p role="status" className="text-sm text-indigo-200">Llegan las naves: {revealed} de {candidates.length} visibles.</p>}
 
             <div className="rounded-2xl border-2 border-indigo-400 bg-red-900/30 p-3">
               {problem.flavor && (
@@ -368,14 +395,14 @@ export function InvadersGeneric({
             <div
               role="group" aria-label="Zona de invasión: elige un blanco y después dispara"
               data-invaders-board="" data-ship-col={shipCol} data-shot={shotCol !== null}
-              className="arcade-scene arcade-stars relative mx-auto h-72 w-full max-w-sm overflow-hidden rounded-2xl border-2 border-indigo-400/60 bg-slate-900"
+              className="arcade-scene arcade-stars relative mx-auto h-72 sm:h-96 w-full max-w-[min(100%,36rem,65vh)] overflow-hidden rounded-2xl border-2 border-indigo-400/60 bg-slate-900"
             >
               <div aria-hidden="true" className="absolute bottom-12 top-0 border-l border-dashed border-indigo-300/50" style={{ left: `${(shipCol + 0.5) * 100 / COLS}%` }} />
               <div
                 className={`${reducedMotion ? "" : "transition-all duration-150"} absolute inset-x-0 grid px-2`}
                 style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)`, top: `${wavePct * 0.7}%` }}
               >
-                {candidates.map((v, i) => (
+                {candidates.map((v, i) => lesson && i >= revealed ? <span key={i} aria-hidden="true" className="m-0.5 h-20" /> : (
                   <button type="button" onClick={() => aimAt(i)} aria-label={`Apuntar a ${choiceLabel(problem, v)}`} aria-pressed={shipCol === i} disabled={frozen || shotCol !== null}
                     key={i}
                     className={`arcade-value m-0.5 flex h-20 touch-manipulation flex-col items-center justify-center rounded-xl border-2 font-bold ${
@@ -411,7 +438,7 @@ export function InvadersGeneric({
               Disparar (espacio)
             </button>
 
-            <p className="text-xs text-indigo-100">Toca un enemigo para apuntar. Solo disparar envía tu elección. Ponte bajo las cápsulas doradas para sumar puntos.</p>
+            <p className="text-xs text-indigo-100">Toca un enemigo para apuntar. Solo disparar envía tu elección. Un disparo incorrecto o una nave que aterriza dañan el escudo. Ponte bajo las cápsulas doradas para sumar puntos.</p>
             <HorizontalPad inline disabled={frozen || shotCol !== null} onLeft={moveLeft} onRight={moveRight} onAction={handleShoot} />
           </div>
         )}

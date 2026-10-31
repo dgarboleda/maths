@@ -13,7 +13,7 @@ import {
   SOLVE_BONUS,
   subscribeArcadeBest,
 } from "@/lib/minigames/arcadeScore";
-import type { PracticeGame } from "@/lib/minigames/lessonExercise";
+import type { ArcadeSession, PracticeGame } from "@/lib/minigames/lessonExercise";
 
 /**
  * Capa arcade común de los nueve minijuegos: marcador, combo, récord local,
@@ -81,11 +81,12 @@ export interface ArcadeFx {
 }
 
 /** `cabinetRef` es la máquina que se sacude; la crea el juego. */
-export function useArcadeFx({ game, soundOn, solved = false, cabinetRef }: {
+export function useArcadeFx({ game, soundOn, solved = false, cabinetRef, session }: {
   game: PracticeGame;
   soundOn: boolean;
   solved?: boolean;
   cabinetRef: RefObject<HTMLDivElement | null>;
+  session?: ArcadeSession;
 }): ArcadeFx {
   const [items, setItems] = useState<FxItem[]>([]);
   const [score, setScore] = useState(0);
@@ -119,9 +120,10 @@ export function useArcadeFx({ game, soundOn, solved = false, cabinetRef }: {
       playSound("fanfare", soundRef.current);
       triggerConfetti("medium");
       saveArcadeBest(game, scoreRef.current + SOLVE_BONUS);
+      session?.update(game, scoreRef.current + SOLVE_BONUS);
     }
     solvedBefore.current = solved;
-  }, [solved, game]);
+  }, [solved, game, session]);
 
   function push(item: Omit<FxItem, "id">) {
     const id = ++seq.current;
@@ -166,9 +168,9 @@ export function useArcadeFx({ game, soundOn, solved = false, cabinetRef }: {
     for (const timer of timers.current) window.clearTimeout(timer);
     timers.current.clear();
     setBestAtStart(readArcadeBest(game));
-    scoreRef.current = 0;
+    scoreRef.current = session?.begin(game) ?? 0;
     comboRef.current = 0;
-    setScore(0);
+    setScore(scoreRef.current);
     setCombo(0);
     setWon(false);
     setItems([]);
@@ -182,6 +184,7 @@ export function useArcadeFx({ game, soundOn, solved = false, cabinetRef }: {
     const gained = pointsFor(base, comboRef.current);
     if (chain) comboRef.current += 1;
     scoreRef.current += gained;
+    session?.update(game, scoreRef.current);
     setScore(scoreRef.current);
     setCombo(comboRef.current);
     pop(label ?? `+${gained}`, at, tone);

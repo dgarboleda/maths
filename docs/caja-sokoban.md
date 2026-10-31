@@ -2,7 +2,7 @@
 
 El alumno resuelve el problema de la clase y elige qué caja entregar. Debe recorrer un almacén con paredes, cambiar de lado para empujar y, cuando hace falta, recolocar otras cajas. Hay una sola meta: entregar todas las alternativas registraría también respuestas que el alumno no eligió como solución matemática.
 
-Los tres almacenes se eligen de forma estable a partir del identificador del problema. Las cinco opciones conservan su valor y posición al deshacer o reiniciar. Cada almacén tiene recorridos testigo para las cinco cajas: las quince entregas son posibles sin entregar antes otra caja y requieren empujar en al menos dos direcciones. Los recorridos solo se incluyen en las pruebas; el juego no elige una respuesta ni consulta si el número es correcto.
+Los cuatro almacenes se eligen de forma estable a partir del identificador del problema y la ronda. Las cinco opciones conservan su valor y posición al deshacer o reiniciar. Cada almacén tiene recorridos testigo para las cinco cajas: las veinte entregas son posibles sin entregar antes otra caja y requieren empujar en al menos dos direcciones. Los recorridos solo se incluyen en las pruebas; el juego no elige una respuesta ni consulta si el número es correcto.
 
 - Las paredes bloquean al personaje y las cajas. Solo se empuja una caja por vez, nunca se tira de ella.
 - Las flechas y los botones mueven una casilla por pulsación. No hay reloj.

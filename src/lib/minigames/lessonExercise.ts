@@ -5,9 +5,24 @@ import { shuffle, type Problem } from "@/lib/problem";
 export const PRACTICE_GAMES = ["frogger", "cohete", "snake", "runner", "numberpac", "invaders", "breakout", "topos", "cajas"] as const;
 export type PracticeGame = (typeof PRACTICE_GAMES)[number];
 export type PracticeMode = "write" | PracticeGame;
+/** Marcador de la sesión en memoria, separado de la evidencia de aprendizaje. */
+export interface ArcadeSession {
+  begin(game: PracticeGame): number;
+  update(game: PracticeGame, score: number): void;
+}
+export function createArcadeSession(): ArcadeSession {
+  let current: PracticeGame | null = null;
+  let score = 0;
+  return {
+    begin(game) {
+      if (current !== game) { current = game; score = 0; }
+      return score;
+    },
+    update(game, value) { if (current === game) score = value; },
+  };
+}
 
-/** La aplicación sortea el juego de cada ejercicio de práctica; el estudiante
- * no tiene que decidirlo. `random` se inyecta para las pruebas unitarias; las
+/** La aplicación sortea un juego para la práctica de una clase. `random` se inyecta para las pruebas unitarias; las
  * e2e fijan el juego con `window.__MATHS_TEST_PRACTICE_GAME__`. */
 export function pickPracticeGame(random: () => number = Math.random): PracticeGame {
   const forced = (globalThis as { __MATHS_TEST_PRACTICE_GAME__?: unknown }).__MATHS_TEST_PRACTICE_GAME__;
@@ -23,6 +38,13 @@ export interface LessonExercise {
   disabled: boolean;
   paused: boolean;
   timed: boolean;
+  /** Aciertos anteriores de práctica numérica en esta clase. */
+  round?: number;
+  /** Cantidad de actividades numéricas de la práctica. */
+  rounds?: number;
+  /** Intentos incorrectos registrados de la pregunta actual. */
+  failedAttempts?: number;
+  session?: ArcadeSession;
   input: ReactNode;
   onResponse: (value: number) => Promise<boolean>;
 }

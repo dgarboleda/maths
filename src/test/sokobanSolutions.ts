@@ -1,7 +1,10 @@
 /** Recorridos testigo: cada caja llega a la meta sin entregar antes otra.
  * Solo se importan desde pruebas; el juego no conoce una solución numérica. */
+const CENTRAL_SOLUTIONS = ["LLUUURURRRDDLLUUU", "UURURULDLUU", "LLUURLDDRRUUUUU", "LLURDRUUUUU", "RURULDLUUUU"];
+const mirror = (route: string) => route.replace(/[LR]/g, (turn) => turn === "L" ? "R" : "L");
 export const SOKOBAN_SOLUTIONS: Record<string, readonly string[]> = {
   giro: ["LLUURUURULDLU", "RRUULURULLLRRDDRDDLLLLUUUUU", "RRUULLLRDDLLUUUUU", "ULDLUUUUU", "LUDRRRULLLDLUUUUU"],
-  centro: ["LLUUURURRRDDLLUUU", "UURURULDLUU", "LLUURLDDRRUUUUU", "LLURDRUUUUU", "RURULDLUUUU"],
+  centro: CENTRAL_SOLUTIONS,
+  "centro-espejo": [1, 0, 2, 4, 3].map((i) => mirror(CENTRAL_SOLUTIONS[i])),
   espejo: ["LLUURULURRRLLDDLDDRRRRUUUUU", "RRUULUULURDRU", "LLUURRRLDDRRUUUUU", "RUDLLLURRRDRUUUUU", "URDRUUUUU"],
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { OrbitalManeuver } from "./OrbitalManeuver";
 import { MathText } from "@/components/MathText";
 import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./ArcadeFx";
 
@@ -15,6 +16,7 @@ import { getModule } from "@/lib/curriculum";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
 
 const GOAL = 8;
 const START_TIME = 30;
@@ -73,7 +75,7 @@ export function CoheteGeneric({
   const [win, setWin] = useState(false);
   const promptId = useId();
   const cabinetRef = useRef<HTMLDivElement>(null);
-  const fx = useArcadeFx({ game: "cohete", soundOn, solved: exercise?.solved, cabinetRef });
+  const fx = useArcadeFx({ game: "cohete", soundOn, solved: exercise?.solved, cabinetRef, session: exercise?.session });
   // El reloj depende de `endGame`: se lee el cierre arcade desde una ref para
   // no reiniciar el intervalo en cada render de efectos.
   const fxEndRef = useRef(fx.end);
@@ -82,8 +84,8 @@ export function CoheteGeneric({
   });
 
   const problem = exercise?.problem ?? bag[0];
-  const goal = exercise ? 1 : GOAL;
-  const shownCount = exercise ? Number(exercise.solved) : correctCount;
+  const goal = exercise ? (exercise.rounds ?? 1) : GOAL;
+  const shownCount = exercise ? (exercise.round ?? 0) + Number(exercise.solved) : correctCount;
   const shownPhase = exercise?.solved ? "over" : phase;
   const shownWin = exercise ? exercise.solved : win;
   const lessonMode = Boolean(exercise);
@@ -137,6 +139,8 @@ export function CoheteGeneric({
     }, 1000);
     return () => clearInterval(id);
   }, [shownPhase, timerRunning, endGame, lessonMode]);
+
+  useContinueArcade(exercise, start);
 
   function start() {
     playSound("click", soundOn);
@@ -262,6 +266,8 @@ export function CoheteGeneric({
               <ArcadeFxLayer fx={fx} />
             </div>
             <ArcadeScoreBar fx={fx} />
+            {exercise && <OrbitalManeuver paused={exercise.paused || exercise.disabled} round={exercise.round ?? 0}
+              onBonus={(points) => fx.award(points, { x: 50, y: 40 }, { tone: "bonus", label: `+${points}` })} />}
 
             <div className="flex items-center justify-between rounded-xl border border-indigo-700 bg-indigo-950/80 p-3">
               <div className="flex items-center gap-2">

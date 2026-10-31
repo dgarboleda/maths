@@ -13,6 +13,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { WAREHOUSES, deliverySquares, floorAt, goalAt, initialWarehouse, moveWarehouse, sameCell, warehouseFor, type Direction, type WarehouseState } from "@/lib/minigames/sokoban";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
 import { lessonArcadeState, arcadeValues, ChoiceText, PromptText, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const CHOICES = 5;
@@ -58,7 +59,7 @@ export function CajasGeneric({
 }) {
   const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
-  const goal = lesson ? 1 : GOAL;
+  const goal = lesson ? (exercise?.rounds ?? 1) : GOAL;
   const promptId = useId();
 
   const [phase, setPhase] = useState<Phase>("start");
@@ -81,7 +82,7 @@ export function CajasGeneric({
   const candidatesRef = useRef<number[]>([]);
   const busyRef = useRef(false); // true mientras se espera la respuesta
   const cabinetRef = useRef<HTMLDivElement>(null);
-  const fx = useArcadeFx({ game: "cajas", soundOn, solved, cabinetRef });
+  const fx = useArcadeFx({ game: "cajas", soundOn, solved, cabinetRef, session: exercise?.session });
   const at = (c: { x: number; y: number }) => cellAt(c.x, c.y, levelRef.current.rows[0].length, levelRef.current.rows.length);
 
   function resetBoxes() {
@@ -114,6 +115,8 @@ export function CajasGeneric({
     }
   }
 
+  useContinueArcade(exercise, start);
+
   function start() {
     if (frozen) return;
     playSound("click", soundOn);
@@ -125,7 +128,7 @@ export function CajasGeneric({
     setPending(false);
     setPhase("playing");
     fx.start("¡A empujar!");
-    spawnRound();
+    spawnRound(exercise?.round ?? 0);
   }
 
   async function resolveRound(correct: boolean, where: { x: number; y: number }, moves: number) {
@@ -250,7 +253,7 @@ export function CajasGeneric({
 
   const shownPhase = solved ? "over" : phase;
   const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
-  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownCount = lesson ? (exercise?.round ?? 0) + Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
@@ -263,7 +266,7 @@ export function CajasGeneric({
       />
 
       <ArcadeFxLayer fx={fx} scope="cabinet" />
-      <div className="relative z-10 mx-auto max-w-md text-center">
+      <div className="relative z-10 mx-auto max-w-2xl text-center">
         <h2 className="mb-2 bg-gradient-to-r from-orange-300 to-sky-400 bg-clip-text text-3xl font-extrabold text-transparent">
           📦 Caja numérica
         </h2>
@@ -330,7 +333,7 @@ export function CajasGeneric({
             <div
               aria-hidden="true"
               data-sokoban-board="" data-warehouse={level.id} data-player-x={board.player.x} data-player-y={board.player.y}
-              className="relative mx-auto grid max-w-sm gap-0.5 rounded-2xl border-2 border-amber-700 bg-stone-950 p-2"
+              className="relative mx-auto grid max-w-[min(100%,36rem,65vh)] gap-0.5 rounded-2xl border-2 border-amber-700 bg-stone-950 p-2"
               style={{ gridTemplateColumns: `repeat(${level.rows[0].length}, minmax(0, 1fr))` }}
             >
               {Array.from({ length: level.rows.length * level.rows[0].length }, (_, i) => {

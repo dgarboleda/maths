@@ -1,5 +1,17 @@
 # Dinámica de cuatro minijuegos
 
+## Práctica con rondas continuas
+
+La práctica conserva el juego elegido al pasar entre actividades numéricas de una clase. Se puede cambiar mediante el selector; las preguntas conceptuales conservan su formato propio. Después de avanzar manualmente a una actividad numérica, el mismo juego inicia la ronda cuando termina el guardado y no está en pausa. Los puntos arcade se acumulan en memoria durante la visita y se reinician al cambiar de juego; no sustituyen el avance ni las estrellas. Cada respuesta se guarda por separado mediante el flujo de la lección y se puede revisar su explicación antes de continuar. Al recargar se conserva el avance guardado, no la puntuación de la sesión.
+
+Los aciertos anteriores ajustan el reto: en Invasión aceleran el descenso; en Autopista, la puerta; en Estanque, el cocodrilo y su dirección inicial; en Serpiente y Laberinto, el movimiento; en Topos, la duración de aparición; en Bloques, el recorrido del disparo; en Cajas, se alterna el almacén. Cohete muestra el avance acumulado entre ejercicios y conserva su reloj opcional. Las velocidades tienen un límite; Cajas mantiene deshacer y no tiene reloj.
+
+En Invasión las naves aparecen una por una y no descienden hasta completar la formación. Apuntar y disparar siguen siendo acciones distintas. Si la formación aterriza o se guarda una respuesta incorrecta se pierde una unidad del escudo; aterrizar no envía una respuesta. Al agotarlo, se repone y se reduce la velocidad. Los tableros aprovechan más ancho en escritorio, con límites según la altura de pantalla.
+
+En Autopista un obstáculo señalado aparece antes de la puerta a partir de la segunda ronda: esquivarlo da puntos y chocar reinicia el tramo sin respuesta. En Estanque los nenúfares rotan mientras la rana espera a salvo y se fijan al entrar al río. Serpiente crece entre aciertos, Bloques alterna alturas sin tapar ninguna opción, Topos acelera sus apariciones con un límite y Cajas incorpora un cuarto almacén con recorridos verificados. En Laberinto, explorar después de usar el escudo puede hacer aparecer otro en una casilla accesible sin atravesar una respuesta. Cohete ofrece una maniobra orbital opcional para esquivar meteoritos y recoger cápsulas; los choques afectan su escudo, no la respuesta matemática, y la pausa detiene la maniobra.
+
+Estas son mejoras de la mecánica existente; no implementan todavía todos los obstáculos y escenarios propuestos para cada juego. El equilibrio de velocidad y la experiencia de lectura requieren pruebas con estudiantes.
+
 La práctica conserva las preguntas de la clase y su corrección en Functions. Estas mejoras cambian la interacción, sin modificar el catálogo, el protocolo 12, la economía de estrellas ni los datos guardados.
 
 | Juego | Dinámica |
