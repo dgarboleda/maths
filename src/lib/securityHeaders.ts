@@ -9,19 +9,24 @@
  * app se incruste en otra página (clickjacking).
  *
  * Orígenes externos: solo Firebase (Auth, Firestore, Functions, Storage, App
- * Check) y reCAPTCHA Enterprise para App Check. Con emuladores se añade
+ * Check) y reCAPTCHA Enterprise para App Check. Firebase Auth carga gapi
+ * (apis.google.com) y un iframe de su `authDomain` al iniciar; si el
+ * authDomain es un dominio propio, se añade a frame-src. Con emuladores se añade
  * 127.0.0.1; en desarrollo, 'unsafe-eval' (React lo usa para depurar).
  */
-export function contentSecurityPolicy({ dev = false, emulators = false } = {}): string {
+interface CspOptions { dev?: boolean; emulators?: boolean; authDomain?: string }
+
+export function contentSecurityPolicy({ dev = false, emulators = false, authDomain }: CspOptions = {}): string {
+  const authFrame = authDomain && /^[a-z0-9.-]+$/i.test(authDomain) && !authDomain.endsWith(".firebaseapp.com") ? ` https://${authDomain}` : "";
   const local = emulators ? " http://127.0.0.1:* ws://127.0.0.1:*" : "";
   const directives: Record<string, string> = {
     "default-src": "'self'",
-    "script-src": `'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""} https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/`,
+    "script-src": `'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""} https://apis.google.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/`,
     "style-src": "'self' 'unsafe-inline'",
     "img-src": `'self' blob: data: https://firebasestorage.googleapis.com${local}`,
     "font-src": "'self'",
     "connect-src": `'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://*.firebaseio.com wss://*.firebaseio.com${local}`,
-    "frame-src": "https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://*.firebaseapp.com",
+    "frame-src": `https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://*.firebaseapp.com${authFrame}`,
     "worker-src": "'self' blob:",
     "object-src": "'none'",
     "base-uri": "'self'",
@@ -34,7 +39,7 @@ export function contentSecurityPolicy({ dev = false, emulators = false } = {}): 
   return policy.join("; ");
 }
 
-export function securityHeaders(options: { dev?: boolean; emulators?: boolean } = {}) {
+export function securityHeaders(options: CspOptions = {}) {
   const headers = [
     { key: "Content-Security-Policy", value: contentSecurityPolicy(options) },
     { key: "X-Content-Type-Options", value: "nosniff" },

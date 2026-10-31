@@ -45,6 +45,7 @@ const nextConfig: NextConfig = {
       headers: securityHeaders({
         dev: process.env.NODE_ENV === "development",
         emulators: process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1",
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
       }),
     }];
   },
