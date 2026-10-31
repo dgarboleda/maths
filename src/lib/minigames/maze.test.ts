@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { MAZE_SIZE, mazeChoiceCells, mazeKey, mazeNeighbors, mazeShieldCell, mazeWall, nextMazeGhost, reachableMaze } from "./maze";
+import { MAZE_SIZE, mazeAmbushTarget, mazeChoiceCells, mazeKey, mazeNeighbors, mazeShieldCell, mazeWall, nextMazeGhost, reachableMaze } from "./maze";
 
 const floor = Array.from({ length: MAZE_SIZE ** 2 }, (_, index) => ({ x: index % MAZE_SIZE, y: Math.floor(index / MAZE_SIZE) })).filter((cell) => !mazeWall(cell));
 
@@ -47,4 +47,13 @@ test("el fantasma elige un paso del pasillo hacia el jugador o huye del escudo",
     expect(mazeWall(next)).toBe(false);
     expect(Math.abs(next.x - ghost.x) + Math.abs(next.y - ghost.y)).toBe(1);
   }
+});
+
+test("el segundo fantasma embosca dos casillas por delante del jugador", () => {
+  expect(mazeAmbushTarget({ x: 0, y: 0 }, { x: 1, y: 0 })).toEqual({ x: 2, y: 0 });
+  // Las paredes interiores no cortan el salto de dos casillas: apunta al suelo de enfrente.
+  expect(mazeAmbushTarget({ x: 2, y: 1 }, { x: 1, y: 0 })).toEqual({ x: 4, y: 1 });
+  // Sin suelo a dos ni a una casilla (borde), apunta al propio jugador.
+  expect(mazeAmbushTarget({ x: 4, y: 4 }, { x: 1, y: 0 })).toEqual({ x: 4, y: 4 });
+  expect(mazeAmbushTarget({ x: 0, y: 2 }, { x: 0, y: 1 })).toEqual({ x: 0, y: 4 });
 });

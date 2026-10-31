@@ -144,7 +144,8 @@ export function CoheteGeneric({
 
   function start() {
     playSound("click", soundOn);
-    setTimeLeft(START_TIME);
+    // Desde el nivel 4, el reto con tiempo deja menos segundos (mínimo 18).
+    setTimeLeft(fx.level >= 4 ? Math.max(18, START_TIME - (fx.level - 3) * 2) : START_TIME);
     setCorrectCount(0);
     correctCountRef.current = 0;
     const previousBest = Math.max(
@@ -267,7 +268,8 @@ export function CoheteGeneric({
               <ArcadeFxLayer fx={fx} />
             </div>
             <ArcadeScoreBar fx={fx} />
-            {exercise && <OrbitalManeuver paused={exercise.paused || exercise.disabled} round={exercise.round ?? 0}
+            {exercise && <OrbitalManeuver paused={exercise.paused || exercise.disabled} round={Math.min(exercise.round ?? 0, 6) + fx.boost}
+              onHit={() => fx.hit({ x: 50, y: 40 }, "¡Meteorito!")}
               onBonus={(points) => fx.award(points, { x: 50, y: 40 }, { tone: "bonus", label: `+${points}` })} />}
 
             <div className="flex items-center justify-between rounded-xl border border-indigo-700 bg-indigo-950/80 p-3">

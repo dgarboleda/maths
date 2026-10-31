@@ -12,7 +12,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
-import { MAZE_SIZE, mazeWall, mazeChoiceCells, mazeShieldCell, nextMazeGhost, reachableMaze } from "@/lib/minigames/maze";
+import { MAZE_SIZE, mazeAmbushTarget, mazeWall, mazeChoiceCells, mazeShieldCell, nextMazeGhost, reachableMaze } from "@/lib/minigames/maze";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
@@ -30,6 +30,10 @@ const PELLET_COUNT_BASE = 3;
 const PELLET_COUNT_STEP = 1;
 const PELLET_COUNT_MAX = 5;
 const INVULN_MS = 4000;
+/** Nivel 4+: un segundo fantasma que embosca. Nivel 6+: escudo más corto. */
+const SECOND_GHOST_LEVEL = 4;
+const SHORT_SHIELD_LEVEL = 6;
+const SHORT_SHIELD_MS = 2500;
 // Puntos arcade: las migas del suelo, el escudo y atrapar al fantasma con
 // escudo. Ninguno es una respuesta ni cambia las opciones del ejercicio.
 const DOT_POINTS = 10;
@@ -48,9 +52,12 @@ interface Candidate extends Cell {
 
 const START_CELL: Cell = { x: 0, y: 0 };
 const GHOST_START: Cell = { x: GRID_SIZE - 1, y: GRID_SIZE - 1 };
+const GHOST2_START: Cell = { x: GRID_SIZE - 1, y: 0 };
 interface Board {
   player: Cell;
   ghost: Cell;
+  /** Segundo fantasma, solo desde el nivel 4. */
+  ghost2: Cell | null;
   pellets: Candidate[];
   powerPellet: Cell | null;
 }
@@ -122,12 +129,12 @@ export function NumberPacGeneric({
 
   const [phase, setPhase] = useState<Phase>("start");
   const [board, setBoard] = useState<Board>({
-    player: START_CELL, ghost: GHOST_START, pellets: [], powerPellet: null,
+    player: START_CELL, ghost: GHOST_START, ghost2: null, pellets: [], powerPellet: null,
   });
   // El teclado, los toques y el reloj comparten la posición más reciente,
   // incluso si llegan varios eventos antes del siguiente render de React.
   const boardRef = useRef(board);
-  const { player, ghost, pellets, powerPellet } = board;
+  const { player, ghost, ghost2, pellets, powerPellet } = board;
   const [lives, setLives] = useState(LIVES_START);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
@@ -154,8 +161,11 @@ export function NumberPacGeneric({
   const invulnRemainingRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
   const bonusShieldRef = useRef(false);
+  const lastDirRef = useRef<Cell>({ x: 1, y: 0 });
 
-  const wave = waveIndex(exercise?.round ?? correctCount, WAVE_SIZE);
+  const wave = waveIndex(exercise?.round ?? correctCount, WAVE_SIZE) + fx.boost;
+  const shieldMs = fx.level >= SHORT_SHIELD_LEVEL ? SHORT_SHIELD_MS : INVULN_MS;
+  const ghost2Start = () => (fx.level >= SECOND_GHOST_LEVEL ? GHOST2_START : null);
   const ghostTickMs = scaleWithWave(GHOST_TICK_BASE_MS, GHOST_TICK_STEP_MS, wave, GHOST_TICK_FLOOR_MS);
   const pelletCount = Math.round(scaleWithWave(PELLET_COUNT_BASE, PELLET_COUNT_STEP, wave, PELLET_COUNT_MAX));
 
@@ -175,7 +185,7 @@ export function NumberPacGeneric({
     const nextProblem = newProblem();
     const spread = Math.max(8, pelletCount * 2);
     const values = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, pelletCount, spread);
-    const free = pickFreeCells([START_CELL, currentPlayer, currentGhost]);
+    const free = pickFreeCells([START_CELL, currentPlayer, currentGhost, ...(boardRef.current.ghost2 ? [boardRef.current.ghost2] : [])]);
     const cells = mazeChoiceCells(currentPlayer, free, values.length);
     const reachable = reachableMaze(currentPlayer, [...cells, currentGhost]);
     const power = free.find((cell) => reachable.has(cellKey(cell)) && !cells.some((number) => cellKey(cell) === cellKey(number)));
@@ -211,7 +221,7 @@ export function NumberPacGeneric({
     busyRef.current = false;
     bonusShieldRef.current = false;
     setExtraShield(false);
-    updateBoard({ player: START_CELL, ghost: GHOST_START });
+    updateBoard({ player: START_CELL, ghost: GHOST_START, ghost2: ghost2Start() });
     setInvulnerable(false);
     setLives(LIVES_START);
     setCorrectCount(0);
@@ -225,12 +235,12 @@ export function NumberPacGeneric({
 
   function handleGhostHit() {
     if (invulnRemainingRef.current > 0) return;
-    fx.oops(at(boardRef.current.player), "¡Bu!");
+    fx.hit(at(boardRef.current.player), "¡Bu!");
     if (lesson) {
       // Fallo de reflejos: sin vidas ni respuesta, solo el respiro de siempre.
       setReflexMiss(true);
       waitForMove();
-      updateBoard({ player: START_CELL, ghost: GHOST_START });
+      updateBoard({ player: START_CELL, ghost: GHOST_START, ghost2: ghost2Start() });
       return;
     }
     const remaining = lives - 1;
@@ -240,7 +250,7 @@ export function NumberPacGeneric({
       return;
     }
     waitForMove();
-    updateBoard({ player: START_CELL, ghost: GHOST_START }); // respiro tras el golpe
+    updateBoard({ player: START_CELL, ghost: GHOST_START, ghost2: ghost2Start() }); // respiro tras el golpe
   }
 
   async function resolvePellet(eaten: Candidate, atCell: Cell, ghostAt: Cell) {
@@ -294,6 +304,7 @@ export function NumberPacGeneric({
     const newCell = { x: current.player.x + direction.x, y: current.player.y + direction.y };
     if (mazeWall(newCell)) { setBlocked(true); return; }
     setBlocked(false);
+    lastDirRef.current = direction;
     movingRef.current = true;
     setAwaitingInput(false);
     updateBoard({ player: newCell });
@@ -319,9 +330,9 @@ export function NumberPacGeneric({
     if (current.powerPellet && cellKey(newCell) === cellKey(current.powerPellet)) {
       updateBoard({ powerPellet: null });
       setExtraShield(false);
-      invulnRemainingRef.current = INVULN_MS;
+      invulnRemainingRef.current = shieldMs;
       setInvulnerable(true);
-      setShieldSeconds(INVULN_MS / 1000);
+      setShieldSeconds(Math.ceil(shieldMs / 1000));
       fx.award(SHIELD_POINTS, at(newCell), { label: "¡Escudo!", tone: "info", sound: "combo" });
     }
     if (cellKey(newCell) === cellKey(current.ghost)) {
@@ -331,25 +342,40 @@ export function NumberPacGeneric({
       }
       catchGhost(newCell);
     }
+    if (current.ghost2 && cellKey(newCell) === cellKey(current.ghost2)) {
+      if (invulnRemainingRef.current <= 0) {
+        handleGhostHit();
+        return;
+      }
+      catchGhost(newCell, true);
+    }
     const eaten = current.pellets.find((p) => cellKey(p) === cellKey(newCell));
     if (eaten) void resolvePellet(eaten, newCell, current.ghost);
   }
 
   /** Con escudo, alcanzar al fantasma lo devuelve a su casa y da puntos. */
-  function catchGhost(where: Cell) {
+  function catchGhost(where: Cell, second = false) {
     fx.award(GHOST_POINTS, at(where), { label: `¡Atrapado! +${GHOST_POINTS}`, tone: "bonus", sound: "combo" });
     fx.shake(4);
-    updateBoard({ ghost: GHOST_START });
+    updateBoard(second ? { ghost2: GHOST2_START } : { ghost: GHOST_START });
   }
 
   // Persigue por los pasillos. El escudo permite invertir la persecución.
   function stepGhost() {
     const current = boardRef.current;
-    const next = nextMazeGhost(current.ghost, current.player, invulnRemainingRef.current > 0);
-    updateBoard({ ghost: next });
-    if (cellKey(next) !== cellKey(current.player)) return;
-    if (invulnRemainingRef.current > 0) catchGhost(next);
-    else handleGhostHit();
+    const frightened = invulnRemainingRef.current > 0;
+    const next = nextMazeGhost(current.ghost, current.player, frightened);
+    // El segundo fantasma embosca: apunta por delante del jugador.
+    const next2 = current.ghost2 && nextMazeGhost(current.ghost2, frightened ? current.player : mazeAmbushTarget(current.player, lastDirRef.current), frightened);
+    updateBoard({ ghost: next, ghost2: next2 });
+    if (cellKey(next) === cellKey(current.player)) {
+      if (frightened) catchGhost(next);
+      else return handleGhostHit();
+    }
+    if (next2 && cellKey(next2) === cellKey(current.player)) {
+      if (frightened) catchGhost(next2, true);
+      else handleGhostHit();
+    }
   }
 
   useGameLoop(
@@ -508,6 +534,9 @@ export function NumberPacGeneric({
                     {player.x === x && player.y === y && (
                       <span className={`absolute inset-[8%] z-10 flex items-center justify-center rounded-full ${invulnerable ? "ring-4 ring-cyan-200" : ""}`}><ArcadeSprite kind="explorer" className="size-full" /></span>
                     )}
+                    {ghost2 && ghost2.x === x && ghost2.y === y && (
+                      <span data-ghost2="" className={`absolute flex items-center justify-center ${pellet ? "bottom-0 left-0 z-30 size-[45%] rounded-full bg-rose-950" : "inset-[8%] z-10"} ${invulnerable ? "opacity-40" : ""}`} style={{ filter: "hue-rotate(140deg) saturate(1.6)" }}><ArcadeSprite kind="ghost" className="size-full" /></span>
+                    )}
                     {ghost.x === x && ghost.y === y && (
                       <span className={`${reducedMotion ? "" : "transition-colors duration-150"} absolute flex items-center justify-center ${pellet ? "right-0 top-0 z-30 size-[45%] rounded-full bg-violet-950" : "inset-[8%] z-10"} ${invulnerable ? "opacity-40" : ""}`}><ArcadeSprite kind="ghost" className="size-full" /></span>
                     )}
@@ -517,7 +546,7 @@ export function NumberPacGeneric({
               <ArcadeFxLayer fx={fx} />
             </div>
 
-            <p role="status" className="text-xs text-cyan-100">{blocked ? "Hay una pared. Busca otro camino." : "◇ Escudo: el fantasma huye 4 segundos y, si lo alcanzas, vuelve a su casa. Recoge las migas para sumar puntos."}</p>
+            <p role="status" className="text-xs text-cyan-100">{blocked ? "Hay una pared. Busca otro camino." : `◇ Escudo: ${ghost2 ? "los fantasmas huyen" : "el fantasma huye"} ${Math.round(shieldMs / 100) / 10} segundos y, si lo alcanzas, vuelve a su casa. Recoge las migas para sumar puntos.${ghost2 ? " El fantasma rosa se adelanta a tus pasos." : ""}`}</p>
             <TouchDPad inline repeat={false} disabled={frozen || solved} onMove={onTouchMove} />
           </div>
         )}

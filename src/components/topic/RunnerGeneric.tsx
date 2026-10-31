@@ -26,6 +26,8 @@ const GOAL = 3; // puertas a cruzar para ganar
 const GATE_TIME_BASE_MS = 2500;
 const GATE_TIME_STEP_MS = -250;
 const GATE_TIME_FLOOR_MS = 900;
+const CONE_LEVEL = 3;
+const TWO_CONES_LEVEL = 6;
 const GATE_POINTS = 150;
 const LANE_CHANGE_POINTS = 5;
 
@@ -121,7 +123,7 @@ export function RunnerGeneric({
     setTurbo(false);
     hazardCheckedRef.current = false;
     setHazardCleared(false);
-    const wave = waveIndex(exercise?.round ?? countForWave, 1);
+    const wave = waveIndex(exercise?.round ?? countForWave, 1) + fx.boost;
     const total = scaleWithWave(GATE_TIME_BASE_MS, GATE_TIME_STEP_MS, wave, GATE_TIME_FLOOR_MS);
     setGateTotalMs(total);
     remainingRef.current = total;
@@ -219,13 +221,12 @@ export function RunnerGeneric({
       paintAccRef.current += dtMs;
       // El obstáculo aparece antes de la puerta, es independiente de la
       // respuesta y deja tiempo para volver a cambiar de carril.
-      if (exercise && (exercise.round ?? 0) > 0 && candidates.length > 1 &&
+      if (exercise && hazardLanes.length > 0 &&
           !hazardCheckedRef.current && remainingRef.current <= gateTotalMs * 0.6) {
         hazardCheckedRef.current = true;
         setHazardCleared(true);
-        const hazardLane = (exercise.round ?? 0) % candidates.length;
-        if (lane === hazardLane) {
-          fx.oops(laneAt(lane), "¡Obstáculo!");
+        if (hazardLanes.includes(lane)) {
+          fx.hit(laneAt(lane), "¡Obstáculo!");
           setReflexMiss(true);
           spawnGate(0);
           return;
@@ -246,6 +247,14 @@ export function RunnerGeneric({
 
   // Tantos carriles como opciones: un problema de dos opciones no deja carriles vacíos.
   const laneCount = candidates.length || LANES;
+  // Conos antes de la puerta: desde la segunda ronda o el nivel 3; desde el
+  // nivel 6, dos por tramo. Siempre queda al menos un carril libre.
+  const hazardLanes = (() => {
+    if (!lesson || laneCount < 2 || ((exercise?.round ?? 0) === 0 && fx.level < CONE_LEVEL)) return [] as number[];
+    const first = ((exercise?.round ?? 0) + fx.level - 1) % laneCount;
+    const second = (first + 2) % laneCount;
+    return fx.level >= TWO_CONES_LEVEL && laneCount > 2 && second !== first ? [first, second] : [first];
+  })();
   function laneAt(row: number) {
     return { x: 22, y: row < 0 ? 50 : ((row + 0.5) / laneCount) * 100 };
   }
@@ -388,7 +397,7 @@ export function RunnerGeneric({
                 </div>
               )}
               {Array.from({ length: laneCount }, (_, row) => (
-                <button type="button" onClick={() => chooseLane(row)} aria-label={`Carril ${row + 1}: ${candidates[row] === undefined ? "" : choiceLabel(problem, candidates[row])}${lesson && (exercise?.round ?? 0) > 0 && laneCount > 1 && !hazardCleared && row === (exercise!.round ?? 0) % laneCount ? ", obstáculo antes de la puerta" : ""}`} aria-pressed={lane === row} disabled={frozen || pending}
+                <button type="button" onClick={() => chooseLane(row)} aria-label={`Carril ${row + 1}: ${candidates[row] === undefined ? "" : choiceLabel(problem, candidates[row])}${!hazardCleared && hazardLanes.includes(row) ? ", obstáculo antes de la puerta" : ""}`} aria-pressed={lane === row} disabled={frozen || pending}
                   key={row}
                   className={`${reducedMotion ? "" : "transition-colors duration-150"} relative flex h-16 w-full touch-manipulation items-center rounded-lg border-b border-dashed font-bold ${
                     lane === row ? "border-amber-300 bg-amber-800/40 text-amber-100" : "border-slate-500/60 text-slate-200"
@@ -396,15 +405,15 @@ export function RunnerGeneric({
                 >
                   <span aria-hidden="true" className="absolute left-1">{lane === row && <ArcadeSprite kind="car" className="size-14" />}</span>
                   {lane === row && racing && <span aria-hidden="true" className={`${turbo ? "arcade-trail text-lg" : "text-xs opacity-60"} absolute left-0`}>{turbo ? "🔥" : "💨"}</span>}
-                  {lesson && (exercise?.round ?? 0) > 0 && laneCount > 1 && !hazardCleared && row === (exercise!.round ?? 0) % laneCount &&
-                    <span aria-hidden="true" className="absolute left-[38%] top-1 text-xl">🚧</span>}
+                  {!hazardCleared && hazardLanes.includes(row) &&
+                    <span aria-hidden="true" data-cone="" className="arcade-hazard arcade-hazard-pulse absolute left-[38%] top-1 text-xl">🚧</span>}
                   <span data-choice-label="" className="arcade-value absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-cyan-100 shadow-lg transition-[left] duration-100 motion-reduce:transition-none" style={{ left: `${74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : <ChoiceText problem={problem} value={candidates[row]} />}</span>
                 </button>
               ))}
               <ArcadeFxLayer fx={fx} />
             </div>
 
-            {lesson && (exercise?.round ?? 0) > 0 && laneCount > 1 && <p className="text-xs text-amber-100">Esquiva el obstáculo antes de elegir la puerta. Un choque reinicia el tramo y no responde.</p>}
+            {hazardLanes.length > 0 && <p className="text-xs text-amber-100">Esquiva el obstáculo antes de elegir la puerta. Un choque reinicia el tramo y no responde.</p>}
             <button type="button" onClick={boost} disabled={frozen || pending || lane === NO_LANE || turbo}
               className="min-h-11 rounded-xl border-2 border-amber-200 bg-amber-400 px-6 font-bold text-slate-950 disabled:opacity-50">Turbo · cruzar ⚡</button>
             <TouchDPad inline disabled={frozen || pending} onMove={onTouchMove} />

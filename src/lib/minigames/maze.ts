@@ -56,3 +56,14 @@ export function nextMazeGhost(ghost: MazeCell, player: MazeCell, frightened: boo
   const options = mazeNeighbors(ghost);
   return options.sort((a, b) => (frightened ? -1 : 1) * (distance.get(mazeKey(a))! - distance.get(mazeKey(b))!))[0] ?? ghost;
 }
+
+/** Segundo fantasma (nivel 4+): en lugar de perseguir al jugador, apunta a
+ * dos casillas por delante en la dirección en que se mueve, como una
+ * emboscada. Si ahí hay pared, prueba una casilla y si no, al jugador. */
+export function mazeAmbushTarget(player: MazeCell, direction: MazeCell): MazeCell {
+  for (const steps of [2, 1]) {
+    const cell = { x: player.x + direction.x * steps, y: player.y + direction.y * steps };
+    if (!mazeWall(cell)) return cell;
+  }
+  return player;
+}

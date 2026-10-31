@@ -19,6 +19,12 @@ import { lessonArcadeState, choiceLabel, arcadeValues, ChoiceText, PromptText, l
 const HOLES = 6; // 3 × 2
 const CHOICES = 5;
 const MAX_UP = 2; // topos visibles a la vez
+/** Nivel 3+: topo bomba sin número (tocarlo cuesta un corazón). Nivel 5+:
+ *  hasta tres topos a la vez y apariciones más cortas. «Sin prisas» no cambia. */
+const BOMB_LEVEL = 3;
+const BUSY_LEVEL = 5;
+const BOMB_EVERY_MS = 2600;
+const BOMB_UP_MS = 1500;
 const GOAL = 3;
 const WAVE_SIZE = 1;
 const LIVES_START = 3;
@@ -91,6 +97,9 @@ export function TopoGeneric({
   const [gold, setGold] = useState<number | null>(null);
   const goldRef = useRef<{ hole: number; until: number } | null>(null);
   const goldAccRef = useRef(0);
+  const [bomb, setBomb] = useState<number | null>(null);
+  const bombRef = useRef<{ hole: number; until: number } | null>(null);
+  const bombAccRef = useRef(0);
   const cabinetRef = useRef<HTMLDivElement>(null);
   const fx = useArcadeFx({ game: "topos", soundOn, solved, cabinetRef, session: exercise?.session });
   /** Centro aproximado de cada agujero en la pradera de 3 × 2. */
@@ -103,8 +112,11 @@ export function TopoGeneric({
   const busyRef = useRef(false); // true mientras se espera la respuesta
 
   const wave = waveIndex(correctCount, WAVE_SIZE);
-  const upMs = lesson ? scaleWithWave(LESSON_UP_MS, -150, exercise?.round ?? 0, 2000) : scaleWithWave(UP_BASE_MS, UP_STEP_MS, wave, UP_FLOOR_MS);
-  const popMs = lesson ? scaleWithWave(POP_MS, -60, exercise?.round ?? 0, 550) : POP_MS;
+  const lessonWave = (exercise?.round ?? 0) + fx.boost;
+  const busy = fx.level >= BUSY_LEVEL;
+  const upMs = lesson ? scaleWithWave(LESSON_UP_MS, -150, lessonWave, busy ? 1600 : 2000) : scaleWithWave(UP_BASE_MS, UP_STEP_MS, wave + fx.boost, UP_FLOOR_MS);
+  const popMs = lesson ? scaleWithWave(POP_MS, -60, lessonWave, busy ? 420 : 550) : POP_MS;
+  const maxUp = busy ? MAX_UP + 1 : MAX_UP;
 
   function spawnRound() {
     const nextProblem = newProblem();
@@ -176,6 +188,9 @@ export function TopoGeneric({
     goldRef.current = null;
     goldAccRef.current = 0;
     setGold(null);
+    bombRef.current = null;
+    bombAccRef.current = 0;
+    setBomb(null);
     setPhase("playing");
     fx.start();
     spawnRound();
@@ -241,6 +256,33 @@ export function TopoGeneric({
     fx.award(GOLD_POINTS, holeAt(hole), { tone: "bonus", label: `¡Dorado! +${GOLD_POINTS}` });
   }
 
+  /** El topo bomba no lleva número: tocarlo es un fallo de reflejos. */
+  function whackBomb(hole: number) {
+    if (bombRef.current?.hole !== hole || busyRef.current || frozen || solved || phase !== "playing") return;
+    bombRef.current = null;
+    setBomb(null);
+    fx.hit(holeAt(hole), "¡Bum!");
+  }
+
+  function tickBomb(dtMs: number, now: number, current: Mole[]) {
+    if (fx.level < BOMB_LEVEL) return;
+    const shown = bombRef.current;
+    if (shown) {
+      if (shown.until <= now || current[shown.hole]) {
+        bombRef.current = null;
+        setBomb(null);
+      }
+      return;
+    }
+    bombAccRef.current += dtMs;
+    if (bombAccRef.current < BOMB_EVERY_MS) return;
+    const free = shuffle(current.flatMap((m, i) => (m || goldRef.current?.hole === i ? [] : [i])));
+    if (free.length === 0) return;
+    bombAccRef.current = 0;
+    bombRef.current = { hole: free[free.length - 1], until: now + BOMB_UP_MS };
+    setBomb(free[free.length - 1]);
+  }
+
   /** Aparece y se esconde el topo dorado en un agujero libre. */
   function tickGold(dtMs: number, now: number, current: Mole[]) {
     const shown = goldRef.current;
@@ -253,7 +295,7 @@ export function TopoGeneric({
     }
     goldAccRef.current += dtMs;
     if (goldAccRef.current < GOLD_EVERY_MS) return;
-    const free = shuffle(current.flatMap((m, i) => (m ? [] : [i])));
+    const free = shuffle(current.flatMap((m, i) => (m || bombRef.current?.hole === i ? [] : [i])));
     if (free.length === 0) return;
     goldAccRef.current = 0;
     goldRef.current = { hole: free[0], until: now + GOLD_UP_MS };
@@ -276,14 +318,15 @@ export function TopoGeneric({
         });
       }
       tickGold(dtMs, now, next);
+      tickBomb(dtMs, now, next);
       if (escapedAnswer && !lesson) {
         setHoles(next);
         void resolveRound(false);
         return;
       }
-      if (popAccRef.current >= popMs && next.filter(Boolean).length < MAX_UP) {
+      if (popAccRef.current >= popMs && next.filter(Boolean).length < maxUp) {
         const value = nextValue(next);
-        const free = shuffle(next.flatMap((m, i) => (m || goldRef.current?.hole === i ? [] : [i])));
+        const free = shuffle(next.flatMap((m, i) => (m || goldRef.current?.hole === i || bombRef.current?.hole === i ? [] : [i])));
         if (value !== undefined && free.length > 0) {
           popAccRef.current = 0;
           next = next.map((m, i) => (i === free[0] ? { value, until: now + upMs } : m));
@@ -380,7 +423,17 @@ export function TopoGeneric({
             </div>
             <p role="status" className="text-xs text-amber-100">{pending ? "Guardando el número elegido…" : calm ? "Los topos esperan. Cambia de tanda hasta ver el número que elegiste." : "Observa a los topos. Si necesitas leer sin reloj, activa «Sin prisas»."}</p>
             <div role="group" aria-labelledby={promptId} className="arcade-scene arcade-scene-meadow relative mx-auto grid max-w-[min(100%,36rem,65vh)] grid-cols-3 gap-3 rounded-2xl border-2 border-amber-700 p-3">
-              {holes.map((mole, i) => !mole && gold === i && !calm ? (
+              {holes.map((mole, i) => !mole && bomb === i && !calm ? (
+                <button key={i} type="button" onClick={() => whackBomb(i)} disabled={frozen || pending}
+                  aria-label="Topo bomba: no lo toques, no es una respuesta" data-bomb=""
+                  className="arcade-mole-hole relative flex h-28 touch-manipulation items-end justify-center overflow-hidden rounded-2xl pb-3 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300">
+                  <span aria-hidden="true" className="absolute inset-x-3 bottom-1 h-5 rounded-[50%] bg-black/60" />
+                  <span aria-hidden="true" className="arcade-hazard arcade-hazard-pulse relative flex flex-col items-center" style={{ filter: "grayscale(0.6) brightness(0.8) drop-shadow(0 0 8px #f43f5e)" }}>
+                    <ArcadeSprite kind="mole" className="size-14" />
+                    <span className="mt-1 rounded-md bg-rose-500 px-2 text-sm font-black text-white">💣</span>
+                  </span>
+                </button>
+              ) : !mole && gold === i && !calm ? (
                 <button key={i} type="button" onClick={() => whackGold(i)} disabled={frozen || pending}
                   aria-label="Topo dorado: puntos extra, no es una respuesta"
                   className="arcade-mole-hole relative flex h-28 touch-manipulation items-end justify-center overflow-hidden rounded-2xl pb-3 focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-300">

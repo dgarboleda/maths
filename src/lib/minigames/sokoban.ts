@@ -16,12 +16,29 @@ export const DIRECTIONS: Record<Direction, Cell> = { U: { x: 0, y: -1 }, D: { x:
 
 const TURN = ["#######", "#G#...#", "#...#.#", "#.....#", "#.$#$.#", "#..$..#", "#.$.$.#", "#..@..#", "#######"];
 const CENTRAL = ["#######", "#..G..#", "#.#.#.#", "#.....#", "#.$.$.#", "#.$...#", "#.$.$.#", "#..@..#", "#######"];
-export const WAREHOUSES: readonly Warehouse[] = [
+const SHELVES = ["#######", "#..G..#", "#.#.#.#", "#.$...#", "##.$#.#", "#..$..#", "#.$.$.#", "#..@..#", "#######"];
+const DOCK = ["#######", "#G....#", "#.###.#", "#..$..#", "#.$.$.#", "#.#$#.#", "#..$..#", "#..@..#", "#######"];
+const BASE_WAREHOUSES: readonly Warehouse[] = [
   { id: "giro", name: "Almacén del giro", rows: TURN },
   { id: "centro", name: "Pasillo central", rows: CENTRAL },
   { id: "espejo", name: "Almacén espejo", rows: TURN.map((row) => [...row].reverse().join("")) },
   { id: "centro-espejo", name: "Pasillo invertido", rows: CENTRAL.map((row) => [...row].reverse().join("")) },
 ];
+/** Almacenes de nivel alto (4+): pasillos más estrechos y más giros. */
+const HARD_WAREHOUSES: readonly Warehouse[] = [
+  { id: "estantes", name: "Almacén de estantes", rows: SHELVES },
+  { id: "muelle", name: "Muelle estrecho", rows: DOCK },
+];
+export const WAREHOUSES: readonly Warehouse[] = [...BASE_WAREHOUSES, ...HARD_WAREHOUSES];
+/** Nivel desde el que se usan los almacenes difíciles. */
+export const HARD_WAREHOUSE_LEVEL = 4;
+
+/** Pasos de referencia («par») por almacén: entregar dentro de ellos da un
+ *  bonus de puntos. Con el nivel, el par se vuelve más exigente. */
+export function warehousePar(level: Warehouse, arcadeLevel = 1): number {
+  const base = HARD_WAREHOUSES.some((w) => w.id === level.id) ? 34 : 28;
+  return Math.max(Math.round(base * 0.6), base - (Math.max(1, arcadeLevel) - 1) * 2);
+}
 
 export const sameCell = (a: Cell, b: Cell) => a.x === b.x && a.y === b.y;
 export const floorAt = (level: Warehouse, cell: Cell) => {
@@ -30,10 +47,11 @@ export const floorAt = (level: Warehouse, cell: Cell) => {
 };
 export const goalAt = (level: Warehouse, cell: Cell) => level.rows[cell.y]?.[cell.x] === "G";
 
-export function warehouseFor(problemId: string, round = 0): Warehouse {
+export function warehouseFor(problemId: string, round = 0, arcadeLevel = 1): Warehouse {
   let hash = 0;
   for (const char of problemId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return WAREHOUSES[(hash + round) % WAREHOUSES.length];
+  const pool = arcadeLevel >= HARD_WAREHOUSE_LEVEL ? HARD_WAREHOUSES : BASE_WAREHOUSES;
+  return pool[(hash + round) % pool.length];
 }
 
 export function initialWarehouse(level: Warehouse, values: readonly number[]): WarehouseState {

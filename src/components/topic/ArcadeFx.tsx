@@ -14,6 +14,7 @@ import {
   subscribeArcadeBest,
 } from "@/lib/minigames/arcadeScore";
 import type { ArcadeSession, PracticeGame } from "@/lib/minigames/lessonExercise";
+import { arcadeMedal, MEDALS, raiseArcadeLevel, readArcadeLevel, subscribeArcadeLevel as subscribeLevel, useArcadeLevel } from "@/lib/minigames/arcadeLevel";
 
 /**
  * Capa arcade común de los nueve minijuegos: marcador, combo, récord local,
@@ -44,6 +45,9 @@ export interface FxAt {
 }
 
 const LIFETIME = { pop: 850, burst: 650, banner: 1150 } as const;
+export const MAX_HEARTS = 3;
+/** Puntos por cerrar la partida sin perder ningún corazón. */
+export const NO_DAMAGE_BONUS = 300;
 const MAX_ITEMS = 14;
 const CENTER: FxAt = { x: 50, y: 45 };
 
@@ -70,9 +74,22 @@ export interface ArcadeFx {
   /** Puntos de la partida, con el bonus de meta si ya se cumplió. */
   total: number;
   record: boolean;
+  /** Corazones de la partida (0–3). Solo cuestan puntos, nunca la respuesta. */
+  hearts: number;
+  /** Nivel con el que se juega (1 en modo tranquilo) y oleadas que suma. */
+  level: number;
+  boost: number;
+  /** Nivel al que se subió al cerrar esta partida, si subió. */
+  levelUp: number | null;
+  /** Bonus «Sin daño» incluido en `total`. */
+  noDamageBonus: number;
+  /** Medalla arcade: 1 bronce, 2 plata, 3 oro. */
+  medal: 1 | 2 | 3;
   start: (banner?: string) => void;
   award: (base: number, at?: FxAt, options?: ScoreOptions) => void;
   oops: (at?: FxAt, text?: string) => void;
+  /** Choque con un peligro: como `oops` y además resta un corazón. */
+  hit: (at?: FxAt, text?: string) => void;
   pop: (text: string, at?: FxAt, tone?: FxTone, scope?: FxScope) => void;
   banner: (text: string, tone?: FxTone) => void;
   burst: (at?: FxAt, tone?: FxTone) => void;
@@ -92,6 +109,11 @@ export function useArcadeFx({ game, soundOn, solved = false, cabinetRef, session
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
   const [won, setWon] = useState(false);
+  const [hearts, setHearts] = useState(MAX_HEARTS);
+  const heartsRef = useRef(MAX_HEARTS);
+  const [levelUp, setLevelUp] = useState<number | null>(null);
+  const [solvedLevelUp, setSolvedLevelUp] = useState<number | null>(null);
+  const { effective: level, boost } = useArcadeLevel(game);
   const scoreRef = useRef(0);
   const comboRef = useRef(0);
   const seq = useRef(0);
@@ -119,8 +141,10 @@ export function useArcadeFx({ game, soundOn, solved = false, cabinetRef, session
     if (solved && !solvedBefore.current) {
       playSound("fanfare", soundRef.current);
       triggerConfetti("medium");
-      saveArcadeBest(game, scoreRef.current + SOLVE_BONUS);
-      session?.update(game, scoreRef.current + SOLVE_BONUS);
+      const final = scoreRef.current + SOLVE_BONUS + (heartsRef.current === MAX_HEARTS ? NO_DAMAGE_BONUS : 0);
+      saveArcadeBest(game, final);
+      session?.update(game, final);
+      raiseArcadeLevel(game);
     }
     solvedBefore.current = solved;
   }, [solved, game, session]);
@@ -173,6 +197,10 @@ export function useArcadeFx({ game, soundOn, solved = false, cabinetRef, session
     setScore(scoreRef.current);
     setCombo(0);
     setWon(false);
+    heartsRef.current = MAX_HEARTS;
+    setHearts(MAX_HEARTS);
+    setLevelUp(null);
+    setSolvedLevelUp(readArcadeLevel(game));
     setItems([]);
     banner(text);
     playSound("whoosh", soundRef.current);
@@ -206,14 +234,38 @@ export function useArcadeFx({ game, soundOn, solved = false, cabinetRef, session
     playSound("crash", soundRef.current);
   }
 
-  function end(didWin: boolean) {
-    setWon(didWin);
-    saveArcadeBest(game, scoreRef.current + (didWin ? SOLVE_BONUS : 0));
+  function hit(at?: FxAt, text = "¡Auch!") {
+    heartsRef.current = Math.max(0, heartsRef.current - 1);
+    setHearts(heartsRef.current);
+    oops(at, text);
   }
 
-  const total = score + (won || solved ? SOLVE_BONUS : 0);
+  function end(didWin: boolean) {
+    setWon(didWin);
+    const bonus = didWin ? SOLVE_BONUS + (heartsRef.current === MAX_HEARTS ? NO_DAMAGE_BONUS : 0) : 0;
+    saveArcadeBest(game, scoreRef.current + bonus);
+    if (didWin) {
+      const before = readArcadeLevel(game);
+      const after = raiseArcadeLevel(game);
+      if (after > before) {
+        setLevelUp(after);
+        banner(`¡Nivel ${after}!`, "bonus");
+      }
+    }
+  }
+
+  const closed = won || solved;
+  const noDamageBonus = closed && hearts === MAX_HEARTS ? NO_DAMAGE_BONUS : 0;
+  const total = score + (closed ? SOLVE_BONUS : 0) + noDamageBonus;
+  // Clase: el nivel guardado sube al resolverse; se compara con el de inicio.
+  const stored = useSyncExternalStore(subscribeLevel, () => readArcadeLevel(game), () => 1);
+  const lessonLevelUp = solved && solvedLevelUp !== null && stored > solvedLevelUp ? stored : null;
   const record = total > 0 && total > (bestAtStart ?? 0);
-  return { items, score, combo, best, total, record, start, award, oops, pop, banner, burst, shake, end };
+  return {
+    items, score, combo, best, total, record, hearts, level, boost, levelUp: levelUp ?? lessonLevelUp, noDamageBonus,
+    medal: arcadeMedal(total, level),
+    start, award, oops, hit, pop, banner, burst, shake, end,
+  };
 }
 
 const PARTICLES = Array.from({ length: 10 }, (_, i) => {
@@ -262,6 +314,9 @@ export function ArcadeScoreBar({ fx }: { fx: ArcadeFx }) {
       <span key={mult} className={`arcade-combo ${mult > 1 ? "arcade-combo-on" : ""}`}>
         {mult > 1 ? `COMBO ×${mult}` : fx.combo > 0 ? `CADENA ${fx.combo}` : "·"}
       </span>
+      <span className="arcade-hearts" data-hearts={fx.hearts} data-level={fx.level}>
+        NV {fx.level} <span className="arcade-heart-row">{Array.from({ length: MAX_HEARTS }, (_, i) => (i < fx.hearts ? "♥" : "♡")).join("")}</span>
+      </span>
       <span>
         RÉCORD <span className="arcade-hud-value">{formatScore(Math.max(fx.best ?? 0, fx.score))}</span>
       </span>
@@ -272,11 +327,21 @@ export function ArcadeScoreBar({ fx }: { fx: ArcadeFx }) {
 /** Puntos finales de la partida, para la pantalla de cierre. */
 export function ArcadeFinalScore({ fx }: { fx: ArcadeFx }) {
   return (
-    <div data-arcade-total={fx.total} className="flex justify-between border-t border-white/15 pt-2">
-      <span>Puntos arcade:</span>
-      <strong className="arcade-hud-value text-yellow-200">
-        {fx.record ? <>¡Nuevo récord! {formatScore(fx.total)}</> : formatScore(fx.total)}
-      </strong>
-    </div>
+    <>
+      <div data-arcade-total={fx.total} className="flex justify-between border-t border-white/15 pt-2">
+        <span>Puntos arcade:</span>
+        <strong className="arcade-hud-value text-yellow-200">
+          {fx.record ? <>¡Nuevo récord! {formatScore(fx.total)}</> : formatScore(fx.total)}
+        </strong>
+      </div>
+      <div className="flex justify-between">
+        <span>Medalla arcade:</span>
+        <strong data-arcade-medal={fx.medal} className={`arcade-medal arcade-medal-${fx.medal}`}>
+          <span aria-hidden="true">{["", "🥉", "🥈", "🥇"][fx.medal]} </span>{MEDALS[fx.medal]}
+        </strong>
+      </div>
+      {fx.noDamageBonus > 0 && <p className="text-sm font-bold text-emerald-200">Sin daño: +{fx.noDamageBonus}</p>}
+      {fx.levelUp && <p className="arcade-win text-sm font-black text-fuchsia-200">¡Subes al nivel {fx.levelUp} de este juego!</p>}
+    </>
   );
 }

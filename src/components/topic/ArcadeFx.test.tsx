@@ -3,6 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 import { useEffect, useRef } from "react";
 import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx, type ArcadeFx } from "./ArcadeFx";
 import { readArcadeBest, resetArcadeBestCache } from "@/lib/minigames/arcadeScore";
+import { readArcadeLevel, resetArcadeLevelCache, setArcadeCalm } from "@/lib/minigames/arcadeLevel";
 import { createArcadeSession, type ArcadeSession } from "@/lib/minigames/lessonExercise";
 
 const sounds: string[] = [];
@@ -39,6 +40,7 @@ describe("useArcadeFx", () => {
     vi.useFakeTimers();
     window.localStorage.clear();
     resetArcadeBestCache();
+    resetArcadeLevelCache();
     sounds.length = 0;
     confetti.mockClear();
   });
@@ -78,10 +80,14 @@ describe("useArcadeFx", () => {
     act(() => fx.start());
     act(() => fx.award(100));
     act(() => fx.end(true));
-    expect(fx.total).toBe(600);
+    // 100 + 500 de meta + 300 «Sin daño».
+    expect(fx.total).toBe(900);
+    expect(fx.noDamageBonus).toBe(300);
     expect(fx.record).toBe(true);
-    expect(readArcadeBest("snake")).toBe(600);
-    expect(screen.getByText(/¡Nuevo récord!/)).toHaveTextContent("00600");
+    expect(readArcadeBest("snake")).toBe(900);
+    expect(screen.getByText(/¡Nuevo récord!/)).toHaveTextContent("00900");
+    expect(fx.levelUp).toBe(2);
+    expect(readArcadeLevel("snake")).toBe(2);
   });
 
   test("en la clase celebra solo cuando el servidor resuelve el ejercicio", () => {
@@ -92,8 +98,10 @@ describe("useArcadeFx", () => {
     rerender(<Harness solved />);
     expect(confetti).toHaveBeenCalledTimes(1);
     expect(sounds).toContain("fanfare");
-    expect(fx.total).toBe(540);
-    expect(readArcadeBest("snake")).toBe(540);
+    expect(fx.total).toBe(840);
+    expect(readArcadeBest("snake")).toBe(840);
+    expect(readArcadeLevel("snake")).toBe(2);
+    expect(fx.levelUp).toBe(2);
   });
 
   test("respeta el sonido desactivado", () => {
@@ -112,12 +120,43 @@ describe("useArcadeFx", () => {
     act(() => fx.start());
     act(() => fx.award(40));
     first.rerender(<Harness session={session} solved />);
-    expect(session.begin("snake")).toBe(540);
+    expect(session.begin("snake")).toBe(840);
     first.unmount();
     render(<Harness session={session} />);
     act(() => fx.start());
-    expect(fx.score).toBe(540);
+    expect(fx.score).toBe(840);
     act(() => fx.award(10));
-    expect(session.begin("snake")).toBe(550);
+    expect(session.begin("snake")).toBe(850);
+  });
+
+  test("los choques restan corazones y quitan el bonus «Sin daño», sin terminar nada", () => {
+    render(<Harness />);
+    act(() => fx.start());
+    act(() => {
+      fx.award(100);
+      fx.hit({ x: 50, y: 50 });
+      fx.hit();
+      fx.hit();
+      fx.hit();
+    });
+    expect(fx.hearts).toBe(0);
+    expect(fx.combo).toBe(0);
+    expect(fx.score).toBe(100);
+    act(() => fx.end(true));
+    expect(fx.noDamageBonus).toBe(0);
+    expect(fx.total).toBe(600);
+    expect(screen.getByText("Medalla arcade:")).toBeInTheDocument();
+    act(() => fx.start());
+    expect(fx.hearts).toBe(3);
+  });
+
+  test("en modo tranquilo se juega en nivel 1 y el nivel no sube", () => {
+    setArcadeCalm(true);
+    render(<Harness />);
+    act(() => fx.start());
+    act(() => fx.end(true));
+    expect(fx.level).toBe(1);
+    expect(fx.levelUp).toBeNull();
+    expect(readArcadeLevel("snake")).toBe(1);
   });
 });

@@ -33,6 +33,11 @@ const CAPSULE_POINTS = 30;
 const CAPSULE_FALL_MS = 2400;
 const CAPSULE_EVERY_MS = 1400;
 const CAPSULE_PAINT_MS = 100;
+// Meteoritos (nivel 3+): caen por una columna; si llegan a la nave, cuestan
+// un corazón. Nunca disparan ni responden nada.
+const METEOR_LEVEL = 3;
+const METEOR_FAST_LEVEL = 6;
+const METEOR_FALL_MS = 2000;
 const colX = (col: number) => ((col + 0.5) * 100) / COLS;
 
 type Phase = "start" | "playing" | "over";
@@ -93,12 +98,15 @@ export function InvadersGeneric({
   const [capsule, setCapsule] = useState<{ col: number; pct: number } | null>(null);
   const capsuleRef = useRef<{ col: number; elapsed: number; paint: number } | null>(null);
   const capsuleWaitRef = useRef(0);
+  const [meteor, setMeteor] = useState<{ col: number; pct: number } | null>(null);
+  const meteorRef = useRef<{ col: number; elapsed: number; paint: number } | null>(null);
+  const meteorWaitRef = useRef(0);
 
   const busyRef = useRef(false); // true mientras se espera onAnswer
 
   const accumulatedDamage = hits + (exercise?.failedAttempts ?? 0);
   const shownShield = 3 - accumulatedDamage % 3;
-  const wave = Math.max(0, waveIndex(exercise?.round ?? correctCount, WAVE_SIZE) - Math.floor(accumulatedDamage / 3));
+  const wave = Math.max(0, waveIndex(exercise?.round ?? correctCount, WAVE_SIZE) + fx.boost - Math.floor(accumulatedDamage / 3));
   const waveTickMs = scaleWithWave(WAVE_TICK_BASE_MS, WAVE_TICK_STEP_MS, wave, WAVE_TICK_FLOOR_MS);
 
   function spawnWave() {
@@ -140,6 +148,9 @@ export function InvadersGeneric({
     setShotCol(null);
     capsuleRef.current = null;
     capsuleWaitRef.current = 0;
+    meteorRef.current = null;
+    meteorWaitRef.current = 0;
+    setMeteor(null);
     setCapsule(null);
     setPhase("playing");
     fx.start();
@@ -230,6 +241,33 @@ export function InvadersGeneric({
     }
   }
 
+  function tickMeteor(dtMs: number) {
+    if (fx.level < METEOR_LEVEL) return;
+    const current = meteorRef.current;
+    if (!current) {
+      meteorWaitRef.current += dtMs;
+      if (meteorWaitRef.current < (fx.level >= METEOR_FAST_LEVEL ? 1600 : 2600)) return;
+      meteorWaitRef.current = 0;
+      const col = Math.floor(Math.random() * COLS);
+      meteorRef.current = { col, elapsed: 0, paint: 0 };
+      setMeteor({ col, pct: 0 });
+      return;
+    }
+    current.elapsed += dtMs;
+    current.paint += dtMs;
+    if (current.elapsed >= METEOR_FALL_MS) {
+      meteorRef.current = null;
+      setMeteor(null);
+      if (current.col === shipCol) fx.hit({ x: colX(current.col), y: 80 }, "¡Meteorito!");
+      else fx.award(10, { x: colX(current.col), y: 82 }, { chain: false, burst: false, label: "¡Fiu!", tone: "info", sound: "whoosh" });
+      return;
+    }
+    if (current.paint >= CAPSULE_PAINT_MS) {
+      current.paint %= CAPSULE_PAINT_MS;
+      setMeteor({ col: current.col, pct: current.elapsed / METEOR_FALL_MS });
+    }
+  }
+
   useGameLoop(
     (dtMs) => {
       const shot = shotRef.current;
@@ -246,6 +284,7 @@ export function InvadersGeneric({
       }
       if (busyRef.current) return;
       tickCapsule(dtMs);
+      tickMeteor(dtMs);
       const result = advanceInvaders(positionsRef.current, dtMs, waveTickMs, shipCol);
       positionsRef.current = result.positions;
       if (result.hits.length) {
@@ -257,7 +296,7 @@ export function InvadersGeneric({
           setLives(remaining);
           if (remaining <= 0) { endGame(false, correctCount); return; }
         }
-        fx.oops({ x: colX(shipCol), y: 80 }, "¡Impacto en la nave!");
+        fx.hit({ x: colX(shipCol), y: 80 }, "¡Impacto en la nave!");
       }
       if (result.dodged.length) fx.award(15 * result.dodged.length, { x: 50, y: 75 }, { chain: false, burst: false, label: "¡Esquivado!", tone: "bonus" });
       paintRef.current += dtMs;
@@ -381,6 +420,9 @@ export function InvadersGeneric({
                   </button>
                 ))}
               </div>
+              {meteor && (
+                <div aria-hidden="true" data-meteor-col={meteor.col} className={`${reducedMotion ? "" : "transition-[top] duration-100 ease-linear"} arcade-meteor arcade-hazard pointer-events-none absolute z-10 size-6 -translate-x-1/2 rounded-full`} style={{ left: `${colX(meteor.col)}%`, top: `${meteor.pct * 80}%` }} />
+              )}
               {capsule && (
                 <div aria-hidden="true" data-capsule-col={capsule.col} className={`${reducedMotion ? "" : "transition-[top] duration-100 ease-linear"} arcade-bonus-item pointer-events-none absolute z-10 size-5 -translate-x-1/2 rounded-full border-2 border-yellow-100 bg-gradient-to-br from-yellow-200 to-amber-500 shadow-[0_0_14px_#facc15]`} style={{ left: `${colX(capsule.col)}%`, top: `${capsule.pct * 80}%` }} />
               )}

@@ -28,6 +28,9 @@ const OBSTACLE_TICK_STEP_MS = -60;
 const OBSTACLE_TICK_FLOOR_MS = 220;
 /** En la clase el obstáculo va más lento: cruzar no debe depender de reflejos. */
 const LESSON_OBSTACLE_TICK_MS = 900;
+/** Nivel 4+: un segundo cocodrilo en sentido contrario. Nivel 7+: más rápidos. */
+const SECOND_CROC_LEVEL = 4;
+const FAST_CROC_LEVEL = 7;
 const HOP_POINTS = 20;
 const NEAR_MISS_POINTS = 40;
 const LILY_POINTS = 150;
@@ -105,6 +108,8 @@ export function FroggerGeneric({
   const [candidates, setCandidates] = useState<number[]>([]);
   const [obstacleX, setObstacleX] = useState(COLS - 1);
   const [obstacleDirection, setObstacleDirection] = useState(-1);
+  const [croc2X, setCroc2X] = useState<number | null>(null);
+  const [croc2Direction, setCroc2Direction] = useState(1);
   const [moving, setMoving] = useState(false);
   const [hopping, setHopping] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -136,7 +141,7 @@ export function FroggerGeneric({
 
   const wave = waveIndex(correctCount, 1);
   const obstacleTickMs = exercise
-    ? scaleWithWave(LESSON_OBSTACLE_TICK_MS, -60, exercise.round ?? 0, 600)
+    ? scaleWithWave(LESSON_OBSTACLE_TICK_MS, -60, (exercise.round ?? 0) + fx.boost, fx.level >= FAST_CROC_LEVEL ? 420 : 600)
     : scaleWithWave(OBSTACLE_TICK_BASE_MS, OBSTACLE_TICK_STEP_MS, wave, OBSTACLE_TICK_FLOOR_MS);
 
   function spawnCheckpoint(count = correctCount) {
@@ -147,6 +152,9 @@ export function FroggerGeneric({
     setObstacleX(count % 2 ? 0 : COLS - 1);
     obstacleDirRef.current = count % 2 ? 1 : -1;
     setObstacleDirection(count % 2 ? 1 : -1);
+    // El segundo cocodrilo sale del borde contrario y nada en sentido opuesto.
+    setCroc2X(fx.level >= SECOND_CROC_LEVEL ? (count % 2 ? COLS - 1 : 0) : null);
+    setCroc2Direction(count % 2 ? -1 : 1);
     accRef.current = 0;
     lilyAccRef.current = 0;
   }
@@ -244,10 +252,15 @@ export function FroggerGeneric({
     }
   }
 
+  /** ¿Hay un cocodrilo en esa columna del río? */
+  function crocAt(col: number) {
+    return col === obstacleX || col === croc2X;
+  }
+
   function handleHit() {
     hopRef.current = 0;
     setHopping(false);
-    fx.oops({ x: colX(obstacleX), y: SCENE_ROW_Y.river }, "¡Ñac!");
+    fx.hit({ x: colX(frogX), y: SCENE_ROW_Y.river }, "¡Ñac!");
     if (exercise) {
       // Chocar es un fallo de reflejos: sin vidas ni respuesta, vuelve a la orilla.
       setReflexMiss(true);
@@ -275,7 +288,7 @@ export function FroggerGeneric({
     setHopping(true);
     setRow(newRow);
     if (isObstacleRow(newRow)) {
-      if (frogX === obstacleX) handleHit();
+      if (crocAt(frogX)) handleHit();
       else fx.award(HOP_POINTS, { x: colX(frogX), y: SCENE_ROW_Y.river }, { burst: false, sound: "pop" });
     } else if (isCheckpointRow(newRow)) {
       resolveCheckpoint(frogX);
@@ -291,7 +304,7 @@ export function FroggerGeneric({
     hopRef.current = 180;
     setHopping(true);
     if (isObstacleRow(newRow)) {
-      if (frogX === obstacleX) handleHit();
+      if (crocAt(frogX)) handleHit();
     }
   }
 
@@ -303,7 +316,7 @@ export function FroggerGeneric({
     setMoving(true);
     hopRef.current = 180;
     setHopping(true);
-    if (isObstacleRow(row) && next === obstacleX) handleHit();
+    if (isObstacleRow(row) && crocAt(next)) handleHit();
   }
   function handleRight() {
     if (busyRef.current || controlsDisabled || shownPhase !== "playing" || hopRef.current > 0) return;
@@ -313,7 +326,7 @@ export function FroggerGeneric({
     setMoving(true);
     hopRef.current = 180;
     setHopping(true);
-    if (isObstacleRow(row) && next === obstacleX) handleHit();
+    if (isObstacleRow(row) && crocAt(next)) handleHit();
   }
 
   useGameLoop(
@@ -345,7 +358,20 @@ export function FroggerGeneric({
       obstacleDirRef.current = dir;
       setObstacleDirection(dir);
       setObstacleX(next);
-      if (isObstacleRow(row) && next === frogX) handleHit();
+      let next2: number | null = null;
+      if (croc2X !== null) {
+        let dir2 = croc2Direction;
+        next2 = croc2X + dir2;
+        // Rebota en los bordes y no se monta sobre el otro cocodrilo.
+        if (next2 < 0 || next2 >= COLS || next2 === next) {
+          dir2 = -dir2;
+          next2 = croc2X + dir2;
+          if (next2 < 0 || next2 >= COLS || next2 === next) next2 = croc2X;
+        }
+        setCroc2Direction(dir2);
+        setCroc2X(next2);
+      }
+      if (isObstacleRow(row) && (next === frogX || next2 === frogX)) handleHit();
       // Esquivar por una casilla: puntos de estilo, sin efecto en la pregunta.
       else if (isObstacleRow(row) && Math.abs(next - frogX) === 1 && Math.abs(obstacleX - frogX) === 2)
         fx.award(NEAR_MISS_POINTS, { x: colX(frogX), y: SCENE_ROW_Y.river - 18 }, { label: "¡Por poco!", tone: "bonus" });
@@ -367,6 +393,7 @@ export function FroggerGeneric({
 
   const progressPct = Math.min(100, (shownCount / goal) * 100);
   const inObstacleRow = isObstacleRow(row);
+  const nextCroc2 = croc2X === null ? null : croc2X + (croc2X + croc2Direction < 0 || croc2X + croc2Direction >= COLS ? -croc2Direction : croc2Direction);
   const nextObstacle = obstacleX + (obstacleX + obstacleDirection < 0 || obstacleX + obstacleDirection >= COLS ? -obstacleDirection : obstacleDirection);
 
   return (
@@ -463,8 +490,9 @@ export function FroggerGeneric({
               <div className="grid w-full gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
                   <div key={col} data-river-cell=""
-                    className={`${reducedMotion ? "" : "transition-colors duration-150"} flex aspect-[4/3] items-center justify-center rounded-lg ${col === nextObstacle ? "ring-1 ring-inset ring-dashed ring-sky-200" : ""} ${col === obstacleX ? (inObstacleRow ? "bg-red-600" : "bg-red-900/60") : "bg-slate-800"}`}>
-                    {col === obstacleX ? <span className="size-full" style={{ transform: obstacleDirection < 0 ? "scaleX(-1)" : undefined }}><ArcadeSprite kind="crocodile" className="size-full" /></span> : inObstacleRow && frogX === col ? <span className={hopping ? "arcade-hop size-10" : "size-10"}><ArcadeSprite kind="frog" className="size-full" /></span> : <span className="text-sky-200/80">{col === nextObstacle ? obstacleX > nextObstacle ? "←" : "→" : "≈"}</span>}
+                    className={`${reducedMotion ? "" : "transition-colors duration-150"} flex aspect-[4/3] items-center justify-center rounded-lg ${col === nextObstacle || col === nextCroc2 ? "ring-1 ring-inset ring-dashed ring-sky-200" : ""} ${crocAt(col) ? (inObstacleRow ? "bg-red-600" : "bg-red-900/60") : "bg-slate-800"}`}>
+                    {col === obstacleX ? <span className="size-full" style={{ transform: obstacleDirection < 0 ? "scaleX(-1)" : undefined }}><ArcadeSprite kind="crocodile" className="size-full" /></span>
+                      : col === croc2X ? <span data-croc2="" className="size-full" style={{ transform: croc2Direction < 0 ? "scaleX(-1)" : undefined, filter: "hue-rotate(60deg)" }}><ArcadeSprite kind="crocodile" className="size-full" /></span> : inObstacleRow && frogX === col ? <span className={hopping ? "arcade-hop size-10" : "size-10"}><ArcadeSprite kind="frog" className="size-full" /></span> : <span className="text-sky-200/80">{col === nextObstacle ? obstacleX > nextObstacle ? "←" : "→" : col === nextCroc2 ? croc2X! > nextCroc2 ? "←" : "→" : "≈"}</span>}
                   </div>
                 ))}
               </div>
