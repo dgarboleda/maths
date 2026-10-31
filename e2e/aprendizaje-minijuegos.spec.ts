@@ -267,6 +267,10 @@ test("Bloques: el rebote lateral alcanza la respuesta apuntada y se guarda una s
   await expect(board).toHaveAttribute("data-held", "true");
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await testInfo.attach("bloques", { body: await page.screenshot(), contentType: "image/png" });
+  await expect(board.locator("[data-barrier]")).toHaveCount(5);
+  await page.getByRole("button", { name: "Lanzar la pelota", exact: true }).click();
+  await expect(board.locator("[data-barrier]")).toHaveCount(4);
+  await expect(board).toHaveAttribute("data-held", "true");
   const answer = savedAnswer(page);
   await page.getByRole("button", { name: "Lanzar la pelota", exact: true }).click();
   const saved = (await (await answer).json()).result;
