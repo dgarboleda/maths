@@ -46,6 +46,8 @@ export interface LessonExercise {
   failedAttempts?: number;
   session?: ArcadeSession;
   input: ReactNode;
+  /** Controles de la práctica que se muestran dentro del tablero. */
+  controls?: ReactNode;
   /** Reanuda una partida pausada cuando la ayuda y el guardado lo permiten. */
   onResume?: () => boolean;
   onResponse: (value: number) => Promise<boolean>;

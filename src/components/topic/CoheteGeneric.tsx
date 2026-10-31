@@ -205,6 +205,7 @@ export function CoheteGeneric({
 
   return (
     <div ref={cabinetRef} data-game="cohete" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-indigo-500 bg-slate-900 p-3 sm:p-6 text-white shadow-2xl">
+      {exercise?.controls}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-30"
