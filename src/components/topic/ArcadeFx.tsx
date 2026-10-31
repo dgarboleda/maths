@@ -219,12 +219,13 @@ const PARTICLES = Array.from({ length: 10 }, (_, i) => {
   return { dx: Math.cos(angle) * distance, dy: Math.sin(angle) * distance };
 });
 
-/** Efectos del escenario (`scene`) o de toda la máquina (`cabinet`). El
+/** Efectos del escenario (`scene`) o de toda la máquina (`cabinet`). Es un
+ *  `span` para no contar como casilla en los tableros de cuadrícula. El
  *  contenedor debe tener `position: relative`. */
 export function ArcadeFxLayer({ fx, scope = "scene" }: { fx: ArcadeFx; scope?: FxScope }) {
   const shown = fx.items.filter((item) => item.scope === scope);
   return (
-    <div aria-hidden="true" data-arcade-fx={scope} className={`arcade-fx-layer ${scope === "cabinet" ? "arcade-fx-cabinet" : ""}`}>
+    <span aria-hidden="true" data-arcade-fx={scope} className={`arcade-fx-layer ${scope === "cabinet" ? "arcade-fx-cabinet" : ""}`}>
       {shown.map((item) =>
         item.kind === "burst" ? (
           <span key={item.id} className={`arcade-burst arcade-tone-${item.tone}`} style={{ left: `${item.x}%`, top: `${item.y}%` }}>
@@ -242,7 +243,7 @@ export function ArcadeFxLayer({ fx, scope = "scene" }: { fx: ArcadeFx; scope?: F
           </span>
         ),
       )}
-    </div>
+    </span>
   );
 }
 
