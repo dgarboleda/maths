@@ -14,6 +14,9 @@ const GRUPOS: Record<string, readonly (keyof typeof budgets)[]> = {
   "1": ["login", "aprendizaje", "aventura"],
   "2": ["juego", "editor"],
 };
+// Una página con presupuesto pero sin grupo nunca se auditaría en CI.
+const sinGrupo = Object.keys(budgets).filter((name) => !Object.values(GRUPOS).some((g) => g.includes(name as keyof typeof budgets)));
+if (sinGrupo.length) throw new Error(`Presupuestos sin PERF_GRUPO: ${sinGrupo.join(", ")}`);
 const grupo = process.env.PERF_GRUPO;
 if (grupo && !GRUPOS[grupo]) throw new Error(`PERF_GRUPO desconocido: ${grupo}`);
 const toca = (name: keyof typeof budgets) => !grupo || GRUPOS[grupo].includes(name);
