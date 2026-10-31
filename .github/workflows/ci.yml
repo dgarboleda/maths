@@ -83,7 +83,7 @@ jobs:
       - run: npm run test:integration
 
   e2e:
-    name: Pruebas de extremo a extremo (shard ${{ matrix.shard }}/2)
+    name: Pruebas de extremo a extremo (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     # Red de seguridad: si algo se cuelga, que falle en vez de ocupar un
     # runner durante horas.
@@ -93,14 +93,16 @@ jobs:
       # propio resultado.
       fail-fast: false
       matrix:
-        # Cuántos shards: subir este número (y el "/2" del paso de abajo, y
+        # Cuántos shards: subir este número (y el "/4" del paso de abajo, y
         # del nombre del job, al mismo valor) reparte el mismo trabajo entre
         # más runners en paralelo — nunca hace falta tocar
         # `playwright.config.ts` ni reorganizar archivos, sea cual sea la
         # cantidad que haya en e2e/ el día de mañana. `--shard` reparte
         # TESTS, no archivos, así que el reparto queda parejo aunque un
         # archivo tenga mucho más peso que otro.
-        shard: [1, 2]
+        # Con 2 shards las pruebas tomaban ~4–5 min por runner frente a
+        # ~1,2 min de preparación fija; con 4 la espera total baja a la mitad.
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -115,7 +117,7 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix functions
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test --shard=${{ matrix.shard }}/2
+      - run: npx playwright test --shard=${{ matrix.shard }}/4
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
@@ -124,11 +126,18 @@ jobs:
           retention-days: 1
 
   presupuesto-rendimiento:
-    name: Presupuesto de rendimiento (Lighthouse)
+    name: Presupuesto de rendimiento (Lighthouse, grupo ${{ matrix.grupo }})
     runs-on: ubuntu-latest
     # Red de seguridad: instalar/lanzar Chrome y 5 corridas de Lighthouse no
     # deberían tardar tanto, pero que falle en vez de colgar el runner.
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cada auditoría tarda ~1 min; repartir las cinco páginas en dos
+        # runners (ver PERF_GRUPO en performance/performance.spec.ts) deja el
+        # job a la par de las e2e en vez de alargar la espera total.
+        grupo: [1, 2]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -144,10 +153,12 @@ jobs:
       - run: npx playwright install --with-deps chromium
       # Build de producción + sesión real: login, clase, aventura, juego y editor.
       - run: npm run perf
+        env:
+          PERF_GRUPO: ${{ matrix.grupo }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: rendimiento
+          name: rendimiento-${{ matrix.grupo }}
           path: performance-reports/
 
   seguridad:
