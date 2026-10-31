@@ -173,4 +173,42 @@ describe("FroggerGeneric", () => {
     }
     expect(screen.getByText("¡Cruzaste el estanque!")).toBeInTheDocument();
   });
+
+  test("si falla el guardado tras varios aciertos, informa el problema y no repite la respuesta", async () => {
+    mockAllCorrect();
+    const onAnswer = vi.fn().mockResolvedValueOnce(1).mockResolvedValueOnce(1).mockRejectedValueOnce(new Error("sin conexión"));
+    const onWin = vi.fn();
+    render(<FroggerGeneric moduleId="test-module" soundOn={false} onAnswer={onAnswer} onWin={onWin} />);
+    fireEvent.click(screen.getByText("¡Empezar!"));
+    await crossCheckpoint(1);
+    await crossCheckpoint(2);
+    await fireKey("ArrowUp");
+    await fireKey("ArrowUp");
+    expect(screen.getByRole("alert")).toHaveTextContent("No se pudo confirmar el guardado");
+    expect(onWin).not.toHaveBeenCalled();
+    expect(onAnswer).toHaveBeenCalledTimes(3);
+    await fireKey("ArrowUp");
+    expect(onAnswer).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "2");
+  });
+
+  test("muestra que está guardando y continúa cuando termina", async () => {
+    vi.useFakeTimers();
+    mockAllCorrect();
+    let finish!: (stars: number) => void;
+    const onAnswer = vi.fn(() => new Promise<number>((resolve) => { finish = resolve; }));
+    render(<FroggerGeneric moduleId="test-module" soundOn={false} onAnswer={onAnswer} />);
+    fireEvent.click(screen.getByText("¡Empezar!"));
+    await fireKey("ArrowUp");
+    await fireKey("ArrowUp");
+    expect(screen.getByText("Guardando tu respuesta…")).toBeInTheDocument();
+    await act(async () => { await vi.advanceTimersByTimeAsync(8_000); });
+    expect(screen.getByText(/El guardado está tardando/)).toBeInTheDocument();
+    await fireKey("ArrowUp");
+    expect(onAnswer).toHaveBeenCalledTimes(1);
+    await act(async () => finish(1));
+    expect(screen.queryByText(/El guardado está tardando/)).not.toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "1");
+    vi.useRealTimers();
+  });
 });

@@ -23,6 +23,8 @@ La práctica conserva las preguntas de la clase y su corrección en Functions. E
 
 Las pausas detienen vuelos, saltos, desplazamientos y animaciones decorativas. Las animaciones decorativas respetan «reducir movimiento». Los fallos de reflejos de la clase no se registran como respuestas matemáticas. Los sonidos mantienen la preferencia existente.
 
+En Estanque se indica cuándo se está guardando una respuesta y si el guardado tarda más de ocho segundos. Si falla de forma inesperada, el juego muestra una alerta y no reenvía automáticamente: en el recorrido anterior el guardado comprende varias operaciones y una podría haber terminado antes del fallo. El estudiante puede salir y revisar su avance antes de volver a responder.
+
 Al empezar se coloca el enunciado al inicio de la vista y se le da el foco para leerlo y jugar con el teclado. Mover al personaje o pausar no vuelve a desplazar la página. El tablero y los controles quedan a continuación del problema, también en móvil.
 
 La geometría de los rebotes se prueba para las cinco columnas y los tres tiros. Las pruebas de componentes comprueban pausa, respuestas únicas, ausencia de respuestas automáticas antes de actuar, turbo y obstáculos. Los E2E recorren el guardado real con emuladores, en móvil y escritorio, y comprueban accesibilidad.

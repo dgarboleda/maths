@@ -3,7 +3,7 @@
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
 import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./ArcadeFx";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
 import { type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
@@ -107,12 +107,20 @@ export function FroggerGeneric({
   const [obstacleDirection, setObstacleDirection] = useState(-1);
   const [moving, setMoving] = useState(false);
   const [hopping, setHopping] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [slowSaving, setSlowSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  useEffect(() => {
+    if (!saving) return;
+    const timeout = window.setTimeout(() => setSlowSaving(true), 8_000);
+    return () => window.clearTimeout(timeout);
+  }, [saving]);
   const hopRef = useRef(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
   const shownPhase = exercise?.solved ? "over" : phase;
-  const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused);
+  const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused || saveError);
   const promptFocus = useArcadeFocus(shownPhase === "playing", controlsDisabled);
   const shownCount = exercise ? (exercise.round ?? 0) + Number(exercise.solved) : correctCount;
   const shownWin = exercise ? exercise.solved : win;
@@ -169,6 +177,9 @@ export function FroggerGeneric({
     obstacleDirRef.current = 1;
     accRef.current = 0;
     busyRef.current = false;
+    setSaving(false);
+    setSlowSaving(false);
+    setSaveError(false);
     setLives(LIVES_START);
     setCorrectCount(0);
     setStarsThisRound(0);
@@ -189,41 +200,46 @@ export function FroggerGeneric({
       return;
     }
     busyRef.current = true;
-    if (exercise) {
-      fx.pop("¡Splash!", at, "info");
-      fx.burst(at, "info");
-      setReflexMiss(false);
-      try {
+    setSlowSaving(false);
+    setSaving(true);
+    try {
+      if (exercise) {
+        fx.pop("¡Splash!", at, "info");
+        fx.burst(at, "info");
+        setReflexMiss(false);
         // Se envía el valor del nenúfar: ni el resultado ni premios se deciden aquí.
         await exercise.onResponse(candidates[chosenX]);
         setRow(startRow);
-      } finally {
-        busyRef.current = false;
-      }
-      return;
-    }
-    const correct = candidates[chosenX] === problem.answer;
-    playSound(correct ? "correct" : "wrong", soundOn);
-    if (correct) fx.award(LILY_POINTS, at, { sound: "pop" });
-    else fx.oops(at, "¡Glup!");
-    const stars = await onAnswer(correct);
-    if (correct) {
-      const next = correctCount + 1;
-      setStarsThisRound((s) => s + stars);
-      setCorrectCount(next);
-      if (next >= GOAL) {
-        endGame(true, next);
         return;
       }
-      spawnCheckpoint(next);
+      const correct = candidates[chosenX] === problem.answer;
+      const stars = await onAnswer(correct);
+      playSound(correct ? "correct" : "wrong", soundOn);
+      if (correct) {
+        fx.award(LILY_POINTS, at, { sound: "pop" });
+        const next = correctCount + 1;
+        setStarsThisRound((s) => s + stars);
+        setCorrectCount(next);
+        if (next >= GOAL) {
+          endGame(true, next);
+          return;
+        }
+        spawnCheckpoint(next);
+        return;
+      }
+      fx.oops(at, "¡Glup!");
+      // Incorrecto: vuelve al carril con una pregunta nueva.
+      setRow((r) => Math.min(r + 1, START_ROW));
+      spawnCheckpoint();
+    } catch {
+      // El guardado anterior puede haber llegado parcialmente al servidor. No
+      // repetirlo automáticamente evita crear una segunda respuesta o premio.
+      setSaveError(true);
+    } finally {
       busyRef.current = false;
-      return;
+      setSaving(false);
+      setSlowSaving(false);
     }
-    // Incorrecto: retrocede al carril-obstáculo recién cruzado y arma una
-    // pregunta nueva para el reintento — nunca termina la partida.
-    setRow((r) => Math.min(r + 1, START_ROW));
-    spawnCheckpoint();
-    busyRef.current = false;
   }
 
   function handleHit() {
@@ -403,6 +419,8 @@ export function FroggerGeneric({
             </div>
 
             <ArcadeScoreBar fx={fx} />
+            {saving && <p role="status" className="text-sm text-sky-100">{slowSaving ? "El guardado está tardando. Puedes salir y revisar tu avance antes de volver a responder." : "Guardando tu respuesta…"}</p>}
+            {saveError && <p role="alert" className="rounded-xl bg-amber-950 p-3 text-sm text-amber-100">No se pudo confirmar el guardado. La respuesta podría haberse guardado parcialmente. Sal del juego y vuelve a entrar para revisar tu avance.</p>}
             {exercise ? <ReflexNotice show={reflexMiss} message={FROGGER_MISS} /> : <div className="flex items-center justify-between rounded-xl border border-sky-700 bg-sky-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
@@ -459,7 +477,7 @@ export function FroggerGeneric({
             {exercise && (exercise.round ?? 0) > 0 && <p className="text-xs text-sky-100">Los nenúfares cambian de lugar mientras esperas en la orilla. Al entrar al río se quedan quietos.</p>}
 
             <p className="text-xs text-sky-100">La flecha marca el próximo paso del cocodrilo. Espera en la orilla para encontrar tu hueco.</p>
-            <TouchDPad inline repeat={false} disabled={controlsDisabled} onMove={onTouchMove} />
+            <TouchDPad inline repeat={false} disabled={controlsDisabled || saving} onMove={onTouchMove} />
           </div>
         )}
 
