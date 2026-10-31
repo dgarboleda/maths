@@ -498,6 +498,12 @@ export function QuestionActivity({
       )}
     </form>
   );
+  const resumeArcade = () => {
+    if (disabled || locked || helpOpen) return false;
+    setManuallyPaused(false);
+    setAcknowledgedAttempts(evidence?.attempts ?? 0);
+    return true;
+  };
   const exercise: LessonExercise | null = problem ? {
     problem,
     solved: Boolean(evidence?.correct),
@@ -511,6 +517,7 @@ export function QuestionActivity({
     failedAttempts: evidence && !evidence.correct ? evidence.attempts : 0,
     session: arcadeSession,
     input: answerForm,
+    onResume: helpOpen ? undefined : resumeArcade,
     onResponse: (value) => {
       setResponse(String(value));
       return run({ kind: "answer", questionId: question.id, response: String(value) });
@@ -578,8 +585,7 @@ export function QuestionActivity({
                 disabled={disabled}
                 onClick={() => {
                   if (paused) {
-                    setManuallyPaused(false);
-                    setAcknowledgedAttempts(evidence?.attempts ?? 0);
+                    resumeArcade();
                   } else setManuallyPaused(true);
                 }}
               >

@@ -121,6 +121,7 @@ export function FroggerGeneric({
   const [win, setWin] = useState(false);
   const shownPhase = exercise?.solved ? "over" : phase;
   const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused || saveError);
+  const canResumeFromStart = Boolean(exercise?.paused && !exercise.disabled && !saveError && exercise.onResume);
   const promptFocus = useArcadeFocus(shownPhase === "playing", controlsDisabled);
   const shownCount = exercise ? (exercise.round ?? 0) + Number(exercise.solved) : correctCount;
   const shownWin = exercise ? exercise.solved : win;
@@ -165,7 +166,8 @@ export function FroggerGeneric({
   useContinueArcade(exercise, start);
 
   function start() {
-    if (controlsDisabled) return;
+    if (phase === "playing") return;
+    if (controlsDisabled && !(canResumeFromStart && exercise?.onResume?.())) return;
     playSound("click", soundOn);
     setReflexMiss(false);
     setRow(startRow);
@@ -390,8 +392,8 @@ export function FroggerGeneric({
             <button
               type="button"
               onClick={start}
-              disabled={controlsDisabled}
-              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-lime-400 to-sky-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
+              disabled={controlsDisabled && !canResumeFromStart}
+              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-lime-400 to-sky-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
             >
               ¡Empezar!
             </button>

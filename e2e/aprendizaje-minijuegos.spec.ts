@@ -119,8 +119,10 @@ test("Estanque: pausa, error, pista, recarga y acierto guardados sin acreditar d
   await expect(page.getByText(q.hints[0], { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByText(q.hints[0], { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Reanudar partida" }).click();
+  await expect(page.getByText(/La partida está en pausa/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "¡Empezar!", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
+  await expect(page.getByText(/La partida está en pausa/)).toHaveCount(0);
   await page.screenshot({ path: test.info().outputPath("estanque.png"), fullPage: true });
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   const corrected = savedAnswer(page);

@@ -86,6 +86,24 @@ test("Estanque: los nenúfares rotan en la orilla y se congelan al pausar", () =
   expect(data.onResponse).not.toHaveBeenCalled();
 });
 
+test("Estanque: empezar reanuda una partida pausada sin enviar respuestas", () => {
+  const onResume = vi.fn(() => true);
+  const data = exercise({ paused: true, onResume });
+  const view = render(<FroggerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  expect(onResume).toHaveBeenCalledOnce();
+  expect(data.onResponse).not.toHaveBeenCalled();
+  expect(view.container.querySelector("[data-board]")).toBeInTheDocument();
+});
+
+test("Estanque: empezar no reanuda mientras se guarda", () => {
+  const onResume = vi.fn(() => true);
+  const data = exercise({ paused: true, disabled: true, onResume });
+  render(<FroggerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  expect(screen.getByRole("button", { name: "¡Empezar!" })).toBeDisabled();
+  expect(onResume).not.toHaveBeenCalled();
+});
+
 test("Estanque: la pausa congela el juego, chocar no cuenta y un guardado fallido permite reintentar", async () => {
   vi.useFakeTimers();
   const data = exercise({ paused: true, onResponse: vi.fn(async () => false) });
