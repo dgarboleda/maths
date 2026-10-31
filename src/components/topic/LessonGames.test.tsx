@@ -122,6 +122,33 @@ function tick(ms: number) {
 }
 // Opciones de la clase en orden: [-4, -3, -2, -1, 0]; la respuesta es -2.
 
+test("Invasión revela la oleada gradualmente, congela la aparición en pausa y no responde sola", () => {
+  vi.useFakeTimers();
+  const data = exercise();
+  const view = render(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  expect(screen.getAllByRole("button", { name: /Apuntar a/ })).toHaveLength(1);
+  tick(700);
+  expect(screen.getAllByRole("button", { name: /Apuntar a/ })).toHaveLength(2);
+  view.rerender(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
+  tick(4_000);
+  expect(screen.getAllByRole("button", { name: /Apuntar a/ })).toHaveLength(2);
+  view.rerender(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  tick(2_500);
+  expect(screen.getAllByRole("button", { name: /Apuntar a/ })).toHaveLength(5);
+  expect(data.onResponse).not.toHaveBeenCalled();
+});
+
+test("la ronda siguiente espera a que termine la pausa antes de iniciar", () => {
+  const data = exercise({ round: 1, paused: true });
+  const view = render(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  expect(screen.getByRole("button", { name: "¡Empezar!" })).toBeDisabled();
+  view.rerender(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: false }} />);
+  expect(screen.getByText(data.problem.prompt)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "¡Empezar!" })).not.toBeInTheDocument();
+  expect(data.onResponse).not.toHaveBeenCalled();
+});
+
 test("Serpiente: chocar no envía respuesta ni termina; comer envía el valor", async () => {
   vi.useFakeTimers();
   const data = exercise();
@@ -207,7 +234,9 @@ test("Invasión: aterrizar no cuenta; disparar envía la columna apuntada", asyn
   key("ArrowRight");
   tick(900 * 5);
   expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
+  expect(screen.getByText("Escudo: 2/3")).toBeInTheDocument();
   expect(data.onResponse).not.toHaveBeenCalled();
+  tick(3_000); // vuelve a aparecer la oleada antes de disparar
   key("Space"); // columna central: -2
   expect(data.onResponse).not.toHaveBeenCalled();
   tick(400);
@@ -287,6 +316,7 @@ test("Invasión: la pausa congela un disparo y varias pulsaciones solo envían l
   const data = exercise();
   const view = render(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  tick(3_000);
   key("Space");
   key("Space");
   tick(150);
@@ -383,6 +413,8 @@ test("Invasión: tocar un blanco solo apunta y el disparo conserva su valor hast
   const data = exercise({ onResponse: vi.fn(() => new Promise<boolean>((resolve) => { finish = resolve; })) });
   render(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  expect(screen.queryByRole("button", { name: "Apuntar a 0" })).not.toBeInTheDocument();
+  tick(3_000);
   const target = screen.getByRole("button", { name: "Apuntar a −4" });
   fireEvent.click(target);
   tick(200);

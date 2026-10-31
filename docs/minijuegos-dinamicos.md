@@ -1,5 +1,15 @@
 # Dinámica de cuatro minijuegos
 
+## Práctica con rondas continuas
+
+La práctica conserva el juego elegido al pasar entre actividades numéricas de una clase. Se puede cambiar mediante el selector; las preguntas conceptuales conservan su formato propio. Después de avanzar manualmente a una actividad numérica, el mismo juego inicia la ronda cuando termina el guardado y no está en pausa. Los puntos arcade se acumulan en memoria durante la visita y se reinician al cambiar de juego; no sustituyen el avance ni las estrellas. Cada respuesta se guarda por separado mediante el flujo de la lección y se puede revisar su explicación antes de continuar. Al recargar se conserva el avance guardado, no la puntuación de la sesión.
+
+Los aciertos anteriores ajustan el reto: en Invasión aceleran el descenso; en Autopista, la puerta; en Estanque, el cocodrilo y su dirección inicial; en Serpiente y Laberinto, el movimiento; en Topos, la duración de aparición; en Bloques, el recorrido del disparo; en Cajas, se alterna el almacén. Cohete muestra el avance acumulado entre ejercicios y conserva su reloj opcional. Las velocidades tienen un límite; Cajas mantiene deshacer y no tiene reloj.
+
+En Invasión las naves aparecen una por una y no descienden hasta completar la formación. Apuntar y disparar siguen siendo acciones distintas. Si la formación aterriza se pierde una unidad del escudo y no se envía una respuesta; al agotarlo, se repone y se reduce la velocidad para el siguiente intento. Los tableros aprovechan más ancho en escritorio, con límites según la altura de pantalla.
+
+Estas son mejoras de la mecánica existente; no implementan todavía todos los obstáculos y escenarios propuestos para cada juego. El equilibrio de velocidad y la experiencia de lectura requieren pruebas con estudiantes.
+
 La práctica conserva las preguntas de la clase y su corrección en Functions. Estas mejoras cambian la interacción, sin modificar el catálogo, el protocolo 12, la economía de estrellas ni los datos guardados.
 
 | Juego | Dinámica |

@@ -15,6 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
 import { lessonArcadeState, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const GRID_SIZE = 8;
@@ -103,7 +104,7 @@ export function SnakeGeneric({
 }) {
   const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
-  const goal = lesson ? 1 : GOAL;
+  const goal = lesson ? (exercise?.rounds ?? 1) : GOAL;
   const [reflexMiss, setReflexMiss] = useState(false);
   // Clase: quieta hasta la primera flecha (tras empezar, chocar o responder).
   const [awaitingInput, setAwaitingInput] = useState(true);
@@ -123,13 +124,13 @@ export function SnakeGeneric({
   const [win, setWin] = useState(false);
   const [coin, setCoin] = useState<Cell | null>(null);
   const cabinetRef = useRef<HTMLDivElement>(null);
-  const fx = useArcadeFx({ game: "snake", soundOn, solved, cabinetRef });
+  const fx = useArcadeFx({ game: "snake", soundOn, solved, cabinetRef, session: exercise?.session });
 
   const dirRef = useRef<Cell>(INITIAL_DIR);
   const accRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer — evita comer dos veces a la vez
 
-  const wave = waveIndex(correctCount, WAVE_SIZE);
+  const wave = waveIndex(exercise?.round ?? correctCount, WAVE_SIZE);
   // Cada moneda acelera un poco la serpiente: más ritmo sin tocar la pregunta.
   const [coinsEaten, setCoinsEaten] = useState(0);
   const tickMs = Math.max(COIN_SPEED_FLOOR_MS, scaleWithWave(TICK_BASE_MS, TICK_STEP_MS, wave, TICK_FLOOR_MS) - coinsEaten * COIN_SPEED_STEP_MS);
@@ -170,6 +171,8 @@ export function SnakeGeneric({
     setSnake(INITIAL_SNAKE);
     spawnRound(INITIAL_SNAKE);
   }
+
+  useContinueArcade(exercise, start);
 
   function start() {
     if (frozen) return;
@@ -293,7 +296,7 @@ export function SnakeGeneric({
 
   const shownPhase = solved ? "over" : phase;
   const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
-  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownCount = lesson ? (exercise?.round ?? 0) + Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const progressPct = Math.min(100, (shownCount / goal) * 100);
   const facing = snake.length > 1 ? { x: snake[0].x - snake[1].x, y: snake[0].y - snake[1].y } : INITIAL_DIR;
@@ -307,7 +310,7 @@ export function SnakeGeneric({
       />
 
       <ArcadeFxLayer fx={fx} scope="cabinet" />
-      <div className="relative z-10 mx-auto max-w-md text-center">
+      <div className="relative z-10 mx-auto max-w-2xl text-center">
         <h2 className="mb-2 bg-gradient-to-r from-emerald-300 to-teal-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🐍 Serpiente numérica
         </h2>
@@ -369,7 +372,7 @@ export function SnakeGeneric({
             <div
               aria-hidden="true"
               data-snake-board="" data-head-x={snake[0].x} data-head-y={snake[0].y}
-              className="arcade-scene arcade-scene-garden relative mx-auto grid aspect-square w-full max-w-sm overflow-hidden rounded-2xl border-2 border-emerald-700"
+              className="arcade-scene arcade-scene-garden relative mx-auto grid aspect-square w-full max-w-[min(100%,36rem,65vh)] overflow-hidden rounded-2xl border-2 border-emerald-700"
               style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`, gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)` }}
             >
               {snake.map((seg, i) => (

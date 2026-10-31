@@ -174,6 +174,7 @@ test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; s
   await expect(page.getByText(/Vidas/)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   // En móvil se apunta directamente; el teclado sigue disponible en escritorio.
+  await expect(page.locator("main [data-invaders-board] [data-choice-label]")).toHaveCount(5);
   const columns = await page.locator("main [data-invaders-board] [data-choice-label]").allTextContents();
   const target = columns.findIndex((label) => label.trim() === "1/3");
   expect(target).toBeGreaterThanOrEqual(0);
@@ -190,6 +191,10 @@ test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; s
   expect(saved.progress.checkPassedAt).toBeNull();
   expect(saved.stars).toBe(0);
   await expect(page.getByRole("heading", { name: "¡Invasión repelida!" })).toBeVisible();
+  await page.getByRole("button", { name: "Siguiente actividad", exact: true }).click();
+  await expect(page.locator("main [data-invaders-board]")).toBeVisible();
+  await expect(page.getByText(getLesson("fracciones-unidad")!.practice[2].prompt, { exact: true })).toBeVisible();
+  await expect.poll(async () => Number(await page.locator("main [data-arcade-score]").getAttribute("data-arcade-score"))).toBeGreaterThanOrEqual(500);
 });
 
 test("Autopista: elegir carril y usar el turbo guarda el resultado de la clase", async ({ page }, testInfo) => {

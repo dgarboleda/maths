@@ -16,6 +16,7 @@ import { MAZE_SIZE, mazeWall, mazeChoiceCells, nextMazeGhost, reachableMaze } fr
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
 import { lessonArcadeState, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const GRID_SIZE = MAZE_SIZE;
@@ -110,7 +111,7 @@ export function NumberPacGeneric({
 }) {
   const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
-  const goal = lesson ? 1 : GOAL;
+  const goal = lesson ? (exercise?.rounds ?? 1) : GOAL;
   const [reflexMiss, setReflexMiss] = useState(false);
   // Cada pulsación da un paso. El fantasma espera el primer paso válido,
   // también al volver a empezar después de un choque o de una respuesta.
@@ -144,7 +145,7 @@ export function NumberPacGeneric({
     setEatenDotsState(next);
   }
   const cabinetRef = useRef<HTMLDivElement>(null);
-  const fx = useArcadeFx({ game: "numberpac", soundOn, solved, cabinetRef });
+  const fx = useArcadeFx({ game: "numberpac", soundOn, solved, cabinetRef, session: exercise?.session });
   const at = (c: Cell) => cellAt(c.x, c.y, GRID_SIZE);
 
   const movingRef = useRef(false);
@@ -152,7 +153,7 @@ export function NumberPacGeneric({
   const invulnRemainingRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
 
-  const wave = waveIndex(correctCount, WAVE_SIZE);
+  const wave = waveIndex(exercise?.round ?? correctCount, WAVE_SIZE);
   const ghostTickMs = scaleWithWave(GHOST_TICK_BASE_MS, GHOST_TICK_STEP_MS, wave, GHOST_TICK_FLOOR_MS);
   const pelletCount = Math.round(scaleWithWave(PELLET_COUNT_BASE, PELLET_COUNT_STEP, wave, PELLET_COUNT_MAX));
 
@@ -194,6 +195,8 @@ export function NumberPacGeneric({
       onWin?.();
     }
   }
+
+  useContinueArcade(exercise, start);
 
   function start() {
     if (frozen) return;
@@ -370,7 +373,7 @@ export function NumberPacGeneric({
 
   const shownPhase = solved ? "over" : phase;
   const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
-  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownCount = lesson ? (exercise?.round ?? 0) + Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const progressPct = Math.min(100, (shownCount / goal) * 100);
 
@@ -383,7 +386,7 @@ export function NumberPacGeneric({
       />
 
       <ArcadeFxLayer fx={fx} scope="cabinet" />
-      <div className="relative z-10 mx-auto max-w-md text-center">
+      <div className="relative z-10 mx-auto max-w-2xl text-center">
         <h2 className="mb-2 bg-gradient-to-r from-yellow-300 to-fuchsia-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🟡 Laberinto de números
         </h2>
@@ -465,7 +468,7 @@ export function NumberPacGeneric({
               data-shield={invulnerable}
               data-player-x={player.x} data-player-y={player.y}
               data-ghost-x={ghost.x} data-ghost-y={ghost.y}
-              className="arcade-scene arcade-scene-maze relative mx-auto grid aspect-square w-full max-w-sm overflow-hidden rounded-2xl border-2 border-yellow-700"
+              className="arcade-scene arcade-scene-maze relative mx-auto grid aspect-square w-full max-w-[min(100%,36rem,65vh)] overflow-hidden rounded-2xl border-2 border-yellow-700"
               style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}
             >
               {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, index) => {

@@ -13,6 +13,7 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
 import { lessonArcadeState, choiceLabel, arcadeValues, ChoiceText, PromptText, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const HOLES = 6; // 3 × 2
@@ -73,7 +74,7 @@ export function TopoGeneric({
 }) {
   const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
-  const goal = lesson ? 1 : GOAL;
+  const goal = lesson ? (exercise?.rounds ?? 1) : GOAL;
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
@@ -91,7 +92,7 @@ export function TopoGeneric({
   const goldRef = useRef<{ hole: number; until: number } | null>(null);
   const goldAccRef = useRef(0);
   const cabinetRef = useRef<HTMLDivElement>(null);
-  const fx = useArcadeFx({ game: "topos", soundOn, solved, cabinetRef });
+  const fx = useArcadeFx({ game: "topos", soundOn, solved, cabinetRef, session: exercise?.session });
   /** Centro aproximado de cada agujero en la pradera de 3 × 2. */
   const holeAt = (hole: number): FxAt => ({ x: ((hole % 3) + 0.5) * (100 / 3), y: Math.floor(hole / 3) === 0 ? 30 : 75 });
 
@@ -102,7 +103,7 @@ export function TopoGeneric({
   const busyRef = useRef(false); // true mientras se espera la respuesta
 
   const wave = waveIndex(correctCount, WAVE_SIZE);
-  const upMs = lesson ? LESSON_UP_MS : scaleWithWave(UP_BASE_MS, UP_STEP_MS, wave, UP_FLOOR_MS);
+  const upMs = lesson ? scaleWithWave(LESSON_UP_MS, -150, exercise?.round ?? 0, 2000) : scaleWithWave(UP_BASE_MS, UP_STEP_MS, wave, UP_FLOOR_MS);
 
   function spawnRound() {
     const nextProblem = newProblem();
@@ -158,6 +159,8 @@ export function TopoGeneric({
       onWin?.();
     }
   }
+
+  useContinueArcade(exercise, start);
 
   function start() {
     if (frozen) return;
@@ -292,7 +295,7 @@ export function TopoGeneric({
 
   const shownPhase = solved ? "over" : phase;
   const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
-  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownCount = lesson ? (exercise?.round ?? 0) + Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
@@ -305,7 +308,7 @@ export function TopoGeneric({
       />
 
       <ArcadeFxLayer fx={fx} scope="cabinet" />
-      <div className="relative z-10 mx-auto max-w-md text-center">
+      <div className="relative z-10 mx-auto max-w-2xl text-center">
         <h2 className="mb-2 bg-gradient-to-r from-amber-300 to-lime-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🐹 Topos numéricos
         </h2>
@@ -374,7 +377,7 @@ export function TopoGeneric({
               {calm && <button type="button" onClick={nextBatch} disabled={frozen || pending} className="arcade-option">Siguiente tanda</button>}
             </div>
             <p role="status" className="text-xs text-amber-100">{pending ? "Guardando el número elegido…" : calm ? "Los topos esperan. Cambia de tanda hasta ver el número que elegiste." : "Observa a los topos. Si necesitas leer sin reloj, activa «Sin prisas»."}</p>
-            <div role="group" aria-labelledby={promptId} className="arcade-scene arcade-scene-meadow relative mx-auto grid max-w-sm grid-cols-3 gap-3 rounded-2xl border-2 border-amber-700 p-3">
+            <div role="group" aria-labelledby={promptId} className="arcade-scene arcade-scene-meadow relative mx-auto grid max-w-[min(100%,36rem,65vh)] grid-cols-3 gap-3 rounded-2xl border-2 border-amber-700 p-3">
               {holes.map((mole, i) => !mole && gold === i && !calm ? (
                 <button key={i} type="button" onClick={() => whackGold(i)} disabled={frozen || pending}
                   aria-label="Topo dorado: puntos extra, no es una respuesta"

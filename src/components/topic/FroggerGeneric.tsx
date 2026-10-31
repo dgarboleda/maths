@@ -15,6 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
 import { arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
@@ -88,7 +89,7 @@ export function FroggerGeneric({
 }) {
   const generateProblem = () =>
     exercise?.problem ?? getModule(moduleId)!.generateProblem();
-  const goal = exercise ? 1 : GOAL;
+  const goal = exercise ? (exercise.rounds ?? 1) : GOAL;
   const startRow = goal * 2;
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
@@ -111,11 +112,11 @@ export function FroggerGeneric({
   const shownPhase = exercise?.solved ? "over" : phase;
   const controlsDisabled = Boolean(exercise?.disabled || exercise?.paused);
   const promptFocus = useArcadeFocus(shownPhase === "playing", controlsDisabled);
-  const shownCount = exercise ? Number(exercise.solved) : correctCount;
+  const shownCount = exercise ? (exercise.round ?? 0) + Number(exercise.solved) : correctCount;
   const shownWin = exercise ? exercise.solved : win;
   const [reflexMiss, setReflexMiss] = useState(false);
   const cabinetRef = useRef<HTMLDivElement>(null);
-  const fx = useArcadeFx({ game: "frogger", soundOn, solved: exercise?.solved, cabinetRef });
+  const fx = useArcadeFx({ game: "frogger", soundOn, solved: exercise?.solved, cabinetRef, session: exercise?.session });
 
   const obstacleDirRef = useRef(1);
   const accRef = useRef(0);
@@ -123,7 +124,7 @@ export function FroggerGeneric({
 
   const wave = waveIndex(correctCount, 1);
   const obstacleTickMs = exercise
-    ? LESSON_OBSTACLE_TICK_MS
+    ? scaleWithWave(LESSON_OBSTACLE_TICK_MS, -60, exercise.round ?? 0, 600)
     : scaleWithWave(OBSTACLE_TICK_BASE_MS, OBSTACLE_TICK_STEP_MS, wave, OBSTACLE_TICK_FLOOR_MS);
 
   function spawnCheckpoint(count = correctCount) {
@@ -149,6 +150,8 @@ export function FroggerGeneric({
     }
   }
 
+  useContinueArcade(exercise, start);
+
   function start() {
     if (controlsDisabled) return;
     playSound("click", soundOn);
@@ -168,7 +171,7 @@ export function FroggerGeneric({
     setWin(false);
     setPhase("playing");
     fx.start();
-    spawnCheckpoint();
+    spawnCheckpoint(exercise?.round ?? correctCount);
   }
 
   async function resolveCheckpoint(chosenX: number) {
@@ -344,7 +347,7 @@ export function FroggerGeneric({
       />
 
       <ArcadeFxLayer fx={fx} scope="cabinet" />
-      <div className="relative z-10 mx-auto max-w-md text-center">
+      <div className="relative z-10 mx-auto max-w-2xl text-center">
         <h2 className="mb-2 bg-gradient-to-r from-lime-300 to-sky-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🐸 Estanque de operaciones
         </h2>
@@ -415,8 +418,8 @@ export function FroggerGeneric({
                 obstáculo y orilla. La rana se dibuja en la fila donde está,
                 para que nunca parezca parada sobre un nenúfar que no eligió. */}
             <div aria-hidden="true" data-board="" data-frog-col={frogX} data-frog-lane={inObstacleRow ? "carril" : "orilla"} data-hopping={hopping} data-obstacle-col={obstacleX} data-obstacle-next={nextObstacle}
-              className="arcade-scene arcade-scene-pond relative mx-auto w-full max-w-sm space-y-2 overflow-hidden rounded-2xl border-2 border-sky-400/60 p-2">
-              <div className="grid w-full max-w-sm gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+              className="arcade-scene arcade-scene-pond relative mx-auto w-full max-w-[min(100%,36rem,65vh)] space-y-2 overflow-hidden rounded-2xl border-2 border-sky-400/60 p-2">
+              <div className="grid w-full max-w-[min(100%,36rem,65vh)] gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
                   <div key={col} data-lily="" className="arcade-hover arcade-value flex aspect-[4/3] items-center justify-center rounded-[40%] font-bold text-lime-50" style={{ animationDelay: `${-col * 0.3}s` }}>
                     {candidates[col] !== undefined && <ChoiceText problem={problem} value={candidates[col]} />}

@@ -15,6 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
+import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
 import { lessonArcadeState, choiceLabel, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const LANES = 3;
@@ -68,7 +69,7 @@ export function RunnerGeneric({
 }) {
   const newProblem = () => exercise?.problem ?? getModule(moduleId)!.generateProblem();
   const { lesson, frozen, solved } = lessonArcadeState(exercise);
-  const goal = lesson ? 1 : GOAL;
+  const goal = lesson ? (exercise?.rounds ?? 1) : GOAL;
   const [reflexMiss, setReflexMiss] = useState(false);
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
@@ -90,7 +91,7 @@ export function RunnerGeneric({
   const [turbo, setTurbo] = useState(false);
   const [pending, setPending] = useState(false);
   const cabinetRef = useRef<HTMLDivElement>(null);
-  const fx = useArcadeFx({ game: "runner", soundOn, solved: exercise?.solved, cabinetRef });
+  const fx = useArcadeFx({ game: "runner", soundOn, solved: exercise?.solved, cabinetRef, session: exercise?.session });
 
   // Cuenta regresiva "caliente": autoridad real de cuándo llega la próxima
   // puerta. Un `requestAnimationFrame` puede disparar muchos ticks dentro de
@@ -116,7 +117,7 @@ export function RunnerGeneric({
     if (exercise) setLane(NO_LANE);
     setRacing(!lesson);
     setTurbo(false);
-    const wave = waveIndex(countForWave, 1);
+    const wave = waveIndex(exercise?.round ?? countForWave, 1);
     const total = scaleWithWave(GATE_TIME_BASE_MS, GATE_TIME_STEP_MS, wave, GATE_TIME_FLOOR_MS);
     setGateTotalMs(total);
     remainingRef.current = total;
@@ -135,6 +136,8 @@ export function RunnerGeneric({
       onWin?.();
     }
   }
+
+  useContinueArcade(exercise, start);
 
   function start() {
     if (frozen) return;
@@ -273,7 +276,7 @@ export function RunnerGeneric({
 
   const shownPhase = solved ? "over" : phase;
   const promptFocus = useArcadeFocus(shownPhase === "playing", frozen);
-  const shownCount = lesson ? Number(solved) : correctCount;
+  const shownCount = lesson ? (exercise?.round ?? 0) + Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
   const gateApproachPct = Math.min(100, ((gateTotalMs - remainingMs) / gateTotalMs) * 100);
@@ -287,7 +290,7 @@ export function RunnerGeneric({
       />
 
       <ArcadeFxLayer fx={fx} scope="cabinet" />
-      <div className="relative z-10 mx-auto max-w-md text-center">
+      <div className="relative z-10 mx-auto max-w-2xl text-center">
         <h2 className="mb-2 bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🏎️ Autopista de resultados
         </h2>
@@ -358,7 +361,7 @@ export function RunnerGeneric({
             </div>
 
             <p role="status" className="text-sm font-semibold text-amber-200">{pending ? "Puerta cruzada. Guardando tu elección…" : !racing ? "Toca un carril o usa las flechas. Tú das la salida." : turbo ? "¡Turbo activado! Aún puedes cambiar de carril." : "¡En marcha! Cambia de carril o acelera con el turbo."}</p>
-            <div role="group" aria-label="Circuito: elige tu carril" data-runner-board="" data-lane={lane} data-racing={racing} className="arcade-scene arcade-road relative mx-auto w-full max-w-sm overflow-hidden rounded-2xl border-2 border-amber-500/70 bg-slate-900 p-2">
+            <div role="group" aria-label="Circuito: elige tu carril" data-runner-board="" data-lane={lane} data-racing={racing} className="arcade-scene arcade-road relative mx-auto w-full max-w-[min(100%,36rem,65vh)] overflow-hidden rounded-2xl border-2 border-amber-500/70 bg-slate-900 p-2">
               {lesson && lane === NO_LANE && (
                 <div className="flex h-10 items-center justify-center gap-2 rounded-lg border border-dashed border-amber-400 text-sm font-bold text-amber-200">
                   <ArcadeSprite kind="car" className="size-10" /> Elige tu carril
