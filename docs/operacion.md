@@ -97,7 +97,7 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=000000000000
 NEXT_PUBLIC_FIREBASE_APP_ID=1:000000000000:web:0000000000000000
 ```
 
-`npm run perf` construye con estos valores, arranca `next start` y mide con Lighthouse login, nivel real y editor autenticados. No apunta al proyecto de producción. En CI las auditorías se reparten en dos runners con `PERF_GRUPO` (1: login, clase y aventura; 2: juego y editor), cada uno con su propia sesión; sin la variable se auditan todas. Las e2e se reparten en cuatro shards. Para depurar un solo grupo en local: `PERF_GRUPO=2 npm run perf`. Los informes completos están en los adjuntos de `performance-reports/playwright`. Para volver a compilar una publicación real, usa `.env.local` y las variables de build reales con `npm run build`.
+`npm run perf` construye con estos valores, arranca `next start` y mide con Lighthouse login, nivel real y editor autenticados. No apunta al proyecto de producción. En CI las auditorías se reparten en dos runners con `PERF_GRUPO` (1: login, clase y aventura; 2: juego y editor), cada uno con su propia sesión; sin la variable se auditan todas. Las e2e se reparten por proyecto: escritorio en dos shards y móvil, que tarda casi el doble, en tres. Para depurar un solo grupo en local: `PERF_GRUPO=2 npm run perf`. Los informes completos están en los adjuntos de `performance-reports/playwright`. Para volver a compilar una publicación real, usa `.env.local` y las variables de build reales con `npm run build`.
 
 ## Dependencias y respaldos
 

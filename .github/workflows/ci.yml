@@ -83,7 +83,7 @@ jobs:
       - run: npm run test:integration
 
   e2e:
-    name: Pruebas de extremo a extremo (shard ${{ matrix.shard }}/4)
+    name: Pruebas de extremo a extremo (${{ matrix.project }} ${{ matrix.shard }}/${{ matrix.total }})
     runs-on: ubuntu-latest
     # Red de seguridad: si algo se cuelga, que falle en vez de ocupar un
     # runner durante horas.
@@ -93,16 +93,18 @@ jobs:
       # propio resultado.
       fail-fast: false
       matrix:
-        # Cuántos shards: subir este número (y el "/4" del paso de abajo, y
-        # del nombre del job, al mismo valor) reparte el mismo trabajo entre
-        # más runners en paralelo — nunca hace falta tocar
-        # `playwright.config.ts` ni reorganizar archivos, sea cual sea la
-        # cantidad que haya en e2e/ el día de mañana. `--shard` reparte
-        # TESTS, no archivos, así que el reparto queda parejo aunque un
-        # archivo tenga mucho más peso que otro.
-        # Con 2 shards las pruebas tomaban ~4–5 min por runner frente a
-        # ~1,2 min de preparación fija; con 4 la espera total baja a la mitad.
-        shard: [1, 2, 3, 4]
+        # `--shard` corta las pruebas en bloques consecutivos y proyecto por
+        # proyecto. Las de móvil tardan casi el doble que las de escritorio,
+        # así que cada proyecto se reparte por separado y móvil recibe un
+        # runner más. Los specs nuevos entran solos en su proyecto: no hace
+        # falta tocar esta lista. Para repartir distinto, cambia `total` y
+        # agrega o quita filas del mismo proyecto.
+        include:
+          - { project: chromium, slug: escritorio, shard: 1, total: 2 }
+          - { project: chromium, slug: escritorio, shard: 2, total: 2 }
+          - { project: móvil, slug: movil, shard: 1, total: 3 }
+          - { project: móvil, slug: movil, shard: 2, total: 3 }
+          - { project: móvil, slug: movil, shard: 3, total: 3 }
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -117,11 +119,11 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix functions
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test --shard=${{ matrix.shard }}/4
+      - run: npx playwright test --project="${{ matrix.project }}" --shard=${{ matrix.shard }}/${{ matrix.total }}
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: blob-report-${{ matrix.shard }}
+          name: blob-report-${{ matrix.slug }}-${{ matrix.shard }}
           path: blob-report/
           retention-days: 1
 
