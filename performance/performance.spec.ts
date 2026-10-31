@@ -5,6 +5,19 @@ import lighthouse from "lighthouse";
 import budgets from "./budgets.json";
 import { registrarPadre, crearHijo, entrarAlPerfil, idDeHijo, sembrarNivelConTerminal } from "../e2e/utilidades";
 
+/**
+ * En CI las cinco auditorías se reparten en dos runners con `PERF_GRUPO`
+ * (cada una tarda ~1 min). Sin la variable, como en `npm run perf` local, se
+ * auditan todas. Cada grupo crea su propia sesión real.
+ */
+const GRUPOS: Record<string, readonly (keyof typeof budgets)[]> = {
+  "1": ["login", "aprendizaje", "aventura"],
+  "2": ["juego", "editor"],
+};
+const grupo = process.env.PERF_GRUPO;
+if (grupo && !GRUPOS[grupo]) throw new Error(`PERF_GRUPO desconocido: ${grupo}`);
+const toca = (name: keyof typeof budgets) => !grupo || GRUPOS[grupo].includes(name);
+
 test("presupuesto de producción: login, clase, aventura, nivel y editor con sesión real", async ({ baseURL }, testInfo) => {
   test.setTimeout(420_000);
   const probe = createServer();
@@ -48,30 +61,40 @@ test("presupuesto de producción: login, clase, aventura, nivel y editor con ses
       expect(result.lhr.categories.accessibility.score).toBeGreaterThanOrEqual(budgets[name].accessibility);
     }
     await page.goto(new URL("/login", baseURL).href);
-    await audit("login", "/login");
+    if (toca("login")) await audit("login", "/login");
     const email = await registrarPadre(page);
     await crearHijo(page);
     await entrarAlPerfil(page, "Ana", "1234", email);
     const childId = idDeHijo(page);
-    const lessonRoute = `/jugar/${childId}/aprende/fraccion-cantidad`;
-    await page.goto(new URL(lessonRoute, baseURL).href);
-    await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Busca cuánto vale una parte" })).toBeVisible();
-    await audit("aprendizaje", lessonRoute);
-    const adventureRoute = `/jugar/${childId}/aventura/apagon`;
-    await page.goto(new URL(adventureRoute, baseURL).href);
-    await page.getByRole("button", { name: /Inspeccionar la central/ }).click();
-    await expect(page.getByText(/Reserva disponible: 120/)).toBeVisible();
-    await audit("aventura", adventureRoute);
-    const { levelId } = await sembrarNivelConTerminal(email, "aritmetica-d1");
-    const gameRoute = `/jugar/${childId}/nivel/${levelId}`;
-    await page.goto(new URL(gameRoute, baseURL).href);
-    await expect(page.getByText("Sala de prueba", { exact: true }).first()).toBeVisible();
-    await audit("juego", gameRoute);
-    const editorRoute = `/panel/editor/${levelId}`;
-    await page.goto(new URL(editorRoute, baseURL).href);
-    await expect(page.getByRole("textbox", { name: "Nombre del nivel" })).toBeVisible();
-    await audit("editor", editorRoute);
+    if (toca("aprendizaje")) {
+      const lessonRoute = `/jugar/${childId}/aprende/fraccion-cantidad`;
+      await page.goto(new URL(lessonRoute, baseURL).href);
+      await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Busca cuánto vale una parte" })).toBeVisible();
+      await audit("aprendizaje", lessonRoute);
+    }
+    if (toca("aventura")) {
+      const adventureRoute = `/jugar/${childId}/aventura/apagon`;
+      await page.goto(new URL(adventureRoute, baseURL).href);
+      await page.getByRole("button", { name: /Inspeccionar la central/ }).click();
+      await expect(page.getByText(/Reserva disponible: 120/)).toBeVisible();
+      await audit("aventura", adventureRoute);
+    }
+    if (toca("juego") || toca("editor")) {
+      const { levelId } = await sembrarNivelConTerminal(email, "aritmetica-d1");
+      if (toca("juego")) {
+        const gameRoute = `/jugar/${childId}/nivel/${levelId}`;
+        await page.goto(new URL(gameRoute, baseURL).href);
+        await expect(page.getByText("Sala de prueba", { exact: true }).first()).toBeVisible();
+        await audit("juego", gameRoute);
+      }
+      if (toca("editor")) {
+        const editorRoute = `/panel/editor/${levelId}`;
+        await page.goto(new URL(editorRoute, baseURL).href);
+        await expect(page.getByRole("textbox", { name: "Nombre del nivel" })).toBeVisible();
+        await audit("editor", editorRoute);
+      }
+    }
   } finally {
     await context.close();
     await rm(profileDir, { recursive: true, force: true });

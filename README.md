@@ -36,6 +36,7 @@ npm run functions:build      # TypeScript y marca de versión del backend
 npm test                     # Lógica, componentes y accesibilidad
 npm run test:integration     # Persistencia, reglas y callables reales
 npm run e2e                  # Chromium, escritorio y móvil
+npm run e2e:minijuegos       # Solo los recorridos de minijuegos (más rápido en local)
 npm run audit:security       # Auditoría de ambos paquetes
 npm run perf                 # Producción: login, clase, aventura, nivel y editor
 npm run build                # Worker completo de OpenNext
