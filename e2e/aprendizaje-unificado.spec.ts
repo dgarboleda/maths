@@ -44,7 +44,7 @@ test("plan, mapa e informe usan las clases actuales sin cargar el sistema anteri
   await page.screenshot({ path: testInfo.outputPath("mapa-educativo.png"), fullPage: true });
   await page.goto("/panel");
   const card = page.getByRole("region", { name: "Progreso de Alex", exact: true });
-  await expect(card.getByText("6 de 49 clases terminadas", { exact: true })).toBeVisible();
+  await expect(card.getByText(`6 de ${LESSONS.length} clases terminadas`, { exact: true })).toBeVisible();
   await expect(card.getByText("0 comprobaciones autónomas", { exact: true })).toBeVisible();
   for (const label of ["Editor", "Mundo", "Currícula"])
     await expect(page.getByRole("link", { name: label, exact: true })).toHaveCount(0);
