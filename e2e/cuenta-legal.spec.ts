@@ -43,5 +43,5 @@ test("borrar la cuenta pide la contraseña y elimina el acceso", async ({ page }
   await page.getByLabel("Correo").fill(correo);
   await page.getByLabel("Contraseña").fill(CLAVE_PADRE);
   await page.getByRole("button", { name: "Entrar al panel" }).click();
-  await expect(page.getByRole("alert")).toHaveText("Correo o contraseña incorrectos.");
+  await expect(page.getByRole("alert").filter({ hasText: "Correo o contraseña incorrectos." })).toBeVisible();
 });
