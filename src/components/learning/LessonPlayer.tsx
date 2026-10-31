@@ -198,7 +198,7 @@ export function LessonPlayer({
                       </p>
                     ),
                   )}
-                  <p className="overflow-x-auto rounded-xl bg-slate-950 p-4 font-mono text-cyan-200">
+                  <p className="overflow-x-auto rounded-xl bg-slate-950 p-4 text-lg font-semibold text-cyan-200">
                     <MathText text={lesson.sections[progress.index].formula} />
                   </p>
                   <LearningVisual key={lesson.visual} kind={lesson.visual} />
@@ -232,7 +232,7 @@ export function LessonPlayer({
                           <p className="text-xs font-bold uppercase text-cyan-200">
                             Paso {index + 1}
                           </p>
-                          <p className="mt-2 overflow-x-auto font-mono text-lg font-semibold">
+                          <p className="mt-2 overflow-x-auto text-lg font-semibold">
                             <MathText text={step.math} />
                           </p>
                           <p className="mt-2 text-sm leading-relaxed text-slate-300">
@@ -708,7 +708,7 @@ export function QuestionActivity({
               <div key={section.title}>
                 <p className="font-bold text-white">{section.title}</p>
                 <p><MathText text={section.paragraphs[0]} /></p>
-                <p className="mt-2 font-mono text-cyan-200">
+                <p className="mt-2 font-semibold text-cyan-200">
                   <MathText text={section.formula} />
                 </p>
               </div>

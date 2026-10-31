@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import { curve, Handle, num, Plane, Slider, snap, Toggle } from "./GraphVisuals";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
@@ -425,7 +426,7 @@ export function DistanceVisual({ id }: { id: string }) {
         </div>
       </div>
       <p className="font-mono text-sm">
-        Δx = {num(dx)} · Δy = {num(dy)} · d = √({num(dx * dx)} + {num(dy * dy)}) {Number.isInteger(dist) ? "=" : "≈"} {num(dist)}
+        <MathText text={`Δx = ${num(dx)} · Δy = ${num(dy)} · d = √(${num(dx * dx)} + ${num(dy * dy)}) ${Number.isInteger(dist) ? "=" : "≈"} ${num(dist)}`} />
         <br />M = ({num(mx)}, {num(my)})
       </p>
       <Plane x={[-6, 6]} y={[-6, 8]} xStep={2} yStep={2}
@@ -535,7 +536,7 @@ export function SolidsVisual({ id }: { id: string }) {
       </p>
       <p className="text-sm text-slate-300">
         Con la misma base y altura, tres conos llenan el cilindro. Duplica el radio y observa: el cono y el cilindro se multiplican por 4 (r²), la esfera por 8 (r³).
-        {h === 2 * r && " Ahora h = 2r: la esfera ocupa exactamente 2/3 del cilindro que la envuelve."}
+        {h === 2 * r && <MathText text=" Ahora h = 2r: la esfera ocupa exactamente 2/3 del cilindro que la envuelve." />}
       </p>
     </>
   );
@@ -576,9 +577,9 @@ export function TwoWayVisual({ id }: { id: string }) {
         </tbody>
       </table>
       <p className="font-mono text-sm">
-        P(vóley | 5.°) = {frac(v5, f5 + v5)}
-        <br />P(5.° | vóley) = {frac(v5, v4 + v5)}
-        <br />P(vóley) = {frac(v4 + v5, total)}
+        <MathText text={`P(vóley | 5.°) = ${frac(v5, f5 + v5)}`} />
+        <br /><MathText text={`P(5.° | vóley) = ${frac(v5, v4 + v5)}`} />
+        <br /><MathText text={`P(vóley) = ${frac(v4 + v5, total)}`} />
       </p>
       <p className="text-sm text-slate-300">
         El numerador es el mismo ({v5}, celda cian); cambia el grupo: los de 5.° (ámbar) o los de vóley (rosa).

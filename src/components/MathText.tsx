@@ -32,7 +32,10 @@ function Visual({ node }: { node: MathNode }) {
   if (node.kind === "sqrt")
     return (
       <span className="math-sqrt">
-        <span className="math-radical"><Glyphs text="√" /></span>
+        {/* Trazo propio: se estira con el contenido y se une a la barra superior. */}
+        <svg className="math-radical" viewBox="0 0 10 20" preserveAspectRatio="none" focusable="false">
+          <path d="M0.5 12.5 L3 11 L6 19.5 L9.6 0.6" vectorEffect="non-scaling-stroke" />
+        </svg>
         <span className="math-radicand"><Parts parts={node.body} /></span>
       </span>
     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import { num, Slider, Toggle } from "./GraphVisuals";
 
 const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
@@ -62,8 +63,7 @@ export function FractionSumVisual({ id }: { id: string }) {
       <Bars filled={A} parts={L} color="bg-cyan-300" label={`${a}/${b} = ${A}/${L}`} />
       <Bars filled={C} parts={L} color="bg-amber-300" label={`${c}/${d} = ${C}/${L}`} />
       <p className="text-lg font-bold">
-        {a}/{b} {op === "suma" ? "+" : "−"} {c}/{d} = {A}/{L} {op === "suma" ? "+" : "−"} {C}/{L} = {sg(R)}/{L}
-        {gcd(R, L) > 1 && R !== 0 ? ` = ${frac(R, L)}` : ""}
+        <MathText text={`${a}/${b} ${op === "suma" ? "+" : "−"} ${c}/${d} = ${A}/${L} ${op === "suma" ? "+" : "−"} ${C}/${L} = ${sg(R)}/${L}${gcd(R, L) > 1 && R !== 0 ? ` = ${frac(R, L)}` : ""}`} />
       </p>
       <p className="text-sm text-slate-300">
         Se suman o restan los numeradores porque las partes ya son del mismo tamaño; el denominador ({L}) no cambia.
@@ -111,12 +111,10 @@ export function FractionProductVisual({ id }: { id: string }) {
             })}
           </svg>
           <p className="text-lg font-bold">
-            {a}/{b} × {c}/{d} = ({a} × {c})/({b} × {d}) = {a * c}/{b * d}
-            {gcd(a * c, b * d) > 1 ? ` = ${frac(a * c, b * d)}` : ""}
+            <MathText text={`${a}/${b} × ${c}/${d} = (${a} × ${c})/(${b} × ${d}) = ${a * c}/${b * d}${gcd(a * c, b * d) > 1 ? ` = ${frac(a * c, b * d)}` : ""}`} />
           </p>
           <p className="text-sm text-slate-300">
-            Las columnas marcan {a}/{b} y las filas {c}/{d}. Donde se cruzan (verde) está «{a}/{b} de {c}/{d}»: {a * c} de las {b * d} casillas del cuadrado.
-            El resultado es menor que cada fracción porque se toma una parte de una parte.
+            <MathText text={`Las columnas marcan ${a}/${b} y las filas ${c}/${d}. Donde se cruzan (verde) está «${a}/${b} de ${c}/${d}»: ${a * c} de las ${b * d} casillas del cuadrado. El resultado es menor que cada fracción porque se toma una parte de una parte.`} />
           </p>
         </>
       ) : (
@@ -124,11 +122,10 @@ export function FractionProductVisual({ id }: { id: string }) {
           <Bars filled={a * (lcm(b, d) / b)} parts={lcm(b, d)} color="bg-cyan-300" label={`${a}/${b} en partes de 1/${lcm(b, d)}`} />
           <Bars filled={c * (lcm(b, d) / d)} parts={lcm(b, d)} color="bg-amber-300" label={`${c}/${d} en partes de 1/${lcm(b, d)}`} />
           <p className="text-lg font-bold">
-            {a}/{b} ÷ {c}/{d} = {a}/{b} × {d}/{c} = {frac(a * d, b * c)}
+            <MathText text={`${a}/${b} ÷ ${c}/${d} = ${a}/${b} × ${d}/${c} = ${frac(a * d, b * c)}`} />
           </p>
           <p className="text-sm text-slate-300">
-            Dividir pregunta cuántas veces cabe {c}/{d} (ámbar) en {a}/{b} (cian): {a * (lcm(b, d) / b)} partes entre {c * (lcm(b, d) / d)} partes
-            = {a * d >= b * c ? `${frac(a * d, b * c)} veces` : `solo ${frac(a * d, b * c)} de una vez: no cabe entera`}. Por eso se multiplica por la fracción invertida.
+            <MathText text={`Dividir pregunta cuántas veces cabe ${c}/${d} (ámbar) en ${a}/${b} (cian): ${a * (lcm(b, d) / b)} partes entre ${c * (lcm(b, d) / d)} partes = ${a * d >= b * c ? `${frac(a * d, b * c)} veces` : `solo ${frac(a * d, b * c)} de una vez: no cabe entera`}. Por eso se multiplica por la fracción invertida.`} />
           </p>
         </>
       )}
@@ -242,12 +239,12 @@ export function SquareRootVisual({ id }: { id: string }) {
         })}
       </svg>
       <p className="text-lg font-bold">
-        {perfect ? `√${area} = ${n}, porque ${n}² = ${n} × ${n} = ${area}` : `${n} < √${area} < ${n + 1}`}
+        <MathText text={perfect ? `√${area} = ${n}, porque ${n}² = ${n} × ${n} = ${area}` : `${n} < √${area} < ${n + 1}`} />
       </p>
       <p className="text-sm text-slate-300">
-        {perfect
+        <MathText text={perfect
           ? `${area} casillas forman un cuadrado exacto de lado ${n}: la raíz cuadrada es el lado.`
-          : `${area} no es un cuadrado perfecto: ${n}² = ${n * n} se queda corto (${area - n * n === 1 ? "sobra 1" : `sobran ${area - n * n}`}, en ámbar) y ${n + 1}² = ${(n + 1) ** 2} se pasa. ${num(Math.sqrt(area))} es una aproximación de √${area}.`}
+          : `${area} no es un cuadrado perfecto: ${n}² = ${n * n} se queda corto (${area - n * n === 1 ? "sobra 1" : `sobran ${area - n * n}`}, en ámbar) y ${n + 1}² = ${(n + 1) ** 2} se pasa. ${num(Math.sqrt(area))} es una aproximación de √${area}.`} />
       </p>
     </>
   );

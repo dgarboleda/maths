@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import { Handle, num, Slider, snap, Toggle } from "./GraphVisuals";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
@@ -113,7 +114,7 @@ export function PythagorasVisual({ id }: { id: string }) {
         <text x={center(sqC)[0]} y={center(sqC)[1]} textAnchor="middle" className="fill-rose-100 text-[12px] font-bold">{a * a + b * b}</text>
       </svg>
       <p className="font-mono text-sm">
-        a² + b² = c² → {a * a} + {b * b} = {a * a + b * b} → c = √{a * a + b * b} = <strong>{num(c)}</strong>
+        <MathText text={`a² + b² = c² → ${a * a} + ${b * b} = ${a * a + b * b} → c = √${a * a + b * b} = `} /><strong>{num(c)}</strong>
       </p>
       <p className="text-sm text-slate-300">
         Arrastra los extremos de los catetos. El área del cuadrado rosa (sobre la hipotenusa) siempre es la suma de las otras dos. Prueba 3 y 4, o 6 y 8: la hipotenusa sale entera.
@@ -270,14 +271,18 @@ export function TreeVisual({ id }: { id: string }) {
         ))}
         <circle cx={20} cy={105} r={6} className="fill-slate-300" />
         {leaves.map((l, i) => (
-          <text key={l.path} x={228} y={leafY[i] + 4} className="fill-slate-100 text-[11px] font-mono">
-            {l.path}: {l.p}/{l.q}
-          </text>
+          // Probabilidad de la rama como fracción apilada, igual que en el texto.
+          <g key={l.path} className="fill-slate-100 text-[11px] font-mono">
+            <text x={228} y={leafY[i] + 4}>{l.path}:</text>
+            <text x={266} y={leafY[i] - 2} textAnchor="middle">{l.p}</text>
+            <line x1={256} x2={276} y1={leafY[i] + 1.5} y2={leafY[i] + 1.5} className="stroke-slate-100" strokeWidth={1} />
+            <text x={266} y={leafY[i] + 12} textAnchor="middle">{l.q}</text>
+          </g>
         ))}
       </svg>
       <p className="text-sm">
         Se multiplica a lo largo de cada rama y se suman las ramas que cumplen el suceso: P(una de cada color) ={" "}
-        {leaves[1].p}/{leaves[1].q} + {leaves[2].p}/{leaves[2].q} = <strong>{num((leaves[1].p + leaves[2].p) / leaves[1].q)}</strong>.
+        <MathText text={`${leaves[1].p}/${leaves[1].q} + ${leaves[2].p}/${leaves[2].q} = `} /><strong>{num((leaves[1].p + leaves[2].p) / leaves[1].q)}</strong>.
         Las cuatro ramas suman 1.
       </p>
       <p className="text-sm text-slate-300">
@@ -378,7 +383,7 @@ export function DecimalGridVisual({ id }: { id: string }) {
         })}
       </div>
       <p className="font-mono text-lg">
-        0,{a} × 0,{b} = {a * b}/100 = <strong>{num((a * b) / 100)}</strong>
+        <MathText text={`0,${a} × 0,${b} = ${a * b}/100 = `} /><strong>{num((a * b) / 100)}</strong>
       </p>
       <p className="text-sm text-slate-300">
         Arrastra sobre la cuadrícula para elegir columnas y filas. Todo el cuadrado es 1. Tomar 0,{a} de 0,{b} deja {a * b} de las 100 casillas: cada décima por décima es una centésima, por eso el producto tiene dos decimales y es menor que ambos factores.

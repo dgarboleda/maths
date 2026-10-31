@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { MathText } from "@/components/MathText";
 import { useId, useState } from "react";
 import type { Visual } from "@/lib/learning/domain";
 import {
@@ -188,7 +189,7 @@ function ProbabilityVisual({ id }: { id: string }) {
       <p className="font-mono text-sm">
         {total === 0
           ? "La bolsa está vacía: no hay casos posibles."
-          : <>P(roja) = casos favorables ÷ casos posibles = {red}/{total} = {(red / total).toLocaleString("es", { maximumFractionDigits: 3 })}<br />P(no roja) = 1 − {red}/{total} = {blue}/{total}</>}
+          : <><MathText text={`P(roja) = casos favorables ÷ casos posibles = ${red}/${total} = ${(red / total).toLocaleString("es", { maximumFractionDigits: 3 })}`} /><br /><MathText text={`P(no roja) = 1 − ${red}/${total} = ${blue}/${total}`} /></>}
       </p>
     </>
   );
@@ -316,9 +317,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
             />
           )}
           <p className="text-xl font-bold text-white">
-            {taken}/{parts}
-            {kind === "percent" &&
-              ` = ${(taken / 100).toLocaleString("es")} = ${taken}%`}
+            <MathText text={`${taken}/${parts}${kind === "percent" ? ` = ${(taken / 100).toLocaleString("es")} = ${taken}%` : ""}`} />
           </p>
           {kind === "equivalence" && (
             <>
@@ -328,8 +327,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
                 label={`${taken * 2} de ${parts * 2} partes; la misma proporción`}
               />
               <p className="text-sm text-cyan-100">
-                {taken}/{parts} = {taken * 2}/{parts * 2}. Al dividir cada parte
-                en dos, cambia el conteo y se conserva la cantidad.
+                <MathText text={`${taken}/${parts} = ${taken * 2}/${parts * 2}. Al dividir cada parte en dos, cambia el conteo y se conserva la cantidad.`} />
               </p>
             </>
           )}
@@ -350,8 +348,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
               />
               <p className="rounded-xl bg-slate-950 p-3 font-mono text-sm">
                 Un cuarto: {total} ÷ 4 = {total / 4}.<br />
-                {taken}/4 del total: {total / 4} × {taken} ={" "}
-                {(total / 4) * taken}.
+                <MathText text={`${taken}/4 del total: ${total / 4} × ${taken} = ${(total / 4) * taken}.`} />
               </p>
             </>
           )}
@@ -387,8 +384,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
                 Azules:verdes = {2 * factor}:{3 * factor} = 2:3
               </p>
               <p className="text-sm">
-                Total: {5 * factor}. La fracción azul del total es {2 * factor}/
-                {5 * factor} = 2/5.
+                <MathText text={`Total: ${5 * factor}. La fracción azul del total es ${2 * factor}/${5 * factor} = 2/5.`} />
               </p>
             </div>
           ) : kind === "change" ? (
