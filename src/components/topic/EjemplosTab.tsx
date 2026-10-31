@@ -99,10 +99,10 @@ function AuthoredExamples({
                     <span className="mr-1.5 font-bold text-purple-700">
                       {i + 1}.
                     </span>
-                    {step.text}
+                    <MathText text={step.text} />
                     {step.math && (
                       <div className="mt-1 font-bold text-purple-800">
-                        {step.math}
+                        <MathText text={step.math} />
                       </div>
                     )}
                     {step.imageSrc && (
@@ -132,7 +132,7 @@ function AuthoredExamples({
                   role="status"
                   className="mt-3 text-center text-lg font-extrabold text-emerald-700"
                 >
-                  Respuesta: {ex.answerText || ex.answer}
+                  Respuesta: <MathText text={ex.answerText || String(ex.answer)} />
                 </p>
               )}
             </div>
@@ -184,7 +184,7 @@ function GeneratedExamples({
                 {ex.hints.slice(0, revealed[ex.id] ?? 0).map((step, i) => (
                   <li key={i} className="rounded-xl bg-purple-50 p-3">
                     <span className="font-bold">{i + 1}. </span>
-                    {step}
+                    <MathText text={step} />
                   </li>
                 ))}
               </ol>
@@ -194,7 +194,7 @@ function GeneratedExamples({
                 role="status"
                 className="mt-3 text-lg font-extrabold text-emerald-700"
               >
-                Respuesta: {formatAnswer(ex, ex.answer)}
+                Respuesta: <MathText text={String(formatAnswer(ex, ex.answer))} />
               </p>
             ) : (
               <button

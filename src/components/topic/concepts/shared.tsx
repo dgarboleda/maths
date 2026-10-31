@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { MathText } from "@/components/MathText";
 
 export function MiniSlider({
   label,
@@ -67,7 +68,7 @@ export function SliderPair({
 export function Formula({ text }: { text: string }) {
   return (
     <div className="rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 px-6 py-4 text-center text-white shadow-lg">
-      <div className="text-2xl font-extrabold sm:text-3xl">{text}</div>
+      <div className="text-2xl font-extrabold sm:text-3xl"><MathText text={text} /></div>
     </div>
   );
 }

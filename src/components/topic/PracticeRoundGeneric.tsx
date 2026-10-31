@@ -235,7 +235,7 @@ export function PracticeRoundGeneric({
                     ))}
                   </ol>
                   <p className="mt-3 font-bold">
-                    Respuesta: {formatAnswer(problem, feedback.answer)}
+                    Respuesta: <MathText text={String(formatAnswer(problem, feedback.answer))} />
                   </p>
                 </details>
               </div>

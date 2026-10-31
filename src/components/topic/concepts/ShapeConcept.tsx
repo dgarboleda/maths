@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import { MiniSlider, SliderPair, Formula } from "./shared";
 
 export type ShapeVariant =
@@ -219,8 +220,7 @@ function ShapePythagoras() {
       </svg>
       <Formula text={`c = √(${a}² + ${b}²) = ${c.toFixed(1)}`} />
       <p className="text-slate-600">
-        Si lo que falta es un cateto, se despeja al revés: b = √(c² − a²). Sirve para cualquier situación con un
-        ángulo recto — una escalera apoyada en una pared, la diagonal de una pantalla, una rampa.
+        <MathText text="Si lo que falta es un cateto, se despeja al revés: b = √(c² − a²). Sirve para cualquier situación con un ángulo recto — una escalera apoyada en una pared, la diagonal de una pantalla, una rampa." />
       </p>
     </div>
   );
@@ -262,8 +262,7 @@ function ShapeScale() {
       })()}
       <Formula text={`Lado grande = ${side} × ${scale} = ${side * scale}`} />
       <p className="text-slate-600">
-        La escala no siempre es un número entero. Si un lado de 4 cm corresponde a uno de 6 cm, la razón es 6/4:
-        cualquier otro lado del pequeño se multiplica por 6 y se divide entre 4 (uno de 8 cm pasa a 12 cm).
+        <MathText text="La escala no siempre es un número entero. Si un lado de 4 cm corresponde a uno de 6 cm, la razón es 6/4: cualquier otro lado del pequeño se multiplica por 6 y se divide entre 4 (uno de 8 cm pasa a 12 cm)." />
       </p>
     </div>
   );

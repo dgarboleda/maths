@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { MathText } from "@/components/MathText";
 
 export function FractionBarConcept({ mode }: { mode: "fraction" | "decimal" | "percent" }) {
   const fixedDen = mode === "fraction" ? null : 10;
@@ -31,7 +32,7 @@ export function FractionBarConcept({ mode }: { mode: "fraction" | "decimal" | "p
     <div className="space-y-6">
       <div className="mx-auto max-w-xl text-center">
         <h2 className="text-2xl font-bold text-purple-800 sm:text-3xl">{title}</h2>
-        <p className="mt-1 text-slate-600">{explanation}</p>
+        <p className="mt-1 text-slate-600"><MathText text={explanation} /></p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 rounded-2xl border-2 border-purple-100 bg-purple-50 p-6 md:grid-cols-2">
