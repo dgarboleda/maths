@@ -101,12 +101,12 @@ Todos tienen etiqueta textual que se actualiza con cada cambio, controles nativo
 
 ## Evaluación de ubicación
 
-`/jugar/{childId}/aprende/ubicacion` estima el punto de partida sobre las 37 clases. Recorre las unidades en orden y, dentro de cada una, plantea una pregunta por clase: el procedimiento central de la forma B de su comprobación (tarea q1), sin pistas, sin desarrollo y sin corrección durante la prueba. Mientras acierta, avanza a la clase siguiente; en el primer fallo, o si elige «Todavía no lo sé», esa clase pasa a ser el inicio de la unidad y la prueba salta a la unidad siguiente. Dura entre 7 preguntas (una por unidad) y 37.
+`/jugar/{childId}/aprende/ubicacion` estima el punto de partida sobre las 49 clases. Recorre las unidades en orden y plantea el procedimiento central de la forma B de cada comprobación (tarea q1). En fracciones, si acierta esa pregunta, plantea también la conceptual (q0); ambas deben acertarse para sugerir que la clase sea opcional. No hay pistas, desarrollo ni corrección durante la prueba. En el primer fallo o «Todavía no lo sé», esa clase pasa a ser el inicio de la unidad y la prueba salta a la unidad siguiente. Dura entre 7 y 56 preguntas. Las sesiones iniciadas antes de este cambio conservan su criterio anterior de una pregunta por clase.
 
 - El servidor evalúa cada respuesta y guarda el estado en `learningProgress/ubicacion`. La pregunta se muestra con un identificador propio (`u1`, `u2`…).
-- El resultado marca clases **dominadas en la ubicación**: quedan opcionales y la recomendación de inicio las salta, pero no cuentan como terminadas, no dan estrellas ni habilitan el repaso mixto (que exige clases recorridas).
+- El resultado sugiere clases **opcionales según la ubicación**: la recomendación de inicio las salta, pero siguen accesibles, no cuentan como terminadas, no dan estrellas ni habilitan el repaso mixto (que exige clases recorridas).
 - Puede repetirse; el resultado anterior se conserva hasta terminar la nueva sesión. El informe familiar lo muestra con su fecha.
-- Limitación: una pregunta por clase es una estimación rápida, sensible a un descuido. Se eligió por duración; la calibración con datos del piloto (ver [Análisis de preguntas](#análisis-de-preguntas)) debe confirmar si conviene una segunda pregunta antes de cerrar una unidad.
+- Limitación: incluso dos preguntas son una estimación rápida, sensible a un descuido o acierto casual. La calibración con datos del piloto debe evaluar la duración y si estas preguntas identifican adecuadamente el punto de partida.
 
 La evaluación curricular ampliada anterior sigue disponible por decisión explícita. Ya no condiciona el acceso ni otorga dominio de módulos inferiores basándose en una respuesta representativa. Sus resultados y logros históricos se conservan.
 

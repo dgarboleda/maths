@@ -212,11 +212,14 @@ export interface MixedReviewState {
   updatedAt: number;
 }
 
-/** Evaluación de ubicación sobre el programa: una pregunta por clase, en
+/** Evaluación de ubicación sobre el programa: una pregunta por clase y una
+ *  pregunta conceptual adicional en fracciones si se acierta la primera, en
  *  orden, unidad por unidad; el primer fallo de una unidad marca dónde
  *  empezar en ella. No da estrellas ni marca clases como terminadas. */
 export interface PlacementState {
   contentVersion: number;
+  /** Protocolo 2 añade una pregunta conceptual a las clases de fracciones. */
+  placementProtocol?: 2;
   revision: number;
   stage: "idle" | "active" | "done";
   /** Preguntas planteadas en esta sesión; la última sin respuesta es la actual. */
@@ -227,9 +230,9 @@ export interface PlacementState {
   updatedAt: number;
 }
 export interface PlacementResult {
-  /** Clases respondidas bien sin ayuda: se pueden saltar. */
+  /** Clases sugeridas como opcionales según las respuestas sin ayuda. */
   mastered: string[];
-  /** Por unidad, la clase donde conviene empezar (null = unidad dominada). */
+  /** Por unidad, la clase donde conviene empezar (null = sin inicio recomendado). */
   start: Partial<Record<UnitId, string | null>>;
   answered: number;
   at: number;

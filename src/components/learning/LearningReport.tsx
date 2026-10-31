@@ -202,7 +202,7 @@ export function LearningReport({
           {!compact && data.placement?.result && (
             <p className="rounded-xl bg-slate-950 p-4 text-sm text-slate-300">
               <strong className="text-white">Evaluación de ubicación:</strong>{" "}
-              {data.placement.result.mastered.length} de {LESSONS.length} clases dominadas al empezar
+              {data.placement.result.mastered.length} de {LESSONS.length} clases sugeridas como opcionales al empezar
               ({new Date(data.placement.result.at).toLocaleDateString("es-PE")}). Esas clases quedan opcionales; no
               cuentan como terminadas ni dan estrellas.
             </p>

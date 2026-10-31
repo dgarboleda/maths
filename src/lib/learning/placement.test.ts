@@ -23,10 +23,10 @@ const NOW = 1_700_000_000_000;
 function run(knows: (lessonId: string) => boolean | "skip") {
   let state: PlacementState = applyPlacementAction(undefined, { kind: "begin" }, NOW);
   let guard = 0;
-  while (state.stage === "active" && guard++ < 100) {
+  while (state.stage === "active" && guard++ < 120) {
     const current = placementCurrent(state)!;
     const decision = knows(current.lesson.id);
-    const real = placementQuestion(current.lesson);
+    const real = current.lesson.checks[1].find((q) => q.id === state.items.at(-1)!.questionId)!;
     state =
       decision === "skip"
         ? applyPlacementAction(state, { kind: "skip", questionId: current.question.id }, NOW)
@@ -62,12 +62,36 @@ describe("Evaluación de ubicación", () => {
     expect(recommendedLesson(new Set(), state.result)).toBe(LESSONS[0]);
   });
 
-  test("quien domina todo responde las 37 y no tiene clase pendiente por ubicación", () => {
+  test("quien acierta todo responde dos preguntas por clase de fracciones", () => {
     const state = run(() => true);
-    expect(state.items).toHaveLength(LESSONS.length);
+    expect(state.items).toHaveLength(LESSONS.length + LESSONS.filter((l) => l.unitId === "fracciones").length);
     expect(state.result!.mastered).toHaveLength(LESSONS.length);
     expect(Object.values(state.result!.start).every((s) => s === null)).toBe(true);
     expect(recommendedLesson(new Set(), state.result)).toBeUndefined();
+  });
+
+  test("un fallo conceptual en fracciones impide recomendar saltar esa clase", () => {
+    let state = applyPlacementAction(undefined, { kind: "begin" }, NOW);
+    while (state.stage === "active") {
+      const current = placementCurrent(state)!;
+      const item = state.items.at(-1)!;
+      const real = current.lesson.checks[1].find((q) => q.id === item.questionId)!;
+      const fail = current.lesson.id === "fracciones-unidad" && real.task === 0;
+      state = applyPlacementAction(state, { kind: "answer", questionId: current.question.id, response: fail ? "respuesta incorrecta" : String(real.answer) }, NOW);
+    }
+    expect(state.result!.start.fracciones).toBe("fracciones-unidad");
+    expect(state.result!.mastered).not.toContain("fracciones-unidad");
+    expect(state.items.filter((i) => i.lessonId === "fracciones-unidad")).toHaveLength(2);
+  });
+
+  test("una sesión antigua conserva el criterio de una pregunta", () => {
+    const state = run(() => true);
+    const old = { ...state, placementProtocol: undefined, items: state.items.filter((i) => getLesson(i.lessonId)!.unitId !== "fracciones" || i.questionId === placementQuestion(getLesson(i.lessonId)!).id), stage: "active" as const };
+    const last = old.items.at(-1)!;
+    last.correct = null;
+    const current = placementCurrent(old)!;
+    const finished = applyPlacementAction(old, { kind: "answer", questionId: current.question.id, response: String(placementQuestion(current.lesson).answer) }, NOW);
+    expect(finished.result!.mastered).toContain("fracciones-unidad");
   });
 
   test("el primer fallo de una unidad marca su inicio y se pasa a la siguiente unidad", () => {

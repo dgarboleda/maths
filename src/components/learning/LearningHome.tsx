@@ -205,7 +205,7 @@ export function LearningHome({
                   href={`${base}/aprende/ubicacion`}
                   className="mt-4 text-sm font-semibold text-cyan-200 underline underline-offset-4"
                 >
-                  Tu ubicación: {placed.mastered.length} {placed.mastered.length === 1 ? "clase que ya dominas" : "clases que ya dominas"} · ver resultado
+                  Tu ubicación: {placed.mastered.length} {placed.mastered.length === 1 ? "clase sugerida como opcional" : "clases sugeridas como opcionales"} · ver resultado
                 </Link>
               ) : (
                 completed === 0 && (
@@ -544,7 +544,7 @@ function LessonCard({
           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${progress?.completedAt ? "bg-emerald-300/10 text-emerald-200" : "bg-white/5 text-slate-300"}`}
         >
           {progress?.completedAt && <Check size={13} aria-hidden="true" />}
-          {!progress && placed ? "Dominada en tu ubicación" : learningStatus(progress)}
+          {!progress && placed ? "Opcional según tu ubicación" : learningStatus(progress)}
         </span>
       </div>
       {peru && (
