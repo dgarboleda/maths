@@ -34,7 +34,7 @@ import {
 } from "./LearningShell";
 
 /**
- * Evaluación de ubicación: una pregunta por clase, sin pistas ni
+ * Evaluación de ubicación: dos preguntas en fracciones y una en otras clases, sin pistas ni
  * correcciones durante la prueba. Avanza dentro de cada unidad mientras la
  * respuesta es correcta; el primer fallo indica dónde empezar esa unidad.
  */
@@ -93,14 +93,14 @@ export function PlacementPlayer({ childId }: { childId: string }) {
         ) : (
           <section className="space-y-4 rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-7">
             <p className="leading-relaxed text-slate-300">
-              Responderás una pregunta por clase, unidad por unidad. Mientras aciertes, avanzas a la clase
+              Responderás una pregunta por clase y, en fracciones, una segunda pregunta si aciertas la primera. Mientras aciertes, avanzas a la clase
               siguiente; cuando una no te salga, pasamos a la próxima unidad. Así sabrás qué clases puedes
-              saltar y dónde empezar en cada tema.
+              considerar opcionales y dónde empezar en cada tema. Es una recomendación que puedes cambiar.
             </p>
             <ul className="list-disc space-y-1 pl-5 text-sm text-slate-300">
               <li>No hay pistas ni correcciones durante la prueba: responde lo que sabes hoy.</li>
               <li>Si no sabes cómo resolver una pregunta, elige «Todavía no lo sé»: no es un error, es información.</li>
-              <li>Dura entre {LEARNING_UNITS.length} y {LESSONS.length} preguntas. No da estrellas ni marca clases como terminadas.</li>
+              <li>Dura entre {LEARNING_UNITS.length} y {LESSONS.length + LESSONS.filter((l) => l.unitId === "fracciones").length} preguntas. No da estrellas ni marca clases como terminadas.</li>
             </ul>
             <button className={primaryButton} disabled={mutation.blocked} onClick={begin}>
               {state.attempts > 0 ? "Empezar de nuevo" : "Empezar la evaluación"}
@@ -194,7 +194,7 @@ function PlacementSummary({
       <p className="rounded-xl bg-emerald-950/40 p-4 text-emerald-100">
         Respondiste {result.answered} preguntas.{" "}
         {result.mastered.length > 0
-          ? `Puedes saltar ${result.mastered.length} de ${LESSONS.length} clases; siguen disponibles si quieres repasarlas.`
+          ? `La prueba sugiere que ${result.mastered.length} de ${LESSONS.length} clases podrían ser opcionales. Puedes abrirlas cuando quieras.`
           : "Empieza por las primeras clases de cada unidad: allí está tu punto de partida."}
       </p>
       {next && (
@@ -218,7 +218,7 @@ function PlacementSummary({
               <tr key={unit.id} className="border-b border-slate-800">
                 <th scope="row" className="p-2 font-semibold text-white">{unit.title}</th>
                 <td className="p-2 text-slate-300">
-                  {start ? getLesson(start)?.title : "Unidad dominada: puedes ir al repaso mixto"}
+                  {start ? getLesson(start)?.title : "Sin inicio recomendado; puedes revisar las clases"}
                 </td>
               </tr>
             );
@@ -250,7 +250,7 @@ function PlacementSummary({
         </tbody>
       </table>
       <p className="text-xs leading-relaxed text-slate-400">
-        Una pregunta por clase es una estimación rápida, no una nota. La correspondencia con los grados del
+        La ubicación es una estimación rápida, no una confirmación de dominio ni una nota. La correspondencia con los grados del
         CNEB es orientativa y está pendiente de validación docente; no sustituye la evaluación del colegio.
       </p>
       <button className={secondaryButton} disabled={disabled} onClick={onRetry}>

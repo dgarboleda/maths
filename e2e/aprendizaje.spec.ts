@@ -333,7 +333,7 @@ test("la evaluación de ubicación recomienda por dónde empezar y la familia ve
   await expect(page.getByRole("table", { name: /Currículo Nacional de Perú/ })).toBeVisible();
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await page.goto(`/jugar/${childId}`);
-  await expect(page.getByRole("link", { name: /Tu ubicación: 1 clase que ya dominas/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Tu ubicación: 1 clase sugerida como opcional/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: getLesson("enteros-suma-resta")!.title, level: 2 })).toBeVisible();
 
   // Un error previsto en la práctica aparece en el informe de la familia.

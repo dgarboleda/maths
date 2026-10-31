@@ -46,14 +46,18 @@ function nextLesson(items: PlacementState["items"]): Lesson | undefined {
   return nextUnit ? lessonsOf(nextUnit)[0] : undefined;
 }
 
-function summarize(items: PlacementState["items"], now: number): PlacementResult {
+function summarize(items: PlacementState["items"], now: number, protocol?: 2): PlacementResult {
   const start: PlacementResult["start"] = {};
   for (const unitId of unitOrder) {
     const failed = items.find((i) => getLesson(i.lessonId)?.unitId === unitId && !i.correct);
     start[unitId] = failed ? failed.lessonId : null;
   }
   return {
-    mastered: items.filter((i) => i.correct).map((i) => i.lessonId),
+    mastered: [...new Set(items.filter((i) => i.correct).map((i) => i.lessonId))].filter((id) => {
+      const answers = items.filter((i) => i.lessonId === id);
+      return answers.every((i) => i.correct) &&
+        (protocol !== 2 || getLesson(id)?.unitId !== "fracciones" || answers.length >= 2);
+    }),
     start,
     answered: items.length,
     at: now,
@@ -87,6 +91,7 @@ export function applyPlacementAction(
   if (action.kind === "begin") {
     const first = nextLesson([])!;
     state.contentVersion = CONTENT_VERSION;
+    state.placementProtocol = 2;
     state.stage = "active";
     state.attempts = base.attempts + 1;
     state.items = [{ lessonId: first.id, questionId: placementQuestion(first).id, correct: null }];
@@ -106,12 +111,20 @@ export function applyPlacementAction(
     correct = isAnswerCorrect(current.question, action.response);
   }
   state.items[state.items.length - 1].correct = correct;
+  // Las sesiones antiguas terminan con sus reglas originales. En las nuevas,
+  // un acierto de procedimiento en fracciones requiere además concepto.
+  if (state.placementProtocol === 2 && correct && current.lesson.unitId === "fracciones" &&
+      state.items.filter((item) => item.lessonId === current.lesson.id).length === 1) {
+    const concept = current.lesson.checks[1].find((q) => q.task === 0)!;
+    state.items.push({ lessonId: current.lesson.id, questionId: concept.id, correct: null });
+    return state;
+  }
   const following = nextLesson(state.items);
   if (following)
     state.items.push({ lessonId: following.id, questionId: placementQuestion(following).id, correct: null });
   else {
     state.stage = "done";
-    state.result = summarize(state.items, now);
+    state.result = summarize(state.items, now, state.placementProtocol);
   }
   return state;
 }

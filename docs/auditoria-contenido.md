@@ -1,5 +1,7 @@
 # Inventario de contenido matemático
 
+> Inventario histórico del 18 de octubre de 2026: los conteos y las brechas de clases de este archivo corresponden a esa fecha. Para el programa actual de 49 lecciones, consulta [reorientación del aprendizaje](reorientacion-aprendizaje.md#programa) y el catálogo en `functions/src/learning/catalog.ts`.
+
 Fecha: 18 de octubre de 2026. Alcance: los 67 módulos de código de `src/lib/curriculum.ts`. Los módulos personalizados de cada familia requieren su propia revisión.
 
 Este inventario documenta cobertura y prioridades. **La revisión docente independiente está pendiente en todos los módulos y en las 32 lecciones del programa**; no certifica corrección completa ni alineación oficial por grado o PISA.
