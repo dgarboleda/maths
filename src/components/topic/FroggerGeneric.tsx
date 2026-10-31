@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./ArcadeFx";
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
@@ -26,6 +27,12 @@ const OBSTACLE_TICK_STEP_MS = -60;
 const OBSTACLE_TICK_FLOOR_MS = 220;
 /** En la clase el obstáculo va más lento: cruzar no debe depender de reflejos. */
 const LESSON_OBSTACLE_TICK_MS = 900;
+const HOP_POINTS = 20;
+const NEAR_MISS_POINTS = 40;
+const LILY_POINTS = 150;
+/** Centro de cada fila del escenario (nenúfares, río, orilla), en %. */
+const SCENE_ROW_Y = { lily: 17, river: 50, bank: 83 } as const;
+const colX = (col: number) => ((col + 0.5) / COLS) * 100;
 
 /** Qué pasó al chocar en la clase, dicho con precisión: no hubo respuesta. */
 export const FROGGER_MISS =
@@ -107,6 +114,8 @@ export function FroggerGeneric({
   const shownCount = exercise ? Number(exercise.solved) : correctCount;
   const shownWin = exercise ? exercise.solved : win;
   const [reflexMiss, setReflexMiss] = useState(false);
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  const fx = useArcadeFx({ game: "frogger", soundOn, solved: exercise?.solved, cabinetRef });
 
   const obstacleDirRef = useRef(1);
   const accRef = useRef(0);
@@ -131,6 +140,7 @@ export function FroggerGeneric({
   function endGame(didWin: boolean, finalCount: number) {
     setWin(didWin);
     setPhase("over");
+    fx.end(didWin);
     playSound(didWin ? "fanfare" : "fail", soundOn);
     onGameOver?.(finalCount);
     if (didWin) {
@@ -157,13 +167,17 @@ export function FroggerGeneric({
     setStarsThisRound(0);
     setWin(false);
     setPhase("playing");
+    fx.start();
     spawnCheckpoint();
   }
 
   async function resolveCheckpoint(chosenX: number) {
     if (busyRef.current || controlsDisabled) return;
     busyRef.current = true;
+    const at = { x: colX(chosenX), y: SCENE_ROW_Y.lily };
     if (exercise) {
+      fx.pop("¡Splash!", at, "info");
+      fx.burst(at, "info");
       setReflexMiss(false);
       try {
         // Se envía el valor del nenúfar: ni el resultado ni premios se deciden aquí.
@@ -176,6 +190,8 @@ export function FroggerGeneric({
     }
     const correct = candidates[chosenX] === problem.answer;
     playSound(correct ? "correct" : "wrong", soundOn);
+    if (correct) fx.award(LILY_POINTS, at, { sound: "pop" });
+    else fx.oops(at, "¡Glup!");
     const stars = await onAnswer(correct);
     if (correct) {
       const next = correctCount + 1;
@@ -199,7 +215,7 @@ export function FroggerGeneric({
   function handleHit() {
     hopRef.current = 0;
     setHopping(false);
-    playSound("wrong", soundOn);
+    fx.oops({ x: colX(obstacleX), y: SCENE_ROW_Y.river }, "¡Ñac!");
     if (exercise) {
       // Chocar es un fallo de reflejos: sin vidas ni respuesta, vuelve a la orilla.
       setReflexMiss(true);
@@ -228,6 +244,7 @@ export function FroggerGeneric({
     setRow(newRow);
     if (isObstacleRow(newRow)) {
       if (frogX === obstacleX) handleHit();
+      else fx.award(HOP_POINTS, { x: colX(frogX), y: SCENE_ROW_Y.river }, { burst: false, sound: "pop" });
     } else if (isCheckpointRow(newRow)) {
       resolveCheckpoint(frogX);
     }
@@ -288,6 +305,9 @@ export function FroggerGeneric({
       setObstacleDirection(dir);
       setObstacleX(next);
       if (isObstacleRow(row) && next === frogX) handleHit();
+      // Esquivar por una casilla: puntos de estilo, sin efecto en la pregunta.
+      else if (isObstacleRow(row) && Math.abs(next - frogX) === 1 && Math.abs(obstacleX - frogX) === 2)
+        fx.award(NEAR_MISS_POINTS, { x: colX(frogX), y: SCENE_ROW_Y.river - 18 }, { label: "¡Por poco!", tone: "bonus" });
     },
     { running: shownPhase === "playing" && !controlsDisabled },
   );
@@ -309,13 +329,14 @@ export function FroggerGeneric({
   const nextObstacle = obstacleX + (obstacleX + obstacleDirection < 0 || obstacleX + obstacleDirection >= COLS ? -obstacleDirection : obstacleDirection);
 
   return (
-    <div data-game="frogger" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-sky-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${controlsDisabled ? "arcade-paused" : ""}`}>
+    <div ref={cabinetRef} data-game="frogger" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-sky-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${controlsDisabled ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{ backgroundImage: "radial-gradient(#38bdf8 1px, transparent 0)", backgroundSize: "24px 24px" }}
       />
 
+      <ArcadeFxLayer fx={fx} scope="cabinet" />
       <div className="relative z-10 mx-auto max-w-md text-center">
         <h2 className="mb-2 bg-gradient-to-r from-lime-300 to-sky-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🐸 Estanque de operaciones
@@ -331,12 +352,12 @@ export function FroggerGeneric({
               type="button"
               onClick={start}
               disabled={controlsDisabled}
-              className="rounded-2xl border-2 border-white bg-gradient-to-r from-lime-400 to-sky-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
+              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-lime-400 to-sky-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
             <p className="text-xs text-sky-300">
-              Un toque, un salto. Observa el cocodrilo y cruza por el hueco.{exercise && " Puedes leer con calma hasta tu primer salto. Chocar no cuenta como respuesta."}
+              Un toque, un salto. Observa el cocodrilo y cruza por el hueco. Esquivarlo por poco da puntos extra.{exercise && " Puedes leer con calma hasta tu primer salto. Chocar no cuenta como respuesta."}
             </p>
           </div>
         )}
@@ -358,6 +379,7 @@ export function FroggerGeneric({
               />
             </div>
 
+            <ArcadeScoreBar fx={fx} />
             {exercise ? <ReflexNotice show={reflexMiss} message={FROGGER_MISS} /> : <div className="flex items-center justify-between rounded-xl border border-sky-700 bg-sky-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
@@ -386,7 +408,7 @@ export function FroggerGeneric({
                 obstáculo y orilla. La rana se dibuja en la fila donde está,
                 para que nunca parezca parada sobre un nenúfar que no eligió. */}
             <div aria-hidden="true" data-board="" data-frog-col={frogX} data-frog-lane={inObstacleRow ? "carril" : "orilla"} data-hopping={hopping} data-obstacle-col={obstacleX} data-obstacle-next={nextObstacle}
-              className="arcade-scene arcade-scene-pond mx-auto w-full max-w-sm space-y-2 overflow-hidden rounded-2xl border-2 border-sky-400/60 p-2">
+              className="arcade-scene arcade-scene-pond relative mx-auto w-full max-w-sm space-y-2 overflow-hidden rounded-2xl border-2 border-sky-400/60 p-2">
               <div className="grid w-full max-w-sm gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
                   <div key={col} data-lily="" className="arcade-hover arcade-value flex aspect-[4/3] items-center justify-center rounded-[40%] font-bold text-lime-50" style={{ animationDelay: `${-col * 0.3}s` }}>
@@ -409,6 +431,7 @@ export function FroggerGeneric({
                   </div>
                 ))}
               </div>
+              <ArcadeFxLayer fx={fx} />
             </div>
 
             <p className="text-xs text-sky-100">La flecha marca el próximo paso del cocodrilo. Espera en la orilla para encontrar tu hueco.</p>
@@ -418,7 +441,7 @@ export function FroggerGeneric({
 
         {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
-            <div aria-hidden="true" className="text-6xl">
+            <div aria-hidden="true" className="arcade-win text-6xl">
               {shownWin ? "🐸🏆" : "💦"}
             </div>
             <h3 className="text-3xl font-bold text-lime-200">{shownWin ? "¡Cruzaste el estanque!" : "¡Buen intento!"}</h3>
@@ -427,6 +450,7 @@ export function FroggerGeneric({
                 <span>Estanques cruzados:</span>
                 <strong className="text-lime-300">{shownCount}</strong>
               </div>
+              <ArcadeFinalScore fx={fx} />
               {!exercise && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-sky-300">+{starsThisRound} ★</strong>

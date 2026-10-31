@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./ArcadeFx";
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
@@ -24,6 +25,8 @@ const GOAL = 3; // puertas a cruzar para ganar
 const GATE_TIME_BASE_MS = 2500;
 const GATE_TIME_STEP_MS = -250;
 const GATE_TIME_FLOOR_MS = 900;
+const GATE_POINTS = 150;
+const LANE_CHANGE_POINTS = 5;
 
 type Phase = "start" | "playing" | "over";
 
@@ -86,6 +89,8 @@ export function RunnerGeneric({
   const [racing, setRacing] = useState(false);
   const [turbo, setTurbo] = useState(false);
   const [pending, setPending] = useState(false);
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  const fx = useArcadeFx({ game: "runner", soundOn, solved: exercise?.solved, cabinetRef });
 
   // Cuenta regresiva "caliente": autoridad real de cuándo llega la próxima
   // puerta. Un `requestAnimationFrame` puede disparar muchos ticks dentro de
@@ -122,6 +127,7 @@ export function RunnerGeneric({
   function endGame(didWin: boolean, finalCount: number) {
     setWin(didWin);
     setPhase("over");
+    fx.end(didWin);
     playSound(didWin ? "fanfare" : "fail", soundOn);
     onGameOver?.(finalCount);
     if (didWin) {
@@ -141,6 +147,7 @@ export function RunnerGeneric({
     setWin(false);
     busyRef.current = false;
     setPhase("playing");
+    fx.start(lesson ? "¡Elige carril!" : "¡YA!");
     spawnGate(0);
   }
 
@@ -148,16 +155,19 @@ export function RunnerGeneric({
     busyRef.current = true;
     setPending(true);
     setRacing(false);
+    const at = laneAt(lane);
     if (exercise) {
       if (lane === NO_LANE) {
         // Llegó la puerta sin elegir carril: es un fallo de reflejos.
-        playSound("wrong", soundOn);
+        fx.oops({ x: 50, y: 50 }, "¡Sin carril!");
         setReflexMiss(true);
         spawnGate(0);
         busyRef.current = false;
         return;
       }
       setReflexMiss(false);
+      fx.pop("¡Puerta!", at, "info");
+      fx.burst(at, "info");
       try {
         await exercise.onResponse(candidates[lane]);
       } finally {
@@ -168,6 +178,8 @@ export function RunnerGeneric({
     }
     const correct = candidates[lane] === problem.answer;
     playSound(correct ? "correct" : "wrong", soundOn);
+    if (correct) fx.award(GATE_POINTS, at, { sound: "pop" });
+    else fx.oops(at, "¡Pum!");
     const stars = await onAnswer(correct);
     if (correct) {
       const next = correctCount + 1;
@@ -211,18 +223,30 @@ export function RunnerGeneric({
   );
 
   const laneCount = lesson ? candidates.length || LANES : LANES;
+  function laneAt(row: number) {
+    return { x: 22, y: row < 0 ? 50 : ((row + 0.5) / laneCount) * 100 };
+  }
+  /** Volantazo: unos pocos puntos de estilo, sin cadena de combo. */
+  function swerve(next: number) {
+    if (next === lane) return;
+    if (racing) fx.award(LANE_CHANGE_POINTS, laneAt(next), { chain: false, burst: false, tone: "info", sound: "click" });
+    else playSound("whoosh", soundOn);
+  }
   function chooseLane(next: number) {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
+    swerve(next);
     setLane(next);
     setRacing(true);
   }
   function moveLaneUp() {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
+    swerve(Math.max(0, lane - 1));
     setLane((l) => Math.max(0, l - 1));
     setRacing(true);
   }
   function moveLaneDown() {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
+    swerve(lane === NO_LANE ? 0 : Math.min(laneCount - 1, lane + 1));
     setLane((l) => l === NO_LANE ? 0 : Math.min(laneCount - 1, l + 1));
     setRacing(true);
   }
@@ -234,7 +258,9 @@ export function RunnerGeneric({
     setRemainingMs(remainingRef.current);
     setTurbo(true);
     setRacing(true);
-    playSound("click", soundOn);
+    playSound("whoosh", soundOn);
+    fx.pop("¡TURBO!", laneAt(lane), "bonus");
+    fx.shake(3);
   }
 
   useArrowKeys({ up: moveLaneUp, down: moveLaneDown, action: boost }, { enabled: phase === "playing" && !frozen && !solved });
@@ -252,13 +278,14 @@ export function RunnerGeneric({
   const gateApproachPct = Math.min(100, ((gateTotalMs - remainingMs) / gateTotalMs) * 100);
 
   return (
-    <div data-game="runner" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen || !racing ? "arcade-paused" : ""}`}>
+    <div ref={cabinetRef} data-game="runner" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen || !racing ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{ backgroundImage: "radial-gradient(#fbbf24 1px, transparent 0)", backgroundSize: "24px 24px" }}
       />
 
+      <ArcadeFxLayer fx={fx} scope="cabinet" />
       <div className="relative z-10 mx-auto max-w-md text-center">
         <h2 className="mb-2 bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🏎️ Autopista de resultados
@@ -272,7 +299,7 @@ export function RunnerGeneric({
               type="button"
               onClick={start}
               disabled={frozen}
-              className="rounded-2xl border-2 border-white bg-gradient-to-r from-amber-400 to-orange-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
+              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-amber-400 to-orange-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
@@ -297,6 +324,7 @@ export function RunnerGeneric({
               />
             </div>
 
+            <ArcadeScoreBar fx={fx} />
             {lesson ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-amber-700 bg-amber-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
@@ -343,10 +371,11 @@ export function RunnerGeneric({
                   }`}
                 >
                   <span aria-hidden="true" className="absolute left-1">{lane === row && <ArcadeSprite kind="car" className="size-14" />}</span>
-                  {turbo && lane === row && <span aria-hidden="true" className="absolute left-0 text-lg">🔥</span>}
+                  {lane === row && racing && <span aria-hidden="true" className={`${turbo ? "arcade-trail text-lg" : "text-xs opacity-60"} absolute left-0`}>{turbo ? "🔥" : "💨"}</span>}
                   <span data-choice-label="" className="arcade-value absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-cyan-100 shadow-lg transition-[left] duration-100 motion-reduce:transition-none" style={{ left: `${74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : lessonLabel(exercise, candidates[row])}</span>
                 </button>
               ))}
+              <ArcadeFxLayer fx={fx} />
             </div>
 
             <button type="button" onClick={boost} disabled={frozen || pending || lane === NO_LANE || turbo}
@@ -357,7 +386,7 @@ export function RunnerGeneric({
 
         {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
-            <div aria-hidden="true" className="text-6xl">
+            <div aria-hidden="true" className="arcade-win text-6xl">
               {shownWin ? "🏁" : "🛑"}
             </div>
             <h3 className="text-3xl font-bold text-orange-200">{shownWin ? "¡Llegaste a la meta!" : "¡Buen intento!"}</h3>
@@ -366,6 +395,7 @@ export function RunnerGeneric({
                 <span>Puertas cruzadas:</span>
                 <strong className="text-amber-300">{shownCount}</strong>
               </div>
+              <ArcadeFinalScore fx={fx} />
               {!lesson && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-orange-300">+{starsThisRound} ★</strong>

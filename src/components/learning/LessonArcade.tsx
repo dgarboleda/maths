@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Volume2, VolumeX } from "lucide-react";
+import { useSoundPreference } from "@/lib/useSoundPreference";
 import type { LessonExercise, PracticeGame } from "@/lib/minigames/lessonExercise";
 
 const Frogger = dynamic(() =>
@@ -51,12 +53,27 @@ export function LessonArcade({
   exercise: LessonExercise;
 }) {
   const Game = GAMES[mode];
+  // Los efectos arcade siguen la preferencia de sonido de toda la app.
+  const [soundOn, toggleSound] = useSoundPreference();
   return (
-    <Game
-      moduleId=""
-      soundOn={false}
-      onAnswer={noLegacyReward}
-      exercise={exercise}
-    />
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={toggleSound}
+          aria-pressed={soundOn}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-600 px-3 text-sm font-bold text-slate-200"
+        >
+          {soundOn ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
+          Sonido del juego
+        </button>
+      </div>
+      <Game
+        moduleId=""
+        soundOn={soundOn}
+        onAnswer={noLegacyReward}
+        exercise={exercise}
+      />
+    </div>
   );
 }

@@ -11,7 +11,19 @@ function getAudioContext(): AudioContext | null {
   return audioCtx;
 }
 
-export type SoundType = "correct" | "wrong" | "click" | "fanfare" | "mastery" | "fail";
+export type SoundType =
+  | "correct" | "wrong" | "click" | "fanfare" | "mastery" | "fail"
+  // Efectos arcade de los minijuegos: cortos y suaves para poder repetirse.
+  | "coin" | "combo" | "crash" | "pop" | "whoosh";
+
+/** Notas breves para los efectos arcade: [frecuencia, inicio, duración]. */
+const ARCADE: Partial<Record<SoundType, { wave: OscillatorType; gain: number; notes: [number, number][]; length: number; slide?: number }>> = {
+  coin: { wave: "square", gain: 0.12, notes: [[987.77, 0], [1318.51, 0.06]], length: 0.2 },
+  combo: { wave: "square", gain: 0.12, notes: [[659.25, 0], [880, 0.05], [1174.66, 0.1], [1567.98, 0.15]], length: 0.3 },
+  crash: { wave: "sawtooth", gain: 0.18, notes: [[120, 0]], length: 0.32, slide: 45 },
+  pop: { wave: "triangle", gain: 0.16, notes: [[330, 0]], length: 0.12, slide: 880 },
+  whoosh: { wave: "sine", gain: 0.1, notes: [[220, 0]], length: 0.35, slide: 660 },
+};
 
 export function playSound(type: SoundType, enabled: boolean) {
   if (!enabled) return;
@@ -24,7 +36,16 @@ export function playSound(type: SoundType, enabled: boolean) {
     gain.connect(ctx.destination);
     const now = ctx.currentTime;
 
-    if (type === "correct") {
+    const arcade = ARCADE[type];
+    if (arcade) {
+      osc.type = arcade.wave;
+      for (const [freq, at] of arcade.notes) osc.frequency.setValueAtTime(freq, now + at);
+      if (arcade.slide) osc.frequency.exponentialRampToValueAtTime(arcade.slide, now + arcade.length);
+      gain.gain.setValueAtTime(arcade.gain, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + arcade.length);
+      osc.start(now);
+      osc.stop(now + arcade.length);
+    } else if (type === "correct") {
       osc.type = "triangle";
       osc.frequency.setValueAtTime(523.25, now);
       osc.frequency.setValueAtTime(659.25, now + 0.08);

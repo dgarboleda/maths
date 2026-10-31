@@ -45,3 +45,37 @@ Las pruebas del motor de Laberinto recorren las 420 combinaciones distintas de j
 Los E2E usan emuladores para comprobar la petición a `recordLearningAction`, la respuesta guardada y la pantalla resultante. Móvil y escritorio recorren los juegos, la pausa, las etiquetas de fracciones, la vía escrita y accesibilidad. Las comprobaciones automáticas de accesibilidad no sustituyen una prueba con usuarios y tecnologías de asistencia.
 
 No cambian el catálogo de lecciones, el protocolo 12, las reglas de recompensas ni los documentos persistidos. No hay migraciones, escrituras por movimiento, cambios de secretos o IAM ni servicios adicionales. `PIN_PEPPER` permanece en Secret Manager.
+
+# Tercera revisión: capa arcade
+
+## Objetivo
+
+Hacer los nueve juegos más dinámicos y con sensación de recreativo sin tocar el contrato con la clase: solo una decisión deliberada envía una respuesta, el servidor decide la corrección y la velocidad no concede premios.
+
+## Capa compartida (`ArcadeFx.tsx`, `arcadeScore.ts`)
+
+- **Marcador arcade**: PUNTOS, COMBO y RÉCORD con cinco cifras. Es local al dispositivo (`numerario:arcade:<juego>`), no se envía a Functions ni concede estrellas o dominio.
+- **Combo**: las acciones seguidas sin fallo de reflejos multiplican ×2, ×3 y ×4 (a las 3, 6 y 10). Un fallo de reflejos corta la cadena, sin restar puntos.
+- **Efectos**: textos flotantes, partículas, carteles («¡YA!», «¡Combo ×2!») y sacudida de la máquina con la Web Animations API. Con «reducir movimiento» no hay partículas ni sacudida y los textos aparecen sin desplazarse; la pausa congela las animaciones.
+- **Sonido**: cinco efectos sintetizados nuevos (`coin`, `combo`, `crash`, `pop`, `whoosh`). En la clase el juego recibía `soundOn={false}`; ahora sigue la preferencia global y hay un botón «Sonido del juego».
+- **Cierre**: al resolver el ejercicio (clase) o ganar la partida se suma un bonus de meta, se celebra con fanfarria y confeti y se muestra «¡Nuevo récord!» si corresponde.
+
+## Mecánicas nuevas por juego
+
+Todas dan solo puntos arcade; ninguna envía respuestas ni cambia las opciones.
+
+| Juego | Novedad |
+| --- | --- |
+| Serpiente | Monedas doradas en casillas libres. Cada moneda acelera un poco la serpiente (con piso de 260 ms por paso). |
+| Laberinto | Las migas del suelo se recogen. El escudo da puntos y, con él activo, alcanzar al fantasma lo devuelve a su casa. |
+| Invasión | Cápsulas doradas que caen por una columna: se recogen colocando la nave debajo. Explosión y sacudida al impactar. |
+| Autopista | Volantazos con puntos de estilo, estela al rodar y llamarada con el turbo (el turbo no da puntos). |
+| Estanque | Puntos por cada salto seguro al río y bonus «¡Por poco!» al esquivar al cocodrilo por una casilla. |
+| Bloques | Peloteo encadenado en el recorrido libre; en la clase, «¡Carambola!» al usar un tiro con rebote. |
+| Topos | Topo dorado sin número que aparece y se esconde; no sale con «Sin prisas». |
+| Caja numérica | Polvo al empujar, aviso al dejar una caja atascada y bonus de «par» por entregar con pocos pasos. Sigue sin reloj. |
+| Cohete | Estela del motor, «¡Despegue!» y combo por respuestas seguidas en el recorrido con tiempo. |
+
+## Validación
+
+Pruebas unitarias de la puntuación (tramos de combo, récord, valores inválidos) y del hook (combo, retirada de efectos, corte de cadena, bonus y récord, celebración solo al resolver en la clase, sonido desactivado). Las pruebas existentes de los nueve juegos y de `LessonGames` siguen pasando sin cambios.

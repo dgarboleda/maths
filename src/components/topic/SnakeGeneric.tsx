@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, cellAt, useArcadeFx } from "./ArcadeFx";
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
@@ -28,6 +29,11 @@ const TICK_FLOOR_MS = 180;
 const CANDIDATES_BASE = 5;
 const CANDIDATES_STEP = 1;
 const CANDIDATES_MAX = 7;
+/** Moneda dorada: solo puntos arcade. No es una respuesta ni hace crecer. */
+const COIN_POINTS = 50;
+const ANSWER_POINTS = 150;
+const COIN_SPEED_STEP_MS = 15;
+const COIN_SPEED_FLOOR_MS = 260;
 
 type Phase = "start" | "playing" | "over";
 interface Cell {
@@ -115,27 +121,35 @@ export function SnakeGeneric({
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
+  const [coin, setCoin] = useState<Cell | null>(null);
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  const fx = useArcadeFx({ game: "snake", soundOn, solved, cabinetRef });
 
   const dirRef = useRef<Cell>(INITIAL_DIR);
   const accRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer — evita comer dos veces a la vez
 
   const wave = waveIndex(correctCount, WAVE_SIZE);
-  const tickMs = scaleWithWave(TICK_BASE_MS, TICK_STEP_MS, wave, TICK_FLOOR_MS);
+  // Cada moneda acelera un poco la serpiente: más ritmo sin tocar la pregunta.
+  const [coinsEaten, setCoinsEaten] = useState(0);
+  const tickMs = Math.max(COIN_SPEED_FLOOR_MS, scaleWithWave(TICK_BASE_MS, TICK_STEP_MS, wave, TICK_FLOOR_MS) - coinsEaten * COIN_SPEED_STEP_MS);
   const candidateCount = Math.round(scaleWithWave(CANDIDATES_BASE, CANDIDATES_STEP, wave, CANDIDATES_MAX));
 
   function spawnRound(currentSnake: Cell[]) {
     const nextProblem = newProblem();
     const spread = Math.max(8, candidateCount * 2);
     const values = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, candidateCount);
-    const cells = pickFreeCells(currentSnake, values.length);
+    const cells = pickFreeCells(currentSnake, values.length + 1);
     setProblem(nextProblem);
-    setCandidates(cells.map((cell, i) => ({ ...cell, value: values[i] })));
+    setCandidates(cells.slice(0, values.length).map((cell, i) => ({ ...cell, value: values[i] })));
+    setCoin(cells[values.length] ?? null);
   }
 
   function endGame(didWin: boolean, finalCount: number) {
     setWin(didWin);
     setPhase("over");
+    fx.end(didWin);
+    if (!didWin) fx.oops();
     playSound(didWin ? "fanfare" : "fail", soundOn);
     onGameOver?.(finalCount);
     if (didWin) {
@@ -146,7 +160,7 @@ export function SnakeGeneric({
 
   /** Choque en modo clase: no es una respuesta; vuelve a empezar el recorrido. */
   function reflexReset() {
-    playSound("wrong", soundOn);
+    fx.oops(cellAt(snakeRef.current[0].x, snakeRef.current[0].y, GRID_SIZE), "¡Choque!");
     setReflexMiss(true);
     setAwaitingInput(true);
     dirRef.current = INITIAL_DIR;
@@ -171,7 +185,9 @@ export function SnakeGeneric({
     setCorrectCount(0);
     setStarsThisRound(0);
     setWin(false);
+    setCoinsEaten(0);
     setPhase("playing");
+    fx.start();
     spawnRound(INITIAL_SNAKE);
   }
 
@@ -179,7 +195,10 @@ export function SnakeGeneric({
     busyRef.current = true;
     setCandidates([]); // nada más para comer hasta que se resuelva esta ronda
     setReflexMiss(false);
+    const at = cellAt(eaten.x, eaten.y, GRID_SIZE);
     if (exercise) {
+      fx.pop("¡Ñam!", at, "info");
+      fx.burst(at, "info");
       try {
         // Se envía el valor comido: el resultado lo decide el servidor.
         await exercise.onResponse(eaten.value);
@@ -192,6 +211,8 @@ export function SnakeGeneric({
     }
     const correct = eaten.value === problem.answer;
     playSound(correct ? "correct" : "wrong", soundOn);
+    if (correct) fx.award(ANSWER_POINTS, at, { sound: "pop" });
+    else fx.oops(at, "✗");
     const stars = await onAnswer(correct);
     if (correct) {
       const next = correctCount + 1;
@@ -228,6 +249,11 @@ export function SnakeGeneric({
     const newSnake = grow ? [newHead, ...currentSnake] : [newHead, ...currentSnake.slice(0, -1)];
     snakeRef.current = newSnake;
     setSnake(newSnake);
+    if (coin && coin.x === newHead.x && coin.y === newHead.y) {
+      fx.award(COIN_POINTS, cellAt(coin.x, coin.y, GRID_SIZE), { tone: "bonus" });
+      setCoin(pickFreeCells([...newSnake, ...candidates], 1)[0] ?? null);
+      setCoinsEaten((n) => n + 1);
+    }
     if (eaten) resolveEaten(eaten, newSnake);
   }
 
@@ -273,13 +299,14 @@ export function SnakeGeneric({
   const facing = snake.length > 1 ? { x: snake[0].x - snake[1].x, y: snake[0].y - snake[1].y } : INITIAL_DIR;
 
   return (
-    <div data-game="snake" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-emerald-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
+    <div ref={cabinetRef} data-game="snake" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-emerald-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{ backgroundImage: "radial-gradient(#34d399 1px, transparent 0)", backgroundSize: "24px 24px" }}
       />
 
+      <ArcadeFxLayer fx={fx} scope="cabinet" />
       <div className="relative z-10 mx-auto max-w-md text-center">
         <h2 className="mb-2 bg-gradient-to-r from-emerald-300 to-teal-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🐍 Serpiente numérica
@@ -293,11 +320,11 @@ export function SnakeGeneric({
               type="button"
               onClick={start}
               disabled={frozen}
-              className="rounded-2xl border-2 border-white bg-gradient-to-r from-emerald-400 to-teal-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
+              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-emerald-400 to-teal-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-emerald-300">Usa las flechas del teclado (o los botones) para moverte.{lesson && " En esta clase la serpiente espera tu primera flecha, y chocar no cuenta como respuesta."}</p>
+            <p className="text-xs text-emerald-300">Usa las flechas del teclado (o los botones) para moverte. Las monedas doradas dan puntos y aceleran la serpiente.{lesson && " En esta clase la serpiente espera tu primera flecha, y chocar no cuenta como respuesta."}</p>
           </div>
         )}
 
@@ -318,6 +345,7 @@ export function SnakeGeneric({
               />
             </div>
 
+            <ArcadeScoreBar fx={fx} />
             {lesson ? <ReflexNotice show={reflexMiss} waiting={waiting} /> : <div className="flex items-center justify-between rounded-xl border border-emerald-700 bg-emerald-950/80 p-3 text-sm">
               <span>
                 Aciertos: <strong className="text-emerald-300">{correctCount}</strong>/{GOAL}
@@ -351,6 +379,10 @@ export function SnakeGeneric({
                   style={{ gridColumn: seg.x + 1, gridRow: seg.y + 1 }}
                 >{i === 0 && <span className="absolute inset-0" style={{ transform: `rotate(${facing.y === 1 ? 90 : facing.y === -1 ? -90 : facing.x === -1 ? 180 : 0}deg)` }}><ArcadeSprite kind="snake" className="size-full" /></span>}</div>
               ))}
+              {coin && (
+                <div className="arcade-bonus-item z-10 m-[14%] rounded-full border-2 border-yellow-100 bg-gradient-to-br from-yellow-200 to-amber-500 shadow-[0_0_12px_#facc15]" data-coin="" style={{ gridColumn: coin.x + 1, gridRow: coin.y + 1 }} />
+              )}
+              <ArcadeFxLayer fx={fx} />
               {candidates.map((c) => (
                 <div
                   key={`candidate-${c.x}-${c.y}`}
@@ -368,7 +400,7 @@ export function SnakeGeneric({
 
         {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
-            <div aria-hidden="true" className="text-6xl">
+            <div aria-hidden="true" className="arcade-win text-6xl">
               {shownWin ? "🐍🏆" : "💥"}
             </div>
             <h3 className="text-3xl font-bold text-teal-200">{shownWin ? "¡Lograste la meta!" : "¡Buen intento!"}</h3>
@@ -377,6 +409,7 @@ export function SnakeGeneric({
                 <span>Respuestas acertadas:</span>
                 <strong className="text-emerald-300">{shownCount}</strong>
               </div>
+              <ArcadeFinalScore fx={fx} />
               {!lesson && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-teal-300">+{starsThisRound} ★</strong>

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx, type FxAt } from "./ArcadeFx";
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
@@ -25,6 +26,12 @@ const UP_BASE_MS = 2400;
 const UP_STEP_MS = -200;
 const UP_FLOOR_MS = 1400;
 const LESSON_UP_MS = 2600;
+const WHACK_POINTS = 200;
+// Topo dorado: sale de vez en cuando sin número. Atraparlo solo da puntos;
+// no es una respuesta y no aparece con «Sin prisas».
+const GOLD_POINTS = 80;
+const GOLD_EVERY_MS = 3600;
+const GOLD_UP_MS = 1300;
 
 type Phase = "start" | "playing" | "over";
 type Mole = { value: number; until: number } | null;
@@ -80,6 +87,13 @@ export function TopoGeneric({
   const [win, setWin] = useState(false);
   const [calm, setCalm] = useState(false);
   const [pending, setPending] = useState(false);
+  const [gold, setGold] = useState<number | null>(null);
+  const goldRef = useRef<{ hole: number; until: number } | null>(null);
+  const goldAccRef = useRef(0);
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  const fx = useArcadeFx({ game: "topos", soundOn, solved, cabinetRef });
+  /** Centro aproximado de cada agujero en la pradera de 3 × 2. */
+  const holeAt = (hole: number): FxAt => ({ x: ((hole % 3) + 0.5) * (100 / 3), y: Math.floor(hole / 3) === 0 ? 30 : 75 });
 
   const clockRef = useRef(0); // tiempo de juego, no de reloj: la pausa lo detiene
   const popAccRef = useRef(0);
@@ -136,6 +150,7 @@ export function TopoGeneric({
   function endGame(didWin: boolean, finalCount: number) {
     setWin(didWin);
     setPhase("over");
+    fx.end(didWin);
     playSound(didWin ? "fanfare" : "fail", soundOn);
     onGameOver?.(finalCount);
     if (didWin) {
@@ -154,14 +169,21 @@ export function TopoGeneric({
     busyRef.current = false;
     setPending(false);
     clockRef.current = 0;
+    goldRef.current = null;
+    goldAccRef.current = 0;
+    setGold(null);
     setPhase("playing");
+    fx.start();
     spawnRound();
   }
 
-  async function resolveRound(correct: boolean) {
+  async function resolveRound(correct: boolean, hole: number | null = null) {
     busyRef.current = true;
     setPending(true);
     playSound(correct ? "correct" : "wrong", soundOn);
+    const at = hole === null ? { x: 50, y: 50 } : holeAt(hole);
+    if (correct) fx.award(WHACK_POINTS, at, { label: `¡Pum! +${WHACK_POINTS}`, sound: "pop" });
+    else fx.oops(at, hole === null ? "¡Se escapó!" : "✗");
     const stars = await onAnswer(correct);
     if (correct) {
       const next = correctCount + 1;
@@ -184,9 +206,12 @@ export function TopoGeneric({
     setPending(false);
   }
 
-  async function whackLesson(value: number) {
+  async function whackLesson(value: number, hole: number) {
     busyRef.current = true;
     setPending(true);
+    fx.pop("¡Pum!", holeAt(hole), "info");
+    fx.burst(holeAt(hole), "info");
+    fx.shake(3);
     try {
       // Se envía el topo tocado: el resultado lo decide el servidor.
       await exercise!.onResponse(value);
@@ -200,9 +225,35 @@ export function TopoGeneric({
   function whack(hole: number) {
     const mole = holes[hole];
     if (!mole || busyRef.current || frozen || solved || phase !== "playing") return;
-    playSound("click", soundOn);
-    if (lesson) void whackLesson(mole.value);
-    else void resolveRound(mole.value === problem.answer);
+    playSound("pop", soundOn);
+    if (lesson) void whackLesson(mole.value, hole);
+    else void resolveRound(mole.value === problem.answer, hole);
+  }
+
+  function whackGold(hole: number) {
+    if (goldRef.current?.hole !== hole || busyRef.current || frozen || solved || phase !== "playing") return;
+    goldRef.current = null;
+    setGold(null);
+    fx.award(GOLD_POINTS, holeAt(hole), { tone: "bonus", label: `¡Dorado! +${GOLD_POINTS}` });
+  }
+
+  /** Aparece y se esconde el topo dorado en un agujero libre. */
+  function tickGold(dtMs: number, now: number, current: Mole[]) {
+    const shown = goldRef.current;
+    if (shown) {
+      if (shown.until <= now || current[shown.hole]) {
+        goldRef.current = null;
+        setGold(null);
+      }
+      return;
+    }
+    goldAccRef.current += dtMs;
+    if (goldAccRef.current < GOLD_EVERY_MS) return;
+    const free = shuffle(current.flatMap((m, i) => (m ? [] : [i])));
+    if (free.length === 0) return;
+    goldAccRef.current = 0;
+    goldRef.current = { hole: free[0], until: now + GOLD_UP_MS };
+    setGold(free[0]);
   }
 
   useGameLoop(
@@ -220,6 +271,7 @@ export function TopoGeneric({
           return null;
         });
       }
+      tickGold(dtMs, now, next);
       if (escapedAnswer && !lesson) {
         setHoles(next);
         void resolveRound(false);
@@ -227,7 +279,7 @@ export function TopoGeneric({
       }
       if (popAccRef.current >= POP_MS && next.filter(Boolean).length < MAX_UP) {
         const value = nextValue(next);
-        const free = shuffle(next.flatMap((m, i) => (m ? [] : [i])));
+        const free = shuffle(next.flatMap((m, i) => (m || goldRef.current?.hole === i ? [] : [i])));
         if (value !== undefined && free.length > 0) {
           popAccRef.current = 0;
           next = next.map((m, i) => (i === free[0] ? { value, until: now + upMs } : m));
@@ -245,13 +297,14 @@ export function TopoGeneric({
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div data-game="topos" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
+    <div ref={cabinetRef} data-game="topos" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-amber-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{ backgroundImage: "radial-gradient(#fbbf24 1px, transparent 0)", backgroundSize: "24px 24px" }}
       />
 
+      <ArcadeFxLayer fx={fx} scope="cabinet" />
       <div className="relative z-10 mx-auto max-w-md text-center">
         <h2 className="mb-2 bg-gradient-to-r from-amber-300 to-lime-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🐹 Topos numéricos
@@ -265,12 +318,12 @@ export function TopoGeneric({
               type="button"
               onClick={start}
               disabled={frozen}
-              className="rounded-2xl border-2 border-white bg-gradient-to-r from-amber-400 to-lime-500 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
+              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-amber-400 to-lime-500 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
             <p className="text-xs text-amber-300">
-              Toca un topo (o usa Tab y Enter) para elegir su número.
+              Toca un topo (o usa Tab y Enter) para elegir su número. El topo dorado no tiene número: atrápalo para sumar puntos.
               {lesson ? " Si un topo se esconde no pasa nada: volverá a salir." : " ¡No dejes escapar el correcto!"}
             </p>
           </div>
@@ -293,6 +346,7 @@ export function TopoGeneric({
               />
             </div>
 
+            <ArcadeScoreBar fx={fx} />
             {!lesson && (
               <div className="flex items-center justify-between rounded-xl border border-amber-700 bg-amber-950/80 p-3 text-sm">
                 <span aria-live="polite">
@@ -320,8 +374,18 @@ export function TopoGeneric({
               {calm && <button type="button" onClick={nextBatch} disabled={frozen || pending} className="arcade-option">Siguiente tanda</button>}
             </div>
             <p role="status" className="text-xs text-amber-100">{pending ? "Guardando el número elegido…" : calm ? "Los topos esperan. Cambia de tanda hasta ver el número que elegiste." : "Observa a los topos. Si necesitas leer sin reloj, activa «Sin prisas»."}</p>
-            <div role="group" aria-labelledby={promptId} className="arcade-scene arcade-scene-meadow mx-auto grid max-w-sm grid-cols-3 gap-3 rounded-2xl border-2 border-amber-700 p-3">
-              {holes.map((mole, i) => (
+            <div role="group" aria-labelledby={promptId} className="arcade-scene arcade-scene-meadow relative mx-auto grid max-w-sm grid-cols-3 gap-3 rounded-2xl border-2 border-amber-700 p-3">
+              {holes.map((mole, i) => !mole && gold === i && !calm ? (
+                <button key={i} type="button" onClick={() => whackGold(i)} disabled={frozen || pending}
+                  aria-label="Topo dorado: puntos extra, no es una respuesta"
+                  className="arcade-mole-hole relative flex h-28 touch-manipulation items-end justify-center overflow-hidden rounded-2xl pb-3 focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-300">
+                  <span aria-hidden="true" className="absolute inset-x-3 bottom-1 h-5 rounded-[50%] bg-black/60" />
+                  <span aria-hidden="true" className="arcade-bonus-item relative flex flex-col items-center" style={{ filter: "sepia(1) saturate(4) brightness(1.15) drop-shadow(0 0 8px #facc15)" }}>
+                    <ArcadeSprite kind="mole" className="size-14" />
+                    <span className="mt-1 rounded-md bg-yellow-300 px-2 text-sm font-black text-slate-900">★</span>
+                  </span>
+                </button>
+              ) : (
                 <button
                   key={i}
                   type="button"
@@ -343,13 +407,14 @@ export function TopoGeneric({
                   </span>
                 </button>
               ))}
+              <ArcadeFxLayer fx={fx} />
             </div>
           </div>
         )}
 
         {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
-            <div aria-hidden="true" className="text-6xl">
+            <div aria-hidden="true" className="arcade-win text-6xl">
               {shownWin ? "🏆" : "🕳️"}
             </div>
             <h3 className="text-3xl font-bold text-lime-200">{shownWin ? "¡Atrapaste al topo!" : "¡Buen intento!"}</h3>
@@ -358,6 +423,7 @@ export function TopoGeneric({
                 <span>Topos atrapados:</span>
                 <strong className="text-lime-300">{shownCount}</strong>
               </div>
+              <ArcadeFinalScore fx={fx} />
               {!lesson && (
                 <div className="flex justify-between">
                   <span>Estrellas ganadas:</span>
