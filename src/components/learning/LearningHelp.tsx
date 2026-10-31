@@ -1,12 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, lazy, Suspense, useCallback, useContext, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { MathText } from "@/components/MathText";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
 import type { ScreenHelp } from "@/lib/learning/screenHelp";
 import styles from "./help.module.css";
+
+const GlossarySearch = lazy(() => import("./GlossarySearch"));
 
 const HelpOpenContext = createContext(false);
 export const useLearningHelpOpen = () => useContext(HelpOpenContext);
@@ -153,6 +155,7 @@ function HelpPanel({ id, help, preferredIdea, onClose, assisted, onIdeaSeen }: {
           <p><MathText text={idea.meaning} /></p>
           {idea.example && <p className={styles.example}><strong>Por ejemplo:</strong> <MathText text={idea.example} /></p>}
         </details>)}
+        <Suspense fallback={<p>Cargando buscador de palabras…</p>}><GlossarySearch /></Suspense>
         {assisted && <p className={styles.assisted}>Esta consulta cuenta como ayuda en la comprobación. Puedes seguir aprendiendo a tu ritmo.</p>}
         <button type="button" className={styles.done} onClick={onClose}>Entendido, seguir</button>
       </div>

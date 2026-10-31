@@ -12,6 +12,26 @@ function setup(overrides: Partial<Parameters<typeof LearningHelpProvider>[0]> = 
 }
 beforeEach(() => localStorage.clear());
 
+test("el buscador explica términos y permite recuperarse de una búsqueda sin resultados", async () => {
+  const user = userEvent.setup();
+  render(setup());
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  const search = await screen.findByRole("searchbox", { name: "¿Qué término quieres entender?" });
+  await user.type(search, "fusibles");
+  expect(screen.getByRole("heading", { name: "Fusible" })).toBeInTheDocument();
+  expect(screen.getByText(/Pieza de seguridad/)).toBeInTheDocument();
+  await user.clear(search);
+  await user.type(search, "noexistepalabra");
+  expect(screen.getByText(/No encontramos ese término/)).toBeInTheDocument();
+  await user.clear(search);
+  await user.type(search, "pendiente");
+  expect(screen.getByRole("heading", { name: /^Pendiente$/ })).toBeInTheDocument();
+  expect(screen.getByText(/cuánto cambia una cantidad/)).toBeInTheDocument();
+  expect(screen.getByText("Juego en pausa")).toBeInTheDocument();
+  await user.keyboard("{Escape}");
+  expect(screen.getByText("Juego activo")).toBeInTheDocument();
+});
+
 test("abre la explicación, pausa el juego, atrapa el foco y Escape vuelve al foco", async () => {
   const user = userEvent.setup();
   const view = render(setup());
