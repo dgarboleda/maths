@@ -90,7 +90,9 @@ export function FroggerGeneric({
   const generateProblem = () =>
     exercise?.problem ?? getModule(moduleId)!.generateProblem();
   const goal = exercise ? (exercise.rounds ?? 1) : GOAL;
-  const startRow = goal * 2;
+  // En clase cada pregunta usa un solo estanque; el total de preguntas solo
+  // alimenta el marcador y no debe añadir filas invisibles al tablero.
+  const startRow = exercise ? 2 : START_ROW;
   const promptId = useId();
   const reducedMotion = prefersReducedMotion();
 
@@ -120,6 +122,7 @@ export function FroggerGeneric({
 
   const obstacleDirRef = useRef(1);
   const accRef = useRef(0);
+  const lilyAccRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
 
   const wave = waveIndex(correctCount, 1);
@@ -136,6 +139,7 @@ export function FroggerGeneric({
     obstacleDirRef.current = count % 2 ? 1 : -1;
     setObstacleDirection(count % 2 ? 1 : -1);
     accRef.current = 0;
+    lilyAccRef.current = 0;
   }
 
   function endGame(didWin: boolean, finalCount: number) {
@@ -302,6 +306,15 @@ export function FroggerGeneric({
         if (hopRef.current === 0) setHopping(false);
       }
       if (!moving) return;
+      // Cambian de lugar solo mientras la rana está a salvo en la orilla;
+      // al entrar al río la disposición queda fija hasta escoger una opción.
+      if (exercise && (exercise.round ?? 0) > 0 && row === startRow && candidates.length > 1) {
+        lilyAccRef.current += dtMs;
+        if (lilyAccRef.current >= 4_000) {
+          lilyAccRef.current -= 4_000;
+          setCandidates((values) => [...values.slice(1), values[0]]);
+        }
+      }
       accRef.current += dtMs;
       if (accRef.current < obstacleTickMs) return;
       accRef.current -= obstacleTickMs;
@@ -443,6 +456,7 @@ export function FroggerGeneric({
               </div>
               <ArcadeFxLayer fx={fx} />
             </div>
+            {exercise && (exercise.round ?? 0) > 0 && <p className="text-xs text-sky-100">Los nenúfares cambian de lugar mientras esperas en la orilla. Al entrar al río se quedan quietos.</p>}
 
             <p className="text-xs text-sky-100">La flecha marca el próximo paso del cocodrilo. Espera en la orilla para encontrar tu hueco.</p>
             <TouchDPad inline repeat={false} disabled={controlsDisabled} onMove={onTouchMove} />

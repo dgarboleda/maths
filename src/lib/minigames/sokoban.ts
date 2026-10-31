@@ -15,10 +15,12 @@ export type Direction = "U" | "D" | "L" | "R";
 export const DIRECTIONS: Record<Direction, Cell> = { U: { x: 0, y: -1 }, D: { x: 0, y: 1 }, L: { x: -1, y: 0 }, R: { x: 1, y: 0 } };
 
 const TURN = ["#######", "#G#...#", "#...#.#", "#.....#", "#.$#$.#", "#..$..#", "#.$.$.#", "#..@..#", "#######"];
+const CENTRAL = ["#######", "#..G..#", "#.#.#.#", "#.....#", "#.$.$.#", "#.$...#", "#.$.$.#", "#..@..#", "#######"];
 export const WAREHOUSES: readonly Warehouse[] = [
   { id: "giro", name: "Almacén del giro", rows: TURN },
-  { id: "centro", name: "Pasillo central", rows: ["#######", "#..G..#", "#.#.#.#", "#.....#", "#.$.$.#", "#.$...#", "#.$.$.#", "#..@..#", "#######"] },
+  { id: "centro", name: "Pasillo central", rows: CENTRAL },
   { id: "espejo", name: "Almacén espejo", rows: TURN.map((row) => [...row].reverse().join("")) },
+  { id: "centro-espejo", name: "Pasillo invertido", rows: CENTRAL.map((row) => [...row].reverse().join("")) },
 ];
 
 export const sameCell = (a: Cell, b: Cell) => a.x === b.x && a.y === b.y;

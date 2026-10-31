@@ -104,6 +104,7 @@ export function TopoGeneric({
 
   const wave = waveIndex(correctCount, WAVE_SIZE);
   const upMs = lesson ? scaleWithWave(LESSON_UP_MS, -150, exercise?.round ?? 0, 2000) : scaleWithWave(UP_BASE_MS, UP_STEP_MS, wave, UP_FLOOR_MS);
+  const popMs = lesson ? scaleWithWave(POP_MS, -60, exercise?.round ?? 0, 550) : POP_MS;
 
   function spawnRound() {
     const nextProblem = newProblem();
@@ -280,7 +281,7 @@ export function TopoGeneric({
         void resolveRound(false);
         return;
       }
-      if (popAccRef.current >= POP_MS && next.filter(Boolean).length < MAX_UP) {
+      if (popAccRef.current >= popMs && next.filter(Boolean).length < MAX_UP) {
         const value = nextValue(next);
         const free = shuffle(next.flatMap((m, i) => (m || goldRef.current?.hole === i ? [] : [i])));
         if (value !== undefined && free.length > 0) {

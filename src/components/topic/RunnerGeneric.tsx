@@ -39,9 +39,9 @@ type Phase = "start" | "playing" | "over";
  * puerta). En la clase, el primer carril da la salida. El turbo permite
  * acortar voluntariamente el recorrido; no altera premios ni corrección.
  *
- * A diferencia de Frogger, acá NO hay un obstáculo aparte: la única
- * consecuencia posible es cruzar la puerta en el carril correcto o
- * incorrecto. Un carril incorrecto cuesta una vida directamente (no hay
+ * En clase, desde la segunda ronda hay un obstáculo señalizado antes de la
+ * puerta. Un choque reinicia el tramo sin enviar una respuesta. En el modo
+ * anterior, un carril incorrecto cuesta una vida directamente (no hay
  * "retroceso" posible en un runner de avance forzado) pero NUNCA termina la
  * partida de inmediato — sólo agotar las vidas lo hace, mismo criterio que
  * el resto de la serie.
@@ -90,6 +90,7 @@ export function RunnerGeneric({
   const [racing, setRacing] = useState(false);
   const [turbo, setTurbo] = useState(false);
   const [pending, setPending] = useState(false);
+  const [hazardCleared, setHazardCleared] = useState(false);
   const cabinetRef = useRef<HTMLDivElement>(null);
   const fx = useArcadeFx({ game: "runner", soundOn, solved: exercise?.solved, cabinetRef, session: exercise?.session });
 
@@ -107,6 +108,7 @@ export function RunnerGeneric({
   const remainingRef = useRef(GATE_TIME_BASE_MS);
   const paintAccRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
+  const hazardCheckedRef = useRef(false);
 
   function spawnGate(countForWave: number) {
     setPending(false);
@@ -117,6 +119,8 @@ export function RunnerGeneric({
     if (exercise) setLane(NO_LANE);
     setRacing(!lesson);
     setTurbo(false);
+    hazardCheckedRef.current = false;
+    setHazardCleared(false);
     const wave = waveIndex(exercise?.round ?? countForWave, 1);
     const total = scaleWithWave(GATE_TIME_BASE_MS, GATE_TIME_STEP_MS, wave, GATE_TIME_FLOOR_MS);
     setGateTotalMs(total);
@@ -213,6 +217,21 @@ export function RunnerGeneric({
       if (busyRef.current || !racing) return;
       remainingRef.current -= dtMs;
       paintAccRef.current += dtMs;
+      // El obstáculo aparece antes de la puerta, es independiente de la
+      // respuesta y deja tiempo para volver a cambiar de carril.
+      if (exercise && (exercise.round ?? 0) > 0 && candidates.length > 1 &&
+          !hazardCheckedRef.current && remainingRef.current <= gateTotalMs * 0.6) {
+        hazardCheckedRef.current = true;
+        setHazardCleared(true);
+        const hazardLane = (exercise.round ?? 0) % candidates.length;
+        if (lane === hazardLane) {
+          fx.oops(laneAt(lane), "¡Obstáculo!");
+          setReflexMiss(true);
+          spawnGate(0);
+          return;
+        }
+        fx.award(25, laneAt(lane), { chain: false, burst: false, tone: "bonus", label: "¡Esquivado! +25" });
+      }
       if (remainingRef.current <= 0) {
         resolveGate();
       } else if (paintAccRef.current >= 80) {
@@ -368,7 +387,7 @@ export function RunnerGeneric({
                 </div>
               )}
               {Array.from({ length: laneCount }, (_, row) => (
-                <button type="button" onClick={() => chooseLane(row)} aria-label={`Carril ${row + 1}: ${candidates[row] === undefined ? "" : choiceLabel(problem, candidates[row])}`} aria-pressed={lane === row} disabled={frozen || pending}
+                <button type="button" onClick={() => chooseLane(row)} aria-label={`Carril ${row + 1}: ${candidates[row] === undefined ? "" : choiceLabel(problem, candidates[row])}${lesson && (exercise?.round ?? 0) > 0 && laneCount > 1 && !hazardCleared && row === (exercise!.round ?? 0) % laneCount ? ", obstáculo antes de la puerta" : ""}`} aria-pressed={lane === row} disabled={frozen || pending}
                   key={row}
                   className={`${reducedMotion ? "" : "transition-colors duration-150"} relative flex h-16 w-full touch-manipulation items-center rounded-lg border-b border-dashed font-bold ${
                     lane === row ? "border-amber-300 bg-amber-800/40 text-amber-100" : "border-slate-500/60 text-slate-200"
@@ -376,12 +395,15 @@ export function RunnerGeneric({
                 >
                   <span aria-hidden="true" className="absolute left-1">{lane === row && <ArcadeSprite kind="car" className="size-14" />}</span>
                   {lane === row && racing && <span aria-hidden="true" className={`${turbo ? "arcade-trail text-lg" : "text-xs opacity-60"} absolute left-0`}>{turbo ? "🔥" : "💨"}</span>}
+                  {lesson && (exercise?.round ?? 0) > 0 && laneCount > 1 && !hazardCleared && row === (exercise!.round ?? 0) % laneCount &&
+                    <span aria-hidden="true" className="absolute left-[38%] top-1 text-xl">🚧</span>}
                   <span data-choice-label="" className="arcade-value absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-cyan-100 shadow-lg transition-[left] duration-100 motion-reduce:transition-none" style={{ left: `${74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : <ChoiceText problem={problem} value={candidates[row]} />}</span>
                 </button>
               ))}
               <ArcadeFxLayer fx={fx} />
             </div>
 
+            {lesson && (exercise?.round ?? 0) > 0 && laneCount > 1 && <p className="text-xs text-amber-100">Esquiva el obstáculo antes de elegir la puerta. Un choque reinicia el tramo y no responde.</p>}
             <button type="button" onClick={boost} disabled={frozen || pending || lane === NO_LANE || turbo}
               className="min-h-11 rounded-xl border-2 border-amber-200 bg-amber-400 px-6 font-bold text-slate-950 disabled:opacity-50">Turbo · cruzar ⚡</button>
             <TouchDPad inline disabled={frozen || pending} onMove={onTouchMove} />

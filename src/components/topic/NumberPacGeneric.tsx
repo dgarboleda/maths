@@ -12,7 +12,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
-import { MAZE_SIZE, mazeWall, mazeChoiceCells, nextMazeGhost, reachableMaze } from "@/lib/minigames/maze";
+import { MAZE_SIZE, mazeWall, mazeChoiceCells, mazeShieldCell, nextMazeGhost, reachableMaze } from "@/lib/minigames/maze";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
@@ -133,6 +133,7 @@ export function NumberPacGeneric({
   const problem = exercise?.problem ?? legacyProblem;
   const [invulnerable, setInvulnerable] = useState(false);
   const [shieldSeconds, setShieldSeconds] = useState(0);
+  const [extraShield, setExtraShield] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
@@ -152,6 +153,7 @@ export function NumberPacGeneric({
   const ghostAccRef = useRef(0);
   const invulnRemainingRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
+  const bonusShieldRef = useRef(false);
 
   const wave = waveIndex(exercise?.round ?? correctCount, WAVE_SIZE);
   const ghostTickMs = scaleWithWave(GHOST_TICK_BASE_MS, GHOST_TICK_STEP_MS, wave, GHOST_TICK_FLOOR_MS);
@@ -207,6 +209,8 @@ export function NumberPacGeneric({
     setShieldSeconds(0);
     setBlocked(false);
     busyRef.current = false;
+    bonusShieldRef.current = false;
+    setExtraShield(false);
     updateBoard({ player: START_CELL, ghost: GHOST_START });
     setInvulnerable(false);
     setLives(LIVES_START);
@@ -298,8 +302,23 @@ export function NumberPacGeneric({
       fx.award(DOT_POINTS, at(newCell), { burst: false, sound: "pop" });
     }
 
+    // Una recompensa por explorar, disponible una vez por ronda después de
+    // usar el primer escudo. Nunca bloquea ni obliga a recoger una respuesta.
+    if (exercise && (exercise.round ?? 0) > 0 && !bonusShieldRef.current &&
+        !current.powerPellet && dotsRef.current.size >= 6) {
+      const available = pickFreeCells([newCell, current.ghost, ...current.pellets]);
+      const extra = mazeShieldCell(newCell, current.ghost, current.pellets, available);
+      if (extra) {
+        bonusShieldRef.current = true;
+        setExtraShield(true);
+        updateBoard({ powerPellet: extra });
+        fx.banner("¡Nuevo escudo!", "bonus");
+      }
+    }
+
     if (current.powerPellet && cellKey(newCell) === cellKey(current.powerPellet)) {
       updateBoard({ powerPellet: null });
+      setExtraShield(false);
       invulnRemainingRef.current = INVULN_MS;
       setInvulnerable(true);
       setShieldSeconds(INVULN_MS / 1000);
@@ -425,6 +444,7 @@ export function NumberPacGeneric({
             </div>
 
             <ArcadeScoreBar fx={fx} />
+            {extraShield && <p role="status" className="text-sm text-fuchsia-200">Ha aparecido un escudo extra. Puedes recogerlo sin pasar por una respuesta.</p>}
             {lesson ? (
               // Sin vidas ni estrellas en la clase: solo avisos, sin recuadro vacío.
               <div className="flex items-center justify-between gap-2 text-sm">

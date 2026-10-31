@@ -110,7 +110,9 @@ export function InvadersGeneric({
   const waveAccRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
 
-  const wave = Math.max(0, waveIndex(exercise?.round ?? correctCount, WAVE_SIZE) - recovery);
+  const accumulatedDamage = 3 - shield + (exercise?.failedAttempts ?? 0);
+  const shownShield = 3 - accumulatedDamage % 3;
+  const wave = Math.max(0, waveIndex(exercise?.round ?? correctCount, WAVE_SIZE) - recovery - Math.floor(accumulatedDamage / 3));
   const waveTickMs = scaleWithWave(WAVE_TICK_BASE_MS, WAVE_TICK_STEP_MS, wave, WAVE_TICK_FLOOR_MS);
 
   function spawnWave() {
@@ -368,7 +370,7 @@ export function InvadersGeneric({
             </div>
 
             <ArcadeScoreBar fx={fx} />
-            {lesson ? <><p className="text-sm text-indigo-100" aria-live="polite">Escudo: {shield}/3{recovery > 0 ? " · velocidad reducida" : ""}</p><ReflexNotice show={reflexMiss} /></> : <div className="flex items-center justify-between rounded-xl border border-red-700 bg-red-950/80 p-3 text-sm">
+            {lesson ? <><p className="text-sm text-indigo-100" aria-live="polite">Escudo: {shownShield}/3{recovery > 0 || accumulatedDamage >= 3 ? " · velocidad reducida" : ""}</p><ReflexNotice show={reflexMiss} /></> : <div className="flex items-center justify-between rounded-xl border border-red-700 bg-red-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
               </span>
@@ -436,7 +438,7 @@ export function InvadersGeneric({
               Disparar (espacio)
             </button>
 
-            <p className="text-xs text-indigo-100">Toca un enemigo para apuntar. Solo disparar envía tu elección. Ponte bajo las cápsulas doradas para sumar puntos.</p>
+            <p className="text-xs text-indigo-100">Toca un enemigo para apuntar. Solo disparar envía tu elección. Un disparo incorrecto o una nave que aterriza dañan el escudo. Ponte bajo las cápsulas doradas para sumar puntos.</p>
             <HorizontalPad inline disabled={frozen || shotCol !== null} onLeft={moveLeft} onRight={moveRight} onAction={handleShoot} />
           </div>
         )}

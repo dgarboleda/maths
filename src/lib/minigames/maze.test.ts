@@ -1,7 +1,16 @@
 import { expect, test } from "vitest";
-import { MAZE_SIZE, mazeChoiceCells, mazeKey, mazeNeighbors, mazeWall, nextMazeGhost } from "./maze";
+import { MAZE_SIZE, mazeChoiceCells, mazeKey, mazeNeighbors, mazeShieldCell, mazeWall, nextMazeGhost, reachableMaze } from "./maze";
 
 const floor = Array.from({ length: MAZE_SIZE ** 2 }, (_, index) => ({ x: index % MAZE_SIZE, y: Math.floor(index / MAZE_SIZE) })).filter((cell) => !mazeWall(cell));
+
+test("el escudo extra no exige cruzar una respuesta ni al fantasma", () => {
+  const player = { x: 0, y: 0 }, ghost = { x: 4, y: 4 }, answers = [{ x: 2, y: 0 }, { x: 0, y: 4 }];
+  const shield = mazeShieldCell(player, ghost, answers, floor);
+  expect(shield).toBeDefined();
+  expect(reachableMaze(player, [...answers, ghost]).has(mazeKey(shield!))).toBe(true);
+  expect([player, ghost, ...answers].map(mazeKey)).not.toContain(mazeKey(shield!));
+  expect(mazeShieldCell(player, ghost, answers, [ghost, ...answers, player])).toBeUndefined();
+});
 
 test("todas las posiciones de salida permiten cinco opciones alcanzables sin responder otra antes", () => {
   for (const player of floor) for (const ghost of floor) {

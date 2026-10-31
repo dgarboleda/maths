@@ -42,6 +42,8 @@ export interface LessonExercise {
   round?: number;
   /** Cantidad de actividades numéricas de la práctica. */
   rounds?: number;
+  /** Intentos incorrectos registrados de la pregunta actual. */
+  failedAttempts?: number;
   session?: ArcadeSession;
   input: ReactNode;
   onResponse: (value: number) => Promise<boolean>;

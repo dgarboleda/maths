@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { OrbitalManeuver } from "./OrbitalManeuver";
 import { MathText } from "@/components/MathText";
 import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./ArcadeFx";
 
@@ -265,6 +266,8 @@ export function CoheteGeneric({
               <ArcadeFxLayer fx={fx} />
             </div>
             <ArcadeScoreBar fx={fx} />
+            {exercise && <OrbitalManeuver paused={exercise.paused || exercise.disabled} round={exercise.round ?? 0}
+              onBonus={(points) => fx.award(points, { x: 50, y: 40 }, { tone: "bonus", label: `+${points}` })} />}
 
             <div className="flex items-center justify-between rounded-xl border border-indigo-700 bg-indigo-950/80 p-3">
               <div className="flex items-center gap-2">

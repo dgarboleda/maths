@@ -517,6 +517,7 @@ export function QuestionActivity({
       item.format !== "choice" && typeof item.answer === "number" && progress.responses[evidenceKey("practice", item)]?.correct,
     ).length,
     rounds: lesson.practice.filter((item) => item.format !== "choice" && typeof item.answer === "number").length,
+    failedAttempts: evidence && !evidence.correct ? evidence.attempts : 0,
     session: arcadeSession,
     input: answerForm,
     onResponse: (value) => {

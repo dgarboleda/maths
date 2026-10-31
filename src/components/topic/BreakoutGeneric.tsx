@@ -52,7 +52,7 @@ interface Block {
   value: number;
 }
 
-/** En la clase, las cinco opciones van en una sola fila (una por columna):
+/** En la clase hay una opción por columna: pueden alternar su altura, pero
  *  ningún bloque queda detrás de otro y cada lanzamiento apunta a uno. */
 const LESSON_COLS = 5;
 const LESSON_W = FIELD_WIDTH / LESSON_COLS;
@@ -64,9 +64,9 @@ const BLOCK_POINTS = 200;
 const TRICK_SHOT_POINTS = 50;
 const blockCenter = (b: { x: number; y: number; w: number; h: number }): FxAt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 
-function buildBlocks(values: number[], lesson = false): Block[] {
+function buildBlocks(values: number[], lesson = false, round = 0): Block[] {
   if (lesson)
-    return values.map((value, col) => ({ id: `0-${col}`, x: col * LESSON_W, y: LESSON_ROW_Y, w: LESSON_W, h: LESSON_BLOCK_H, value }));
+    return values.map((value, col) => ({ id: `0-${col}`, x: col * LESSON_W, y: LESSON_ROW_Y + (round > 0 && (col + round) % 2 ? 6 : 0), w: LESSON_W, h: LESSON_BLOCK_H, value }));
   const blocks: Block[] = [];
   let i = 0;
   for (let row = 0; row < BLOCK_ROWS; row++) {
@@ -177,7 +177,7 @@ export function BreakoutGeneric({
     const spread = Math.max(8, BLOCK_ROWS * BLOCK_COLS * 2);
     const values = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, BLOCK_ROWS * BLOCK_COLS, spread);
     setProblem(nextProblem);
-    setBlocks(buildBlocks(values, lesson));
+    setBlocks(buildBlocks(values, lesson, exercise?.round ?? 0));
   }
 
   function endGame(didWin: boolean, finalCount: number) {
