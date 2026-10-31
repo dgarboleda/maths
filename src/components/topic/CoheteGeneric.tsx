@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./ArcadeFx";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { QuestionWidget } from "./QuestionWidget";
@@ -20,6 +21,7 @@ const START_TIME = 30;
 // se consume en orden, y cuando se agota se arma una bolsa nueva. Así nunca
 // se repite nada mientras queden preguntas distintas por mostrar.
 const BAG_SIZE = 20;
+const ANSWER_POINTS = 100;
 
 type Phase = "start" | "playing" | "over";
 
@@ -69,6 +71,14 @@ export function CoheteGeneric({
   );
   const [win, setWin] = useState(false);
   const promptId = useId();
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  const fx = useArcadeFx({ game: "cohete", soundOn, solved: exercise?.solved, cabinetRef });
+  // El reloj depende de `endGame`: se lee el cierre arcade desde una ref para
+  // no reiniciar el intervalo en cada render de efectos.
+  const fxEndRef = useRef(fx.end);
+  useEffect(() => {
+    fxEndRef.current = fx.end;
+  });
 
   const problem = exercise?.problem ?? bag[0];
   const goal = exercise ? 1 : GOAL;
@@ -96,6 +106,7 @@ export function CoheteGeneric({
       );
       setWin(didWin);
       setPhase("over");
+      fxEndRef.current(didWin);
       playSound(didWin ? "fanfare" : "fail", soundOn);
       onGameOver?.(correctCountRef.current);
       if (didWin) {
@@ -143,6 +154,7 @@ export function CoheteGeneric({
     setStarsThisRound(0);
     setBag(exercise ? [exercise.problem] : drawBag(generateProblem));
     setPhase("playing");
+    fx.start("¡Despegue!");
   }
 
   async function submit(given: number) {
@@ -158,6 +170,7 @@ export function CoheteGeneric({
       if (correct) {
         playSound("correct", soundOn);
         const next = correctCountRef.current + 1;
+        fx.award(ANSWER_POINTS, { x: 10 + (next / GOAL) * 80, y: 40 }, { label: `+${ANSWER_POINTS} ¡Impulso!`, sound: "whoosh" });
         correctCountRef.current = next;
         setCorrectCount(next);
         setStarsThisRound((s) => s + stars);
@@ -167,6 +180,7 @@ export function CoheteGeneric({
         }
       } else {
         playSound("wrong", soundOn);
+        fx.oops({ x: 50, y: 40 }, "−3 s");
         setTimeLeft(timerRef.current - 3);
         if (timerRef.current <= 0) {
           endGame(false);
@@ -185,7 +199,7 @@ export function CoheteGeneric({
   const progressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div data-game="cohete" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-indigo-500 bg-slate-900 p-3 sm:p-6 text-white shadow-2xl">
+    <div ref={cabinetRef} data-game="cohete" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-indigo-500 bg-slate-900 p-3 sm:p-6 text-white shadow-2xl">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-30"
@@ -195,6 +209,7 @@ export function CoheteGeneric({
         }}
       />
 
+      <ArcadeFxLayer fx={fx} scope="cabinet" />
       <div className="relative z-10 mx-auto max-w-2xl text-center">
         <h2 className="mb-2 bg-gradient-to-r from-yellow-300 to-pink-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🚀 Misión despegue galáctico
@@ -212,7 +227,7 @@ export function CoheteGeneric({
               type="button"
               onClick={start}
               disabled={exercise?.disabled || exercise?.paused}
-              className="rounded-2xl border-2 border-white bg-gradient-to-r from-green-400 to-emerald-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
+              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-green-400 to-emerald-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Iniciar misión!
             </button>
@@ -239,11 +254,13 @@ export function CoheteGeneric({
                 className="absolute bottom-12 left-10 right-10 h-16"
               >
                 <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="absolute inset-0 size-full"><path d="M0 29 Q50 -20 100 29" fill="none" stroke="#a5b4fc" strokeWidth=".6" strokeDasharray="2 2" /></svg>
-                <div className="absolute -translate-x-1/2 transition-all duration-500 motion-reduce:transition-none" style={{ left: `${progressPct}%`, bottom: `${Math.sin(progressPct / 100 * Math.PI) * 45}%`, transform: `translateX(-50%) rotate(${progressPct * 1.2}deg)` }}><ArcadeSprite kind="rocket" className="size-12" /></div>
+                <div className="absolute -translate-x-1/2 transition-all duration-500 motion-reduce:transition-none" style={{ left: `${progressPct}%`, bottom: `${Math.sin(progressPct / 100 * Math.PI) * 45}%`, transform: `translateX(-50%) rotate(${progressPct * 1.2}deg)` }}><ArcadeSprite kind="rocket" className="size-12" /><span className="arcade-trail absolute left-1/2 top-full -mt-2 block h-4 w-3 -translate-x-1/2 rounded-b-full bg-gradient-to-b from-yellow-200 via-orange-400 to-transparent" /></div>
               </div>
               <span aria-hidden="true" className="absolute inset-x-0 top-2 text-xs font-bold tracking-widest text-indigo-200">{progressPct === 0 ? "Listo para despegar" : progressPct < 70 ? "En órbita" : "Aproximación lunar"}</span>
               <span aria-hidden="true" className="z-10 flex flex-col items-center gap-1 text-xs text-indigo-100"><ArcadeSprite kind="moon" className="size-12" />Luna</span>
+              <ArcadeFxLayer fx={fx} />
             </div>
+            <ArcadeScoreBar fx={fx} />
 
             <div className="flex items-center justify-between rounded-xl border border-indigo-700 bg-indigo-950/80 p-3">
               <div className="flex items-center gap-2">
@@ -296,7 +313,7 @@ export function CoheteGeneric({
 
         {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
-            <div aria-hidden="true" className="text-6xl">
+            <div aria-hidden="true" className="arcade-win text-6xl">
               {shownWin ? "🚀🌕" : "🌟"}
             </div>
             <h3 className="text-3xl font-bold text-yellow-300">
@@ -312,6 +329,7 @@ export function CoheteGeneric({
                 <span>Respuestas acertadas:</span>
                 <strong className="text-green-400">{shownCount}</strong>
               </div>
+              <ArcadeFinalScore fx={fx} />
               {!exercise && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-yellow-400">+{starsThisRound} ★</strong>

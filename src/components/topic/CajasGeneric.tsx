@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, cellAt, useArcadeFx } from "./ArcadeFx";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
@@ -17,6 +18,11 @@ import { lessonArcadeState, lessonLabel, lessonValues, gamePromptSize } from "@/
 const CHOICES = 5;
 const GOAL = 3;
 const LIVES_START = 3;
+// Puntuación de almacén: entregar da puntos y planificar con pocos pasos suma
+// un extra («par»). No hay reloj: pensar despacio nunca resta.
+const DELIVERY_POINTS = 150;
+const PAR_BONUS_MAX = 250;
+const PAR_STEP_COST = 5;
 
 type Phase = "start" | "playing" | "over";
 
@@ -74,6 +80,9 @@ export function CajasGeneric({
   const [win, setWin] = useState(false);
   const candidatesRef = useRef<number[]>([]);
   const busyRef = useRef(false); // true mientras se espera la respuesta
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  const fx = useArcadeFx({ game: "cajas", soundOn, solved, cabinetRef });
+  const at = (c: { x: number; y: number }) => cellAt(c.x, c.y, levelRef.current.rows[0].length, levelRef.current.rows.length);
 
   function resetBoxes() {
     const initial = initialWarehouse(levelRef.current, candidatesRef.current);
@@ -96,6 +105,7 @@ export function CajasGeneric({
   function endGame(didWin: boolean, finalCount: number) {
     setWin(didWin);
     setPhase("over");
+    fx.end(didWin);
     playSound(didWin ? "fanfare" : "fail", soundOn);
     onGameOver?.(finalCount);
     if (didWin) {
@@ -114,12 +124,17 @@ export function CajasGeneric({
     busyRef.current = false;
     setPending(false);
     setPhase("playing");
+    fx.start("¡A empujar!");
     spawnRound();
   }
 
-  async function resolveRound(correct: boolean) {
+  async function resolveRound(correct: boolean, where: { x: number; y: number }, moves: number) {
     busyRef.current = true;
     playSound(correct ? "correct" : "wrong", soundOn);
+    if (correct) {
+      const par = Math.max(0, PAR_BONUS_MAX - moves * PAR_STEP_COST);
+      fx.award(DELIVERY_POINTS + par, at(where), { label: par > 0 ? `¡Entregada! +${DELIVERY_POINTS} · par +${par}` : undefined });
+    } else fx.oops(at(where), "✗");
     const stars = await onAnswer(correct);
     if (correct) {
       const next = correctCount + 1;
@@ -164,13 +179,25 @@ export function CajasGeneric({
     boardRef.current = result.state;
     setBoard(result.state);
     const trapped = result.state.boxes.some((box) => !deliverable.has(`${box.x},${box.y}`));
+    const wasTrapped = previous.boxes.some((box) => !deliverable.has(`${box.x},${box.y}`));
     setNotice(trapped ? "Una caja quedó sin salida hacia la meta. Puedes deshacer o reiniciar sin perder nada." : "");
+    const pushed = result.state.pushes > previous.pushes;
+    if (pushed && !result.delivered) {
+      playSound("pop", soundOn);
+      const crate = result.state.boxes.find((box) => !previous.boxes.some((old) => sameCell(old, box)));
+      if (crate) fx.burst(at(crate), "info");
+      if (trapped && !wasTrapped) fx.shake(3);
+    }
     if (result.delivered) {
       busyRef.current = true;
       setPending(true);
       playSound("click", soundOn);
-      if (lesson) void deliverLesson(result.delivered.value);
-      else void resolveRound(result.delivered.value === problem.answer);
+      fx.burst(at(result.delivered), "bonus");
+      fx.shake(3);
+      if (lesson) {
+        fx.pop("¡Al camión!", at(result.delivered), "info");
+        void deliverLesson(result.delivered.value);
+      } else void resolveRound(result.delivered.value === problem.answer, result.delivered, result.state.moves);
     }
   }
 
@@ -182,6 +209,7 @@ export function CajasGeneric({
     setBoard(previous);
     setUndoCount(historyRef.current.length);
     setNotice("Movimiento deshecho. Prueba otro camino.");
+    playSound("whoosh", soundOn);
   }
 
   function restart() {
@@ -227,13 +255,14 @@ export function CajasGeneric({
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div data-game="cajas" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6">
+    <div ref={cabinetRef} data-game="cajas" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{ backgroundImage: "radial-gradient(#fb923c 1px, transparent 0)", backgroundSize: "24px 24px" }}
       />
 
+      <ArcadeFxLayer fx={fx} scope="cabinet" />
       <div className="relative z-10 mx-auto max-w-md text-center">
         <h2 className="mb-2 bg-gradient-to-r from-orange-300 to-sky-400 bg-clip-text text-3xl font-extrabold text-transparent">
           📦 Caja numérica
@@ -247,12 +276,12 @@ export function CajasGeneric({
               type="button"
               onClick={start}
               disabled={frozen}
-              className="rounded-2xl border-2 border-white bg-gradient-to-r from-orange-400 to-sky-500 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
+              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-orange-400 to-sky-500 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
             <p className="text-xs text-orange-300">
-              Solo puedes empujar, nunca tirar de una caja ni empujar dos a la vez. Rodea las paredes y cambia de lado. Sin reloj: puedes deshacer y reiniciar.
+              Solo puedes empujar, nunca tirar de una caja ni empujar dos a la vez. Rodea las paredes y cambia de lado. Sin reloj: puedes deshacer y reiniciar. Entregar con pocos pasos suma puntos extra.
             </p>
           </div>
         )}
@@ -274,6 +303,7 @@ export function CajasGeneric({
               />
             </div>
 
+            <ArcadeScoreBar fx={fx} />
             {!lesson && (
               <div className="flex items-center justify-between rounded-xl border border-orange-700 bg-orange-950/80 p-3 text-sm">
                 <span aria-live="polite">
@@ -300,7 +330,7 @@ export function CajasGeneric({
             <div
               aria-hidden="true"
               data-sokoban-board="" data-warehouse={level.id} data-player-x={board.player.x} data-player-y={board.player.y}
-              className="mx-auto grid max-w-sm gap-0.5 rounded-2xl border-2 border-amber-700 bg-stone-950 p-2"
+              className="relative mx-auto grid max-w-sm gap-0.5 rounded-2xl border-2 border-amber-700 bg-stone-950 p-2"
               style={{ gridTemplateColumns: `repeat(${level.rows[0].length}, minmax(0, 1fr))` }}
             >
               {Array.from({ length: level.rows.length * level.rows[0].length }, (_, i) => {
@@ -321,6 +351,7 @@ export function CajasGeneric({
                   </div>
                 );
               })}
+              <ArcadeFxLayer fx={fx} />
             </div>
 
             <p className="text-xs text-slate-300">🧱 Pared · 📦 Caja · 🚚 Meta. Mueve otras cajas si necesitas abrir paso.</p>
@@ -338,7 +369,7 @@ export function CajasGeneric({
 
         {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
-            <div aria-hidden="true" className="text-6xl">
+            <div aria-hidden="true" className="arcade-win text-6xl">
               {shownWin ? "🏆" : "📦"}
             </div>
             <h3 className="text-3xl font-bold text-sky-200">{shownWin ? "¡Caja entregada!" : "¡Buen intento!"}</h3>
@@ -347,6 +378,7 @@ export function CajasGeneric({
                 <span>Cajas entregadas:</span>
                 <strong className="text-sky-300">{shownCount}</strong>
               </div>
+              <ArcadeFinalScore fx={fx} />
               {!lesson && (
                 <div className="flex justify-between">
                   <span>Estrellas ganadas:</span>

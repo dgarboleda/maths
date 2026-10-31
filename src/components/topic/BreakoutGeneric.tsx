@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro } from "./ArcadeArt";
+import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx, type FxAt } from "./ArcadeFx";
 
 import { useEffect, useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
@@ -57,6 +58,10 @@ const LESSON_W = FIELD_WIDTH / LESSON_COLS;
 const LESSON_ROW_Y = 14;
 const LESSON_BLOCK_H = 16;
 const LESSON_SPEED = 150;
+const RALLY_POINTS = 10;
+const BLOCK_POINTS = 200;
+const TRICK_SHOT_POINTS = 50;
+const blockCenter = (b: { x: number; y: number; w: number; h: number }): FxAt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 
 function buildBlocks(values: number[], lesson = false): Block[] {
   if (lesson)
@@ -140,6 +145,8 @@ export function BreakoutGeneric({
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  const fx = useArcadeFx({ game: "breakout", soundOn, solved, cabinetRef });
 
   const ballRef = useRef<Ball>({ x: BALL_START_X, y: BALL_START_Y, vx: 0, vy: -SPEED_BASE });
   const ballElRef = useRef<HTMLDivElement>(null);
@@ -175,6 +182,7 @@ export function BreakoutGeneric({
   function endGame(didWin: boolean, finalCount: number) {
     setWin(didWin);
     setPhase("over");
+    fx.end(didWin);
     playSound(didWin ? "fanfare" : "fail", soundOn);
     onGameOver?.(finalCount);
     if (didWin) {
@@ -198,6 +206,7 @@ export function BreakoutGeneric({
     setWin(false);
     ballRef.current = { x: BALL_START_X, y: BALL_START_Y, vx: 0, vy: -SPEED_BASE };
     setPhase("playing");
+    fx.start();
     spawnRound();
   }
 
@@ -207,6 +216,10 @@ export function BreakoutGeneric({
       // Lanzamiento apuntado: el bloque alcanzado es la respuesta elegida.
       busyRef.current = true;
       setReflexMiss(false);
+      fx.pop(shotStyle !== "direct" ? "¡Carambola!" : "¡Crack!", blockCenter(block), "info");
+      if (shotStyle !== "direct") fx.award(TRICK_SHOT_POINTS, { x: blockCenter(block).x, y: blockCenter(block).y + 14 }, { tone: "bonus", sound: "crash" });
+      else fx.burst(blockCenter(block), "info");
+      fx.shake(3);
       try {
         await exercise.onResponse(block.value);
       } finally {
@@ -218,6 +231,8 @@ export function BreakoutGeneric({
     if (correct) {
       busyRef.current = true;
       playSound("correct", soundOn);
+      fx.award(BLOCK_POINTS, blockCenter(block), { sound: "crash" });
+      fx.shake(4);
       const stars = await onAnswer(true);
       const next = correctCount + 1;
       setStarsThisRound((s) => s + stars);
@@ -233,12 +248,14 @@ export function BreakoutGeneric({
     // Incorrecto: el bloque desaparece igual (fidelidad del género) pero sin
     // puntaje ni penalización — la pelota sigue en juego sin pausa.
     playSound("wrong", soundOn);
+    fx.burst(blockCenter(block), "bad");
+    fx.pop("✗", blockCenter(block), "bad");
     setBlocks((prev) => prev.filter((b) => b.id !== block.id));
     await onAnswer(false);
   }
 
   function handleFall() {
-    playSound("wrong", soundOn);
+    fx.oops({ x: ballRef.current.x, y: 88 }, "¡Se fue!");
     if (lesson) {
       // Perder la pelota es un fallo de reflejos: sin vidas ni respuesta.
       setReflexMiss(true);
@@ -256,7 +273,7 @@ export function BreakoutGeneric({
 
   function launch() {
     if (!lesson || !held || flightRef.current || busyRef.current || frozen || solved || phase !== "playing") return;
-    playSound("click", soundOn);
+    playSound("whoosh", soundOn);
     const block = blocks.find((b) => paddleX + paddleWidth / 2 >= b.x && paddleX + paddleWidth / 2 < b.x + b.w);
     if (!block) return;
     const start = { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE };
@@ -292,6 +309,8 @@ export function BreakoutGeneric({
       let ball = stepBall(ballRef.current, dtSec, FIELD_WIDTH, BALL_SIZE);
 
       if (!lesson && hitsPaddle(ball, BALL_SIZE, paddleX, PADDLE_WIDTH, PADDLE_Y, PADDLE_H)) {
+        // Mantener viva la pelota encadena puntos de peloteo.
+        fx.award(RALLY_POINTS, { x: ball.x + BALL_SIZE / 2, y: PADDLE_Y - 4 }, { burst: false, sound: "pop" });
         ball = {
           ...ball,
           y: PADDLE_Y - BALL_SIZE,
@@ -348,13 +367,14 @@ export function BreakoutGeneric({
     { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: LESSON_ROW_Y + LESSON_BLOCK_H }, shotStyle, FIELD_WIDTH - BALL_SIZE) : [];
 
   return (
-    <div data-game="breakout" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen ? "arcade-paused" : ""}`}>
+    <div ref={cabinetRef} data-game="breakout" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen ? "arcade-paused" : ""}`}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{ backgroundImage: "radial-gradient(#fb923c 1px, transparent 0)", backgroundSize: "24px 24px" }}
       />
 
+      <ArcadeFxLayer fx={fx} scope="cabinet" />
       <div className="relative z-10 mx-auto max-w-md text-center">
         <h2 className="mb-2 bg-gradient-to-r from-orange-300 to-violet-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🧱 Bloques numéricos
@@ -368,7 +388,7 @@ export function BreakoutGeneric({
               type="button"
               onClick={start}
               disabled={frozen}
-              className="rounded-2xl border-2 border-white bg-gradient-to-r from-orange-400 to-violet-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
+              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-orange-400 to-violet-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
@@ -397,6 +417,7 @@ export function BreakoutGeneric({
               />
             </div>
 
+            <ArcadeScoreBar fx={fx} />
             {lesson ? <ReflexNotice show={reflexMiss} /> : <div className="flex items-center justify-between rounded-xl border border-orange-700 bg-orange-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
@@ -439,6 +460,7 @@ export function BreakoutGeneric({
                 className={`${reducedMotion ? "" : "transition-all duration-150"} absolute rounded-md bg-violet-400`}
                 style={{ left: `${paddleX}%`, top: `${PADDLE_Y}%`, width: `${paddleWidth}%`, height: `${PADDLE_H}%` }}
               />
+              <ArcadeFxLayer fx={fx} />
             </div>
 
             {lesson && (
@@ -460,7 +482,7 @@ export function BreakoutGeneric({
 
         {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
-            <div aria-hidden="true" className="text-6xl">
+            <div aria-hidden="true" className="arcade-win text-6xl">
               {shownWin ? "🏆" : "🕳️"}
             </div>
             <h3 className="text-3xl font-bold text-violet-200">{shownWin ? "¡Muro derribado!" : "¡Buen intento!"}</h3>
@@ -469,6 +491,7 @@ export function BreakoutGeneric({
                 <span>Bloques acertados:</span>
                 <strong className="text-violet-300">{shownCount}</strong>
               </div>
+              <ArcadeFinalScore fx={fx} />
               {!lesson && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-orange-300">+{starsThisRound} ★</strong>

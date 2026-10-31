@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, cellAt, useArcadeFx } from "./ArcadeFx";
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
@@ -28,6 +29,12 @@ const PELLET_COUNT_BASE = 3;
 const PELLET_COUNT_STEP = 1;
 const PELLET_COUNT_MAX = 5;
 const INVULN_MS = 4000;
+// Puntos arcade: las migas del suelo, el escudo y atrapar al fantasma con
+// escudo. Ninguno es una respuesta ni cambia las opciones del ejercicio.
+const DOT_POINTS = 10;
+const SHIELD_POINTS = 50;
+const GHOST_POINTS = 200;
+const ANSWER_POINTS = 150;
 
 type Phase = "start" | "playing" | "over";
 interface Cell {
@@ -129,6 +136,16 @@ export function NumberPacGeneric({
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
+  const [eatenDots, setEatenDotsState] = useState<ReadonlySet<string>>(() => new Set([cellKey(START_CELL)]));
+  // Igual que `boardRef`: varias flechas pueden llegar antes del siguiente render.
+  const dotsRef = useRef(eatenDots);
+  function setEatenDots(next: ReadonlySet<string>) {
+    dotsRef.current = next;
+    setEatenDotsState(next);
+  }
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  const fx = useArcadeFx({ game: "numberpac", soundOn, solved, cabinetRef });
+  const at = (c: Cell) => cellAt(c.x, c.y, GRID_SIZE);
 
   const movingRef = useRef(false);
   const ghostAccRef = useRef(0);
@@ -169,6 +186,7 @@ export function NumberPacGeneric({
   function endGame(didWin: boolean, finalCount: number) {
     setWin(didWin);
     setPhase("over");
+    fx.end(didWin);
     playSound(didWin ? "fanfare" : "fail", soundOn);
     onGameOver?.(finalCount);
     if (didWin) {
@@ -192,13 +210,15 @@ export function NumberPacGeneric({
     setCorrectCount(0);
     setStarsThisRound(0);
     setWin(false);
+    setEatenDots(new Set([cellKey(START_CELL)]));
     setPhase("playing");
+    fx.start();
     spawnRound(START_CELL, GHOST_START);
   }
 
   function handleGhostHit() {
     if (invulnRemainingRef.current > 0) return;
-    playSound("wrong", soundOn);
+    fx.oops(at(boardRef.current.player), "¡Bu!");
     if (lesson) {
       // Fallo de reflejos: sin vidas ni respuesta, solo el respiro de siempre.
       setReflexMiss(true);
@@ -222,6 +242,8 @@ export function NumberPacGeneric({
     waitForMove();
     setReflexMiss(false);
     if (exercise) {
+      fx.pop("¡Elegido!", at(eaten), "info");
+      fx.burst(at(eaten), "info");
       try {
         await exercise.onResponse(eaten.value);
       } finally {
@@ -232,6 +254,8 @@ export function NumberPacGeneric({
     }
     const correct = eaten.value === problem.answer;
     playSound(correct ? "correct" : "wrong", soundOn);
+    if (correct) fx.award(ANSWER_POINTS, at(eaten), { sound: "pop" });
+    else fx.oops(at(eaten), "✗");
     const stars = await onAnswer(correct);
     if (correct) {
       const next = correctCount + 1;
@@ -266,19 +290,34 @@ export function NumberPacGeneric({
     movingRef.current = true;
     setAwaitingInput(false);
     updateBoard({ player: newCell });
+    if (!dotsRef.current.has(cellKey(newCell))) {
+      setEatenDots(new Set(dotsRef.current).add(cellKey(newCell)));
+      fx.award(DOT_POINTS, at(newCell), { burst: false, sound: "pop" });
+    }
 
     if (current.powerPellet && cellKey(newCell) === cellKey(current.powerPellet)) {
       updateBoard({ powerPellet: null });
       invulnRemainingRef.current = INVULN_MS;
       setInvulnerable(true);
       setShieldSeconds(INVULN_MS / 1000);
+      fx.award(SHIELD_POINTS, at(newCell), { label: "¡Escudo!", tone: "info", sound: "combo" });
     }
-    if (cellKey(newCell) === cellKey(current.ghost) && invulnRemainingRef.current <= 0) {
-      handleGhostHit();
-      return;
+    if (cellKey(newCell) === cellKey(current.ghost)) {
+      if (invulnRemainingRef.current <= 0) {
+        handleGhostHit();
+        return;
+      }
+      catchGhost(newCell);
     }
     const eaten = current.pellets.find((p) => cellKey(p) === cellKey(newCell));
     if (eaten) void resolvePellet(eaten, newCell, current.ghost);
+  }
+
+  /** Con escudo, alcanzar al fantasma lo devuelve a su casa y da puntos. */
+  function catchGhost(where: Cell) {
+    fx.award(GHOST_POINTS, at(where), { label: `¡Atrapado! +${GHOST_POINTS}`, tone: "bonus", sound: "combo" });
+    fx.shake(4);
+    updateBoard({ ghost: GHOST_START });
   }
 
   // Persigue por los pasillos. El escudo permite invertir la persecución.
@@ -286,7 +325,9 @@ export function NumberPacGeneric({
     const current = boardRef.current;
     const next = nextMazeGhost(current.ghost, current.player, invulnRemainingRef.current > 0);
     updateBoard({ ghost: next });
-    if (cellKey(next) === cellKey(current.player)) handleGhostHit();
+    if (cellKey(next) !== cellKey(current.player)) return;
+    if (invulnRemainingRef.current > 0) catchGhost(next);
+    else handleGhostHit();
   }
 
   useGameLoop(
@@ -334,13 +375,14 @@ export function NumberPacGeneric({
   const progressPct = Math.min(100, (shownCount / goal) * 100);
 
   return (
-    <div data-game="numberpac" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-yellow-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
+    <div ref={cabinetRef} data-game="numberpac" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className="arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-yellow-500 bg-slate-950 p-3 sm:p-6 text-white shadow-2xl">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{ backgroundImage: "radial-gradient(#fde047 1px, transparent 0)", backgroundSize: "24px 24px" }}
       />
 
+      <ArcadeFxLayer fx={fx} scope="cabinet" />
       <div className="relative z-10 mx-auto max-w-md text-center">
         <h2 className="mb-2 bg-gradient-to-r from-yellow-300 to-fuchsia-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🟡 Laberinto de números
@@ -354,7 +396,7 @@ export function NumberPacGeneric({
               type="button"
               onClick={start}
               disabled={frozen}
-              className="rounded-2xl border-2 border-white bg-gradient-to-r from-yellow-400 to-fuchsia-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
+              className="arcade-start-pulse rounded-2xl border-2 border-white bg-gradient-to-r from-yellow-400 to-fuchsia-600 px-10 py-4 text-2xl font-extrabold text-slate-900 shadow-lg transition-transform hover:scale-105"
             >
               ¡Empezar!
             </button>
@@ -379,6 +421,7 @@ export function NumberPacGeneric({
               />
             </div>
 
+            <ArcadeScoreBar fx={fx} />
             {lesson ? (
               // Sin vidas ni estrellas en la clase: solo avisos, sin recuadro vacío.
               <div className="flex items-center justify-between gap-2 text-sm">
@@ -429,7 +472,7 @@ export function NumberPacGeneric({
                 const x = index % GRID_SIZE, y = Math.floor(index / GRID_SIZE);
                 const pellet = pellets.find((p) => p.x === x && p.y === y);
                 return (
-                  <div key={index} data-cell-x={x} data-cell-y={y} data-value={pellet?.value} data-wall={mazeWall({ x, y }) || undefined} data-power={powerPellet?.x === x && powerPellet.y === y || undefined} className={`relative min-h-0 min-w-0 ${mazeWall({ x, y }) ? "arcade-maze-wall" : "arcade-maze-floor"}`}>
+                  <div key={index} data-cell-x={x} data-cell-y={y} data-value={pellet?.value} data-wall={mazeWall({ x, y }) || undefined} data-power={powerPellet?.x === x && powerPellet.y === y || undefined} className={`relative min-h-0 min-w-0 ${mazeWall({ x, y }) ? "arcade-maze-wall" : eatenDots.has(`${x},${y}`) ? "" : "arcade-maze-floor"}`}>
                     {pellet && (
                       <span className={`arcade-value absolute inset-[8%] z-20 flex justify-center rounded-xl border-2 border-amber-300 bg-amber-950 font-bold text-amber-100 shadow-lg ${ghost.x === x && ghost.y === y ? "items-end pb-1" : "items-center"}`}>
                         {lessonLabel(exercise, pellet.value)}
@@ -447,16 +490,17 @@ export function NumberPacGeneric({
                   </div>
                 );
               })}
+              <ArcadeFxLayer fx={fx} />
             </div>
 
-            <p role="status" className="text-xs text-cyan-100">{blocked ? "Hay una pared. Busca otro camino." : "◇ Escudo: el fantasma huye durante 4 segundos. Las paredes bloquean a los dos."}</p>
+            <p role="status" className="text-xs text-cyan-100">{blocked ? "Hay una pared. Busca otro camino." : "◇ Escudo: el fantasma huye 4 segundos y, si lo alcanzas, vuelve a su casa. Recoge las migas para sumar puntos."}</p>
             <TouchDPad inline repeat={false} disabled={frozen || solved} onMove={onTouchMove} />
           </div>
         )}
 
         {shownPhase === "over" && (
           <div role="status" className="space-y-6 py-6">
-            <div aria-hidden="true" className="text-6xl">
+            <div aria-hidden="true" className="arcade-win text-6xl">
               {shownWin ? "🏆" : "👻"}
             </div>
             <h3 className="text-3xl font-bold text-fuchsia-200">{shownWin ? "¡Laberinto resuelto!" : "¡Buen intento!"}</h3>
@@ -465,6 +509,7 @@ export function NumberPacGeneric({
                 <span>Pellets acertados:</span>
                 <strong className="text-yellow-300">{shownCount}</strong>
               </div>
+              <ArcadeFinalScore fx={fx} />
               {!lesson && <div className="flex justify-between">
                 <span>Estrellas ganadas:</span>
                 <strong className="text-fuchsia-300">+{starsThisRound} ★</strong>
