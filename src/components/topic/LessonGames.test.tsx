@@ -292,34 +292,67 @@ test("Serpiente: cada acierto anterior aumenta su longitud sin ocupar una respue
   expect(data.onResponse).not.toHaveBeenCalled();
 });
 
-test("Carrera: leer no activa el reloj; la primera flecha da la salida y el turbo acorta la espera", async () => {
+test("Carrera: leer no activa el reloj y el turbo no salta los tramos", async () => {
   vi.useFakeTimers();
   const data = exercise();
-  render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  const { container } = render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
-  expect(screen.getByText("Elige tu carril")).toBeInTheDocument();
   tick(2600);
-  expect(screen.queryByText(REFLEX_MISS)).not.toBeInTheDocument();
   expect(data.onResponse).not.toHaveBeenCalled();
-  key("ArrowDown"); // fuera → carril 0
-  key("ArrowDown");
-  key("ArrowDown"); // carril 2, donde está -2
-  key("Space");
-  tick(750);
+  const board = container.querySelector("[data-runner-board]")!;
+  for (let segment = 0; segment < 2; segment++) {
+    const lanes = screen.getAllByRole("button", { name: /^Carril/ });
+    fireEvent.click(lanes.find((lane) => !lane.querySelector("[data-cone]"))!);
+    key("Space"); tick(750);
+    expect(board).toHaveAttribute("data-segment", String(segment + 1));
+    expect(data.onResponse).not.toHaveBeenCalled();
+  }
+  fireEvent.click(screen.getByRole("button", { name: "Carril 3: −2" }));
+  key("Space"); tick(750);
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
 });
 
-test("Carrera: chocar con un obstáculo reinicia el tramo sin enviar respuesta", () => {
+test("Carrera: chocar reinicia solo el tramo sin enviar respuesta", () => {
   vi.useFakeTimers();
   const data = exercise({ round: 1, rounds: 5 });
-  render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
-  expect(screen.getByRole("button", { name: /Carril 2:.*obstáculo antes de la puerta/ })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: /Carril 2:/ }));
-  tick(1_200);
+  const { container } = render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  const board = container.querySelector("[data-runner-board]")!;
+  const lanes = screen.getAllByRole("button", { name: /^Carril/ });
+  fireEvent.click(lanes.find((lane) => !lane.querySelector("[data-cone]"))!);
+  tick(2000);
+  expect(board).toHaveAttribute("data-segment", "1");
+  fireEvent.click(screen.getAllByRole("button", { name: /^Carril/ }).find((lane) => lane.querySelector("[data-cone]"))!);
+  tick(2000);
+  expect(board).toHaveAttribute("data-segment", "1");
+  expect(board).toHaveAttribute("data-racing", "false");
   expect(data.onResponse).not.toHaveBeenCalled();
   expect(screen.getByText(REFLEX_MISS)).toBeInTheDocument();
-  expect(screen.getByText("Elige tu carril")).toBeInTheDocument();
+});
+
+test("Carrera: dos opciones conservan un camino libre y la pausa congela el tramo", async () => {
+  vi.useFakeTimers();
+  const data = exercise({ problem: { ...exercise().problem, choices: [-2, 0] } });
+  const view = render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  const board = view.container.querySelector("[data-runner-board]")!;
+  for (let segment = 0; segment < 2; segment++) {
+    const lanes = screen.getAllByRole("button", { name: /^Carril/ });
+    expect(lanes.filter((lane) => !lane.querySelector("[data-cone]"))).toHaveLength(1);
+    fireEvent.click(lanes.find((lane) => !lane.querySelector("[data-cone]"))!);
+    if (segment === 0) {
+      view.rerender(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={{ ...data, paused: true }} />);
+      tick(5000);
+      expect(board).toHaveAttribute("data-segment", "0");
+      view.rerender(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+    }
+    key("Space"); tick(750);
+    expect(board).toHaveAttribute("data-segment", String(segment + 1));
+  }
+  fireEvent.click(screen.getByRole("button", { name: "Carril 1: −2" }));
+  key("Space"); tick(750);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
 });
 
 test("Laberinto: comer un número envía su valor", async () => {
@@ -568,9 +601,12 @@ test("Carrera: tocar carriles permite cambiar de elección antes de cruzar", asy
   const data = exercise();
   render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  for (let segment = 0; segment < 2; segment++) {
+    fireEvent.click(screen.getAllByRole("button", { name: /^Carril/ }).find((lane) => !lane.querySelector("[data-cone]"))!);
+    tick(2000);
+    expect(data.onResponse).not.toHaveBeenCalled();
+  }
   fireEvent.click(screen.getByRole("button", { name: "Carril 4: −1" }));
-  tick(500);
-  expect(data.onResponse).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Carril 3: −2" }));
   fireEvent.click(screen.getByRole("button", { name: /Turbo · cruzar/ }));
   tick(750);

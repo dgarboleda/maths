@@ -40,13 +40,16 @@ async function fireKey(code: string) {
   });
 }
 
-/** Avanza el tiempo lo suficiente para cruzar una puerta (la cuenta
- *  regresiva más larga posible es 2500ms en la oleada 0). */
+/** Esquiva ambos tramos y termina en el carril que estaba elegido. */
 async function advanceOneGate() {
-  for (let i = 0; i < 8; i++) {
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(500);
-    });
+  const board = screen.getByRole("group", { name: "Circuito: elige tu carril" });
+  const target = Number(board.getAttribute("data-lane"));
+  for (let segment = 0; segment < 3; segment++) {
+    const lanes = screen.getAllByRole("button", { name: /^Carril/ });
+    const chosen = segment < 2 ? lanes.find((button) => !button.querySelector("[data-cone]"))! : lanes[target];
+    fireEvent.click(chosen);
+    fireEvent.click(screen.getByRole("button", { name: /Turbo · cruzar/ }));
+    for (let i = 0; i < 15; i++) await act(async () => { await vi.advanceTimersByTimeAsync(50); });
   }
 }
 

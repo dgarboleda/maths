@@ -132,7 +132,7 @@ test("Invasión: los meteoritos llegan desde el nivel 3, cuestan corazones y nun
   vi.mocked(Math.random).mockRestore();
 });
 
-test("Autopista: dos conos desde el nivel 6; chocar resta un corazón y no responde", () => {
+test("Autopista: dos conos desde el nivel 6; chocar no quita corazones ni responde", () => {
   vi.useFakeTimers();
   setArcadeLevel("runner", 6);
   const data = exercise();
@@ -144,7 +144,7 @@ test("Autopista: dos conos desde el nivel 6; chocar resta un corazón y no respo
   const coneLane = cones[0].closest("button")!;
   fireEvent.click(coneLane);
   tick(3000);
-  expect(hearts(container)).toBe(2);
+  expect(hearts(container)).toBe(3);
   expect(data.onResponse).not.toHaveBeenCalled();
 });
 
