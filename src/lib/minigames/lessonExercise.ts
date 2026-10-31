@@ -22,7 +22,7 @@ export function createArcadeSession(): ArcadeSession {
   };
 }
 
-/** La aplicación sortea un juego para la práctica de una clase. `random` se inyecta para las pruebas unitarias; las
+/** La aplicación sortea un juego para cada actividad de práctica. `random` se inyecta para las pruebas unitarias; las
  * e2e fijan el juego con `window.__MATHS_TEST_PRACTICE_GAME__`. */
 export function pickPracticeGame(random: () => number = Math.random): PracticeGame {
   const forced = (globalThis as { __MATHS_TEST_PRACTICE_GAME__?: unknown }).__MATHS_TEST_PRACTICE_GAME__;

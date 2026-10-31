@@ -186,8 +186,12 @@ test("Cohete: fracción exacta, sin reloj por defecto y recuperación de respues
 
 test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; sin estrellas ni dominio", async ({ page }, testInfo) => {
   const q = await conceptThenNumeric(page, "fracciones-unidad", "invaders");
+  await expect(page.getByRole("combobox", { name: "Juego de práctica" })).toHaveCount(0);
   await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
   await expectGameInView(page);
+  const firstInvader = page.locator("main [data-invader-col='0']");
+  const initialY = Number(await firstInvader.getAttribute("data-invader-y"));
+  await expect.poll(async () => Number(await firstInvader.getAttribute("data-invader-y"))).toBeGreaterThan(initialY);
   await expect(page.getByText(/Vidas/)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   // En móvil se apunta directamente; el teclado sigue disponible en escritorio.
@@ -209,6 +213,7 @@ test("Invasión con su mecánica real: apuntar y disparar envía la respuesta; s
   expect(saved.stars).toBe(0);
   await expect(page.getByRole("heading", { name: "¡Invasión repelida!" })).toBeVisible();
   await page.getByRole("button", { name: "Siguiente actividad", exact: true }).click();
+  await page.getByRole("button", { name: "¡Empezar!", exact: true }).click();
   await expect(page.locator("main [data-invaders-board]")).toBeVisible();
   await expect(page.getByText(getLesson("fracciones-unidad")!.practice[2].prompt, { exact: true })).toBeVisible();
   await expect.poll(async () => Number(await page.locator("main [data-arcade-score]").getAttribute("data-arcade-score"))).toBeGreaterThanOrEqual(500);

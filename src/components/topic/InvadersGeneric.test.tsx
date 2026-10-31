@@ -4,11 +4,8 @@ import { InvadersGeneric } from "./InvadersGeneric";
 import * as problemModule from "@/lib/problem";
 
 /**
- * Fase 40 (docs/plan-minijuegos-retro.md). Disparar es inmediato por click/
- * tecla (no atado a `useGameLoop`, que acá solo mueve la oleada hacia
- * abajo) — la mayoría de los tests no necesita timers falsos en absoluto,
- * a diferencia de Frogger/Runner/Number Pac. Solo el caso "la oleada llega
- * abajo sin disparar" depende del bucle de juego.
+ * Las alternativas aparecen y descienden con el bucle de juego. El disparo
+ * conserva su valor hasta el impacto; chocar no envía una respuesta.
  */
 vi.mock("@/lib/gameSound", () => ({ playSound: () => {} }));
 vi.mock("@/lib/confetti", () => ({ triggerConfetti: () => {} }));
@@ -39,6 +36,8 @@ function shootButton() {
 }
 
 async function shoot() {
+  // La columna central entra después de las dos primeras alternativas.
+  for (let i = 0; i < 35; i++) await act(async () => { await vi.advanceTimersByTimeAsync(50); });
   fireEvent.click(shootButton());
   for (let i = 0; i < 10; i++) await act(async () => { await vi.advanceTimersByTimeAsync(50); });
   await act(async () => {}); // deja resolver la promesa de onAnswer
@@ -101,7 +100,7 @@ describe("InvadersGeneric", () => {
     expect(container.textContent).toContain("Vidas: 2");
   });
 
-  test("dejar que la oleada llegue abajo sin disparar también cuenta como fallo", async () => {
+  test("un impacto cuesta una vida sin registrar una respuesta matemática", async () => {
     vi.useFakeTimers();
     mockAllCorrect(); // no importa: nunca se dispara
     const onAnswer = vi.fn(async () => 0);
@@ -109,13 +108,13 @@ describe("InvadersGeneric", () => {
     const { container } = render(<InvadersGeneric moduleId="test-module" soundOn={false} onAnswer={onAnswer} onWin={onWin} />);
     fireEvent.click(screen.getByText("¡Empezar!"));
 
-    for (let i = 0; i < 30 && onAnswer.mock.calls.length === 0; i++) {
+    for (let i = 0; i < 50; i++) {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(200);
       });
     }
 
-    expect(onAnswer).toHaveBeenCalledWith(false);
+    expect(onAnswer).not.toHaveBeenCalled();
     expect(onWin).not.toHaveBeenCalled();
     expect(container.textContent).toContain("Vidas: 2");
   });

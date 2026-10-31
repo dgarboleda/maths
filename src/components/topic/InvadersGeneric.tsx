@@ -13,14 +13,13 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
+import { advanceInvaders, initialInvaders } from "@/lib/minigames/invasion";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
 import { lessonArcadeState, choiceLabel, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
-const ROWS = 5; // filas visuales que baja la oleada antes de "aterrizar"
 const GOAL = 3; // oleadas correctas para ganar
 const WAVE_SIZE = 1;
 const LIVES_START = 3;
@@ -40,18 +39,9 @@ type Phase = "start" | "playing" | "over";
 
 /**
  * Math Invaders — Fase 40 (docs/plan-minijuegos-retro.md). Mismo contrato
- * que el resto de la serie. Primer minijuego con disparo: a diferencia de
- * los anteriores, el jugador no "camina hacia" la respuesta — apunta y
- * dispara contra la columna que cree correcta. El rayo conserva esa
- * elección hasta el impacto y se congela al pausar. En la clase la oleada
- * espera el primer movimiento; los enemigos oscilan dentro de su columna,
- * sin mezclar los números mientras se apunta.
- *
- * Disparar la columna correcta → gana la oleada. Disparar una incorrecta →
- * pierde una vida. Dejar que la oleada llegue abajo sin disparar la
- * correcta también cuenta como fallo (evita que ignorar la pregunta sea
- * gratis) — en los tres casos, nunca termina la partida de inmediato, solo
- * agotar las vidas lo hace.
+ * Las alternativas descienden de forma independiente y reaparecen. Apuntar
+ * no responde: solo un disparo envía el valor fijado hasta el impacto.
+ * Esquivar da puntos; una colisión afecta la partida sin responder.
  */
 export function InvadersGeneric({
   moduleId,
@@ -83,22 +73,19 @@ export function InvadersGeneric({
 
   const [phase, setPhase] = useState<Phase>("start");
   const [shipCol, setShipCol] = useState(CENTER_COL);
-  const [waveRow, setWaveRow] = useState(0);
-  const wavePct = Math.min(100, (waveRow / (ROWS - 1)) * 100);
   const [lives, setLives] = useState(LIVES_START);
-  const [shield, setShield] = useState(3);
-  const [recovery, setRecovery] = useState(0);
+  const [hits, setHits] = useState(0);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
   const [candidates, setCandidates] = useState<number[]>([]);
-  const [revealed, setRevealed] = useState(0);
-  const revealRef = useRef({ count: 0, elapsed: 0 });
+  const [positions, setPositions] = useState<number[]>([]);
+  const positionsRef = useRef<number[]>([]);
+  const paintRef = useRef(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
-  const [moving, setMoving] = useState(false);
   const [shotCol, setShotCol] = useState<number | null>(null);
-  const shotRef = useRef<{ value: number; elapsed: number } | null>(null);
+  const shotRef = useRef<{ value: number; elapsed: number; targetY: number } | null>(null);
   const shotEl = useRef<HTMLDivElement>(null);
 
   const cabinetRef = useRef<HTMLDivElement>(null);
@@ -107,25 +94,23 @@ export function InvadersGeneric({
   const capsuleRef = useRef<{ col: number; elapsed: number; paint: number } | null>(null);
   const capsuleWaitRef = useRef(0);
 
-  const waveAccRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
 
-  const accumulatedDamage = 3 - shield + (exercise?.failedAttempts ?? 0);
+  const accumulatedDamage = hits + (exercise?.failedAttempts ?? 0);
   const shownShield = 3 - accumulatedDamage % 3;
-  const wave = Math.max(0, waveIndex(exercise?.round ?? correctCount, WAVE_SIZE) - recovery - Math.floor(accumulatedDamage / 3));
+  const wave = Math.max(0, waveIndex(exercise?.round ?? correctCount, WAVE_SIZE) - Math.floor(accumulatedDamage / 3));
   const waveTickMs = scaleWithWave(WAVE_TICK_BASE_MS, WAVE_TICK_STEP_MS, wave, WAVE_TICK_FLOOR_MS);
 
   function spawnWave() {
     const nextProblem = newProblem();
     const spread = Math.max(8, COLS * 2);
     setProblem(nextProblem);
-    setCandidates(exercise ? lessonValues(exercise) : arcadeValues(nextProblem, COLS, spread));
-    revealRef.current = { count: lesson ? 1 : COLS, elapsed: 0 };
-    setRevealed(lesson ? 1 : COLS);
-    setWaveRow(0);
+    const values = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, COLS, spread);
+    setCandidates(values);
+    positionsRef.current = initialInvaders(values.length);
+    setPositions(positionsRef.current);
+    paintRef.current = 0;
     setShotCol(null);
-    setMoving(!lesson);
-    waveAccRef.current = 0;
   }
 
   function endGame(didWin: boolean, finalCount: number) {
@@ -140,16 +125,13 @@ export function InvadersGeneric({
     }
   }
 
-  useContinueArcade(exercise, start);
-
   function start() {
     if (frozen) return;
     playSound("click", soundOn);
     setReflexMiss(false);
     setShipCol(CENTER_COL);
     setLives(LIVES_START);
-    setShield(3);
-    setRecovery(0);
+    setHits(0);
     setCorrectCount(0);
     setStarsThisRound(0);
     setWin(false);
@@ -167,7 +149,7 @@ export function InvadersGeneric({
   async function resolveWave(correct: boolean, col: number | null = null) {
     busyRef.current = true;
     playSound(correct ? "correct" : "wrong", soundOn);
-    const at = { x: col === null ? 50 : colX(col), y: wavePct * 0.7 + 12 };
+    const at = { x: col === null ? 50 : colX(col), y: col === null ? 75 : Math.max(0, positionsRef.current[col] ?? 0) + 12 };
     if (correct) {
       fx.award(HIT_POINTS, at, { label: `¡Boom! +${HIT_POINTS}`, sound: "crash" });
       fx.shake(4);
@@ -185,8 +167,7 @@ export function InvadersGeneric({
       busyRef.current = false;
       return;
     }
-    // Incorrecto (disparo errado, o la oleada llegó abajo sin resolver):
-    // cuesta una vida, pero nunca termina la partida de inmediato.
+    // Una respuesta incorrecta cuesta una vida, pero no termina inmediatamente.
     const remaining = lives - 1;
     setLives(remaining);
     if (remaining <= 0) {
@@ -200,7 +181,7 @@ export function InvadersGeneric({
   async function shootLesson(value: number, col: number) {
     busyRef.current = true;
     setReflexMiss(false);
-    const at = { x: colX(col), y: wavePct * 0.7 + 12 };
+    const at = { x: colX(col), y: Math.max(0, positionsRef.current[col] ?? 0) + 12 };
     fx.pop("¡Impacto!", at, "info");
     fx.burst(at, "info");
     fx.shake(3);
@@ -216,11 +197,11 @@ export function InvadersGeneric({
   function handleShoot() {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
     playSound("pop", soundOn);
-    if (candidates[shipCol] === undefined || (lesson && shipCol >= revealed)) return;
+    if (candidates[shipCol] === undefined || (positionsRef.current[shipCol] ?? -1) < 0) return;
     // La respuesta queda fijada al disparar; esperar al impacto nunca cambia
     // el valor elegido ni permite enviar dos respuestas por una pulsación.
     busyRef.current = true;
-    shotRef.current = { value: candidates[shipCol], elapsed: 0 };
+    shotRef.current = { value: candidates[shipCol], elapsed: 0, targetY: Math.max(0, positionsRef.current[shipCol]) };
     setShotCol(shipCol);
   }
 
@@ -255,7 +236,7 @@ export function InvadersGeneric({
       if (shot) {
         shot.elapsed += Math.min(dtMs, 50);
         const travel = Math.min(1, shot.elapsed / 320);
-        if (shotEl.current) shotEl.current.style.bottom = `${18 + travel * (68 - waveRow * 15)}%`;
+        if (shotEl.current) shotEl.current.style.bottom = `${18 + travel * Math.max(0, 68 - shot.targetY)}%`;
         if (travel === 1) {
           shotRef.current = null;
           if (lesson) void shootLesson(shot.value, shotCol ?? shipCol);
@@ -264,34 +245,25 @@ export function InvadersGeneric({
         return;
       }
       if (busyRef.current) return;
-      if (lesson && revealRef.current.count < candidates.length) {
-        revealRef.current.elapsed += dtMs;
-        if (revealRef.current.elapsed >= 650) {
-          revealRef.current.elapsed -= 650;
-          revealRef.current.count++;
-          setRevealed(revealRef.current.count);
-        }
-        return;
-      }
-      if (!moving) return;
       tickCapsule(dtMs);
-      waveAccRef.current += dtMs;
-      if (waveAccRef.current < waveTickMs) return;
-      waveAccRef.current -= waveTickMs;
-      const nextRow = waveRow + 1;
-      if (nextRow >= ROWS - 1) {
+      const result = advanceInvaders(positionsRef.current, dtMs, waveTickMs, shipCol);
+      positionsRef.current = result.positions;
+      if (result.hits.length) {
         if (lesson) {
-          // Aterrizó sin disparo: fallo de reflejos, la oleada vuelve arriba.
-          fx.oops({ x: 50, y: 60 }, "¡Aterrizaron!");
-          if (shield <= 1) {
-            setShield(3);
-            setRecovery((level) => level + 1);
-          } else setShield(shield - 1);
+          setHits((count) => count + result.hits.length);
           setReflexMiss(true);
-          spawnWave();
-        } else resolveWave(false); // llegó abajo sin que la dispararan a tiempo
-      } else {
-        setWaveRow(nextRow);
+        } else {
+          const remaining = lives - result.hits.length;
+          setLives(remaining);
+          if (remaining <= 0) { endGame(false, correctCount); return; }
+        }
+        fx.oops({ x: colX(shipCol), y: 80 }, "¡Impacto en la nave!");
+      }
+      if (result.dodged.length) fx.award(15 * result.dodged.length, { x: 50, y: 75 }, { chain: false, burst: false, label: "¡Esquivado!", tone: "bonus" });
+      paintRef.current += dtMs;
+      if (paintRef.current >= 80 || result.hits.length || result.dodged.length) {
+        paintRef.current = 0;
+        setPositions([...result.positions]);
       }
     },
     { running: phase === "playing" && !frozen && !solved },
@@ -300,18 +272,15 @@ export function InvadersGeneric({
   function moveLeft() {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
     setShipCol((c) => Math.max(0, c - 1));
-    setMoving(true);
   }
   function moveRight() {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
     setShipCol((c) => Math.min(COLS - 1, c + 1));
-    setMoving(true);
   }
 
   function aimAt(column: number) {
     if (busyRef.current || frozen || solved || phase !== "playing") return;
     setShipCol(column);
-    setMoving(true);
   }
 
   useArrowKeys({ left: moveLeft, right: moveRight, action: handleShoot }, { enabled: phase === "playing" && !frozen && !solved });
@@ -348,7 +317,7 @@ export function InvadersGeneric({
             >
               ¡Empezar!
             </button>
-              <p className="text-xs text-red-300">Flechas para pilotar · espacio para disparar.{lesson && " Las naves aparecen poco a poco. La oleada espera a que aparezcan todas y a tu primer movimiento."}</p>
+              <p className="text-xs text-red-300">Flechas para pilotar · espacio para disparar. Las respuestas bajan por separado. Dispara a la correcta y esquiva las demás.</p>
           </div>
         )}
 
@@ -370,7 +339,7 @@ export function InvadersGeneric({
             </div>
 
             <ArcadeScoreBar fx={fx} />
-            {lesson ? <><p className="text-sm text-indigo-100" aria-live="polite">Escudo: {shownShield}/3{recovery > 0 || accumulatedDamage >= 3 ? " · velocidad reducida" : ""}</p><ReflexNotice show={reflexMiss} /></> : <div className="flex items-center justify-between rounded-xl border border-red-700 bg-red-950/80 p-3 text-sm">
+            {lesson ? <><p className="text-sm text-indigo-100" aria-live="polite">Escudo: {shownShield}/3{accumulatedDamage >= 3 ? " · velocidad reducida" : ""}</p><ReflexNotice show={reflexMiss} /></> : <div className="flex items-center justify-between rounded-xl border border-red-700 bg-red-950/80 p-3 text-sm">
               <span aria-live="polite">
                 <span aria-hidden="true">❤️ </span>Vidas: <strong className="text-red-300">{lives}</strong>
               </span>
@@ -378,8 +347,6 @@ export function InvadersGeneric({
                 <span aria-hidden="true">⭐ </span>Estrellas: <strong className="text-indigo-300">{starsThisRound}</strong>
               </span>
             </div>}
-            {lesson && !moving && !reflexMiss && <p className="text-sm text-indigo-200">Lee y apunta con calma. Tú inicias la acción.</p>}
-            {lesson && revealed < candidates.length && <p role="status" className="text-sm text-indigo-200">Llegan las naves: {revealed} de {candidates.length} visibles.</p>}
 
             <div className="rounded-2xl border-2 border-indigo-400 bg-red-900/30 p-3">
               {problem.flavor && (
@@ -398,17 +365,15 @@ export function InvadersGeneric({
               className="arcade-scene arcade-stars relative mx-auto h-72 sm:h-96 w-full max-w-[min(100%,36rem,65vh)] overflow-hidden rounded-2xl border-2 border-indigo-400/60 bg-slate-900"
             >
               <div aria-hidden="true" className="absolute bottom-12 top-0 border-l border-dashed border-indigo-300/50" style={{ left: `${(shipCol + 0.5) * 100 / COLS}%` }} />
-              <div
-                className={`${reducedMotion ? "" : "transition-all duration-150"} absolute inset-x-0 grid px-2`}
-                style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)`, top: `${wavePct * 0.7}%` }}
-              >
-                {candidates.map((v, i) => lesson && i >= revealed ? <span key={i} aria-hidden="true" className="m-0.5 h-20" /> : (
+              <div className="absolute inset-0 px-2">
+                {candidates.map((v, i) => (positions[i] ?? -1) < 0 ? null : (
                   <button type="button" onClick={() => aimAt(i)} aria-label={`Apuntar a ${choiceLabel(problem, v)}`} aria-pressed={shipCol === i} disabled={frozen || shotCol !== null}
+                    data-invader-col={i} data-invader-y={positions[i]}
                     key={i}
-                    className={`arcade-value m-0.5 flex h-20 touch-manipulation flex-col items-center justify-center rounded-xl border-2 font-bold ${
+                    className={`arcade-value absolute m-0.5 flex h-20 touch-manipulation flex-col items-center justify-center rounded-xl border-2 font-bold ${
                       shipCol === i ? "border-indigo-200 bg-indigo-600 text-white shadow-lg shadow-indigo-500/40" : "border-red-400/40 bg-slate-800 text-indigo-200"
                     }`}
-                    style={{ animationDelay: `${i * -0.2}s` }}
+                    style={{ left: `${i * 100 / COLS}%`, top: `${positions[i]}%`, width: `calc(${100 / COLS}% - 0.25rem)` }}
                   >
                     <span className="arcade-hover size-10" style={{ animationDelay: `${i * -0.2}s` }}><ArcadeSprite kind="alien" className="size-full" /></span>
                     <span data-choice-label=""><ChoiceText problem={problem} value={v} /></span>
@@ -438,7 +403,7 @@ export function InvadersGeneric({
               Disparar (espacio)
             </button>
 
-            <p className="text-xs text-indigo-100">Toca un enemigo para apuntar. Solo disparar envía tu elección. Un disparo incorrecto o una nave que aterriza dañan el escudo. Ponte bajo las cápsulas doradas para sumar puntos.</p>
+            <p className="text-xs text-indigo-100">Toca un enemigo para apuntar. Solo disparar envía una respuesta. Esquiva las naves que llegan abajo; si te alcanzan, dañan el escudo.</p>
             <HorizontalPad inline disabled={frozen || shotCol !== null} onLeft={moveLeft} onRight={moveRight} onAction={handleShoot} />
           </div>
         )}
