@@ -16,6 +16,7 @@ const CHILD_SUBCOLLECTIONS = [
   "badges",
   "records",
   "learningProgress",
+  "customLessonProgress",
   "learningEvidence",
   "learningMissions",
 ] as const;

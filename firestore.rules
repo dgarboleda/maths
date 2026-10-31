@@ -99,6 +99,11 @@ service cloud.firestore {
 
         // La evidencia educativa y sus agregados los valida Functions.
         // El dispositivo solo lee su propio avance; la familia puede borrarlo.
+        match /customLessonProgress/{lessonId} {
+          allow read: if isParentOrChild(parentId, childId);
+          allow delete: if isParent(parentId);
+          allow create, update: if false;
+        }
         match /learningProgress/{lessonId} {
           allow read: if isParentOrChild(parentId, childId);
           allow delete: if isParent(parentId);
@@ -224,6 +229,11 @@ service cloud.firestore {
       // nivel y no justifica ese costo. Un hijo la lee para poder jugar
       // (useCustomCurriculum se hidrata también en /jugar/{childId}/**);
       // solo el padre la edita.
+      match /customLessons/{lessonId} {
+        allow read: if isParent(parentId) || (isChild(parentId, request.auth.token.get("childId", "")) && resource.data.published == true);
+        allow write: if isParent(parentId);
+      }
+
       match /curriculumModules/{moduleId} {
         allow read: if isParent(parentId) || isAnyChildOf(parentId);
         allow write: if isParent(parentId);

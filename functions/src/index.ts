@@ -211,3 +211,5 @@ export const verifyChildPin = onCall({ secrets: [PIN_PEPPER] }, async (request) 
   const token = await getAuth().createCustomToken(uid, { role: "child", parentId, childId });
   return { token };
 });
+
+export { answerCustomLesson } from "./customLessons/actions";

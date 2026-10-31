@@ -1,0 +1,67 @@
+import { expect, test } from "@playwright/test";
+import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
+
+test("una familia publica una clase y el alumno resuelve sus preguntas", async ({ page }) => {
+  await registrarPadre(page);
+  const child = await crearHijo(page, { nombre: "Alex" });
+  const childId = await entrarAlEspacio(page, child.nombre, child.pin);
+  await page.goto("/panel/clases");
+  await page.getByLabel("Tema", { exact: true }).fill("Aritmética");
+  await page.getByLabel("Título de la clase").fill("Sumar dos números");
+  await page.getByLabel("Contenido de la clase").fill("Sumar es reunir cantidades.");
+  await page.getByRole("button", { name: "Añadir pregunta" }).click();
+  await page.getByLabel("Enunciado").fill("¿Cuánto es 2 + 2?");
+  await page.getByLabel("Respuestas (una por línea)").fill("3\n4");
+  await page.getByLabel("Respuestas (una por línea)").blur();
+  await page.getByLabel("Respuesta correcta").selectOption({ label: "4" });
+  await page.getByLabel("Explicación").fill("Dos más dos son cuatro.");
+  await page.getByRole("button", { name: "Publicar para alumnos" }).click();
+  await expect(page.getByText("Clase publicada para tus alumnos.")).toBeVisible();
+  await page.goto(`/jugar/${childId}/aprende`);
+  await page.getByRole("link", { name: "Aritmética: Sumar dos números" }).click();
+  await expect(page.getByText("Sumar es reunir cantidades.")).toBeVisible();
+  await page.getByRole("button", { name: "Empezar preguntas" }).click();
+  await page.getByRole("button", { name: "3", exact: true }).click();
+  await expect(page.getByText("Inténtalo de nuevo.")).toBeVisible();
+  await page.getByRole("button", { name: "4", exact: true }).click();
+  await expect(page.getByText(/¡Correcto!/)).toBeVisible();
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await expect(page.getByText("¡Terminaste la clase!")).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Empezar preguntas" }).click();
+  await expect(page.getByText("¡Terminaste la clase!")).toBeVisible();
+});
+
+test("una clase personalizada muestra respuestas de texto en el minijuego", async ({ page }) => {
+  await registrarPadre(page);
+  const child = await crearHijo(page, { nombre: "Sol" });
+  const childId = await entrarAlEspacio(page, child.nombre, child.pin);
+  await page.goto("/panel/clases");
+  await page.getByLabel("Tema", { exact: true }).fill("Formas");
+  await page.getByLabel("Título de la clase").fill("Formas planas");
+  await page.getByLabel("Contenido de la clase").fill("Las figuras se distinguen por sus lados.");
+  await page.getByLabel("Minijuego").selectOption("breakout");
+  await page.getByRole("button", { name: "Añadir pregunta" }).click();
+  await page.getByLabel("Enunciado").fill("¿Qué figura tiene tres lados?");
+  await page.getByLabel("Respuestas (una por línea)").fill("Círculo\nCuadrado\nTriángulo\nÓvalo\nRectángulo");
+  await page.getByLabel("Respuestas (una por línea)").blur();
+  await page.getByLabel("Respuesta correcta").selectOption({ label: "Triángulo" });
+  await page.getByRole("button", { name: "Publicar para alumnos" }).click();
+  await expect(page.getByText("Clase publicada para tus alumnos.")).toBeVisible();
+  await page.goto(`/jugar/${childId}/aprende`);
+  await page.getByRole("link", { name: "Formas: Formas planas" }).click();
+  await page.getByRole("button", { name: "Empezar preguntas" }).click();
+  await page.getByRole("button", { name: "¡Empezar!" }).click();
+  await page.getByRole("button", { name: "Apuntar al bloque Triángulo" }).click();
+  const board = page.locator("[data-breakout-board]");
+  const barriers = await board.locator("[data-barrier]").count();
+  await page.getByRole("button", { name: "Lanzar la pelota" }).click();
+  if (barriers) {
+    await expect(board.locator("[data-barrier]")).toHaveCount(barriers - 1);
+    await expect(board).toHaveAttribute("data-held", "true");
+    await page.getByRole("button", { name: "Lanzar la pelota" }).click();
+  }
+  await expect(page.getByText(/¡Correcto!/)).toBeVisible();
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await expect(page.getByText("¡Terminaste la clase!")).toBeVisible();
+});
