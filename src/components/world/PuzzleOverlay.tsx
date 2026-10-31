@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { MathText } from "@/components/MathText";
 import Link from "next/link";
 import { getFirebase } from "@/lib/firebase";
 import { moduleHref, missingPrerequisites, type ModuleDef } from "@/lib/curriculum";
@@ -296,7 +297,7 @@ export function PuzzleOverlay({
                     </p>
                   )}
                   <p id={promptId} className="mt-2 text-xl font-extrabold text-slate-50 sm:text-2xl">
-                    {problem.prompt}
+                    <MathText text={problem.prompt} />
                   </p>
 
                   {/* Fase 29: la pista queda diferida hasta `hintsAfterAttempts`
@@ -311,7 +312,7 @@ export function PuzzleOverlay({
                             <span className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300">
                               Diagnóstico ·{" "}
                             </span>
-                            {problem.hints[hintLevel - 1]}
+                            <MathText text={problem.hints[hintLevel - 1]} />
                           </p>
                         )}
                       </div>

@@ -15,7 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { choiceLabel, arcadeValues, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
@@ -403,7 +403,7 @@ export function FroggerGeneric({
                 </p>
               )}
               <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200 outline-none`}>
-                {problem.prompt}
+                <PromptText problem={problem} />
               </p>
             </div>
 
@@ -419,7 +419,7 @@ export function FroggerGeneric({
               <div className="grid w-full max-w-sm gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
                   <div key={col} data-lily="" className="arcade-hover arcade-value flex aspect-[4/3] items-center justify-center rounded-[40%] font-bold text-lime-50" style={{ animationDelay: `${-col * 0.3}s` }}>
-                    {candidates[col] !== undefined && choiceLabel(problem, candidates[col])}
+                    {candidates[col] !== undefined && <ChoiceText problem={problem} value={candidates[col]} />}
                   </div>
                 ))}
               </div>

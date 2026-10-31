@@ -16,7 +16,7 @@ import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import { findHitBlock, hitsPaddle, paddleBounceVx, stepBall, type Ball } from "./breakoutPhysics";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, choiceLabel, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 import { pointOnRoute, routeLength, shotRoute, type ShotPoint, type ShotStyle } from "@/lib/minigames/aimedShot";
 
 const FIELD_WIDTH = 100; // unidades porcentuales, no píxeles — ver breakoutPhysics.ts
@@ -434,7 +434,7 @@ export function BreakoutGeneric({
                 </p>
               )}
               <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-violet-200 outline-none`}>
-                {problem.prompt}
+                <PromptText problem={problem} />
               </p>
             </div>
 
@@ -448,8 +448,8 @@ export function BreakoutGeneric({
                 const selected = lesson && paddleX + paddleWidth / 2 >= b.x && paddleX + paddleWidth / 2 < b.x + b.w;
                 const className = `arcade-brick arcade-value absolute flex touch-manipulation items-center justify-center rounded-lg border-2 font-bold text-orange-100 ${selected ? "border-violet-200 bg-violet-700 shadow-lg shadow-violet-500/50" : "border-orange-400 bg-orange-950"}`;
                 const style = { left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` };
-                return lesson ? <button key={b.id} type="button" data-choice-label="" aria-label={`Apuntar al bloque ${choiceLabel(problem, b.value)}`} aria-pressed={selected} disabled={!held || frozen} onClick={() => aimBlock(b)} className={className} style={style}>{choiceLabel(problem, b.value)}</button>
-                  : <div key={b.id} data-choice-label="" className={className} style={style}>{choiceLabel(problem, b.value)}</div>;
+                return lesson ? <button key={b.id} type="button" data-choice-label="" aria-label={`Apuntar al bloque ${choiceLabel(problem, b.value)}`} aria-pressed={selected} disabled={!held || frozen} onClick={() => aimBlock(b)} className={className} style={style}><ChoiceText problem={problem} value={b.value} /></button>
+                  : <div key={b.id} data-choice-label="" className={className} style={style}><ChoiceText problem={problem} value={b.value} /></div>;
               })}
               <div
                 ref={ballElRef}

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArcadeIntro, ArcadeSprite } from "./ArcadeArt";
+import { MathText } from "@/components/MathText";
 import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./ArcadeFx";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -298,7 +299,7 @@ export function CoheteGeneric({
                 id={promptId}
                 className="mb-4 text-3xl font-black text-yellow-300 sm:text-4xl"
               >
-                {problem.prompt}
+                <MathText text={problem.prompt} />
               </div>}
               {exercise ? exercise.input : <QuestionWidget
                 key={problem.id}

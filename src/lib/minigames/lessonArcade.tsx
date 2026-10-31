@@ -1,5 +1,6 @@
 import { choiceSet, shuffle, type Problem } from "@/lib/problem";
 import type { LessonExercise } from "./lessonExercise";
+import { MathText } from "@/components/MathText";
 
 /**
  * Reglas comunes del modo clase de los minijuegos de reflejos (serpiente,
@@ -67,4 +68,20 @@ export function ReflexNotice({ show, waiting = false, message = REFLEX_MISS }: {
       {show ? message : waiting ? AWAITING_INPUT : ""}
     </p>
   );
+}
+
+/** Enunciado del juego con sus fórmulas dibujadas y, si la pregunta la
+ *  indica aparte, la unidad de la respuesta, igual que en la vía escrita. */
+export function PromptText({ problem }: { problem: Problem }) {
+  return (
+    <>
+      <MathText text={problem.prompt} />
+      {problem.unit && <span className="mt-1 block text-sm font-semibold opacity-80">Respuesta en {problem.unit}</span>}
+    </>
+  );
+}
+
+/** Texto de una alternativa con sus fórmulas dibujadas (por ejemplo, 3/4 apilada). */
+export function ChoiceText({ problem, value }: { problem: Problem; value: number }) {
+  return <MathText text={choiceLabel(problem, value)} />;
 }

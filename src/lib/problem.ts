@@ -16,6 +16,8 @@ export interface Problem {
   /** Etiqueta a mostrar por cada choice, en el mismo orden (para opciones no numéricas: símbolos, formas...). */
   choiceLabels?: string[];
   inputType: InputType;
+  /** Unidad de la respuesta, si la pregunta la indica aparte del enunciado (cm², soles…). */
+  unit?: string;
   /** numberLine: recta de lineMin a lineMax, el token arranca en startValue. */
   lineMin?: number;
   lineMax?: number;

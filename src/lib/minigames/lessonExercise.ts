@@ -100,6 +100,7 @@ export function lessonProblem(question: Question): Problem | null {
     prompt: question.prompt,
     answer,
     inputType: "decimal",
+    ...(question.unit ? { unit: question.unit } : {}),
     choices,
     choiceLabels: choices.map((value) => {
       if (fraction && !Number.isInteger(value)) {

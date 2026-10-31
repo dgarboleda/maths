@@ -940,3 +940,25 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .arcade-hover, .arcade-hop, .arcade-road { animation: none; }
 }
+
+/* Fórmulas en línea (MathText.tsx): fracción apilada, raíz con vínculo y
+   exponente, con la tipografía del texto que las rodea. */
+.math { white-space: nowrap; }
+.math-visual { display: inline; }
+.math-t::before { content: attr(data-t); white-space: pre; }
+.math-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0 0.12em;
+  vertical-align: middle;
+  font-size: 0.92em;
+  line-height: 1.12;
+  text-align: center;
+}
+.math-num { padding: 0 0.2em 0.06em; border-bottom: max(1px, 0.075em) solid currentColor; }
+.math-den { padding: 0.06em 0.2em 0; }
+.math-sqrt { display: inline-flex; align-items: stretch; vertical-align: baseline; }
+.math-radical { align-self: flex-end; padding-right: 0.02em; line-height: 1.15; transform: scaleY(1.12); transform-origin: bottom; }
+.math-radicand { padding: 0.08em 0.12em 0 0.06em; border-top: max(1px, 0.075em) solid currentColor; line-height: 1.15; }
+.math-sup { font-size: 0.72em; line-height: 0; vertical-align: 0.9em; }

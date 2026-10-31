@@ -13,7 +13,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { WAREHOUSES, deliverySquares, floorAt, goalAt, initialWarehouse, moveWarehouse, sameCell, warehouseFor, type Direction, type WarehouseState } from "@/lib/minigames/sokoban";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, arcadeValues, ChoiceText, PromptText, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const CHOICES = 5;
 const GOAL = 3;
@@ -322,7 +322,7 @@ export function CajasGeneric({
                 </p>
               )}
               <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-sky-200 outline-none`}>
-                {problem.prompt}
+                <PromptText problem={problem} />
               </p>
             </div>
 
@@ -347,7 +347,7 @@ export function CajasGeneric({
                     className={`relative flex aspect-square min-w-0 items-center justify-center rounded text-xs font-black sm:text-sm ${wall ? "sokoban-wall" : box ? "sokoban-crate text-slate-950" : goal ? "border-2 border-dashed border-cyan-300 bg-cyan-950 text-cyan-100" : "border border-slate-700/70 bg-slate-800"}`}
                   >
                     {dead && <span className="absolute right-0.5 top-0 text-xs font-bold text-rose-200">×</span>}
-                    {box ? <span className="arcade-value relative z-10 px-0.5 leading-tight">{choiceLabel(problem, box.value)}</span> : isPlayer ? <ArcadeSprite kind="worker" className="size-full" /> : goal ? <ArcadeSprite kind="truck" className="size-full" /> : ""}
+                    {box ? <span className="arcade-value relative z-10 px-0.5 leading-tight"><ChoiceText problem={problem} value={box.value} /></span> : isPlayer ? <ArcadeSprite kind="worker" className="size-full" /> : goal ? <ArcadeSprite kind="truck" className="size-full" /> : ""}
                   </div>
                 );
               })}

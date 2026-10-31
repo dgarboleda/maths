@@ -15,7 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const GRID_SIZE = 8;
 // Más bajo que el GOAL=8 del Cohete (30s contrarreloj): cada acierto acá
@@ -362,7 +362,7 @@ export function SnakeGeneric({
                 </p>
               )}
               <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-teal-200 outline-none`}>
-                {problem.prompt}
+                <PromptText problem={problem} />
               </p>
             </div>
 
@@ -389,7 +389,7 @@ export function SnakeGeneric({
                   className="arcade-value z-10 m-[3%] flex items-center justify-center rounded-lg border border-emerald-300/70 bg-emerald-950 font-bold text-emerald-100 shadow-md"
                   style={{ gridColumn: c.x + 1, gridRow: c.y + 1 }}
                 >
-                  {choiceLabel(problem, c.value)}
+                  <ChoiceText problem={problem} value={c.value} />
                 </div>
               ))}
             </div>

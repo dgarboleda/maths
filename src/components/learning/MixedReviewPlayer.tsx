@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MathText } from "@/components/MathText";
 import { useEffect, useRef } from "react";
 import { ArrowRight, BookOpen, Check, X } from "lucide-react";
 import {
@@ -222,10 +223,10 @@ function MixedSummary({ state }: { state: MixedReviewState }) {
                   {ok ? "autónoma" : correct ? "con ayuda" : "por revisar"}
                 </span>
               </p>
-              <p className="mt-2 font-semibold text-white">{question.prompt}</p>
+              <p className="mt-2 font-semibold text-white"><MathText text={question.prompt} /></p>
               {!correct && evidence?.response && (
                 <p className="mt-2 text-sm text-amber-100">
-                  {errorFeedback(question, evidence.response)}
+                  <MathText text={errorFeedback(question, evidence.response)} />
                 </p>
               )}
               <details className="mt-2 text-sm text-slate-300">
@@ -234,7 +235,7 @@ function MixedSummary({ state }: { state: MixedReviewState }) {
                 </summary>
                 <ol className="mt-2 list-decimal space-y-1 pl-5">
                   {question.solution.map((step) => (
-                    <li key={step}>{step}</li>
+                    <li key={step}><MathText text={step} /></li>
                   ))}
                 </ol>
               </details>

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { MathText } from "@/components/MathText";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
@@ -114,7 +115,7 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
         {error && <p role="alert" className={styles.notice}>No se pudo abrir la ayuda. Reintenta cuando se guarde tu avance.</p>}
         {!open && novel && <button type="button" className={styles.notice} onClick={() => void show()} disabled={disabled || busy}>
           <span className={styles.newLabel}>Nuevo símbolo</span>
-          ¿Qué significa {novel.symbol}?
+          ¿Qué significa <MathText text={novel.symbol} />?
           {onOpen && <span className={styles.helpWarning}>Consultar cuenta como ayuda</span>}
         </button>}
         <button ref={trigger} type="button" className={styles.bulb} aria-label="Entender esta pantalla"
@@ -148,9 +149,9 @@ function HelpPanel({ id, help, preferredIdea, onClose, assisted, onIdeaSeen }: {
         {ideas.map((idea, index) => <details key={idea.id} className={styles.idea} open={index === 0 ? true : undefined}
           ref={(element) => { if (element?.open) onIdeaSeen(idea.id); }}
           onToggle={(event) => { if (event.currentTarget.open) onIdeaSeen(idea.id); }}>
-          <summary>{idea.symbol && <span className={styles.symbol} aria-hidden="true">{idea.symbol}</span>}{idea.title}</summary>
-          <p>{idea.meaning}</p>
-          {idea.example && <p className={styles.example}><strong>Por ejemplo:</strong> {idea.example}</p>}
+          <summary>{idea.symbol && <span className={styles.symbol} aria-hidden="true"><MathText text={idea.symbol} /></span>}{idea.title}</summary>
+          <p><MathText text={idea.meaning} /></p>
+          {idea.example && <p className={styles.example}><strong>Por ejemplo:</strong> <MathText text={idea.example} /></p>}
         </details>)}
         {assisted && <p className={styles.assisted}>Esta consulta cuenta como ayuda en la comprobación. Puedes seguir aprendiendo a tu ritmo.</p>}
         <button type="button" className={styles.done} onClick={onClose}>Entendido, seguir</button>

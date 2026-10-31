@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MathText } from "@/components/MathText";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ArrowRight, BookOpen, Lightbulb } from "lucide-react";
@@ -193,12 +194,12 @@ export function LessonPlayer({
                         key={paragraph}
                         className="max-w-prose text-pretty leading-relaxed text-slate-200"
                       >
-                        {paragraph}
+                        <MathText text={paragraph} />
                       </p>
                     ),
                   )}
                   <p className="overflow-x-auto rounded-xl bg-slate-950 p-4 font-mono text-cyan-200">
-                    {lesson.sections[progress.index].formula}
+                    <MathText text={lesson.sections[progress.index].formula} />
                   </p>
                   <LearningVisual key={lesson.visual} kind={lesson.visual} />
                   <button
@@ -219,7 +220,7 @@ export function LessonPlayer({
                     Ejemplo {progress.index + 1} de {lesson.examples.length}
                   </p>
                   <h3 className="text-xl font-bold">
-                    {lesson.examples[progress.index].prompt}
+                    <MathText text={lesson.examples[progress.index].prompt} />
                   </h3>
                   <ol className="space-y-3">
                     {lesson.examples[progress.index].steps.map(
@@ -232,17 +233,17 @@ export function LessonPlayer({
                             Paso {index + 1}
                           </p>
                           <p className="mt-2 overflow-x-auto font-mono text-lg font-semibold">
-                            {step.math}
+                            <MathText text={step.math} />
                           </p>
                           <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                            <strong>Por qué:</strong> {step.why}
+                            <strong>Por qué:</strong> <MathText text={step.why} />
                           </p>
                         </li>
                       ),
                     )}
                   </ol>
                   <p className="rounded-xl bg-emerald-950/40 p-4 text-emerald-100">
-                    {lesson.examples[progress.index].conclusion}
+                    <MathText text={lesson.examples[progress.index].conclusion} />
                   </p>
                   <button
                     disabled={mutation.blocked}
@@ -344,10 +345,10 @@ export function LessonPlayer({
                 {lesson.vocabulary.map((word) => (
                   <div key={word.term}>
                     <dt className="text-sm font-bold text-cyan-200">
-                      {word.term}
+                      <MathText text={word.term} />
                     </dt>
                     <dd className="mt-1 text-sm text-slate-300">
-                      {word.meaning}
+                      <MathText text={word.meaning} />
                     </dd>
                   </div>
                 ))}
@@ -421,7 +422,7 @@ export function QuestionActivity({
     >
       <fieldset disabled={disabled || locked || (arcade && paused)} className="space-y-4">
         <legend className="mb-4 text-xl font-bold leading-relaxed text-white">
-          {question.prompt}
+          <MathText text={question.prompt} />
         </legend>
         {question.choices ? (
           <div className="space-y-2">
@@ -439,7 +440,7 @@ export function QuestionActivity({
                   className="mt-1 accent-cyan-300"
                 />
                 <span className="text-sm leading-relaxed">
-                  {option.label}
+                  <MathText text={option.label} />
                 </span>
               </label>
             ))}
@@ -549,7 +550,7 @@ export function QuestionActivity({
       )}
       {progress.stage === "guided" && (
         <p className="rounded-xl bg-cyan-950/40 p-4 text-sm text-cyan-100">
-          <strong>Vamos paso a paso.</strong> {question.hints[0]}
+          <strong>Vamos paso a paso.</strong> <MathText text={question.hints[0]} />
         </p>
       )}
       {arcade && exercise ? (
@@ -613,7 +614,7 @@ export function QuestionActivity({
             </p>
           ) : (
             <div className="space-y-2 rounded-xl bg-amber-950/40 p-4 text-amber-100">
-              <p>{errorFeedback(question, evidence.response ?? "")}</p>
+              <p><MathText text={errorFeedback(question, evidence.response ?? "")} /></p>
               {evidence.attempts >= 2 && (
                 <p className="text-sm">
                   Puedes volver a la clase o revisar el desarrollo. Después
@@ -625,7 +626,7 @@ export function QuestionActivity({
         {Boolean(evidence?.hintsUsed) && (
           <p className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-950/40 p-4 text-sm text-cyan-100">
             <Lightbulb className="mb-2" size={18} aria-hidden="true" />
-            {question.hints[(evidence?.hintsUsed ?? 1) - 1]}
+            <MathText text={question.hints[(evidence?.hintsUsed ?? 1) - 1]} />
           </p>
         )}
       </div>
@@ -634,7 +635,7 @@ export function QuestionActivity({
           <h3 className="font-bold text-cyan-200">El razonamiento</h3>
           <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-slate-200">
             {question.solution.map((step) => (
-              <li key={step}>{step}</li>
+              <li key={step}><MathText text={step} /></li>
             ))}
           </ol>
         </div>
@@ -706,9 +707,9 @@ export function QuestionActivity({
             {lesson.sections.map((section) => (
               <div key={section.title}>
                 <p className="font-bold text-white">{section.title}</p>
-                <p>{section.paragraphs[0]}</p>
+                <p><MathText text={section.paragraphs[0]} /></p>
                 <p className="mt-2 font-mono text-cyan-200">
-                  {section.formula}
+                  <MathText text={section.formula} />
                 </p>
               </div>
             ))}
@@ -791,14 +792,14 @@ function LessonSummary({
                   key={q.id}
                   className="border-t border-slate-700 pt-3 text-sm"
                 >
-                  <p className="font-bold">{q.prompt}</p>
+                  <p className="font-bold"><MathText text={q.prompt} /></p>
                   <p className="mt-2 text-slate-400">
                     {e?.firstCorrect && !e.hintsUsed && !e.revealed
                       ? "Resuelta de forma autónoma"
                       : "Para seguir trabajando con apoyo"}
                   </p>
                   <p className="mt-2 leading-relaxed text-slate-200">
-                    {q.explanation}
+                    <MathText text={q.explanation} />
                   </p>
                 </li>
               );

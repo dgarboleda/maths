@@ -13,7 +13,7 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, choiceLabel, arcadeValues, ChoiceText, PromptText, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const HOLES = 6; // 3 × 2
 const CHOICES = 5;
@@ -365,7 +365,7 @@ export function TopoGeneric({
                 </p>
               )}
               <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200 outline-none`}>
-                {problem.prompt}
+                <PromptText problem={problem} />
               </p>
             </div>
 
@@ -401,7 +401,7 @@ export function TopoGeneric({
                   >
                     <ArcadeSprite kind="mole" className="size-14" />
                     <span className="mt-1 rounded-md bg-lime-300 px-2 text-sm font-black text-slate-900">
-                      {mole ? choiceLabel(problem, mole.value) : ""}
+                      {mole ? <ChoiceText problem={problem} value={mole.value} /> : ""}
                     </span>
                     {mole && !calm && <span key={mole.until} className="arcade-mole-clock mt-1 h-1 w-10 rounded-full bg-amber-200" style={{ animationDuration: `${upMs}ms` }} />}
                   </span>

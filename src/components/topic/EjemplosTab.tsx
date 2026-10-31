@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import type { Problem } from "@/lib/problem";
 import { formatAnswer } from "@/lib/problem";
 import { getModule } from "@/lib/curriculum";
@@ -87,7 +88,7 @@ function AuthoredExamples({
               className="rounded-2xl border-2 border-purple-200 bg-white p-5 shadow-sm"
             >
               <p className="text-center text-xl font-bold text-purple-900">
-                {ex.prompt}
+                <MathText text={ex.prompt} />
               </p>
               <ol className="mt-4 space-y-2">
                 {ex.steps.slice(0, shown).map((step, i) => (
@@ -177,7 +178,7 @@ function GeneratedExamples({
             key={ex.id}
             className="rounded-2xl border-2 border-purple-200 bg-white p-5 text-center shadow-sm"
           >
-            <p className="text-xl font-bold text-purple-900">{ex.prompt}</p>
+            <p className="text-xl font-bold text-purple-900"><MathText text={ex.prompt} /></p>
             {ex.hints && (
               <ol className="mt-3 space-y-2 text-left text-sm text-slate-700">
                 {ex.hints.slice(0, revealed[ex.id] ?? 0).map((step, i) => (

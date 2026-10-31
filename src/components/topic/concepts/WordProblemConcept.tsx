@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import { getStrand } from "@/lib/strands";
 
 export function WordProblemConcept({ strandSlug, difficulty }: { strandSlug: string; difficulty: number }) {
@@ -18,7 +19,7 @@ export function WordProblemConcept({ strandSlug, difficulty }: { strandSlug: str
         <li>Resuelve y revisa si la respuesta tiene sentido.</li>
       </ol>
       <div className="mx-auto max-w-xl rounded-2xl border-2 border-purple-200 bg-white p-6 shadow-sm">
-        <p className="text-xl font-bold text-purple-900">{problem.prompt}</p>
+        <p className="text-xl font-bold text-purple-900"><MathText text={problem.prompt} /></p>
         {revealed ? (
           <p className="mt-4 text-lg font-extrabold text-emerald-700">Respuesta: {problem.answer}</p>
         ) : (

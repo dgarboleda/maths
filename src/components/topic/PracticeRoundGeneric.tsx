@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { MathText } from "@/components/MathText";
 import { QuestionWidget } from "./QuestionWidget";
 import {
   formatAnswer,
@@ -168,7 +169,7 @@ export function PracticeRoundGeneric({
         id={promptId}
         className="text-2xl font-extrabold text-purple-900 sm:text-3xl"
       >
-        {problem.prompt}
+        <MathText text={problem.prompt} />
       </p>
 
       {!feedback && problem.hints && (
@@ -177,7 +178,7 @@ export function PracticeRoundGeneric({
             {hintLevel > 0 && (
               <p className="rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-800">
                 <span aria-hidden="true">💡 </span>
-                {problem.hints[hintLevel - 1]}
+                <MathText text={problem.hints[hintLevel - 1]} />
               </p>
             )}
           </div>

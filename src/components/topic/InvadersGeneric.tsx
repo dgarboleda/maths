@@ -15,7 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, choiceLabel, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
@@ -361,7 +361,7 @@ export function InvadersGeneric({
                 </p>
               )}
               <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-indigo-200 outline-none`}>
-                {problem.prompt}
+                <PromptText problem={problem} />
               </p>
             </div>
 
@@ -384,7 +384,7 @@ export function InvadersGeneric({
                     style={{ animationDelay: `${i * -0.2}s` }}
                   >
                     <span className="arcade-hover size-10" style={{ animationDelay: `${i * -0.2}s` }}><ArcadeSprite kind="alien" className="size-full" /></span>
-                    <span data-choice-label="">{choiceLabel(problem, v)}</span>
+                    <span data-choice-label=""><ChoiceText problem={problem} value={v} /></span>
                   </button>
                 ))}
               </div>

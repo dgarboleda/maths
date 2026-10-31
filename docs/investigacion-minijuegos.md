@@ -98,4 +98,14 @@ Se mantienen a propósito:
 
 - Los errores razonados del contenido, aunque estén fuera del dominio (−14 como lado, 9,6 unidades), porque su retroalimentación trabaja ese error.
 - Errores razonados que no se pueden escribir con exactitud (1/6 en una respuesta entera, 16,67 %), que siguen fuera de las alternativas.
-- La unidad de 21 preguntas (cm², soles, °) no se muestra ni en el juego ni en la vía escrita. Es una decisión de contenido para revisar aparte.
+- Errata corregida: la vía escrita sí muestra la unidad («Tu respuesta (cm²)»). Los juegos la muestran ahora bajo el enunciado («Respuesta en cm²») en las 21 preguntas que la indican aparte.
+
+# Fórmulas escritas como en papel
+
+La notación en línea del contenido («3/4», «(1 × 2)/(2 × 2)», «√(81 + 144)», «10^?») se dibuja con fracciones apiladas, raíces con vínculo y exponentes (`src/lib/math/parseMath.ts`, `src/components/MathText.tsx`). No hace falta reescribir el contenido.
+
+- Se reconocen fracciones de números, letras con coeficiente («4x/4»), huecos («?/9», «__/12»), grupos entre paréntesis y raíces anidadas, como en la fórmula general de segundo grado. Las razones entre palabras («opuesto/hipotenusa») solo se apilan dentro de una fórmula, después de «=».
+- Quedan como texto las unidades («km/h», «L/min», «S/ 2000», «créditos/sensor»), las fechas, las razones en prosa y «f(x)/2». Se contrastó con los 16 535 textos que ve el estudiante.
+- Se usa HTML y CSS propios en lugar de MathML o KaTeX: se ve igual en todos los navegadores, no depende de una fuente matemática instalada y no añade dependencias.
+- Accesibilidad y pruebas: el dibujo es `aria-hidden` y pinta sus caracteres con `content: attr()`. El texto del documento sigue siendo el original («1/5»), así que lectores de pantalla, copiar y pegar y las búsquedas de las pruebas no cambian.
+- Se aplica en clases (secciones, fórmulas, ejemplos, preguntas, opciones, pistas, retroalimentación y razonamiento), repasos, ubicación, ayuda de símbolos, los nueve minijuegos (enunciado y alternativas), la ronda de práctica, el cohete y las fichas del mundo.

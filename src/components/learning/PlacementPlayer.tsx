@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MathText } from "@/components/MathText";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Compass, SkipForward } from "lucide-react";
 import {
@@ -138,7 +139,7 @@ function PlacementQuestion({
         if (response.trim()) onAnswer(response.trim());
       }}
     >
-      <p className="text-lg font-semibold leading-relaxed text-white">{question.prompt}</p>
+      <p className="text-lg font-semibold leading-relaxed text-white"><MathText text={question.prompt} /></p>
       {question.choices ? (
         <fieldset className="space-y-2" disabled={disabled}>
           <legend className="sr-only">Elige una respuesta</legend>
@@ -147,7 +148,7 @@ function PlacementQuestion({
               className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 has-[:checked]:border-cyan-300">
               <input type="radio" name="placement" value={choice.id} checked={response === choice.id}
                 onChange={() => setResponse(choice.id)} className="accent-cyan-300" />
-              {choice.label}
+              <MathText text={choice.label} />
             </label>
           ))}
         </fieldset>
