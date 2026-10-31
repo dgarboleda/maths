@@ -3,6 +3,7 @@ import { FRACTION_LESSONS } from "./fractions";
 import { FRACTION_OPERATION_LESSONS } from "./fractionOps";
 import { INVERSE_LESSONS } from "./inverse";
 import { EXPRESSION_LESSONS } from "./expressions";
+import { NOTABLE_PRODUCT_LESSONS } from "./notableProducts";
 import { GEOMETRY_LESSONS } from "./geometry";
 import { DATA_LESSONS } from "./data";
 import { PROPORTIONALITY_LESSONS } from "./proportionality";
@@ -80,6 +81,7 @@ export const LESSONS: Lesson[] = [
   ...INTEREST_LESSONS,
   ...ALGEBRA_LESSONS,
   ...EXPRESSION_LESSONS,
+  ...NOTABLE_PRODUCT_LESSONS,
   ...SEQUENCE_LESSONS,
   ...QUADRATIC_LESSONS,
   ...QUADRATIC_FUNCTION_LESSONS,

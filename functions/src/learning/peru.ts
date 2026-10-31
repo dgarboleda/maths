@@ -45,6 +45,7 @@ export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruG
   "modelar-ecuaciones": { competency: "regularidad", grade: 2 },
   "expresiones-algebraicas": { competency: "regularidad", grade: 1 },
   "propiedad-distributiva": { competency: "regularidad", grade: 2 },
+  "productos-notables": { competency: "regularidad", grade: 3 },
   "ecuaciones-ambos-lados": { competency: "regularidad", grade: 2 },
   inecuaciones: { competency: "regularidad", grade: 3 },
   "funciones-lineales": { competency: "regularidad", grade: 3 },
