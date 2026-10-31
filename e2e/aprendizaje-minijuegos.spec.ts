@@ -441,34 +441,44 @@ test("Laberinto en móvil: un toque es un paso, el fantasma espera y pisar un n�
   expect(answers).toBe(0);
   await page.getByRole("button", { name: "Entendido, seguir" }).click();
   await page.screenshot({ path: testInfo.outputPath("laberinto-movil-tablero.png"), fullPage: true });
-  const state = await board.evaluate((element) => ({
+  type Point = { x: number; y: number };
+  // El fantasma sigue moviéndose mientras se toca: si atrapa al jugador lo
+  // devuelve al inicio, así que el camino se recalcula con el tablero real
+  // antes de cada paso en vez de seguir un plan hecho de antemano.
+  const readBoard = () => board.evaluate((element) => ({
     x: Number(element.getAttribute("data-player-x")), y: Number(element.getAttribute("data-player-y")),
-    gx: Number(element.getAttribute("data-ghost-x")), gy: Number(element.getAttribute("data-ghost-y")),
+    ghosts: [`${element.getAttribute("data-ghost-x")},${element.getAttribute("data-ghost-y")}`],
     numbers: [...element.querySelectorAll("[data-value]")].map((cell) => ({ x: Number(cell.getAttribute("data-cell-x")), y: Number(cell.getAttribute("data-cell-y")), value: cell.getAttribute("data-value")! })),
     walls: [...element.querySelectorAll('[data-wall="true"]')].map((cell) => `${cell.getAttribute("data-cell-x")},${cell.getAttribute("data-cell-y")}`),
   }));
-  type Point = { x: number; y: number };
-  const queue: { cell: Point; path: Point[] }[] = [{ cell: state, path: [] }];
-  const seen = new Set([`${state.x},${state.y}`]);
-  let path: Point[] = [], chosen: string | undefined;
-  while (queue.length) {
-    const next = queue.shift()!;
-    const number = state.numbers.find((n) => n.x === next.cell.x && n.y === next.cell.y);
-    if (number) { path = next.path; chosen = number.value; break; }
-    for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
-      const cell = { x: next.cell.x + dx, y: next.cell.y + dy }, key = `${cell.x},${cell.y}`;
-      if (cell.x < 0 || cell.x > 4 || cell.y < 0 || cell.y > 4 || state.walls.includes(key) || seen.has(key) || (cell.x === state.gx && cell.y === state.gy)) continue;
-      seen.add(key); queue.push({ cell, path: [...next.path, cell] });
+  function nextStep(state: Awaited<ReturnType<typeof readBoard>>) {
+    const queue: { cell: Point; first?: Point }[] = [{ cell: state }];
+    const seen = new Set([`${state.x},${state.y}`]);
+    while (queue.length) {
+      const next = queue.shift()!;
+      const number = state.numbers.find((n) => n.x === next.cell.x && n.y === next.cell.y);
+      if (number && next.first) return { step: next.first, target: number.value, last: next.first === next.cell };
+      for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+        const cell = { x: next.cell.x + dx, y: next.cell.y + dy }, key = `${cell.x},${cell.y}`;
+        if (cell.x < 0 || cell.x > 4 || cell.y < 0 || cell.y > 4 || state.walls.includes(key) || seen.has(key) || state.ghosts.includes(key)) continue;
+        seen.add(key); queue.push({ cell, first: next.first ?? cell });
+      }
     }
   }
-  expect(chosen).toBeDefined();
   const saved = savedAnswer(page);
-  let position: Point = state;
-  for (const cell of path) {
-    const name = cell.x > position.x ? "Mover a la derecha" : cell.x < position.x ? "Mover a la izquierda" : cell.y > position.y ? "Mover abajo" : "Mover arriba";
+  let chosen: string | undefined;
+  for (let taps = 0; taps < 60 && answers === 0; taps++) {
+    const state = await readBoard();
+    const plan = nextStep(state);
+    if (!plan) { await page.waitForTimeout(300); continue; } // el fantasma tapa el paso: espera
+    const name = plan.step.x > state.x ? "Mover a la derecha" : plan.step.x < state.x ? "Mover a la izquierda" : plan.step.y > state.y ? "Mover abajo" : "Mover arriba";
     await page.getByRole("button", { name, exact: true }).tap();
-    position = cell;
+    if (!plan.last) continue;
+    // Pisó un número salvo que el fantasma lo atrapara justo antes.
+    chosen = plan.target;
+    await expect.poll(() => answers, { timeout: 3000 }).toBe(1).catch(() => { chosen = undefined; });
   }
+  expect(chosen).toBeDefined();
   const result = (await (await saved).json()).result;
   expect(result.progress.responses[`practice:${question.id}`]).toMatchObject({ response: chosen, attempts: 1 });
   expect(result.stars).toBe(0);
