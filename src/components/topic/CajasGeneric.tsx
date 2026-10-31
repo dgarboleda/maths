@@ -10,7 +10,7 @@ import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
 import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
-import { WAREHOUSES, deliverySquares, floorAt, goalAt, initialWarehouse, moveWarehouse, sameCell, warehouseFor, type Direction, type WarehouseState } from "@/lib/minigames/sokoban";
+import { WAREHOUSES, deliverySquares, floorAt, goalAt, initialWarehouse, moveWarehouse, sameCell, warehouseFor, warehousePar, type Direction, type WarehouseState } from "@/lib/minigames/sokoban";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
@@ -83,6 +83,7 @@ export function CajasGeneric({
   const busyRef = useRef(false); // true mientras se espera la respuesta
   const cabinetRef = useRef<HTMLDivElement>(null);
   const fx = useArcadeFx({ game: "cajas", soundOn, solved, cabinetRef, session: exercise?.session });
+  const par = warehousePar(level, fx.level);
   const at = (c: { x: number; y: number }) => cellAt(c.x, c.y, levelRef.current.rows[0].length, levelRef.current.rows.length);
 
   function resetBoxes() {
@@ -98,7 +99,7 @@ export function CajasGeneric({
     const nextProblem = newProblem();
     setProblem(nextProblem);
     candidatesRef.current = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, CHOICES, Math.max(8, CHOICES * 2));
-    levelRef.current = warehouseFor(nextProblem.id, round);
+    levelRef.current = warehouseFor(nextProblem.id, round, fx.level);
     setLevel(levelRef.current);
     resetBoxes();
   }
@@ -199,6 +200,8 @@ export function CajasGeneric({
       fx.shake(3);
       if (lesson) {
         fx.pop("¡Al camión!", at(result.delivered), "info");
+        // Planificar bien da puntos: entregar dentro del par de pasos.
+        if (result.state.moves <= par) fx.award(120, at(result.delivered), { label: "¡Dentro del par! +120", tone: "bonus", burst: false });
         void deliverLesson(result.delivered.value);
       } else void resolveRound(result.delivered.value === problem.answer, result.delivered, result.state.moves);
     }
@@ -330,7 +333,7 @@ export function CajasGeneric({
               </p>
             </div>
 
-            <div className="flex flex-wrap justify-between gap-2 text-xs text-slate-300"><span>{level.name}</span><span>Pasos: {board.moves} · Empujes: {board.pushes}</span></div>
+            <div className="flex flex-wrap justify-between gap-2 text-xs text-slate-300"><span>{level.name}</span><span>Pasos: {board.moves}/{par} par · Empujes: {board.pushes}</span></div>
             <div
               aria-hidden="true"
               data-sokoban-board="" data-warehouse={level.id} data-player-x={board.player.x} data-player-y={board.player.y}

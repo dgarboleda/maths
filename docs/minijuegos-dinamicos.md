@@ -28,3 +28,23 @@ En Estanque se indica cuándo se está guardando una respuesta y si el guardado 
 Al empezar se coloca el enunciado al inicio de la vista y se le da el foco para leerlo y jugar con el teclado. Mover al personaje o pausar no vuelve a desplazar la página. El tablero y los controles quedan a continuación del problema, también en móvil.
 
 La geometría de los rebotes se prueba para las cinco columnas y los tres tiros. Las pruebas de componentes comprueban pausa, respuestas únicas, ausencia de respuestas automáticas antes de actuar, turbo y obstáculos. Los E2E recorren el guardado real con emuladores, en móvil y escritorio, y comprueban accesibilidad.
+
+## Niveles arcade, corazones y medallas
+
+Cada minijuego tiene un **nivel arcade** del 1 al 10, guardado en el dispositivo (`numerario:arcade-level:<juego>`). Sube al resolver un ejercicio o ganar una partida y nunca baja. El nivel 1 es el juego descrito arriba; el nivel suma oleadas a las mismas curvas de dificultad que la ronda y activa mecánicas nuevas. **Modo tranquilo**, en la ficha de inicio, juega siempre en nivel 1 y no sube el nivel.
+
+Cada partida tiene **tres corazones de juego**. Chocar con un peligro resta uno, corta el combo y quita el bonus «Sin daño» (+300). Llegar a cero no termina nada ni afecta la respuesta, el avance o las estrellas de la app. Al cerrar se muestra una **medalla arcade** (bronce, plata u oro) según los puntos y el nivel. Se usan medallas y no estrellas para no confundirlas con las estrellas, que sí son un premio.
+
+| Juego | Novedades por nivel |
+| --- | --- |
+| Serpiente | 2: rocas fijas, colocadas sin cerrar el camino a ninguna opción (comprobado por recorrido en anchura). 3: fruta reloj que la frena 3 s. 5: más rocas y velocidad. |
+| Laberinto | 2: fantasma más rápido. 4: segundo fantasma que embosca dos casillas por delante del jugador. 6: escudo de 2,5 s. |
+| Invasión | 2: descenso más rápido. 3: meteoritos que cuestan un corazón si alcanzan la nave. 6: meteoritos más frecuentes. |
+| Autopista | 2: puertas más rápidas. 3: conos desde la primera ronda. 6: dos conos por tramo, siempre con un carril libre. |
+| Estanque | 2: cocodrilo más rápido. 4: segundo cocodrilo en sentido contrario, con su flecha de próximo paso. 7: más velocidad. |
+| Bloques | 2: gema en la pista: si la pelota la atraviesa, da puntos. 3: la fila oscila mientras se apunta. El bloque queda fijado al lanzar y la fila se detiene en vuelo. 6: oscila más rápido. |
+| Topos | 2: apariciones más cortas. 3: topo bomba sin número (tocarlo cuesta un corazón). 5: hasta tres topos a la vez. «Sin prisas» no cambia. |
+| Caja numérica | 2: par de pasos más exigente; entregar dentro del par da puntos. 4: dos almacenes más estrechos, con recorridos testigo verificados para cada caja. |
+| Cohete | 2: maniobra orbital más rápida; sus impactos cuestan corazones. 4: el reto con tiempo, opcional, empieza con menos segundos (mínimo 18). |
+
+Ninguna mecánica nueva envía respuestas. Los peligros esperan la primera acción en la clase, se detienen con la pausa y se dibujan sin transiciones con «reducir movimiento». Con el almacenamiento vacío el nivel es 1, por lo que las pruebas y los E2E existentes no cambian. Las pruebas nuevas fijan el nivel y comprueban cada mecánica, que los choques restan corazones sin responder y que el modo tranquilo vuelve al nivel 1.

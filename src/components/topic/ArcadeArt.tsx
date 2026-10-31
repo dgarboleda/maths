@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import type { PracticeGame } from "@/lib/minigames/lessonExercise";
+import { levelPerks, MAX_LEVEL, useArcadeLevel } from "@/lib/minigames/arcadeLevel";
 
 /** Ilustraciones propias: sin descargas, fuentes de emoji ni peticiones externas. */
 const ART = {
@@ -36,10 +39,22 @@ const INTRO: Record<PracticeGame, { sprite: keyof typeof ART; caption: string }>
   cohete: { sprite: "rocket", caption: "Resuelve · Despega · Llega a la Luna" },
 };
 
+/** Ficha de inicio: qué se hace, el nivel del juego, lo que trae y la opción
+ *  de jugar con calma. El nivel es local y solo cambia el reto del juego. */
 export function ArcadeIntro({ game }: { game: PracticeGame }) {
   const { sprite, caption } = INTRO[game];
+  const { level, calm, effective, toggleCalm } = useArcadeLevel(game);
+  const { unlocked, next } = levelPerks(game, effective);
   return <div className="arcade-intro mx-auto flex max-w-xs flex-col items-center gap-3 rounded-2xl border border-white/15 p-4">
     <ArcadeSprite kind={sprite} className="size-20" />
     <p className="text-xs font-bold tracking-wide text-slate-200">{caption}</p>
+    <p data-arcade-level={effective} className="arcade-level-badge rounded-full px-3 py-1 text-xs font-black tracking-widest">
+      {calm ? `MODO TRANQUILO · NIVEL 1` : `NIVEL ${level} DE ${MAX_LEVEL}`}
+    </p>
+    {!calm && unlocked.length > 0 && <p className="text-xs text-slate-200">Novedad: {unlocked[unlocked.length - 1]}.</p>}
+    {!calm && next && <p className="text-[11px] text-slate-400">Nivel {next[0]}: {next[1].toLowerCase()}.</p>}
+    <button type="button" aria-pressed={calm} onClick={toggleCalm} className="arcade-option text-xs">
+      Modo tranquilo
+    </button>
   </div>;
 }

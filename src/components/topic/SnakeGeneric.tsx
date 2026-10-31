@@ -16,6 +16,7 @@ import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import { useContinueArcade } from "@/lib/minigames/useContinueArcade";
+import { placeRocks, rockCount } from "@/lib/minigames/snakeHazards";
 import { lessonArcadeState, arcadeValues, ChoiceText, PromptText, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const GRID_SIZE = 8;
@@ -35,6 +36,11 @@ const COIN_POINTS = 50;
 const ANSWER_POINTS = 150;
 const COIN_SPEED_STEP_MS = 15;
 const COIN_SPEED_FLOOR_MS = 260;
+/** Fruta reloj (desde el nivel 3): frena la serpiente unos segundos. */
+const CLOCK_LEVEL = 3;
+const CLOCK_SLOW_MS = 3000;
+const CLOCK_SLOW_FACTOR = 1.6;
+const CLOCK_POINTS = 30;
 
 type Phase = "start" | "playing" | "over";
 interface Cell {
@@ -126,6 +132,10 @@ export function SnakeGeneric({
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
   const [coin, setCoin] = useState<Cell | null>(null);
+  const [rocks, setRocks] = useState<Cell[]>([]);
+  const [clock, setClock] = useState<Cell | null>(null);
+  const slowRef = useRef(0);
+  const [slowed, setSlowed] = useState(false);
   const cabinetRef = useRef<HTMLDivElement>(null);
   const fx = useArcadeFx({ game: "snake", soundOn, solved, cabinetRef, session: exercise?.session });
 
@@ -133,20 +143,28 @@ export function SnakeGeneric({
   const accRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer — evita comer dos veces a la vez
 
-  const wave = waveIndex(exercise?.round ?? correctCount, WAVE_SIZE);
+  // El nivel del juego suma oleadas a la curva de siempre.
+  const wave = waveIndex(exercise?.round ?? correctCount, WAVE_SIZE) + fx.boost;
   // Cada moneda acelera un poco la serpiente: más ritmo sin tocar la pregunta.
   const [coinsEaten, setCoinsEaten] = useState(0);
-  const tickMs = Math.max(COIN_SPEED_FLOOR_MS, scaleWithWave(TICK_BASE_MS, TICK_STEP_MS, wave, TICK_FLOOR_MS) - coinsEaten * COIN_SPEED_STEP_MS);
+  const baseTickMs = Math.max(COIN_SPEED_FLOOR_MS, scaleWithWave(TICK_BASE_MS, TICK_STEP_MS, wave, TICK_FLOOR_MS) - coinsEaten * COIN_SPEED_STEP_MS);
+  const tickMs = slowed ? baseTickMs * CLOCK_SLOW_FACTOR : baseTickMs;
   const candidateCount = Math.round(scaleWithWave(CANDIDATES_BASE, CANDIDATES_STEP, wave, CANDIDATES_MAX));
 
   function spawnRound(currentSnake: Cell[]) {
     const nextProblem = newProblem();
     const spread = Math.max(8, candidateCount * 2);
     const values = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, candidateCount, spread);
-    const cells = pickFreeCells(currentSnake, values.length + 1);
+    const withClock = fx.level >= CLOCK_LEVEL;
+    const cells = pickFreeCells(currentSnake, values.length + 1 + Number(withClock));
+    const targets = cells;
     setProblem(nextProblem);
     setCandidates(cells.slice(0, values.length).map((cell, i) => ({ ...cell, value: values[i] })));
     setCoin(cells[values.length] ?? null);
+    setClock(withClock ? cells[values.length + 1] ?? null : null);
+    // Las rocas nunca cierran el camino a una opción, la moneda o el reloj.
+    const count = rockCount(fx.level);
+    setRocks(count ? placeRocks(GRID_SIZE, currentSnake, dirRef.current, pickFreeCells([...currentSnake, ...targets], GRID_SIZE * GRID_SIZE), targets, count) : []);
   }
 
   function endGame(didWin: boolean, finalCount: number) {
@@ -164,7 +182,9 @@ export function SnakeGeneric({
 
   /** Choque en modo clase: no es una respuesta; vuelve a empezar el recorrido. */
   function reflexReset() {
-    fx.oops(cellAt(snakeRef.current[0].x, snakeRef.current[0].y, GRID_SIZE), "¡Choque!");
+    fx.hit(cellAt(snakeRef.current[0].x, snakeRef.current[0].y, GRID_SIZE), "¡Choque!");
+    slowRef.current = 0;
+    setSlowed(false);
     setReflexMiss(true);
     setAwaitingInput(true);
     dirRef.current = INITIAL_DIR;
@@ -192,6 +212,8 @@ export function SnakeGeneric({
     setStarsThisRound(0);
     setWin(false);
     setCoinsEaten(0);
+    slowRef.current = 0;
+    setSlowed(false);
     setPhase("playing");
     fx.start();
     spawnRound(openingSnake);
@@ -244,6 +266,12 @@ export function SnakeGeneric({
       else endGame(false, correctCount);
       return;
     }
+    if (rocks.some((r) => r.x === newHead.x && r.y === newHead.y)) {
+      // Una roca es un fallo de reflejos, como un muro.
+      if (lesson) reflexReset();
+      else endGame(false, correctCount);
+      return;
+    }
     const eaten = candidates.find((c) => c.x === newHead.x && c.y === newHead.y);
     const grow = eaten ? eaten.value === problem.answer : false;
     const bodyToCheck = grow ? currentSnake : currentSnake.slice(0, -1);
@@ -260,11 +288,21 @@ export function SnakeGeneric({
       setCoin(pickFreeCells([...newSnake, ...candidates], 1)[0] ?? null);
       setCoinsEaten((n) => n + 1);
     }
+    if (clock && clock.x === newHead.x && clock.y === newHead.y) {
+      fx.award(CLOCK_POINTS, cellAt(clock.x, clock.y, GRID_SIZE), { tone: "info", label: "¡Más lento!", sound: "whoosh" });
+      setClock(null);
+      slowRef.current = CLOCK_SLOW_MS;
+      setSlowed(true);
+    }
     if (eaten) resolveEaten(eaten, newSnake);
   }
 
   useGameLoop(
     (dtMs) => {
+      if (slowRef.current > 0) {
+        slowRef.current = Math.max(0, slowRef.current - dtMs);
+        if (slowRef.current === 0) setSlowed(false);
+      }
       accRef.current += dtMs;
       if (accRef.current < tickMs) return;
       accRef.current -= tickMs;
@@ -331,7 +369,7 @@ export function SnakeGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-emerald-300">Usa las flechas del teclado (o los botones) para moverte. Las monedas doradas dan puntos y aceleran la serpiente.{lesson && " En esta clase la serpiente espera tu primera flecha, y chocar no cuenta como respuesta."}</p>
+            <p className="text-xs text-emerald-300">Usa las flechas del teclado (o los botones) para moverte. Las monedas doradas dan puntos y aceleran la serpiente; el reloj la frena. Evita las rocas.{lesson && " En esta clase la serpiente espera tu primera flecha, y chocar no cuenta como respuesta."}</p>
           </div>
         )}
 
@@ -386,6 +424,12 @@ export function SnakeGeneric({
                   style={{ gridColumn: seg.x + 1, gridRow: seg.y + 1 }}
                 >{i === 0 && <span className="absolute inset-0" style={{ transform: `rotate(${facing.y === 1 ? 90 : facing.y === -1 ? -90 : facing.x === -1 ? 180 : 0}deg)` }}><ArcadeSprite kind="snake" className="size-full" /></span>}</div>
               ))}
+              {rocks.map((r) => (
+                <div key={`rock-${r.x}-${r.y}`} data-rock="" className="arcade-rock arcade-hazard z-10 m-[8%] rounded-[35%]" style={{ gridColumn: r.x + 1, gridRow: r.y + 1 }} />
+              ))}
+              {clock && (
+                <div data-clock="" className="arcade-bonus-item z-10 m-[12%] flex items-center justify-center rounded-full border-2 border-cyan-100 bg-gradient-to-br from-cyan-200 to-sky-600 text-xs font-black text-sky-950 shadow-[0_0_12px_#22d3ee]" style={{ gridColumn: clock.x + 1, gridRow: clock.y + 1 }}>⏱</div>
+              )}
               {coin && (
                 <div className="arcade-bonus-item z-10 m-[14%] rounded-full border-2 border-yellow-100 bg-gradient-to-br from-yellow-200 to-amber-500 shadow-[0_0_12px_#facc15]" data-coin="" style={{ gridColumn: coin.x + 1, gridRow: coin.y + 1 }} />
               )}

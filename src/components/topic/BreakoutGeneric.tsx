@@ -62,6 +62,14 @@ const LESSON_SPEED = 150;
 const RALLY_POINTS = 10;
 const BLOCK_POINTS = 200;
 const TRICK_SHOT_POINTS = 50;
+// Nivel 2+: una gema flota en la pista; si la pelota la atraviesa, da puntos.
+// Nivel 3+: la fila de bloques oscila; el bloque queda fijado al lanzar.
+const GEM_LEVEL = 2;
+const GEM_POINTS = 80;
+const GEM_SIZE = 8;
+const MOVE_LEVEL = 3;
+const FAST_MOVE_LEVEL = 6;
+const SHIFT_AMPLITUDE = LESSON_W / 2;
 const blockCenter = (b: { x: number; y: number; w: number; h: number }): FxAt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 
 function buildBlocks(values: number[], lesson = false, round = 0): Block[] {
@@ -151,6 +159,10 @@ export function BreakoutGeneric({
 
   const ballRef = useRef<Ball>({ x: BALL_START_X, y: BALL_START_Y, vx: 0, vy: -SPEED_BASE });
   const ballElRef = useRef<HTMLDivElement>(null);
+  const [gem, setGem] = useState<{ x: number; y: number } | null>(null);
+  const [shift, setShift] = useState(0);
+  const shiftClockRef = useRef(0);
+  const shiftPaintRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer del bloque CORRECTO (arma ronda nueva)
 
   const wave = waveIndex(correctCount, WAVE_SIZE);
@@ -178,6 +190,7 @@ export function BreakoutGeneric({
     const values = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, BLOCK_ROWS * BLOCK_COLS, spread);
     setProblem(nextProblem);
     setBlocks(buildBlocks(values, lesson, exercise?.round ?? 0));
+    setGem(lesson && fx.level >= GEM_LEVEL ? { x: 8 + Math.random() * (FIELD_WIDTH - 16 - GEM_SIZE), y: 48 } : null);
   }
 
   function endGame(didWin: boolean, finalCount: number) {
@@ -277,11 +290,12 @@ export function BreakoutGeneric({
   function launch() {
     if (!lesson || !held || flightRef.current || busyRef.current || frozen || solved || phase !== "playing") return;
     playSound("whoosh", soundOn);
-    const block = blocks.find((b) => paddleX + paddleWidth / 2 >= b.x && paddleX + paddleWidth / 2 < b.x + b.w);
+    const block = blocks.find((b) => paddleX + paddleWidth / 2 >= b.x + shift && paddleX + paddleWidth / 2 < b.x + shift + b.w);
     if (!block) return;
     const start = { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE };
-    const route = shotRoute(start, { x: block.x + block.w / 2 - BALL_SIZE / 2, y: block.y + block.h - 0.1 }, shotStyle, FIELD_WIDTH - BALL_SIZE);
-    const shotSpeed = LESSON_SPEED + Math.min(exercise?.round ?? 0, 5) * 10;
+    // Destino según la posición del bloque al lanzar: la fila se detiene en vuelo.
+    const route = shotRoute(start, { x: Math.min(FIELD_WIDTH - BALL_SIZE, Math.max(0, block.x + shift + block.w / 2 - BALL_SIZE / 2)), y: block.y + block.h - 0.1 }, shotStyle, FIELD_WIDTH - BALL_SIZE);
+    const shotSpeed = LESSON_SPEED + Math.min((exercise?.round ?? 0) + fx.boost, 8) * 10;
     flightRef.current = { route, elapsed: 0, duration: Math.max(450, routeLength(route) / shotSpeed * 1000), block };
     ballRef.current = { ...start, vx: 0, vy: 0 };
     setHeld(false);
@@ -290,6 +304,15 @@ export function BreakoutGeneric({
   useGameLoop(
     (dtMs) => {
       if (busyRef.current) return;
+      if (lesson && held && fx.level >= MOVE_LEVEL) {
+        // La fila oscila mientras se apunta: hay que elegir el momento.
+        shiftClockRef.current += dtMs;
+        shiftPaintRef.current += dtMs;
+        if (shiftPaintRef.current >= 50) {
+          shiftPaintRef.current = 0;
+          setShift(SHIFT_AMPLITUDE * Math.sin(shiftClockRef.current / (fx.level >= FAST_MOVE_LEVEL ? 450 : 750)));
+        }
+      }
       if (lesson && held) {
         // Sobre la paleta, siguiéndola, hasta el lanzamiento.
         ballRef.current = { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE, vx: 0, vy: 0 };
@@ -303,6 +326,13 @@ export function BreakoutGeneric({
         const progress = Math.min(1, flight.elapsed / flight.duration);
         ballRef.current = { ...pointOnRoute(flight.route, progress), vx: 0, vy: 0 };
         syncBallDom();
+        if (gem) {
+          const b = ballRef.current;
+          if (b.x + BALL_SIZE > gem.x && b.x < gem.x + GEM_SIZE && b.y + BALL_SIZE > gem.y && b.y < gem.y + GEM_SIZE) {
+            setGem(null);
+            fx.award(GEM_POINTS, { x: gem.x + GEM_SIZE / 2, y: gem.y }, { tone: "bonus", label: `¡Gema! +${GEM_POINTS}`, sound: "combo" });
+          }
+        }
         if (progress === 1) {
           flightRef.current = null;
           void resolveBlock(flight.block);
@@ -450,12 +480,13 @@ export function BreakoutGeneric({
             >
               {lesson && held && <svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full"><polyline points={preview.map((point) => `${point.x + BALL_SIZE / 2},${point.y + BALL_SIZE / 2}`).join(" ")} fill="none" stroke="#c4b5fd" strokeWidth="0.6" strokeDasharray="2 2" /></svg>}
               {blocks.map((b) => {
-                const selected = lesson && paddleX + paddleWidth / 2 >= b.x && paddleX + paddleWidth / 2 < b.x + b.w;
+                const selected = lesson && paddleX + paddleWidth / 2 >= b.x + shift && paddleX + paddleWidth / 2 < b.x + shift + b.w;
                 const className = `arcade-brick arcade-value absolute flex touch-manipulation items-center justify-center rounded-lg border-2 font-bold text-orange-100 ${selected ? "border-violet-200 bg-violet-700 shadow-lg shadow-violet-500/50" : "border-orange-400 bg-orange-950"}`;
-                const style = { left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` };
+                const style = { left: `${b.x + (lesson ? shift : 0)}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` };
                 return lesson ? <button key={b.id} type="button" data-choice-label="" aria-label={`Apuntar al bloque ${choiceLabel(problem, b.value)}`} aria-pressed={selected} disabled={!held || frozen} onClick={() => aimBlock(b)} className={className} style={style}><ChoiceText problem={problem} value={b.value} /></button>
                   : <div key={b.id} data-choice-label="" className={className} style={style}><ChoiceText problem={problem} value={b.value} /></div>;
               })}
+              {gem && <div aria-hidden="true" data-gem="" className="arcade-bonus-item pointer-events-none absolute flex items-center justify-center text-lg" style={{ left: `${gem.x}%`, top: `${gem.y}%`, width: `${GEM_SIZE}%`, height: `${GEM_SIZE}%` }}>💎</div>}
               <div
                 ref={ballElRef}
                 className="absolute rounded-full bg-yellow-300 shadow-[0_0_12px_3px_#fbbf24]"

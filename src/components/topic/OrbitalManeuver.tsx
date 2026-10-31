@@ -11,10 +11,12 @@ const EVENTS: readonly Encounter[] = [
 ];
 
 /** Desafío opcional de reflejos: no conoce ni envía respuestas matemáticas. */
-export function OrbitalManeuver({ paused, round, onBonus }: {
+export function OrbitalManeuver({ paused, round, onBonus, onHit }: {
   paused: boolean;
   round: number;
   onBonus: (points: number) => void;
+  /** Un meteorito alcanzó al cohete: solo efecto de juego. */
+  onHit?: () => void;
 }) {
   const [active, setActive] = useState(false);
   const [lane, setLane] = useState(1);
@@ -25,7 +27,8 @@ export function OrbitalManeuver({ paused, round, onBonus }: {
   const indexRef = useRef(0);
   const shieldRef = useRef(3);
   const elapsed = useRef(0);
-  const duration = Math.max(1100, 2000 - Math.min(round, 6) * 120);
+  // `round` ya incluye el nivel del juego: con más nivel, objetos más rápidos.
+  const duration = Math.max(800, 2000 - Math.min(round, 9) * 120);
 
   function start() {
     laneRef.current = 1;
@@ -50,6 +53,7 @@ export function OrbitalManeuver({ paused, round, onBonus }: {
     if (event.kind === "meteor" && sameLane) {
       shieldRef.current--;
       setShield(shieldRef.current);
+      onHit?.();
       setNotice("¡Impacto! El escudo perdió una unidad. No afecta tu respuesta.");
     } else if (event.kind === "fuel" && sameLane) {
       onBonus(50);
