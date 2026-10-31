@@ -239,8 +239,15 @@ test("Autopista: elegir carril y usar el turbo guarda el resultado de la clase",
   expect(target).toBeGreaterThanOrEqual(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await testInfo.attach("autopista", { body: await page.screenshot(), contentType: "image/png" });
+  for (let segment = 0; segment < 2; segment++) {
+    const safeLane = board.locator('button[aria-label^="Carril"]').filter({ hasNot: page.locator("[data-cone]") }).first();
+    if (testInfo.project.name === "móvil") await safeLane.tap();
+    else await safeLane.click();
+    await page.getByRole("button", { name: "Turbo · cruzar ⚡", exact: true }).click();
+    await expect(board).toHaveAttribute("data-segment", String(segment + 1));
+  }
   if (testInfo.project.name === "móvil") await page.getByRole("button", { name: `Carril ${target + 1}: 1/3`, exact: true }).tap();
-  else for (let i = 0; i <= target; i++) await page.keyboard.press("ArrowDown");
+  else await page.getByRole("button", { name: `Carril ${target + 1}: 1/3`, exact: true }).click();
   await expect(board).toHaveAttribute("data-lane", String(target));
   const answer = savedAnswer(page);
   await page.getByRole("button", { name: "Turbo · cruzar ⚡", exact: true }).click();

@@ -23,10 +23,10 @@ const CENTER_LANE = 1;
 const NO_LANE = -1;
 const LIVES_START = 3;
 const GOAL = 3; // puertas a cruzar para ganar
-const GATE_TIME_BASE_MS = 2500;
+const GATE_TIME_BASE_MS = 1800;
+const OBSTACLE_SEGMENTS = 2;
 const GATE_TIME_STEP_MS = -250;
 const GATE_TIME_FLOOR_MS = 900;
-const CONE_LEVEL = 3;
 const TWO_CONES_LEVEL = 6;
 const GATE_POINTS = 150;
 const LANE_CHANGE_POINTS = 5;
@@ -41,12 +41,10 @@ type Phase = "start" | "playing" | "over";
  * puerta). En la clase, el primer carril da la salida. El turbo permite
  * acortar voluntariamente el recorrido; no altera premios ni corrección.
  *
- * En clase, desde la segunda ronda hay un obstáculo señalizado antes de la
- * puerta. Un choque reinicia el tramo sin enviar una respuesta. En el modo
- * anterior, un carril incorrecto cuesta una vida directamente (no hay
- * "retroceso" posible en un runner de avance forzado) pero NUNCA termina la
- * partida de inmediato — sólo agotar las vidas lo hace, mismo criterio que
- * el resto de la serie.
+ * Cada pregunta tiene dos tramos de obstáculos y una puerta sin obstáculos.
+ * Un choque reinicia solo el tramo actual y nunca envía una respuesta. En el
+ * modo anterior, elegir una puerta incorrecta sigue costando una vida; en
+ * clase, la respuesta se valida por el flujo educativo.
  */
 export function RunnerGeneric({
   moduleId,
@@ -92,7 +90,8 @@ export function RunnerGeneric({
   const [racing, setRacing] = useState(false);
   const [turbo, setTurbo] = useState(false);
   const [pending, setPending] = useState(false);
-  const [hazardCleared, setHazardCleared] = useState(false);
+  const [segment, setSegment] = useState(0);
+  const segmentRef = useRef(0);
   const cabinetRef = useRef<HTMLDivElement>(null);
   const fx = useArcadeFx({ game: "runner", soundOn, solved: exercise?.solved, cabinetRef, session: exercise?.session });
 
@@ -110,7 +109,7 @@ export function RunnerGeneric({
   const remainingRef = useRef(GATE_TIME_BASE_MS);
   const paintAccRef = useRef(0);
   const busyRef = useRef(false); // true mientras se espera onAnswer
-  const hazardCheckedRef = useRef(false);
+
 
   function spawnGate(countForWave: number) {
     setPending(false);
@@ -121,8 +120,8 @@ export function RunnerGeneric({
     if (exercise) setLane(NO_LANE);
     setRacing(!lesson);
     setTurbo(false);
-    hazardCheckedRef.current = false;
-    setHazardCleared(false);
+    segmentRef.current = 0;
+    setSegment(0);
     const wave = waveIndex(exercise?.round ?? countForWave, 1) + fx.boost;
     const total = scaleWithWave(GATE_TIME_BASE_MS, GATE_TIME_STEP_MS, wave, GATE_TIME_FLOOR_MS);
     setGateTotalMs(total);
@@ -219,22 +218,27 @@ export function RunnerGeneric({
       if (busyRef.current || !racing) return;
       remainingRef.current -= dtMs;
       paintAccRef.current += dtMs;
-      // El obstáculo aparece antes de la puerta, es independiente de la
-      // respuesta y deja tiempo para volver a cambiar de carril.
-      if (exercise && hazardLanes.length > 0 &&
-          !hazardCheckedRef.current && remainingRef.current <= gateTotalMs * 0.6) {
-        hazardCheckedRef.current = true;
-        setHazardCleared(true);
-        if (hazardLanes.includes(lane)) {
-          fx.hit(laneAt(lane), "¡Obstáculo!");
-          setReflexMiss(true);
-          spawnGate(0);
-          return;
-        }
-        fx.award(25, laneAt(lane), { chain: false, burst: false, tone: "bonus", label: "¡Esquivado! +25" });
-      }
       if (remainingRef.current <= 0) {
-        resolveGate();
+        if (segmentRef.current < OBSTACLE_SEGMENTS) {
+          if (hazardLanes.includes(lane)) {
+            // Un choque nunca responde: se vuelve a intentar este mismo tramo.
+            fx.oops(laneAt(lane), "¡Obstáculo!");
+            setReflexMiss(true);
+            setRacing(false);
+            setTurbo(false);
+          } else {
+            fx.award(25, laneAt(lane), { chain: false, burst: false, tone: "bonus", label: "¡Esquivado! +25" });
+            setReflexMiss(false);
+            segmentRef.current += 1;
+            setSegment(segmentRef.current);
+            setTurbo(false);
+          }
+          remainingRef.current = gateTotalMs;
+          paintAccRef.current = 0;
+          setRemainingMs(gateTotalMs);
+        } else {
+          void resolveGate();
+        }
       } else if (paintAccRef.current >= 80) {
         // La llegada usa el reloj real; pintar la aproximación no necesita
         // volver a renderizar cinco carriles y sus SVG en cada fotograma.
@@ -247,11 +251,11 @@ export function RunnerGeneric({
 
   // Tantos carriles como opciones: un problema de dos opciones no deja carriles vacíos.
   const laneCount = candidates.length || LANES;
-  // Conos antes de la puerta: desde la segunda ronda o el nivel 3; desde el
-  // nivel 6, dos por tramo. Siempre queda al menos un carril libre.
+  // Cada tramo deja al menos un carril libre. La puerta final no tiene
+  // obstáculos para que todas las respuestas sean alcanzables.
   const hazardLanes = (() => {
-    if (!lesson || laneCount < 2 || ((exercise?.round ?? 0) === 0 && fx.level < CONE_LEVEL)) return [] as number[];
-    const first = ((exercise?.round ?? 0) + fx.level - 1) % laneCount;
+    if (segment >= OBSTACLE_SEGMENTS || laneCount < 2) return [] as number[];
+    const first = ((exercise?.round ?? correctCount) + segment + fx.level - 1) % laneCount;
     const second = (first + 2) % laneCount;
     return fx.level >= TWO_CONES_LEVEL && laneCount > 2 && second !== first ? [first, second] : [first];
   })();
@@ -285,7 +289,7 @@ export function RunnerGeneric({
 
   function boost() {
     if (busyRef.current || frozen || solved || phase !== "playing" || lane === NO_LANE) return;
-    // Acelerar es voluntario: ninguna recompensa depende de la velocidad.
+    // El turbo solo acelera el tramo actual; nunca salta obstáculos ni puertas.
     remainingRef.current = Math.min(remainingRef.current, 650);
     setRemainingMs(remainingRef.current);
     setTurbo(true);
@@ -323,7 +327,7 @@ export function RunnerGeneric({
         <h2 className="mb-2 bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🏎️ Autopista de resultados
         </h2>
-        <p className="mb-4 text-sm text-amber-200">¡Cambia de carril y activa el turbo hacia el resultado correcto!</p>
+        <p className="mb-4 text-sm text-amber-200">¡Esquiva los obstáculos y llega a la puerta con la respuesta correcta!</p>
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
@@ -336,7 +340,7 @@ export function RunnerGeneric({
             >
               ¡Empezar!
             </button>
-            <p className="text-xs text-amber-300">Flechas arriba/abajo para cambiar de carril · espacio para el turbo.{lesson && " Lee con calma: la carrera empieza cuando eliges el primer carril."}</p>
+            <p className="text-xs text-amber-300">Esquiva dos tramos y elige tu respuesta en la puerta. Flechas arriba/abajo para cambiar de carril · espacio para el turbo.{lesson && " Lee con calma: la carrera empieza cuando eliges el primer carril."}</p>
           </div>
         )}
 
@@ -381,7 +385,7 @@ export function RunnerGeneric({
             <div
               aria-hidden="true"
               className="h-2 w-full overflow-hidden rounded-full bg-slate-800"
-              title="Distancia a la próxima puerta"
+              title={segment < OBSTACLE_SEGMENTS ? "Distancia al obstáculo" : "Distancia a la puerta"}
             >
               <div
                 className={`${reducedMotion ? "" : "transition-all duration-150"} h-2 rounded-full bg-red-500`}
@@ -389,15 +393,15 @@ export function RunnerGeneric({
               />
             </div>
 
-            <p role="status" className="text-sm font-semibold text-amber-200">{pending ? "Puerta cruzada. Guardando tu elección…" : !racing ? "Toca un carril o usa las flechas. Tú das la salida." : turbo ? "¡Turbo activado! Aún puedes cambiar de carril." : "¡En marcha! Cambia de carril o acelera con el turbo."}</p>
-            <div role="group" aria-label="Circuito: elige tu carril" data-runner-board="" data-lane={lane} data-racing={racing} className="arcade-scene arcade-road relative mx-auto w-full max-w-[min(100%,36rem,65vh)] overflow-hidden rounded-2xl border-2 border-amber-500/70 bg-slate-900 p-2">
+            <p role="status" className="text-sm font-semibold text-amber-200">{pending ? "Puerta cruzada. Guardando tu elección…" : !racing ? "Elige un carril libre para comenzar o reintentar." : turbo ? "¡Turbo activado! Aún puedes cambiar de carril." : segment < OBSTACLE_SEGMENTS ? `Tramo ${segment + 1} de ${OBSTACLE_SEGMENTS}: esquiva los obstáculos.` : "Puerta final: elige el carril con tu respuesta."}</p>
+            <div role="group" aria-label="Circuito: elige tu carril" data-runner-board="" data-lane={lane} data-racing={racing} data-segment={segment} className="arcade-scene arcade-road relative mx-auto w-full max-w-[min(100%,36rem,65vh)] overflow-hidden rounded-2xl border-2 border-amber-500/70 bg-slate-900 p-2">
               {lesson && lane === NO_LANE && (
                 <div className="flex h-10 items-center justify-center gap-2 rounded-lg border border-dashed border-amber-400 text-sm font-bold text-amber-200">
                   <ArcadeSprite kind="car" className="size-10" /> Elige tu carril
                 </div>
               )}
               {Array.from({ length: laneCount }, (_, row) => (
-                <button type="button" onClick={() => chooseLane(row)} aria-label={`Carril ${row + 1}: ${candidates[row] === undefined ? "" : choiceLabel(problem, candidates[row])}${!hazardCleared && hazardLanes.includes(row) ? ", obstáculo antes de la puerta" : ""}`} aria-pressed={lane === row} disabled={frozen || pending}
+                <button type="button" onClick={() => chooseLane(row)} aria-label={`Carril ${row + 1}: ${candidates[row] === undefined ? "" : choiceLabel(problem, candidates[row])}${hazardLanes.includes(row) ? ", obstáculo antes de la puerta" : ""}`} aria-pressed={lane === row} disabled={frozen || pending}
                   key={row}
                   className={`${reducedMotion ? "" : "transition-colors duration-150"} relative flex h-16 w-full touch-manipulation items-center rounded-lg border-b border-dashed font-bold ${
                     lane === row ? "border-amber-300 bg-amber-800/40 text-amber-100" : "border-slate-500/60 text-slate-200"
@@ -405,15 +409,15 @@ export function RunnerGeneric({
                 >
                   <span aria-hidden="true" className="absolute left-1">{lane === row && <ArcadeSprite kind="car" className="size-14" />}</span>
                   {lane === row && racing && <span aria-hidden="true" className={`${turbo ? "arcade-trail text-lg" : "text-xs opacity-60"} absolute left-0`}>{turbo ? "🔥" : "💨"}</span>}
-                  {!hazardCleared && hazardLanes.includes(row) &&
-                    <span aria-hidden="true" data-cone="" className="arcade-hazard arcade-hazard-pulse absolute left-[38%] top-1 text-xl">🚧</span>}
-                  <span data-choice-label="" className="arcade-value absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-cyan-100 shadow-lg transition-[left] duration-100 motion-reduce:transition-none" style={{ left: `${74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : <ChoiceText problem={problem} value={candidates[row]} />}</span>
+                  {hazardLanes.includes(row) &&
+                    <span aria-hidden="true" data-cone="" className="arcade-hazard arcade-hazard-pulse absolute top-1 text-xl" style={{ left: `${74 - gateApproachPct * 0.6}%` }}>🚧</span>}
+                  <span data-choice-label="" className="arcade-value absolute flex min-h-11 w-[22%] items-center justify-center rounded-lg border-2 border-cyan-300 bg-cyan-950 text-cyan-100 shadow-lg transition-[left] duration-100 motion-reduce:transition-none" style={{ left: `${segment < OBSTACLE_SEGMENTS ? 76 : 74 - gateApproachPct * 0.60}%` }}>{candidates[row] === undefined ? "" : <ChoiceText problem={problem} value={candidates[row]} />}</span>
                 </button>
               ))}
               <ArcadeFxLayer fx={fx} />
             </div>
 
-            {hazardLanes.length > 0 && <p className="text-xs text-amber-100">Esquiva el obstáculo antes de elegir la puerta. Un choque reinicia el tramo y no responde.</p>}
+            {hazardLanes.length > 0 && <p className="text-xs text-amber-100">Esquiva el obstáculo; un choque reinicia solo este tramo y no responde.</p>}
             <button type="button" onClick={boost} disabled={frozen || pending || lane === NO_LANE || turbo}
               className="min-h-11 rounded-xl border-2 border-amber-200 bg-amber-400 px-6 font-bold text-slate-950 disabled:opacity-50">Turbo · cruzar ⚡</button>
             <TouchDPad inline disabled={frozen || pending} onMove={onTouchMove} />

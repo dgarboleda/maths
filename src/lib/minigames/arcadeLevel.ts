@@ -101,7 +101,7 @@ export const LEVEL_FEATURES: Record<PracticeGame, readonly (readonly [number, st
   snake: [[2, "Rocas en el jardín"], [3, "Fruta reloj que frena la serpiente"], [5, "Más rocas y más velocidad"]],
   numberpac: [[2, "Fantasma más rápido"], [4, "Un segundo fantasma que embosca"], [6, "Escudo más corto"]],
   invaders: [[2, "Descenso más rápido"], [3, "Lluvia de meteoritos"], [6, "Meteoritos más frecuentes"]],
-  runner: [[2, "Puertas más rápidas"], [3, "Conos en la carretera"], [6, "Dos conos por tramo"]],
+  runner: [[2, "Tramos más rápidos"], [3, "Obstáculos más rápidos"], [6, "Dos conos por tramo"]],
   frogger: [[2, "Cocodrilo más rápido"], [4, "Un segundo cocodrilo"], [7, "Cocodrilos todavía más rápidos"]],
   breakout: [[2, "Gema bonus en la pista"], [3, "Bloques en movimiento"], [6, "Bloques más rápidos"]],
   topos: [[2, "Topos más rápidos"], [3, "Topo bomba: no lo toques"], [5, "Hasta tres topos a la vez"]],
