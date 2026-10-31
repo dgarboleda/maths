@@ -41,9 +41,10 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  // En CI, `--shard` (ver .github/workflows/ci.yml) ya reparte los archivos
-  // entre varios runners — 2 workers por shard alcanza sin pelearse por
-  // CPU con el resto. En local, todos los núcleos disponibles.
+  // En CI cada proyecto se reparte por separado (`--project` + `--shard`, ver
+  // .github/workflows/ci.yml): escritorio en 2 runners y móvil en 3. Playwright
+  // corta por pruebas en bloques consecutivos, no por archivos. 2 workers por
+  // runner alcanza sin pelearse por CPU. En local, todos los núcleos.
   workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI
     ? [["github"], ["blob", { outputDir: "blob-report" }]]

@@ -9,6 +9,15 @@ async function accessible(page: Page) {
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  // axe mide el color calculado: en mitad de un `transition-colors` (p. ej.
+  // el paso recién marcado con aria-current) lee tonos intermedios sin
+  // contraste. Espera a que terminen las transiciones finitas.
+  await page.waitForFunction(() =>
+    document.getAnimations().every((animation) =>
+      animation.playState !== "running" ||
+      animation.effect?.getComputedTiming().iterations === Infinity,
+    ),
+  );
   const audit = await new AxeBuilder({ page }).include("main").analyze();
   expect(audit.violations).toEqual([]);
 }
