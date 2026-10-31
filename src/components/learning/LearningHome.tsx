@@ -1,5 +1,7 @@
 "use client";
 
+import { CustomLessonList } from "@/components/custom-lessons/CustomLessonList";
+
 import Link from "next/link";
 import { useEffect } from "react";
 import {
@@ -150,6 +152,7 @@ export function LearningHome({
       portrait={view === "home" && getProfileAvatar(data.child.avatarId) ? <Avatar avatarId={data.child.avatarId} title={`Avatar de ${data.child.name}`} className="size-16 rounded-2xl border border-cyan-300/25" /> : undefined}
     >
       <div className="space-y-8 sm:space-y-10">
+        {view === "learn" && <CustomLessonList childId={childId} />}
         {view === "home" ? (
           <section
             aria-label="Tu siguiente paso"

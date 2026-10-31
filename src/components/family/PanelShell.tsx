@@ -14,6 +14,7 @@ const NAV = [
   { href: "/panel/hijos", label: "Hijos", icon: Users, exact: false },
   { href: "/panel/progreso", label: "Progreso", icon: ChartLine, exact: false },
   { href: "/panel/recompensas", label: "Recompensas", short: "Premios", icon: Gift, exact: false },
+  { href: "/panel/clases", label: "Crear clases", short: "Clases", icon: BookOpen, exact: false },
   { href: "/panel/plan", label: "Plan de estudio", short: "Plan", icon: BookOpen, exact: false },
   { href: "/panel/ajustes", label: "Ajustes", icon: Settings, exact: false },
 ] as const;
