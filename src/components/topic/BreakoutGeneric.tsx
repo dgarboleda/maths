@@ -58,6 +58,9 @@ const LESSON_COLS = 5;
 const LESSON_W = FIELD_WIDTH / LESSON_COLS;
 const LESSON_ROW_Y = 14;
 const LESSON_BLOCK_H = 16;
+const BARRIER_Y = 42;
+const BARRIER_H = 9;
+const BARRIER_POINTS = 50;
 const LESSON_SPEED = 150;
 const RALLY_POINTS = 10;
 const BLOCK_POINTS = 200;
@@ -140,6 +143,7 @@ export function BreakoutGeneric({
 
   const [phase, setPhase] = useState<Phase>("start");
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [barriers, setBarriers] = useState<Block[]>([]);
   const paddleWidth = lesson ? LESSON_W : PADDLE_WIDTH;
   const paddleStep = lesson ? LESSON_W : PADDLE_STEP;
   const paddleStart = lesson ? 2 * LESSON_W : PADDLE_START_X;
@@ -147,7 +151,7 @@ export function BreakoutGeneric({
   /** Clase: la pelota descansa sobre la paleta hasta que se lanza. */
   const [held, setHeld] = useState(true);
   const [shotStyle, setShotStyle] = useState<ShotStyle>("direct");
-  const flightRef = useRef<{ route: ShotPoint[]; elapsed: number; duration: number; block: Block } | null>(null);
+  const flightRef = useRef<{ route: ShotPoint[]; elapsed: number; duration: number; block: Block; barrier: boolean } | null>(null);
   const [lives, setLives] = useState(LIVES_START);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
@@ -190,6 +194,7 @@ export function BreakoutGeneric({
     const values = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, BLOCK_ROWS * BLOCK_COLS, spread);
     setProblem(nextProblem);
     setBlocks(buildBlocks(values, lesson, exercise?.round ?? 0));
+    setBarriers(lesson ? values.map((_, col) => ({ id: `wall-${col}`, x: col * LESSON_W, y: BARRIER_Y, w: LESSON_W, h: BARRIER_H, value: 0 })) : []);
     setGem(lesson && fx.level >= GEM_LEVEL ? { x: 8 + Math.random() * (FIELD_WIDTH - 16 - GEM_SIZE), y: 48 } : null);
   }
 
@@ -292,11 +297,13 @@ export function BreakoutGeneric({
     playSound("whoosh", soundOn);
     const block = blocks.find((b) => paddleX + paddleWidth / 2 >= b.x + shift && paddleX + paddleWidth / 2 < b.x + shift + b.w);
     if (!block) return;
+    const barrier = barriers.find((item) => item.x === block.x);
+    const target = barrier ?? block;
     const start = { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE };
     // Destino según la posición del bloque al lanzar: la fila se detiene en vuelo.
-    const route = shotRoute(start, { x: Math.min(FIELD_WIDTH - BALL_SIZE, Math.max(0, block.x + shift + block.w / 2 - BALL_SIZE / 2)), y: block.y + block.h - 0.1 }, shotStyle, FIELD_WIDTH - BALL_SIZE);
+    const route = shotRoute(start, { x: Math.min(FIELD_WIDTH - BALL_SIZE, Math.max(0, target.x + shift + target.w / 2 - BALL_SIZE / 2)), y: target.y + target.h - 0.1 }, shotStyle, FIELD_WIDTH - BALL_SIZE);
     const shotSpeed = LESSON_SPEED + Math.min((exercise?.round ?? 0) + fx.boost, 8) * 10;
-    flightRef.current = { route, elapsed: 0, duration: Math.max(450, routeLength(route) / shotSpeed * 1000), block };
+    flightRef.current = { route, elapsed: 0, duration: Math.max(450, routeLength(route) / shotSpeed * 1000), block: target, barrier: Boolean(barrier) };
     ballRef.current = { ...start, vx: 0, vy: 0 };
     setHeld(false);
   }
@@ -335,7 +342,12 @@ export function BreakoutGeneric({
         }
         if (progress === 1) {
           flightRef.current = null;
-          void resolveBlock(flight.block);
+          if (flight.barrier) {
+            setBarriers((previous) => previous.filter((item) => item.id !== flight.block.id));
+            fx.award(BARRIER_POINTS, blockCenter(flight.block), { sound: "crash", label: "¡Camino abierto!" });
+            fx.shake(2);
+            setHeld(true);
+          } else void resolveBlock(flight.block);
         }
         return;
       }
@@ -397,8 +409,10 @@ export function BreakoutGeneric({
   const shownCount = lesson ? (exercise?.round ?? 0) + Number(solved) : correctCount;
   const shownWin = lesson ? solved : win;
   const goalProgressPct = Math.min(100, (shownCount / goal) * 100);
+  const selectedBlock = blocks.find((b) => paddleX + paddleWidth / 2 >= b.x + shift && paddleX + paddleWidth / 2 < b.x + shift + b.w);
+  const selectedBarrier = barriers.find((b) => b.x === selectedBlock?.x);
   const preview = lesson ? shotRoute({ x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: PADDLE_Y - BALL_SIZE },
-    { x: paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: LESSON_ROW_Y + LESSON_BLOCK_H }, shotStyle, FIELD_WIDTH - BALL_SIZE) : [];
+    { x: selectedBlock ? Math.min(FIELD_WIDTH - BALL_SIZE, Math.max(0, selectedBlock.x + shift + selectedBlock.w / 2 - BALL_SIZE / 2)) : paddleX + paddleWidth / 2 - BALL_SIZE / 2, y: (selectedBarrier ? selectedBarrier.y + selectedBarrier.h : (selectedBlock?.y ?? LESSON_ROW_Y) + LESSON_BLOCK_H) - 0.1 }, shotStyle, FIELD_WIDTH - BALL_SIZE) : [];
 
   return (
     <div ref={cabinetRef} data-game="breakout" data-paused={Boolean(exercise?.paused || exercise?.disabled)} className={`arcade-cabinet relative overflow-hidden rounded-3xl border-4 border-orange-500 bg-slate-950 p-3 text-white shadow-2xl sm:p-6 ${frozen ? "arcade-paused" : ""}`}>
@@ -414,7 +428,7 @@ export function BreakoutGeneric({
         <h2 className="mb-2 bg-gradient-to-r from-orange-300 to-violet-400 bg-clip-text text-3xl font-extrabold text-transparent">
           🧱 Bloques numéricos
         </h2>
-        <p className="mb-4 text-sm text-orange-200">{lesson ? "¡Apunta al resultado y elige un tiro directo o con rebote!" : "¡Rompe el bloque con el resultado correcto sin dejar caer la pelota!"}</p>
+        <p className="mb-4 text-sm text-orange-200">{lesson ? "¡Rompe un bloque sin número para abrir camino hasta tu respuesta!" : "¡Rompe el bloque con el resultado correcto sin dejar caer la pelota!"}</p>
 
         {shownPhase === "start" && (
           <div className="space-y-6 py-8">
@@ -429,7 +443,7 @@ export function BreakoutGeneric({
             </button>
             <p className="text-xs text-orange-300">
               {lesson
-                ? "Mueve la paleta bajo tu respuesta. Elige tiro directo o rebote lateral, mira la guía y lanza con espacio, flecha arriba o el botón."
+                ? "Apunta a tu respuesta y rompe primero el bloque sin número. Vuelve a lanzar para alcanzar la respuesta; usa espacio, flecha arriba o el botón."
                 : "Usa las flechas (o los botones) para mover la paleta; golpea con un borde para dirigir la pelota."}
             </p>
           </div>
@@ -486,6 +500,7 @@ export function BreakoutGeneric({
                 return lesson ? <button key={b.id} type="button" data-choice-label="" aria-label={`Apuntar al bloque ${choiceLabel(problem, b.value)}`} aria-pressed={selected} disabled={!held || frozen} onClick={() => aimBlock(b)} className={className} style={style}><ChoiceText problem={problem} value={b.value} /></button>
                   : <div key={b.id} data-choice-label="" className={className} style={style}><ChoiceText problem={problem} value={b.value} /></div>;
               })}
+              {barriers.map((b) => <div key={b.id} aria-hidden="true" data-barrier="" className="arcade-brick pointer-events-none absolute rounded-lg border-2 border-amber-300 bg-amber-700 shadow-inner" style={{ left: `${b.x + shift}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` }} />)}
               {gem && <div aria-hidden="true" data-gem="" className="arcade-bonus-item pointer-events-none absolute flex items-center justify-center text-lg" style={{ left: `${gem.x}%`, top: `${gem.y}%`, width: `${GEM_SIZE}%`, height: `${GEM_SIZE}%` }}>💎</div>}
               <div
                 ref={ballElRef}
@@ -511,7 +526,7 @@ export function BreakoutGeneric({
                 Lanzar la pelota
               </button>
             )}
-            {lesson && <p className="text-xs text-violet-100">Toca un bloque para apuntar. La guía muestra el camino de la pelota.</p>}
+            {lesson && <p className="text-xs text-violet-100">Toca una respuesta para apuntar. Rompe primero el bloque sin número que está debajo; la guía muestra el camino de la pelota.</p>}
             <HorizontalPad inline disabled={frozen || (lesson && !held)} onLeft={moveLeft} onRight={moveRight} />
           </div>
         )}

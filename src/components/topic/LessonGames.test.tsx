@@ -394,16 +394,26 @@ test.each([FroggerGeneric, InvadersGeneric, RunnerGeneric, BreakoutGeneric])("al
 test("Bloques en la clase: el lanzamiento apuntado envía el bloque elegido, correcto o no", async () => {
   vi.useFakeTimers();
   const data = exercise({ onResponse: vi.fn(async () => false) });
-  render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
+  const { container } = render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+  expect(container.querySelectorAll("[data-barrier]")).toHaveLength(5);
   // Cinco bloques en una fila: la paleta empieza bajo el central (−2).
   key("ArrowLeft"); // bajo −3
+  fireEvent.click(screen.getByRole("button", { name: "Lanzar la pelota" }));
+  tick(2_000);
+  await act(async () => {});
+  expect(data.onResponse).not.toHaveBeenCalled();
+  expect(container.querySelectorAll("[data-barrier]")).toHaveLength(4);
   fireEvent.click(screen.getByRole("button", { name: "Lanzar la pelota" }));
   tick(2_000);
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-3);
   // La pelota vuelve a la paleta: se puede apuntar de nuevo.
   key("ArrowRight");
+  key("ArrowUp");
+  tick(2_000);
+  await act(async () => {});
+  expect(data.onResponse).toHaveBeenCalledTimes(1);
   key("ArrowUp");
   tick(2_000);
   await act(async () => {});
@@ -417,6 +427,9 @@ test.each(["Rebote ←", "Rebote →"])("Bloques: %s conserva el destino al paus
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   key("ArrowLeft"); // apunta a −3, una respuesta incorrecta deliberada
   fireEvent.click(screen.getByRole("button", { name: style }));
+  key("Space");
+  tick(2_000); // primero se rompe la barrera, sin enviar respuesta
+  expect(data.onResponse).not.toHaveBeenCalled();
   key("Space");
   key("Space");
   tick(150);
@@ -579,6 +592,10 @@ test("Bloques: tocar un bloque no lanza; el rebote entrega la elección fijada",
   fireEvent.click(screen.getByRole("button", { name: "Lanzar la pelota" }));
   expect(target).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Apuntar al bloque 0" }));
+  tick(2_000);
+  await act(async () => {});
+  expect(data.onResponse).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Lanzar la pelota" }));
   tick(2_000);
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-4);
