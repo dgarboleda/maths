@@ -45,7 +45,6 @@ import {
   pickPracticeGame,
   createArcadeSession,
   type LessonExercise,
-  type PracticeGame,
   type ArcadeSession,
 } from "@/lib/minigames/lessonExercise";
 
@@ -68,7 +67,6 @@ export function LessonPlayer({
   const now = useLearningClock();
   const mutation = useLearningAction(data.parentId, childId);
   const [launched, setLaunched] = useState(false);
-  const [practiceGame, setPracticeGame] = useState(pickPracticeGame);
   const { session: arcadeSession } = useMemo(() => ({ lessonId, session: createArcadeSession() }), [lessonId]);
   const lesson = getLesson(lessonId);
   const saved = data.progress[lessonId];
@@ -270,8 +268,6 @@ export function LessonPlayer({
                   question={question}
                   progress={progress}
                   evidence={evidence}
-                  practiceGame={practiceGame}
-                  onPracticeGameChange={setPracticeGame}
                   arcadeSession={arcadeSession}
                   disabled={mutation.blocked}
                   run={run}
@@ -375,8 +371,6 @@ export function QuestionActivity({
   question,
   progress,
   evidence,
-  practiceGame,
-  onPracticeGameChange,
   arcadeSession,
   disabled,
   run,
@@ -385,8 +379,6 @@ export function QuestionActivity({
   question: Question;
   progress: LearningProgress;
   evidence?: ResponseEvidence;
-  practiceGame?: PracticeGame;
-  onPracticeGameChange?: (game: PracticeGame) => void;
   arcadeSession?: ArcadeSession;
   disabled: boolean;
   run: (action: LearningAction) => Promise<boolean>;
@@ -397,9 +389,8 @@ export function QuestionActivity({
   const [manuallyPaused, setManuallyPaused] = useState(false);
   const [acknowledgedAttempts, setAcknowledgedAttempts] = useState(0);
   const [timed, setTimed] = useState(false);
-  // Una clase conserva el juego elegido al pasar a la siguiente actividad.
-  const [fallbackGame] = useState(pickPracticeGame);
-  const game = practiceGame ?? fallbackGame;
+  // Cada actividad elige un minijuego al azar y lo conserva hasta terminarla.
+  const [game] = useState(pickPracticeGame);
   // Vía accesible: quien no pueda o no quiera jugar responde por escrito.
   const [writing, setWriting] = useState(false);
   const helpOpen = useLearningHelpOpen();
@@ -576,22 +567,6 @@ export function QuestionActivity({
       )}
       {arcade && exercise ? (
         <div className="space-y-4">
-          {onPracticeGameChange && !canNext && (
-            <label className="flex flex-wrap items-center gap-3 text-sm text-slate-200">
-              Juego de práctica
-              <select value={game} disabled={disabled} onChange={(event) => onPracticeGameChange(event.target.value as PracticeGame)} className="min-h-11 rounded-xl border border-slate-500 bg-slate-950 px-3 text-white">
-                <option value="invaders">Invasión numérica</option>
-                <option value="runner">Autopista de resultados</option>
-                <option value="frogger">Estanque</option>
-                <option value="breakout">Bloques numéricos</option>
-                <option value="topos">Topos</option>
-                <option value="snake">Serpiente</option>
-                <option value="numberpac">Laberinto numérico</option>
-                <option value="cajas">Caja numérica</option>
-                <option value="cohete">Cohete</option>
-              </select>
-            </label>
-          )}
           {exercise.round !== undefined && exercise.round > 0 && (
             <p className="text-sm text-cyan-100">Aciertos anteriores en esta práctica: {exercise.round}. El reto se adapta a tu avance.</p>
           )}
