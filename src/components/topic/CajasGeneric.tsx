@@ -5,7 +5,7 @@ import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, cellAt, useArcadeFx } 
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
-import { choiceSet, type Problem } from "@/lib/problem";
+import { type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { useArrowKeys } from "@/lib/minigames/useArrowKeys";
@@ -13,7 +13,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { WAREHOUSES, deliverySquares, floorAt, goalAt, initialWarehouse, moveWarehouse, sameCell, warehouseFor, type Direction, type WarehouseState } from "@/lib/minigames/sokoban";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const CHOICES = 5;
 const GOAL = 3;
@@ -96,7 +96,7 @@ export function CajasGeneric({
   function spawnRound(round = 0) {
     const nextProblem = newProblem();
     setProblem(nextProblem);
-    candidatesRef.current = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, Math.max(8, CHOICES * 2), CHOICES);
+    candidatesRef.current = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, CHOICES, Math.max(8, CHOICES * 2));
     levelRef.current = warehouseFor(nextProblem.id, round);
     setLevel(levelRef.current);
     resetBoxes();
@@ -347,7 +347,7 @@ export function CajasGeneric({
                     className={`relative flex aspect-square min-w-0 items-center justify-center rounded text-xs font-black sm:text-sm ${wall ? "sokoban-wall" : box ? "sokoban-crate text-slate-950" : goal ? "border-2 border-dashed border-cyan-300 bg-cyan-950 text-cyan-100" : "border border-slate-700/70 bg-slate-800"}`}
                   >
                     {dead && <span className="absolute right-0.5 top-0 text-xs font-bold text-rose-200">×</span>}
-                    {box ? <span className="arcade-value relative z-10 px-0.5 leading-tight">{lessonLabel(exercise, box.value)}</span> : isPlayer ? <ArcadeSprite kind="worker" className="size-full" /> : goal ? <ArcadeSprite kind="truck" className="size-full" /> : ""}
+                    {box ? <span className="arcade-value relative z-10 px-0.5 leading-tight">{choiceLabel(problem, box.value)}</span> : isPlayer ? <ArcadeSprite kind="worker" className="size-full" /> : goal ? <ArcadeSprite kind="truck" className="size-full" /> : ""}
                   </div>
                 );
               })}

@@ -1,3 +1,4 @@
+import { choiceSet, shuffle, type Problem } from "@/lib/problem";
 import type { LessonExercise } from "./lessonExercise";
 
 /**
@@ -15,10 +16,29 @@ export function lessonValues(exercise: LessonExercise): number[] {
   return exercise.problem.choices ?? [exercise.problem.answer];
 }
 
-export function lessonLabel(exercise: LessonExercise | undefined, value: number): string {
-  if (!exercise) return String(value);
-  const index = lessonValues(exercise).indexOf(value);
-  return exercise.problem.choiceLabels?.[index] ?? String(value).replace(".", ",");
+/**
+ * Texto de una alternativa: el que el problema define para ese valor (una
+ * fracción, un símbolo, el nombre de una figura) o el número con coma
+ * decimal y signo tipográfico. Lo que se lee es siempre lo que se envía.
+ */
+export function choiceLabel(problem: Problem, value: number): string {
+  const index = problem.choices?.indexOf(value) ?? -1;
+  const label = index >= 0 ? problem.choiceLabels?.[index] : undefined;
+  return label ?? String(Number(value.toFixed(6))).replace(".", ",").replace(/^-/, "−");
+}
+
+/**
+ * Alternativas del modo legado (módulos del currículo en los niveles). Si el
+ * problema trae sus propias opciones —de texto o numéricas razonadas— se
+ * usan esas, con la respuesta siempre incluida; si no, vecinos de la
+ * respuesta. Puede devolver menos de `count` valores.
+ */
+export function arcadeValues(problem: Problem, count: number, spread: number): number[] {
+  if (problem.choices?.length) {
+    const others = shuffle(problem.choices.filter((value) => value !== problem.answer)).slice(0, count - 1);
+    return shuffle([problem.answer, ...others]);
+  }
+  return choiceSet(problem.answer, spread, count);
 }
 
 /** Estado derivado que comparten los cinco juegos en modo clase. */

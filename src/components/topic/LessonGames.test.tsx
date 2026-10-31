@@ -336,12 +336,12 @@ test("Topos: que un topo se esconda no cuenta; tocarlo envía su valor", async (
   render(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
   tick(100);
-  expect(screen.getByRole("button", { name: "Topo con -4" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Topo con −4" })).toBeInTheDocument();
   tick(3_000); // se esconde sin que nadie lo toque
   expect(data.onResponse).not.toHaveBeenCalled();
   expect(screen.queryByText(/Vidas/)).not.toBeInTheDocument();
-  for (let i = 0; i < 100 && !screen.queryByRole("button", { name: "Topo con -2" }); i++) tick(100);
-  fireEvent.click(screen.getByRole("button", { name: "Topo con -2" }));
+  for (let i = 0; i < 100 && !screen.queryByRole("button", { name: "Topo con −2" }); i++) tick(100);
+  fireEvent.click(screen.getByRole("button", { name: "Topo con −2" }));
   await act(async () => {});
   expect(data.onResponse).toHaveBeenCalledExactlyOnceWith(-2);
   // Un agujero vacío no responde nada.
@@ -383,7 +383,7 @@ test("Invasión: tocar un blanco solo apunta y el disparo conserva su valor hast
   const data = exercise({ onResponse: vi.fn(() => new Promise<boolean>((resolve) => { finish = resolve; })) });
   render(<InvadersGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
-  const target = screen.getByRole("button", { name: "Apuntar a -4" });
+  const target = screen.getByRole("button", { name: "Apuntar a −4" });
   fireEvent.click(target);
   tick(200);
   expect(target).toHaveAttribute("aria-pressed", "true");
@@ -404,10 +404,10 @@ test("Carrera: tocar carriles permite cambiar de elección antes de cruzar", asy
   const data = exercise();
   render(<RunnerGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
-  fireEvent.click(screen.getByRole("button", { name: "Carril 4: -1" }));
+  fireEvent.click(screen.getByRole("button", { name: "Carril 4: −1" }));
   tick(500);
   expect(data.onResponse).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole("button", { name: "Carril 3: -2" }));
+  fireEvent.click(screen.getByRole("button", { name: "Carril 3: −2" }));
   fireEvent.click(screen.getByRole("button", { name: /Turbo · cruzar/ }));
   tick(750);
   await act(async () => {});
@@ -419,7 +419,7 @@ test("Bloques: tocar un bloque no lanza; el rebote entrega la elección fijada",
   const data = exercise();
   render(<BreakoutGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
-  const target = screen.getByRole("button", { name: "Apuntar al bloque -4" });
+  const target = screen.getByRole("button", { name: "Apuntar al bloque −4" });
   fireEvent.click(target);
   fireEvent.click(screen.getByRole("button", { name: "Rebote ←" }));
   tick(2_000);
@@ -447,7 +447,7 @@ test("Topos sin prisas: no caducan, las tandas cubren las opciones y pausarlas n
   expect(data.onResponse).not.toHaveBeenCalled();
   view.rerender(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={data} />);
   fireEvent.click(screen.getByRole("button", { name: "Siguiente tanda" }));
-  const target = screen.getByRole("button", { name: "Topo con -2" });
+  const target = screen.getByRole("button", { name: "Topo con −2" });
   expect(data.onResponse).not.toHaveBeenCalled();
   fireEvent.click(target);
   await act(async () => {});

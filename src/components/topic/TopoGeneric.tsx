@@ -5,7 +5,7 @@ import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx, type FxAt
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
-import { choiceSet, shuffle, type Problem } from "@/lib/problem";
+import { shuffle, type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -13,7 +13,7 @@ import { useGameLoop } from "@/lib/minigames/useGameLoop";
 import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const HOLES = 6; // 3 × 2
 const CHOICES = 5;
@@ -107,7 +107,7 @@ export function TopoGeneric({
   function spawnRound() {
     const nextProblem = newProblem();
     setProblem(nextProblem);
-    candidatesRef.current = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, Math.max(8, CHOICES * 2), CHOICES);
+    candidatesRef.current = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, CHOICES, Math.max(8, CHOICES * 2));
     queueRef.current = [];
     popAccRef.current = POP_MS; // el primer topo sale enseguida
     setHoles(calm ? batch(true) : emptyHoles());
@@ -391,7 +391,7 @@ export function TopoGeneric({
                   type="button"
                   onClick={() => whack(i)}
                   disabled={frozen || pending || !mole}
-                  aria-label={mole ? `Topo con ${lessonLabel(exercise, mole.value)}` : "Agujero vacío"}
+                  aria-label={mole ? `Topo con ${choiceLabel(problem, mole.value)}` : "Agujero vacío"}
                   className="arcade-mole-hole relative flex h-28 touch-manipulation items-end justify-center overflow-hidden rounded-2xl pb-3 focus:outline-none focus-visible:ring-4 focus-visible:ring-lime-300"
                 >
                   <span aria-hidden="true" className="absolute inset-x-3 bottom-1 h-5 rounded-[50%] bg-black/60" />
@@ -401,7 +401,7 @@ export function TopoGeneric({
                   >
                     <ArcadeSprite kind="mole" className="size-14" />
                     <span className="mt-1 rounded-md bg-lime-300 px-2 text-sm font-black text-slate-900">
-                      {mole ? lessonLabel(exercise, mole.value) : ""}
+                      {mole ? choiceLabel(problem, mole.value) : ""}
                     </span>
                     {mole && !calm && <span key={mole.until} className="arcade-mole-clock mt-1 h-1 w-10 rounded-full bg-amber-200" style={{ animationDuration: `${upMs}ms` }} />}
                   </span>

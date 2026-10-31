@@ -5,7 +5,7 @@ import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
-import { choiceSet, type Problem } from "@/lib/problem";
+import { type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -15,7 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { choiceLabel, arcadeValues, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
@@ -130,7 +130,7 @@ export function FroggerGeneric({
     const nextProblem = generateProblem();
     const spread = Math.max(8, COLS * 2);
     setProblem(nextProblem);
-    setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, COLS));
+    setCandidates(exercise ? lessonValues(exercise) : arcadeValues(nextProblem, COLS, spread));
     setObstacleX(count % 2 ? 0 : COLS - 1);
     obstacleDirRef.current = count % 2 ? 1 : -1;
     setObstacleDirection(count % 2 ? 1 : -1);
@@ -173,8 +173,15 @@ export function FroggerGeneric({
 
   async function resolveCheckpoint(chosenX: number) {
     if (busyRef.current || controlsDisabled) return;
-    busyRef.current = true;
     const at = { x: colX(chosenX), y: SCENE_ROW_Y.lily };
+    if (candidates[chosenX] === undefined) {
+      // Un problema con menos opciones deja nenúfares sin número: saltar a
+      // uno vacío no es una respuesta, la rana vuelve al río.
+      fx.oops(at, "¡Vacío!");
+      setRow((r) => Math.min(r + 1, startRow));
+      return;
+    }
+    busyRef.current = true;
     if (exercise) {
       fx.pop("¡Splash!", at, "info");
       fx.burst(at, "info");
@@ -412,7 +419,7 @@ export function FroggerGeneric({
               <div className="grid w-full max-w-sm gap-1" style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
                 {Array.from({ length: COLS }, (_, col) => (
                   <div key={col} data-lily="" className="arcade-hover arcade-value flex aspect-[4/3] items-center justify-center rounded-[40%] font-bold text-lime-50" style={{ animationDelay: `${-col * 0.3}s` }}>
-                    {candidates[col] !== undefined && lessonLabel(exercise, candidates[col])}
+                    {candidates[col] !== undefined && choiceLabel(problem, candidates[col])}
                   </div>
                 ))}
               </div>

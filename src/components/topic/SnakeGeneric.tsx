@@ -5,7 +5,7 @@ import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, cellAt, useArcadeFx } 
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
-import { choiceSet, shuffle, type Problem } from "@/lib/problem";
+import { shuffle, type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -15,7 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { TouchDPad } from "@/components/level/runtime/TouchDPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const GRID_SIZE = 8;
 // Más bajo que el GOAL=8 del Cohete (30s contrarreloj): cada acierto acá
@@ -138,7 +138,7 @@ export function SnakeGeneric({
   function spawnRound(currentSnake: Cell[]) {
     const nextProblem = newProblem();
     const spread = Math.max(8, candidateCount * 2);
-    const values = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, candidateCount);
+    const values = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, candidateCount, spread);
     const cells = pickFreeCells(currentSnake, values.length + 1);
     setProblem(nextProblem);
     setCandidates(cells.slice(0, values.length).map((cell, i) => ({ ...cell, value: values[i] })));
@@ -389,7 +389,7 @@ export function SnakeGeneric({
                   className="arcade-value z-10 m-[3%] flex items-center justify-center rounded-lg border border-emerald-300/70 bg-emerald-950 font-bold text-emerald-100 shadow-md"
                   style={{ gridColumn: c.x + 1, gridRow: c.y + 1 }}
                 >
-                  {lessonLabel(exercise, c.value)}
+                  {choiceLabel(problem, c.value)}
                 </div>
               ))}
             </div>

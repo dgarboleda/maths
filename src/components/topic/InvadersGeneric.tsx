@@ -5,7 +5,7 @@ import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx } from "./
 
 import { useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
-import { choiceSet, type Problem } from "@/lib/problem";
+import { type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -15,7 +15,7 @@ import { useArcadeFocus } from "@/lib/minigames/useArcadeFocus";
 import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 
 const COLS = 5;
 const CENTER_COL = Math.floor(COLS / 2);
@@ -112,7 +112,7 @@ export function InvadersGeneric({
     const nextProblem = newProblem();
     const spread = Math.max(8, COLS * 2);
     setProblem(nextProblem);
-    setCandidates(exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, COLS));
+    setCandidates(exercise ? lessonValues(exercise) : arcadeValues(nextProblem, COLS, spread));
     setWaveRow(0);
     setShotCol(null);
     setMoving(!lesson);
@@ -376,7 +376,7 @@ export function InvadersGeneric({
                 style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)`, top: `${wavePct * 0.7}%` }}
               >
                 {candidates.map((v, i) => (
-                  <button type="button" onClick={() => aimAt(i)} aria-label={`Apuntar a ${lessonLabel(exercise, v)}`} aria-pressed={shipCol === i} disabled={frozen || shotCol !== null}
+                  <button type="button" onClick={() => aimAt(i)} aria-label={`Apuntar a ${choiceLabel(problem, v)}`} aria-pressed={shipCol === i} disabled={frozen || shotCol !== null}
                     key={i}
                     className={`arcade-value m-0.5 flex h-20 touch-manipulation flex-col items-center justify-center rounded-xl border-2 font-bold ${
                       shipCol === i ? "border-indigo-200 bg-indigo-600 text-white shadow-lg shadow-indigo-500/40" : "border-red-400/40 bg-slate-800 text-indigo-200"
@@ -384,7 +384,7 @@ export function InvadersGeneric({
                     style={{ animationDelay: `${i * -0.2}s` }}
                   >
                     <span className="arcade-hover size-10" style={{ animationDelay: `${i * -0.2}s` }}><ArcadeSprite kind="alien" className="size-full" /></span>
-                    <span data-choice-label="">{lessonLabel(exercise, v)}</span>
+                    <span data-choice-label="">{choiceLabel(problem, v)}</span>
                   </button>
                 ))}
               </div>

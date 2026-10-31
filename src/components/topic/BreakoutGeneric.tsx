@@ -5,7 +5,7 @@ import { ArcadeFinalScore, ArcadeFxLayer, ArcadeScoreBar, useArcadeFx, type FxAt
 
 import { useEffect, useId, useRef, useState } from "react";
 import { getModule } from "@/lib/curriculum";
-import { choiceSet, type Problem } from "@/lib/problem";
+import { type Problem } from "@/lib/problem";
 import { playSound } from "@/lib/gameSound";
 import { triggerConfetti } from "@/lib/confetti";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -16,7 +16,7 @@ import { scaleWithWave, waveIndex } from "@/lib/minigames/difficultyCurve";
 import { HorizontalPad } from "@/components/level/runtime/HorizontalPad";
 import { findHitBlock, hitsPaddle, paddleBounceVx, stepBall, type Ball } from "./breakoutPhysics";
 import type { LessonExercise } from "@/lib/minigames/lessonExercise";
-import { lessonArcadeState, lessonLabel, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
+import { lessonArcadeState, choiceLabel, arcadeValues, lessonValues, ReflexNotice, gamePromptSize } from "@/lib/minigames/lessonArcade";
 import { pointOnRoute, routeLength, shotRoute, type ShotPoint, type ShotStyle } from "@/lib/minigames/aimedShot";
 
 const FIELD_WIDTH = 100; // unidades porcentuales, no píxeles — ver breakoutPhysics.ts
@@ -174,7 +174,7 @@ export function BreakoutGeneric({
   function spawnRound() {
     const nextProblem = newProblem();
     const spread = Math.max(8, BLOCK_ROWS * BLOCK_COLS * 2);
-    const values = exercise ? lessonValues(exercise) : choiceSet(nextProblem.answer, spread, BLOCK_ROWS * BLOCK_COLS);
+    const values = exercise ? lessonValues(exercise) : arcadeValues(nextProblem, BLOCK_ROWS * BLOCK_COLS, spread);
     setProblem(nextProblem);
     setBlocks(buildBlocks(values, lesson));
   }
@@ -448,8 +448,8 @@ export function BreakoutGeneric({
                 const selected = lesson && paddleX + paddleWidth / 2 >= b.x && paddleX + paddleWidth / 2 < b.x + b.w;
                 const className = `arcade-brick arcade-value absolute flex touch-manipulation items-center justify-center rounded-lg border-2 font-bold text-orange-100 ${selected ? "border-violet-200 bg-violet-700 shadow-lg shadow-violet-500/50" : "border-orange-400 bg-orange-950"}`;
                 const style = { left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` };
-                return lesson ? <button key={b.id} type="button" data-choice-label="" aria-label={`Apuntar al bloque ${lessonLabel(exercise, b.value)}`} aria-pressed={selected} disabled={!held || frozen} onClick={() => aimBlock(b)} className={className} style={style}>{lessonLabel(exercise, b.value)}</button>
-                  : <div key={b.id} data-choice-label="" className={className} style={style}>{lessonLabel(exercise, b.value)}</div>;
+                return lesson ? <button key={b.id} type="button" data-choice-label="" aria-label={`Apuntar al bloque ${choiceLabel(problem, b.value)}`} aria-pressed={selected} disabled={!held || frozen} onClick={() => aimBlock(b)} className={className} style={style}>{choiceLabel(problem, b.value)}</button>
+                  : <div key={b.id} data-choice-label="" className={className} style={style}>{choiceLabel(problem, b.value)}</div>;
               })}
               <div
                 ref={ballElRef}

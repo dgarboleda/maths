@@ -79,3 +79,23 @@ Todas dan solo puntos arcade; ninguna envía respuestas ni cambia las opciones.
 ## Validación
 
 Pruebas unitarias de la puntuación (tramos de combo, récord, valores inválidos) y del hook (combo, retirada de efectos, corte de cadena, bonus y récord, celebración solo al resolver en la clase, sonido desactivado). Las pruebas existentes de los nueve juegos y de `LessonGames` siguen pasando sin cambios.
+
+# Cuarta revisión: congruencia entre preguntas y alternativas
+
+Auditoría de las 245 preguntas numéricas de práctica de las clases y de los 67 módulos del currículo que los niveles pueden asignar a cualquier minijuego. Queda fijada en `src/lib/minigames/arcadeCongruence.test.ts`.
+
+| Hallazgo | Alcance | Corrección |
+| --- | --- | --- |
+| Los módulos con opciones de texto (figuras, fracciones, lógica) guardan la respuesta como índice. En los minijuegos de los niveles se mostraban números sin relación con la pregunta (0, 3, 7…). | 10 módulos | `arcadeValues` usa las opciones propias del problema y `choiceLabel` muestra su texto. |
+| Con respuesta negativa, todas las alternativas generadas eran positivas: el signo delataba la correcta. | `aritmetica-d10`, `geometria-d8` | `choiceSet` admite negativos si la respuesta lo es y garantiza al menos otro. |
+| «Escribe como decimal la fracción 2/5» mostraba la opción correcta como «2/5», copiada del enunciado y en la forma contraria a la pedida. | Clases que piden decimal | `lessonProblem` respeta «como decimal» salvo «fracción o decimal». |
+| Los decimales del modo legado se mostraban con punto («22.1») y sin signo tipográfico. | 3 módulos | Misma presentación que las clases: coma decimal y «−». |
+| Un problema con menos opciones que casillas dejaba nenúfares o carriles vacíos que contaban como respuesta incorrecta. | Estanque, Autopista | Saltar a un nenúfar vacío no responde; hay tantos carriles como opciones. |
+
+Comprobaciones permanentes: cada etiqueta se corrige igual que el valor enviado, una sola opción correcta, sin etiquetas repetidas, se respeta la forma pedida (decimal o fracción), convertir no se resuelve copiando el enunciado, no hay negativos ni probabilidades fuera de [0, 1] inventados y, en el modo legado, la respuesta siempre está entre las opciones y su texto es el del problema.
+
+Se mantienen a propósito:
+
+- Los errores razonados del contenido, aunque estén fuera del dominio (−14 como lado, 9,6 unidades), porque su retroalimentación trabaja ese error.
+- Errores razonados que no se pueden escribir con exactitud (1/6 en una respuesta entera, 16,67 %), que siguen fuera de las alternativas.
+- La unidad de 21 preguntas (cm², soles, °) no se muestra ni en el juego ni en la vía escrita. Es una decisión de contenido para revisar aparte.
