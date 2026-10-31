@@ -3,14 +3,20 @@
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { getFirebase } from "@/lib/firebase";
+import { acceptLegalTerms } from "@/lib/legal";
+import { ConsentCheckbox } from "@/components/legal/ConsentCheckbox";
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
+  const [consent, setConsent] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +26,11 @@ export default function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setNotice(null);
+    if (mode === "signup" && !consent) {
+      setError("Para crear la cuenta debes aceptar los términos y la política de privacidad.");
+      return;
+    }
     setSubmitting(true);
     try {
       const {
@@ -27,12 +38,22 @@ export default function LoginPage() {
         db,
         firestore: { doc, serverTimestamp, setDoc },
       } = await getFirebase();
+      if (mode === "reset") {
+        // Mismo mensaje exista o no la cuenta: no revela qué correos están registrados.
+        await sendPasswordResetEmail(auth, email).catch((err: { code?: string }) => {
+          if (!err.code?.includes("user-not-found")) throw err;
+        });
+        setNotice("Si hay una cuenta con ese correo, te enviamos un enlace para crear una contraseña nueva. Revisa también la carpeta de spam.");
+        return;
+      }
       if (mode === "signup") {
         const credential = await createUserWithEmailAndPassword(auth, email, password);
         await setDoc(doc(db, "parents", credential.user.uid), {
           email: credential.user.email,
           createdAt: serverTimestamp(),
         });
+        // Si esto falla, LegalConsentGate lo vuelve a pedir al entrar.
+        await acceptLegalTerms().catch((err) => console.error("No se pudo registrar la aceptación", err));
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -86,7 +107,9 @@ export default function LoginPage() {
               <p className="text-sm text-indigo-200/80">
                 {mode === "login"
                   ? "Entra para ver el progreso y las recompensas de tus hijos."
-                  : "Crea tu cuenta de padre o madre para empezar la aventura."}
+                  : mode === "signup"
+                    ? "Crea tu cuenta de padre o madre para empezar la aventura."
+                    : "Escribe el correo de tu cuenta y te enviaremos un enlace para crear una contraseña nueva."}
               </p>
             </header>
 
@@ -105,7 +128,7 @@ export default function LoginPage() {
                   className={`family-input${error ? " has-error" : ""}`}
                 />
               </div>
-              <div className="space-y-1.5">
+              {mode !== "reset" && <div className="space-y-1.5">
                 <label htmlFor="login-pass" className="text-xs font-bold uppercase tracking-wide text-indigo-300">
                   Contraseña
                 </label>
@@ -120,7 +143,15 @@ export default function LoginPage() {
                   placeholder="········"
                   className={`family-input${error ? " has-error" : ""}`}
                 />
-              </div>
+              </div>}
+
+              {mode === "signup" && <ConsentCheckbox checked={consent} onChange={setConsent} />}
+
+              {notice && (
+                <p role="status" className="rounded-xl bg-emerald-500/10 px-3.5 py-2.5 text-sm font-semibold text-emerald-200">
+                  {notice}
+                </p>
+              )}
 
               {error && (
                 <p
@@ -133,32 +164,53 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || (mode === "signup" && !consent)}
                 className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 font-display text-sm font-bold uppercase tracking-wide text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {submitting
                   ? "Un momento…"
                   : mode === "login"
                     ? "Entrar al panel"
-                    : "Crear cuenta"}
+                    : mode === "signup"
+                      ? "Crear cuenta"
+                      : "Enviar enlace"}
               </button>
             </form>
 
+            {mode === "login" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setNotice(null);
+                  setMode("reset");
+                }}
+                className="block min-h-11 w-full text-center text-sm font-semibold text-indigo-200 underline-offset-4 hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
                 setError(null);
+                setNotice(null);
                 setMode(mode === "login" ? "signup" : "login");
               }}
               className="block min-h-11 w-full text-center text-sm font-semibold text-cyan-300 underline-offset-4 hover:underline"
             >
-              {mode === "login" ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Entra"}
+              {mode === "login" ? "¿No tienes cuenta? Créala" : mode === "signup" ? "¿Ya tienes cuenta? Entra" : "Volver a entrar"}
             </button>
 
             <p className="rounded-xl border border-dashed border-indigo-500/30 px-3.5 py-2.5 text-center text-xs text-indigo-300/80">
               ¿Va a jugar un explorador o exploradora? Entra primero como madre o padre; después
               eligen su perfil y su PIN.
             </p>
+
+            <nav aria-label="Información legal" className="flex justify-center gap-4 text-xs text-indigo-300/80">
+              <Link href="/privacidad" className="underline-offset-4 hover:underline">Privacidad</Link>
+              <Link href="/terminos" className="underline-offset-4 hover:underline">Términos</Link>
+            </nav>
           </div>
         </div>
       </section>
@@ -205,6 +257,7 @@ function mensajeDeError(err: unknown): string {
   }
   if (code.includes("weak-password")) return "La contraseña debe tener al menos 6 caracteres.";
   if (code.includes("invalid-email")) return "Ese correo no es válido.";
+  if (code.includes("too-many-requests")) return "Demasiados intentos. Espera unos minutos y vuelve a probar.";
   // Sin código reconocido: se muestra el código crudo (p. ej.
   // "permission-denied" o "auth/operation-not-allowed") y, si lo hay, el
   // mensaje completo (getFirebase() añade ahí un diagnóstico de

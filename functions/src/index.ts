@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { initializeApp } from "firebase-admin/app";
@@ -8,15 +7,17 @@ import { defineSecret } from "firebase-functions/params";
 import { HttpsError, onCall, onRequest, type CallableRequest } from "firebase-functions/v2/https";
 import { ACCESS_KEY_PATTERN, checkPin, PIN_HASH_VERSION, PIN_PATTERN, pinHmac, safeEqual } from "./pin";
 import { getProfileAvatar } from "./profileAvatars";
+import { childAuthUid } from "./account";
 
 initializeApp();
 
 export { initializeStarBalance, updateStarBalance } from "./stars";
 export { recordLearningAction } from "./learning";
+export { acceptLegalTerms, deleteAccount } from "./account";
 
 export const deploymentStatus = onRequest((_request, response) => {
   const { release } = JSON.parse(readFileSync(path.join(__dirname, "release.json"), "utf8"));
-  response.set("Cache-Control", "no-store").json({ service: "maths-functions", protocol: 12, release });
+  response.set("Cache-Control", "no-store").json({ service: "maths-functions", protocol: 13, release });
 });
 
 /**
@@ -206,9 +207,7 @@ export const verifyChildPin = onCall({ secrets: [PIN_PEPPER] }, async (request) 
   if (outcome !== "ok") throw new HttpsError("permission-denied", "PIN incorrecto.");
   if (fromFamilyDevice) return { ok: true };
 
-  // Firebase Auth limita el uid a 128 caracteres, incluso con ids largos.
-  const uid = `child:${createHash("sha256").update(JSON.stringify([parentId, childId])).digest("hex")}`;
-  const token = await getAuth().createCustomToken(uid, { role: "child", parentId, childId });
+  const token = await getAuth().createCustomToken(childAuthUid(parentId, childId), { role: "child", parentId, childId });
   return { token };
 });
 

@@ -70,8 +70,13 @@ service cloud.firestore {
 
     match /parents/{parentId} {
       // El documento del padre no lo lee ningún hijo — nada bajo /jugar/**
-      // lo necesita.
-      allow read, write: if isParent(parentId);
+      // lo necesita. `legalConsent` (aceptación de privacidad y términos) lo
+      // escribe solo Functions (`acceptLegalTerms`) con hora del servidor:
+      // el navegador no puede fabricarlo, cambiarlo ni borrarlo.
+      allow read, delete: if isParent(parentId);
+      allow create: if isParent(parentId) && !request.resource.data.keys().hasAny(['legalConsent']);
+      allow update: if isParent(parentId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['legalConsent']);
 
       match /children/{childId} {
         allow read: if isParentOrChild(parentId, childId);

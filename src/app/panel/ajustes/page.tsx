@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { signOut } from "firebase/auth";
-import { Check, Copy, DatabaseBackup, ImageIcon, KeyRound, Smartphone, Trash2, UserRound, Users } from "lucide-react";
+import { EmailAuthProvider, reauthenticateWithCredential, signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { Check, Copy, DatabaseBackup, ImageIcon, KeyRound, ShieldCheck, Smartphone, Trash2, UserRound, Users } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { useFamily, type ChildDoc } from "@/components/family/FamilyProvider";
 import { getFirebase } from "@/lib/firebase";
 import { deviceAccessLink, newAccessKey, setChildPin } from "@/lib/pin";
 import { deleteChildProfile } from "@/lib/deleteChild";
+import { deleteFamilyAccount } from "@/lib/legal";
 import { ageFromBirthDate } from "@/lib/family/age";
 import { Avatar } from "@/components/world/Avatar";
 import { SectionCard } from "@/components/family/ui";
@@ -21,6 +23,7 @@ export default function AjustesPage() {
   const [resettingChild, setResettingChild] = useState<ChildDoc | null>(null);
   const [deletingChild, setDeletingChild] = useState<ChildDoc | null>(null);
   const [pickingAvatarChild, setPickingAvatarChild] = useState<ChildDoc | null>(null);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   return (
     <div className="space-y-5">
@@ -117,6 +120,23 @@ export default function AjustesPage() {
         </SectionCard>
       )}
 
+      <SectionCard title="Privacidad y datos" icon={<ShieldCheck className="size-4" aria-hidden="true" />}>
+        <p className="text-sm text-slate-300">
+          Consulta qué datos guardamos y para qué en la{" "}
+          <Link href="/privacidad" className="text-cyan-200 underline">política de privacidad</Link> y los{" "}
+          <Link href="/terminos" className="text-cyan-200 underline">términos de uso</Link>.
+        </p>
+        <button
+          type="button"
+          onClick={() => setDeletingAccount(true)}
+          className="mt-3 flex min-h-11 items-center gap-1.5 rounded-full border border-red-500/25 bg-red-950/30 px-3.5 text-sm font-bold text-red-300 transition-colors hover:bg-red-950/50"
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+          Borrar cuenta
+        </button>
+      </SectionCard>
+
+      {deletingAccount && <DeleteAccountDialog onClose={() => setDeletingAccount(false)} />}
       {resettingChild && parentId && (
         <ResetPinDialog parentId={parentId} child={resettingChild} onClose={() => setResettingChild(null)} />
       )}
@@ -436,6 +456,116 @@ function DeleteChildDialog({
               className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
             >
               {submitting ? "Borrando…" : "Borrar perfil"}
+            </button>
+            <button type="button" onClick={onClose} className="text-sm font-bold text-slate-400">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+const DELETE_WORD = "BORRAR";
+
+/**
+ * Borra la cuenta familiar completa (perfiles, avance, creaciones, archivos y
+ * el usuario). Pide la contraseña: `deleteAccount` exige un inicio de sesión
+ * reciente, así que un dispositivo olvidado abierto no basta para borrarla.
+ */
+function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const titleId = useId();
+  const passwordId = useId();
+  const confirmId = useId();
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const { dialogRef, handleKeyDown } = useDialogFocus(onClose, passwordRef);
+  const [password, setPassword] = useState("");
+  const [confirmWord, setConfirmWord] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const confirmed = confirmWord.trim().toUpperCase() === DELETE_WORD && password.length > 0;
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!confirmed || submitting || !user?.email) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+    } catch (err) {
+      const code = (err as { code?: string })?.code ?? "";
+      setError(code.includes("too-many-requests")
+        ? "Demasiados intentos. Espera unos minutos y vuelve a probar."
+        : "La contraseña no es correcta.");
+      setSubmitting(false);
+      return;
+    }
+    try {
+      await deleteFamilyAccount();
+      const { auth } = await getFirebase();
+      await signOut(auth).catch(() => undefined);
+      router.replace("/login");
+    } catch (err) {
+      console.error("No se pudo borrar la cuenta", err);
+      setError("No se pudo terminar el borrado. Vuelve a intentarlo: lo ya borrado no se recupera y el resto se completará.");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/80 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        className="family-panel anim-rise w-full max-w-sm rounded-3xl border border-red-500/25 p-5 focus:outline-none"
+      >
+        <h2 id={titleId} className="font-display text-lg font-bold text-white">Borrar la cuenta</h2>
+        <p className="mt-2 text-sm text-slate-300">
+          Se borran para siempre todos los perfiles, su avance, estrellas y evaluaciones, las clases y niveles creados, las imágenes
+          subidas y tu usuario. No se puede deshacer.
+        </p>
+        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
+          <label htmlFor={passwordId} className="flex flex-col gap-1 text-sm font-bold text-slate-200">
+            Tu contraseña
+            <input
+              ref={passwordRef}
+              id={passwordId}
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="family-input"
+            />
+          </label>
+          <label htmlFor={confirmId} className="flex flex-col gap-1 text-sm font-bold text-slate-200">
+            Escribe &quot;{DELETE_WORD}&quot; para confirmar
+            <input
+              id={confirmId}
+              autoComplete="off"
+              value={confirmWord}
+              onChange={(e) => setConfirmWord(e.target.value)}
+              className="family-input"
+            />
+          </label>
+          {error && (
+            <p role="alert" className="text-sm font-bold text-red-400">
+              {error}
+            </p>
+          )}
+          <div className="mt-1 flex gap-4">
+            <button
+              type="submit"
+              disabled={!confirmed || submitting}
+              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+            >
+              {submitting ? "Borrando…" : "Borrar cuenta"}
             </button>
             <button type="button" onClick={onClose} className="text-sm font-bold text-slate-400">
               Cancelar
