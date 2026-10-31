@@ -15,6 +15,12 @@ test("una familia publica una clase y el alumno resuelve sus preguntas", async (
   await page.getByLabel("Respuestas (una por línea)").blur();
   await page.getByLabel("Respuesta correcta").selectOption({ label: "4" });
   await page.getByLabel("Explicación").fill("Dos más dos son cuatro.");
+  await page.getByRole("button", { name: "Añadir pregunta" }).click();
+  const second = page.getByRole("group", { name: "Pregunta 2" });
+  await second.getByLabel("Enunciado").fill("¿Cuánto es 1 + 1?");
+  await second.getByLabel("Respuestas (una por línea)").fill("2\n3");
+  await second.getByLabel("Respuestas (una por línea)").blur();
+  await second.getByLabel("Respuesta correcta").selectOption({ label: "2" });
   await page.getByRole("button", { name: "Publicar para alumnos" }).click();
   await expect(page.getByText("Clase publicada para tus alumnos.")).toBeVisible();
   await page.goto(`/jugar/${childId}/aprende`);
@@ -25,11 +31,17 @@ test("una familia publica una clase y el alumno resuelve sus preguntas", async (
   await expect(page.getByText("Inténtalo de nuevo.")).toBeVisible();
   await page.getByRole("button", { name: "4", exact: true }).click();
   await expect(page.getByText(/¡Correcto!/)).toBeVisible();
-  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByRole("button", { name: "Siguiente pregunta" }).click();
+  await expect(page.getByText("¿Cuánto es 1 + 1?")).toBeVisible();
+  await page.getByRole("button", { name: "2", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Terminar clase" })).toBeVisible();
+  await page.getByRole("button", { name: "Terminar clase" }).click();
   await expect(page.getByText("¡Terminaste la clase!")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Elegir otra clase" })).toHaveAttribute("href", `/jugar/${childId}/aprende`);
   await page.reload();
   await page.getByRole("button", { name: "Empezar preguntas" }).click();
   await expect(page.getByText("¡Terminaste la clase!")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Elegir otra clase" })).toHaveAttribute("href", `/jugar/${childId}/aprende`);
 });
 
 test("una clase personalizada muestra respuestas de texto en el minijuego", async ({ page }) => {
@@ -62,6 +74,7 @@ test("una clase personalizada muestra respuestas de texto en el minijuego", asyn
     await page.getByRole("button", { name: "Lanzar la pelota" }).click();
   }
   await expect(page.getByText(/¡Correcto!/)).toBeVisible();
-  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByRole("button", { name: "Terminar clase" }).click();
   await expect(page.getByText("¡Terminaste la clase!")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Elegir otra clase" })).toHaveAttribute("href", `/jugar/${childId}/aprende`);
 });

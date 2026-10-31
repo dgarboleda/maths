@@ -852,10 +852,11 @@ function LessonSummary({
         )}
         {next && (
           <Link
-            className={secondaryButton}
+            className={primaryButton}
             href={`/jugar/${childId}/aprende/${next.id}`}
           >
-            Siguiente clase: {next.title}
+            Ir a la siguiente clase: {next.title}
+            <ArrowRight size={16} aria-hidden="true" />
           </Link>
         )}
         <Link className={secondaryButton} href={`/jugar/${childId}`}>
