@@ -23,6 +23,9 @@ describe("cabeceras de seguridad", () => {
   test("desarrollo con emuladores: admite 127.0.0.1 y eval, sin HSTS ni upgrade", () => {
     const csp = contentSecurityPolicy({ dev: true, emulators: true });
     expect(directive(csp, "connect-src")).toContain("http://127.0.0.1:*");
+    // El emulador de Auth sirve su iframe desde 127.0.0.1:9099.
+    expect(directive(csp, "frame-src")).toContain("http://127.0.0.1:*");
+    expect(directive(contentSecurityPolicy(), "frame-src")).not.toContain("127.0.0.1");
     expect(directive(csp, "script-src")).toContain("'unsafe-eval'");
     expect(csp).not.toContain("upgrade-insecure-requests");
     expect(securityHeaders({ dev: true, emulators: true }).map((h) => h.key)).not.toContain("Strict-Transport-Security");

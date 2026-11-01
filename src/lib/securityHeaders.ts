@@ -26,7 +26,7 @@ export function contentSecurityPolicy({ dev = false, emulators = false, authDoma
     "img-src": `'self' blob: data: https://firebasestorage.googleapis.com${local}`,
     "font-src": "'self'",
     "connect-src": `'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://*.firebaseio.com wss://*.firebaseio.com${local}`,
-    "frame-src": `https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://*.firebaseapp.com${authFrame}`,
+    "frame-src": `https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://*.firebaseapp.com${authFrame}${emulators ? " http://127.0.0.1:*" : ""}`,
     "worker-src": "'self' blob:",
     "object-src": "'none'",
     "base-uri": "'self'",
