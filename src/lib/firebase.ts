@@ -33,6 +33,30 @@ export interface Firebase {
  */
 let firebasePromise: Promise<Firebase> | undefined;
 
+/*
+ * App Check: cada petición a Firestore, Functions y Storage lleva una prueba
+ * de que sale de esta app (reCAPTCHA Enterprise, invisible), así un script
+ * con la API key pública no puede llamar al backend. Solo se activa con
+ * NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_KEY y nunca con emuladores (que no la
+ * validan). La aplicación en Firebase se exige después, por separado
+ * (docs/operacion.md → Seguridad operativa), para no cortar a nadie mientras
+ * se observan las métricas.
+ */
+const appCheckKey = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_KEY;
+let appCheckPromise: Promise<void> | undefined;
+
+async function getApp(): Promise<FirebaseApp> {
+  const { initializeApp, getApps, getApp: existingApp } = await import("firebase/app");
+  const app = getApps().length ? existingApp() : initializeApp(firebaseConfig);
+  if (appCheckKey && process.env.NEXT_PUBLIC_FIREBASE_EMULATORS !== "1") {
+    appCheckPromise ??= import("firebase/app-check").then(({ initializeAppCheck, ReCaptchaEnterpriseProvider }) => {
+      initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(appCheckKey), isTokenAutoRefreshEnabled: true });
+    });
+    await appCheckPromise;
+  }
+  return app;
+}
+
 export function getFirebase(): Promise<Firebase> {
   if (!firebasePromise) firebasePromise = initFirebase();
   return firebasePromise;
@@ -44,14 +68,13 @@ declare global {
 }
 
 async function initFirebase(): Promise<Firebase> {
-  const [{ initializeApp, getApps, getApp }, { getAuth, connectAuthEmulator }, firestore] =
+  const [app, { getAuth, connectAuthEmulator }, firestore] =
     await Promise.all([
-      import("firebase/app"),
+      getApp(),
       import("firebase/auth"),
       import("firebase/firestore"),
     ]);
 
-  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   const auth = withDiagnostics(() => getAuth(app));
   const db = getOrInitFirestore(app, firestore);
 
@@ -104,12 +127,11 @@ export function getFirebaseStorage(): Promise<FirebaseStorageBundle> {
 }
 
 async function initFirebaseStorage(): Promise<FirebaseStorageBundle> {
-  const [{ initializeApp, getApps, getApp }, storageFns] = await Promise.all([
-    import("firebase/app"),
+  const [app, storageFns] = await Promise.all([
+    getApp(),
     import("firebase/storage"),
   ]);
 
-  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   const storage = storageFns.getStorage(app);
 
   if (
@@ -143,9 +165,7 @@ export function getFirebaseFunctions(): Promise<FirebaseFunctionsBundle> {
 }
 
 async function initFirebaseFunctions(): Promise<FirebaseFunctionsBundle> {
-  const { initializeApp, getApps, getApp } = await import("firebase/app");
-  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  return getFirebaseFunctionsForApp(app);
+  return getFirebaseFunctionsForApp(await getApp());
 }
 
 const functionsEmulators = new WeakSet<import("firebase/functions").Functions>();

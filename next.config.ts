@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { execFileSync } from "node:child_process";
 import { version } from "./package.json";
+import { securityHeaders } from "./src/lib/securityHeaders";
 
 function sourceRelease(): string {
   if (process.env.MATHS_RELEASE) return process.env.MATHS_RELEASE;
@@ -36,6 +37,18 @@ const nextConfig: NextConfig = {
    * hidrata. Solo afecta a `next dev`.
    */
   allowedDevOrigins: ["127.0.0.1"],
+  poweredByHeader: false,
+  // CSP, HSTS y demás: ver src/lib/securityHeaders.ts.
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: securityHeaders({
+        dev: process.env.NODE_ENV === "development",
+        emulators: process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1",
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      }),
+    }];
+  },
   turbopack: {
     resolveAlias: firebaseBrowserAliases,
   },

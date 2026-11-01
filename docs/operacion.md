@@ -19,6 +19,10 @@ No lo rotes sin plan: los hashes v2 dejarían de coincidir y habría que restabl
 
 **Migración:** los enlaces anteriores (sin clave) dejan de funcionar y muestran que hay que pedir uno nuevo. Al publicar, avisa a las familias de que vuelvan a compartir el enlace desde Ajustes. El contrato de los callables cambió: Functions y Worker anuncian el **protocolo 4** y deben desplegarse desde la misma revisión.
 
+**Cuenta familiar: consentimiento, recuperación y borrado (protocolo 13):** dos callables nuevos. `acceptLegalTerms` guarda `parents/{uid}.legalConsent = { version, acceptedAt }` con hora del servidor; las reglas impiden que el navegador cree, cambie o borre ese campo. La versión vigente está en `functions/src/legalVersion.ts` y `src/lib/legal.ts` (una prueba exige que coincidan); subirla hace que cada familia vuelva a aceptar en `LegalConsentGate` antes de ver `/perfiles` o `/panel`. Las cuentas existentes ven esa pantalla al entrar por primera vez tras el despliegue. `deleteAccount` exige un inicio de sesión de menos de 5 minutos (`auth_time`; Ajustes pide la contraseña), marca los perfiles como `deleting`, borra `parents/{uid}` con todas sus subcolecciones, los archivos bajo `parents/{uid}/` en Storage, los usuarios de Auth de las sesiones de cada hijo y, al final, el de la familia. Es idempotente: si falla a mitad, repetirla termina el trabajo. El login ofrece «¿Olvidaste tu contraseña?» (`sendPasswordResetEmail`, con el mismo mensaje exista o no la cuenta).
+
+Antes de abrir al público: completa los campos marcados en `/privacidad` y `/terminos` con revisión legal, personaliza en Firebase Console → Authentication → Templates el correo de restablecimiento (remitente, idioma español, dominio de la acción) y activa la protección contra enumeración de correos. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 13.
+
 **Tres clases más y calibración del repaso (protocolo 12):** Functions conoce `funcion-cuadratica`, `volumen-conos-esferas` y `probabilidad-condicional` (49 clases). El repaso diario elige problemas con `calibrationData.ts` (vacío hasta que haya datos: sin cambio de comportamiento). Sin migración. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 12.
 
 **Rachas, errores en el repaso y tres clases nuevas (protocolo 11):** Functions conoce `interes-compuesto`, `progresiones` y `distancia-punto-medio` (46 clases), y el repaso diario lee las últimas 300 respuestas del perfil al empezar (consulta por `createdAt`, índice automático) para priorizar errores que se repiten; guarda la racha en `learningProgress/diario`. Sin migración. Despliega ambos con `npm run deploy` y comprueba que `verify:deployment` anuncia el protocolo 11.
@@ -106,3 +110,45 @@ Se retiraron la dependencia no usada `claude` y Lighthouse CI antiguo. Las medic
 `npm run audit:security` comprueba los paquetes del frontend y Functions. Los informes completos incluyen herramientas de desarrollo aunque el control bloqueante se centre en avisos altos/críticos de ejecución. No se fuerza un cambio incompatible ni se suprime un aviso sin parche. Revisa las cadenas de `braces`/herramientas de build y OpenTelemetry en `security-reports/`; actualiza cuando el proveedor publique una corrección compatible.
 
 El respaldo JSON conserva el formato existente. No es una copia de los bytes de Storage ni de las cuentas, intentos o saldos. La importación puede haber escrito parte del paquete si falla una etapa: conserva el archivo original, revisa el resultado y reintenta. No presentes ese archivo como recuperación completa del proyecto Firebase.
+
+## Seguridad operativa
+
+### Cabeceras HTTP
+
+`next.config.ts` aplica a todas las rutas las cabeceras de `src/lib/securityHeaders.ts`: CSP, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` (sin cámara, micrófono ni ubicación) y, fuera de local, HSTS de dos años. La CSP no usa nonces porque las páginas son estáticas (guía de Next 16, "Without Nonces"): admite `'unsafe-inline'` en scripts por la hidratación, pero solo permite conectar con Firebase y reCAPTCHA, prohíbe `<object>` y formularios externos, y `frame-ancestors 'none'` impide incrustar la app. Si añades un servicio externo (analítica, pagos, fuentes), agrégalo ahí; si no, el navegador lo bloqueará y la consola mostrará la directiva. Comprueba en producción con `curl -sI https://<dominio>/login`.
+
+### App Check (en dos fases)
+
+1. En Google Cloud → Security → reCAPTCHA crea una clave **de sitio web** con el dominio de producción (y el de previews si se prueban ahí). En Firebase Console → App Check, registra la app web con el proveedor reCAPTCHA Enterprise y esa clave.
+2. Configura `NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_KEY` en las variables de build de Workers (Production y Preview) y despliega. El cliente ya envía tokens; nada se rechaza todavía.
+3. Durante unos días revisa App Check → métricas: el porcentaje de peticiones verificadas de Firestore, Storage y Functions debe acercarse al 100 %. Las no verificadas son clientes antiguos en caché o tráfico ajeno.
+4. Activa la aplicación: en la consola, **Enforce** para Firestore y Storage; para Functions, crea `functions/.env.<proyecto>` con `ENFORCE_APP_CHECK=true` y despliega Functions (`functions/src/runtimeOptions.ts`). Para revertir, quita el enforce y vuelve a desplegar con `false`.
+
+Los emuladores no usan App Check: el cliente no lo inicializa con `NEXT_PUBLIC_FIREBASE_EMULATORS=1` y Functions lo ignora en el emulador.
+
+### Respaldos
+
+El JSON de `/panel/archivo` no recupera el proyecto (ver arriba). Configura en el proyecto real:
+
+```sh
+P="$FIREBASE_PROJECT_ID"
+# Recuperación a cualquier minuto de los últimos 7 días.
+gcloud firestore databases update --database='(default)' --enable-pitr --project "$P"
+# Copia diaria conservada 14 días.
+gcloud firestore backups schedules create --database='(default)' --recurrence=daily --retention=14d --project "$P"
+# Storage: los objetos borrados se pueden recuperar durante 7 días.
+gcloud storage buckets update "gs://$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET" --soft-delete-duration=7d
+```
+
+Restaurar crea una base nueva (`gcloud firestore databases restore --source-backup=… --destination-database=…`); se cambia a ella o se copian los documentos necesarios. Practica una restauración antes de abrir al público. El plazo máximo de las copias (14 días) es el que debe figurar en la política de privacidad como plazo de borrado en respaldos: una cuenta borrada desaparece de ellas al rotar.
+
+### Alertas de gasto
+
+```sh
+gcloud billing budgets create --billing-account=<CUENTA> \
+  --display-name="Math Quest mensual" --budget-amount=50USD \
+  --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0 \
+  --filter-projects="projects/$FIREBASE_PROJECT_ID"
+```
+
+Ajusta el importe al uso esperado. Las alertas avisan por correo a los administradores de facturación, pero no cortan el servicio. Los límites que sí acotan el gasto ya están en el código: `maxInstances` en `recordLearningAction`, el tope diario de estrellas por perfil y el bloqueo de PIN.

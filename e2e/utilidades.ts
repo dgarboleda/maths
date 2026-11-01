@@ -26,6 +26,7 @@ export async function registrarPadre(page: Page): Promise<string> {
   await page.getByRole("button", { name: /Créala/i }).click();
   await page.getByLabel("Correo").fill(correo);
   await page.getByLabel("Contraseña").fill(CLAVE_PADRE);
+  await page.getByRole("checkbox", { name: /tutor legal/ }).check();
   await page.getByRole("button", { name: "Crear cuenta" }).click();
   await expect(page.getByRole("heading", { name: "¿Quién va a jugar?" })).toBeVisible();
   return correo;
