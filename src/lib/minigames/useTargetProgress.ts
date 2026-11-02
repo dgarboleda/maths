@@ -5,11 +5,11 @@ import { useAuth } from '@/lib/AuthProvider';
 import { getFirebase } from '@/lib/firebase';
 import { EMPTY_PROGRESS, mergeProgress, mergeSameDevice, normalizeProgress, type TargetProgress } from './targetProgress';
 
-const prefix = 'target-masters-v1-';
 type SyncStatus = 'local' | 'conectando' | 'sincronizado' | 'pendiente' | 'error';
 
 /** Cada dispositivo conserva sus propios contadores; nunca pisa los de otro. */
-export function useTargetProgress(childId: string) {
+export function useTargetProgress(childId: string, game: 'target-masters' | 'fraction-fighters' = 'target-masters') {
+  const prefix = `${game}-v1-`;
   const { parentId, user } = useAuth();
   const [progress, setProgress] = useState<TargetProgress>(EMPTY_PROGRESS);
   const [loaded, setLoaded] = useState(false);
@@ -17,8 +17,8 @@ export function useTargetProgress(childId: string) {
   const [snapshotState, setSnapshotState] = useState<{ scope: string; replicas: Record<string, TargetProgress> }>({ scope: '', replicas: {} });
   const [syncReady, setSyncReady] = useState('');
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('local');
-  const key = `numerario:target-masters:${childId}`;
-  const scope = `${parentId ?? ''}/${childId}/${device ?? ''}`;
+  const key = `numerario:${game}:${childId}`;
+  const scope = `${parentId ?? ''}/${childId}/${game}/${device ?? ''}`;
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +69,7 @@ export function useTargetProgress(childId: string) {
       }, () => { if (!cancelled) { setSyncReady(''); setSyncStatus('error'); } });
     }).catch(() => { if (!cancelled) setSyncStatus('error'); });
     return () => { cancelled = true; unsubscribe?.(); };
-  }, [parentId, user, childId, device, loaded, scope]);
+  }, [parentId, user, childId, device, loaded, scope, prefix]);
 
   useEffect(() => {
     if (!loaded || syncReady !== scope || !parentId || !user || !device) return;
@@ -92,7 +92,7 @@ export function useTargetProgress(childId: string) {
     };
     void save();
     return () => { cancelled = true; if (retry) clearTimeout(retry); };
-  }, [progress, loaded, syncReady, parentId, user, device, childId, scope]);
+  }, [progress, loaded, syncReady, parentId, user, device, childId, scope, prefix]);
 
   const replicas = snapshotState.scope === scope ? snapshotState.replicas : {};
   const otherReplicas = Object.entries(replicas).filter(([id]) => id !== device).map(([, value]) => value);
