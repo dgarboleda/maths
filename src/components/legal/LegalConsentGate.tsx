@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { signOut } from "firebase/auth";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
-import { acceptLegalTerms, hasCurrentConsent } from "@/lib/legal";
+import { acceptLegalTerms, acceptLegalTermsErrorMessage, hasCurrentConsent } from "@/lib/legal";
 import { ConsentCheckbox } from "./ConsentCheckbox";
 
 type Status = "checking" | "ok" | "needed";
@@ -56,7 +56,7 @@ export function LegalConsentGate({ children }: { children: ReactNode }) {
       setChecked({ uid, ok: true });
     } catch (err) {
       console.error("No se pudo registrar la aceptación", err);
-      setError("No se pudo guardar tu aceptación. Revisa la conexión e inténtalo de nuevo.");
+      setError(acceptLegalTermsErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
