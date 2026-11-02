@@ -69,7 +69,7 @@ export default function LoginPage() {
     <main
       id="contenido"
       tabIndex={-1}
-      className="min-h-screen bg-slate-950 lg:grid lg:grid-cols-[1.1fr_1fr]"
+      className="h-dvh overflow-hidden bg-slate-950 lg:grid lg:grid-cols-[1.1fr_1fr]"
     >
       <h1 className="sr-only">Math Quest</h1>
 
@@ -96,7 +96,7 @@ export default function LoginPage() {
       </aside>
 
       {/* Columna de acceso */}
-      <section className="flex min-h-screen flex-col px-4 py-6 sm:px-8">
+      <section className="flex h-full min-h-0 flex-col overflow-y-auto px-4 py-6 sm:px-8">
         <div className="lg:hidden">
           <Brand />
         </div>

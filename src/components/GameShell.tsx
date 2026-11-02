@@ -25,7 +25,7 @@ export function GameShell({
 }) {
   return (
     <div
-      className="min-h-screen bg-slate-950"
+      className="flex h-dvh min-h-0 flex-col overflow-hidden bg-slate-950"
       style={{
         backgroundImage:
           "radial-gradient(#818cf833 1.5px, transparent 1.5px), radial-gradient(#e879f933 1.5px, transparent 1.5px)",
@@ -33,7 +33,7 @@ export function GameShell({
         backgroundPosition: "0 0, 30px 30px",
       }}
     >
-      <header className="sticky top-0 z-40 border-b-2 border-indigo-500/30 bg-slate-900/90 px-4 py-3 shadow-lg backdrop-blur-md">
+      <header className="z-40 shrink-0 border-b-2 border-indigo-500/30 bg-slate-900/90 px-4 py-3 shadow-lg backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div
@@ -87,7 +87,7 @@ export function GameShell({
 
       {nav}
 
-      <main id="contenido" tabIndex={-1} className="mx-auto my-6 w-full max-w-4xl px-4">
+      <main id="contenido" tabIndex={-1} className="mx-auto min-h-0 w-full max-w-4xl flex-1 overflow-y-auto px-4 py-6">
         {children}
       </main>
     </div>

@@ -48,6 +48,10 @@ La CI verifica las tres capas de pruebas, el empaquetado del Worker, las depende
 
 La auditoría bloquea vulnerabilidades altas/críticas en dependencias de ejecución y errores del servicio de auditoría. También guarda informes completos de herramientas de desarrollo en `security-reports/`, incluidos los avisos que todavía no tienen parche compatible.
 
+## Aplicación instalable
+
+En HTTPS, el navegador puede instalar Math Quest desde su menú de instalación; en iPhone o iPad se usa Compartir → Añadir a pantalla de inicio. El manifiesto incluye iconos para Android y Apple. Un service worker muestra `/offline.html` cuando falla una navegación sin conexión. Las clases, perfiles y el progreso necesitan Firebase y no se guardan en caché por motivos de privacidad; para usarlos hay que volver a conectarse. En `next dev` el service worker no se registra para evitar cachés antiguas durante el desarrollo.
+
 ## Funcionamiento y datos
 
 - `/panel`: perfiles, progreso, recompensas y ajustes de la familia.

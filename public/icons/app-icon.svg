@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Math Quest">
+  <defs>
+    <radialGradient id="background" cx="30%" cy="25%" r="90%">
+      <stop stop-color="#4338ca"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </radialGradient>
+    <linearGradient id="letter" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#c4b5fd"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#background)"/>
+  <circle cx="256" cy="256" r="183" fill="#25205d" stroke="#a78bfa" stroke-width="12"/>
+  <circle cx="256" cy="256" r="158" fill="none" stroke="#6366f1" stroke-width="3" opacity=".7"/>
+  <path d="M158 334V195l98 100 98-100v139" fill="none" stroke="url(#letter)" stroke-width="35" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M356 130l10 26 26 10-26 10-10 26-10-26-26-10 26-10z" fill="#facc15"/>
+</svg>
