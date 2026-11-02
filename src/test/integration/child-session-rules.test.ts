@@ -8,6 +8,7 @@ import {
   signOut,
 } from "firebase/auth";
 import * as firestoreFns from "firebase/firestore";
+import { connectFunctionsEmulator, getFunctions, httpsCallable } from "firebase/functions";
 
 /**
  * Verifica contra el emulador REAL de Firestore (reglas incluidas) la
@@ -25,7 +26,7 @@ import * as firestoreFns from "firebase/firestore";
  * de Auth (a diferencia de un proyecto real) no verifica la firma, así que
  * no hace falta una clave privada para probar las reglas con estos claims.
  */
-function fakeChildCustomToken(uid: string, claims: Record<string, string>): string {
+function fakeChildCustomToken(uid: string, claims: Record<string, string | number>): string {
   const base64url = (obj: unknown) => Buffer.from(JSON.stringify(obj)).toString("base64url");
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "none", typ: "JWT" };
@@ -41,12 +42,14 @@ function fakeChildCustomToken(uid: string, claims: Record<string, string>): stri
   return `${base64url(header)}.${base64url(payload)}.`;
 }
 
-async function nuevaFamiliaConDosHijos() {
+async function nuevaFamiliaConDosHijos(sessionVersion = 0, tokenVersion = 0) {
   const app = initializeApp({ apiKey: "demo-api-key", projectId: "demo-numerario" }, `child-session-${crypto.randomUUID()}`);
   const auth = getAuth(app);
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
   const db = firestoreFns.getFirestore(app);
   firestoreFns.connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  const functions = getFunctions(app);
+  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
 
   const { user } = await createUserWithEmailAndPassword(auth, `padre-${crypto.randomUUID()}@ejemplo.test`, "secreto123");
   const parentId = user.uid;
@@ -67,16 +70,34 @@ async function nuevaFamiliaConDosHijos() {
     total: 20,
     schemaVersion: 1,
   });
+  if (sessionVersion) {
+    await httpsCallable(functions, "setChildPin")({ parentId, childId, pin: "1234" });
+  }
   await signOut(auth);
 
   const uid = `child:${parentId}:${childId}`;
-  const token = fakeChildCustomToken(uid, { role: "child", parentId, childId });
+  const token = fakeChildCustomToken(uid, { role: "child", parentId, childId, sessionVersion: tokenVersion });
   await signInWithCustomToken(auth, token);
 
-  return { app, db, parentId, childId, otherChildId };
+  return { app, db, functions, parentId, childId, otherChildId };
 }
 
 describe("firestore.rules — sesión propia del hijo (custom token)", () => {
+  test("una sesión revocada no accede al perfil ni al contenido compartido", async () => {
+    const { app, db, functions, parentId, childId } = await nuevaFamiliaConDosHijos(1, 0);
+    try {
+      await expect(firestoreFns.getDoc(firestoreFns.doc(db, "parents", parentId, "children", childId))).rejects.toThrow();
+      await expect(firestoreFns.getDoc(firestoreFns.doc(db, "parents", parentId, "world", "main"))).rejects.toThrow();
+      await expect(httpsCallable(functions, "initializeStarBalance")({ parentId, childId })).rejects.toThrow();
+    } finally { await deleteApp(app); }
+  });
+
+  test("una sesión emitida tras la revocación conserva acceso", async () => {
+    const { app, db, parentId, childId } = await nuevaFamiliaConDosHijos(1, 1);
+    try {
+      await expect(firestoreFns.getDoc(firestoreFns.doc(db, "parents", parentId, "children", childId))).resolves.toBeDefined();
+    } finally { await deleteApp(app); }
+  });
   test("puede leer y escribir su propio skillsProgress", async () => {
     const { app, db, parentId, childId } = await nuevaFamiliaConDosHijos();
     try {

@@ -1,5 +1,6 @@
 import { FieldValue, getFirestore, type Transaction, type DocumentReference } from "firebase-admin/firestore";
 import { HttpsError, onCall, type CallableRequest } from "firebase-functions/v2/https";
+import { assertChildSessionCurrent } from "./childSession";
 
 const BALANCE_SCHEMA = 1;
 /** Tope diario de estrellas que una sesión infantil puede pedir por su cuenta
@@ -53,6 +54,7 @@ export const initializeStarBalance = onCall(async (request) => {
   const force = request.data?.reconcile === true;
   if (force && !isParent) throw new HttpsError("permission-denied", "Solo la familia puede reconciliar el saldo.");
   return getFirestore().runTransaction(async (tx) => {
+    assertChildSessionCurrent(request, await tx.get(child));
     const { balance, total } = await readBalance(tx, child, force);
     tx.set(balance, { total, schemaVersion: BALANCE_SCHEMA });
     return { total };
@@ -77,6 +79,7 @@ export const updateStarBalance = onCall(async (request) => {
   }
 
   return getFirestore().runTransaction(async (tx) => {
+    assertChildSessionCurrent(request, await tx.get(child));
     // El id se conserva al reintentar la misma operación: jamás cobra dos veces.
     const entry = child.collection("starLedger").doc(operationId);
     const quota = child.collection("starBalance").doc("childDaily");

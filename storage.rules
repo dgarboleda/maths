@@ -22,7 +22,11 @@ service firebase.storage {
     function isAnyChildOf(parentId) {
       return request.auth != null
         && request.auth.token.get('role', null) == 'child'
-        && request.auth.token.get('parentId', null) == parentId;
+        && request.auth.token.get('parentId', null) == parentId
+        && request.auth.token.get('childId', null) is string
+        && firestore.exists(/databases/(default)/documents/parents/$(parentId)/children/$(request.auth.token.childId))
+        && firestore.get(/databases/(default)/documents/parents/$(parentId)/children/$(request.auth.token.childId)).data.get('deleting', false) != true
+        && firestore.get(/databases/(default)/documents/parents/$(parentId)/children/$(request.auth.token.childId)).data.get('sessionVersion', 0) == request.auth.token.get('sessionVersion', 0);
     }
 
     match /parents/{parentId}/level-assets/{assetFile} {

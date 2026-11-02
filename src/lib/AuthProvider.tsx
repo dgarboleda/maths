@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
+    let generation = 0;
     getFirebase()
       .then(({ auth }) => {
         if (cancelled) return;
@@ -54,6 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // token, y este evento es el que se dispara también justo después
         // de `signInWithCustomToken`.
         unsubscribe = onIdTokenChanged(auth, (u) => {
+          const current = ++generation;
+          setLoading(true);
           setUser(u);
           if (!u) {
             setClaims({ role: null });
@@ -62,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           u.getIdTokenResult()
             .then((result) => {
+              if (cancelled || current !== generation) return;
               const role = result.claims.role === "child" ? "child" : "parent";
               setClaims({
                 role,
@@ -70,10 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
             })
             .catch((err) => {
+              if (cancelled || current !== generation) return;
               console.error("No se pudieron leer los claims de la sesión", err);
-              setClaims({ role: "parent", parentId: u.uid });
+              setClaims({ role: null });
             })
-            .finally(() => setLoading(false));
+            .finally(() => { if (!cancelled && current === generation) setLoading(false); });
         });
       })
       .catch((err) => {

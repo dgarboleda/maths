@@ -31,6 +31,10 @@ export default function LoginPage() {
       setError("Para crear la cuenta debes aceptar los términos y la política de privacidad.");
       return;
     }
+    if (mode === "signup" && password.length < 12) {
+      setError("La contraseña debe tener al menos 12 caracteres.");
+      return;
+    }
     setSubmitting(true);
     try {
       const {
@@ -136,7 +140,7 @@ export default function LoginPage() {
                   id="login-pass"
                   type="password"
                   required
-                  minLength={6}
+                  minLength={mode === "signup" ? 12 : 6}
                   autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -144,6 +148,7 @@ export default function LoginPage() {
                   className={`family-input${error ? " has-error" : ""}`}
                 />
               </div>}
+              {mode === "signup" && <p className="text-xs text-indigo-200/80">Usa al menos 12 caracteres; una frase larga es fácil de recordar.</p>}
 
               {mode === "signup" && <ConsentCheckbox checked={consent} onChange={setConsent} />}
 
@@ -255,7 +260,7 @@ function mensajeDeError(err: unknown): string {
   ) {
     return "Correo o contraseña incorrectos.";
   }
-  if (code.includes("weak-password")) return "La contraseña debe tener al menos 6 caracteres.";
+  if (code.includes("weak-password")) return "La contraseña no cumple la política de seguridad. Elige una más larga.";
   if (code.includes("invalid-email")) return "Ese correo no es válido.";
   if (code.includes("too-many-requests")) return "Demasiados intentos. Espera unos minutos y vuelve a probar.";
   // Sin código reconocido: se muestra el código crudo (p. ej.

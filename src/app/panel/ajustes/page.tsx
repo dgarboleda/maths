@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Check, Copy, DatabaseBackup, ImageIcon, KeyRound, ShieldCheck, Smartphone, Trash2, UserRound, Users } from "lucide-react";
 import { useAuth } from "@/lib/AuthProvider";
 import { useFamily, type ChildDoc } from "@/components/family/FamilyProvider";
-import { getFirebase } from "@/lib/firebase";
+import { getFirebase, getFirebaseFunctions } from "@/lib/firebase";
 import { deviceAccessLink, newAccessKey, setChildPin } from "@/lib/pin";
 import { deleteChildProfile } from "@/lib/deleteChild";
 import { deleteFamilyAccount } from "@/lib/legal";
@@ -154,8 +154,7 @@ export default function AjustesPage() {
  * El enlace lleva el `parentId` y una clave aleatoria de la familia
  * (`parents/{parentId}.deviceAccessKey`, solo legible por ella). Sin la clave,
  * `/entrar` no muestra los nombres de los hijos ni admite intentos de PIN.
- * "Generar un enlace nuevo" la rota e invalida los enlaces compartidos antes;
- * las sesiones ya abiertas en otros dispositivos no se cierran.
+ * Generar un enlace nuevo también revoca las sesiones infantiles existentes.
  */
 function ChildDeviceLink({ parentId }: { parentId: string }) {
   const [copied, setCopied] = useState(false);
@@ -198,7 +197,9 @@ function ChildDeviceLink({ parentId }: { parentId: string }) {
     setRotating(true);
     setError(null);
     try {
-      await saveKey(newAccessKey());
+      const { functions, functionsFns: { httpsCallable } } = await getFirebaseFunctions();
+      const result = await httpsCallable<void, { accessKey: string }>(functions, "rotateChildAccess")();
+      setAccessKey(result.data.accessKey);
     } catch (err) {
       console.error("No se pudo generar un enlace nuevo", err);
       setError("No se pudo generar un enlace nuevo. Intenta de nuevo.");
@@ -223,6 +224,7 @@ function ChildDeviceLink({ parentId }: { parentId: string }) {
         Comparte este enlace con el dispositivo de tu hijo para que entre directo a elegir su perfil, sin que abras
         tu sesión ahí. Trátalo como una llave: quien lo tenga verá los nombres de los perfiles.
       </p>
+      <p className="text-sm text-slate-400">Al generar un enlace nuevo, todos los hijos deberán volver a entrar con el nuevo enlace y su PIN.</p>
       {error && (
         <p role="alert" className="text-sm font-semibold text-red-300">
           {error}
@@ -256,7 +258,7 @@ function ChildDeviceLink({ parentId }: { parentId: string }) {
             disabled={rotating}
             className="flex min-h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold text-cyan-300 underline disabled:opacity-60"
           >
-            {rotating ? "Generando…" : "Generar un enlace nuevo"}
+            {rotating ? "Generando…" : "Generar enlace nuevo y revocar accesos infantiles"}
           </button>
         </div>
       )}
@@ -319,6 +321,7 @@ function ResetPinDialog({
         <h2 id={titleId} className="font-display text-lg font-bold text-white">
           Restablecer PIN de {child.name}
         </h2>
+        <p className="mt-2 text-sm text-slate-400">Los dispositivos que ya habían entrado con este perfil necesitarán el PIN nuevo para volver a acceder.</p>
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-sm font-bold text-slate-200">
             PIN nuevo (4 dígitos)

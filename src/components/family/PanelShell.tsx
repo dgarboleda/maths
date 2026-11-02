@@ -26,19 +26,19 @@ const NAV = [
  * Monta `FamilyProvider` una sola vez para toda la sección `/panel/*`.
  */
 export function PanelShell({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
+    if (!loading && (!user || role !== "parent")) router.replace("/login");
+  }, [user, loading, role, router]);
 
   function isActive(item: (typeof NAV)[number]): boolean {
     return item.exact ? pathname === item.href : pathname.startsWith(item.href);
   }
 
-  if (loading || !user) {
+  if (loading || !user || role !== "parent") {
     return (
       <main id="contenido" tabIndex={-1} className="flex h-dvh w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-indigo-200">

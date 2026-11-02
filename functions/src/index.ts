@@ -1,6 +1,7 @@
 import "./runtimeOptions";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { randomBytes } from "node:crypto";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
@@ -106,6 +107,21 @@ export const listChildrenPublic = onCall(async (request) => {
   };
 });
 
+/** Rota el enlace y corta inmediatamente las sesiones infantiles anteriores. */
+export const rotateChildAccess = onCall(async (request) => {
+  const parentId = request.auth?.uid;
+  if (!parentId || !isParentSession(request, parentId)) throw new HttpsError("permission-denied", "Solo la familia puede cambiar el acceso.");
+  const db = getFirestore();
+  const parent = db.collection("parents").doc(parentId);
+  const key = randomBytes(32).toString("base64url");
+  await db.runTransaction(async (tx) => {
+    const children = await tx.get(parent.collection("children"));
+    tx.set(parent, { deviceAccessKey: key }, { merge: true });
+    children.docs.forEach((child) => tx.update(child.ref, { sessionVersion: FieldValue.increment(1) }));
+  });
+  return { accessKey: key };
+});
+
 /** Única vía para fijar o restablecer un PIN: el navegador nunca calcula ni
  * escribe el hash (firestore.rules lo impide), así que el secreto no sale de
  * Functions. Solo la sesión de la familia. */
@@ -129,6 +145,7 @@ export const setChildPin = onCall({ secrets: [PIN_PEPPER] }, async (request) => 
       pinHash: pinHmac(secret, parentId, childId, pin),
       pinHashVersion: PIN_HASH_VERSION,
       pinFailCount: 0,
+      sessionVersion: FieldValue.increment(1),
       pinLockedUntil: FieldValue.delete(),
     });
   });
@@ -168,12 +185,19 @@ export const verifyChildPin = onCall({ secrets: [PIN_PEPPER] }, async (request) 
   // script que dispare varios a la vez) no se salteen el bloqueo por una
   // condición de carrera.
   const outcome = await getFirestore().runTransaction(async (tx) => {
+    if (!fromFamilyDevice) {
+      const parent = await tx.get(getFirestore().collection("parents").doc(parentId));
+      const stored = parent.data()?.deviceAccessKey;
+      if (typeof accessKey !== "string" || typeof stored !== "string" || !safeEqual(stored, accessKey)) {
+        throw new HttpsError("failed-precondition", "Este enlace ya no es válido. Pide uno nuevo a tu familia.");
+      }
+    }
     const snap = await tx.get(ref);
     if (!snap.exists) {
       // Mismo mensaje que un PIN incorrecto: no delatar si el childId existe.
       return "incorrect";
     }
-    const data = snap.data() as { pinHash?: string; pinHashVersion?: number; pinFailCount?: number; pinLockedUntil?: number; deleting?: boolean };
+    const data = snap.data() as { pinHash?: string; pinHashVersion?: number; pinFailCount?: number; pinLockedUntil?: number; sessionVersion?: number; deleting?: boolean };
     if (data.deleting) return "incorrect";
     const now = Date.now();
     if (data.pinLockedUntil && data.pinLockedUntil > now) {
@@ -199,17 +223,16 @@ export const verifyChildPin = onCall({ secrets: [PIN_PEPPER] }, async (request) 
       // Migración perezosa del SHA-256 sin secreto al HMAC.
       ...(upgrade ? { pinHash: pinHmac(secret, parentId, childId, pin), pinHashVersion: PIN_HASH_VERSION } : {}),
     });
-    return "ok";
+    return { version: Number(data.sessionVersion ?? 0) };
   });
 
   if (outcome === "locked") {
     throw new HttpsError("resource-exhausted", "Demasiados intentos. Espera un momento e intenta de nuevo.");
   }
-  if (outcome !== "ok") throw new HttpsError("permission-denied", "PIN incorrecto.");
-  if (fromFamilyDevice) return { ok: true };
+  if (typeof outcome !== "object") throw new HttpsError("permission-denied", "PIN incorrecto.");
 
-  const token = await getAuth().createCustomToken(childAuthUid(parentId, childId), { role: "child", parentId, childId });
-  return { token };
+  const token = await getAuth().createCustomToken(childAuthUid(parentId, childId), { role: "child", parentId, childId, sessionVersion: outcome.version });
+  return { ok: true, token };
 });
 
 export { answerCustomLesson } from "./customLessons/actions";

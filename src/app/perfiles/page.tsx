@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
+import { signOut, signInWithCustomToken } from "firebase/auth";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { confirmChildPin, setChildPin } from "@/lib/pin";
@@ -20,18 +20,18 @@ interface ChildDoc extends ChildProfile {
 }
 
 export default function PerfilesPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const router = useRouter();
   const [children, setChildren] = useState<ChildDoc[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
+    if (!loading && (!user || role !== "parent")) router.replace("/login");
+  }, [user, loading, role, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || role !== "parent") return;
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
     getFirebase()
@@ -58,9 +58,9 @@ export default function PerfilesPage() {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [user]);
+  }, [user, role]);
 
-  if (loading || !user) {
+  if (loading || !user || role !== "parent") {
     return (
       <main id="contenido" tabIndex={-1} className="flex h-dvh w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-indigo-200">
@@ -108,6 +108,7 @@ export default function PerfilesPage() {
           <p className="mt-1 text-sm text-indigo-200/80 md:text-base">
             Elige tu personaje y escribe tu PIN para continuar.
           </p>
+          <p className="mt-1 text-xs text-indigo-200/70">Al entrar se cerrará la sesión familiar. Para volver al panel, una persona adulta deberá iniciar sesión otra vez.</p>
         </header>
 
         {listError && (
@@ -244,11 +245,19 @@ function PinDialog({ child, onClose }: { child: ChildDoc; onClose: () => void })
       console.error("No se pudo comprobar el PIN", err);
       result = "error";
     }
-    setChecking(false);
-    if (result === "ok") {
-      router.push(`/jugar/${child.id}`);
-      return;
+    if (typeof result === "object") {
+      try {
+        const { auth } = await getFirebase();
+        const { user: childUser } = await signInWithCustomToken(auth, result.token);
+        await childUser.getIdTokenResult();
+        router.push(`/jugar/${child.id}`);
+        return;
+      } catch (err) {
+        console.error("No se pudo iniciar la sesión infantil", err);
+        result = "error";
+      }
     }
+    setChecking(false);
     setError(
       result === "locked"
         ? "Demasiados intentos. Espera un momento."

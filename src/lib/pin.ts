@@ -10,14 +10,15 @@ export async function setChildPin(parentId: string, childId: string, pin: string
   await functionsFns.httpsCallable(functions, "setChildPin")({ parentId, childId, pin });
 }
 
-export type PinCheck = "ok" | "incorrect" | "locked";
+export type PinCheck = { token: string } | "incorrect" | "locked";
 
 /** Comprueba el PIN dentro de la sesión de la familia (dispositivo compartido). */
 export async function confirmChildPin(parentId: string, childId: string, pin: string): Promise<PinCheck> {
   const { functions, functionsFns } = await getFirebaseFunctions();
   try {
-    await functionsFns.httpsCallable(functions, "verifyChildPin")({ parentId, childId, pin });
-    return "ok";
+    const result = await functionsFns.httpsCallable<{ parentId: string; childId: string; pin: string }, { token: string }>(functions, "verifyChildPin")({ parentId, childId, pin });
+    if (!result.data.token) throw new Error("El servidor no devolvió una sesión infantil.");
+    return { token: result.data.token };
   } catch (err) {
     const code = (err as { code?: string })?.code;
     if (code === "functions/permission-denied") return "incorrect";
