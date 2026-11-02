@@ -34,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${quicksand.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      className={`${quicksand.variable} ${spaceGrotesk.variable} h-dvh antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <a className="skip-link" href="#contenido">

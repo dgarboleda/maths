@@ -58,7 +58,7 @@ export function LegalConsentGate({ children }: { children: ReactNode }) {
   if (status === "ok") return children;
   if (status === "checking") {
     return (
-      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+      <main id="contenido" tabIndex={-1} className="flex h-dvh w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-indigo-200">Cargando…</p>
       </main>
     );
@@ -89,8 +89,8 @@ export function LegalConsentGate({ children }: { children: ReactNode }) {
   }
 
   return (
-    <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950 p-4">
-      <form onSubmit={handleSubmit} className="family-panel w-full max-w-md space-y-4 rounded-3xl border border-indigo-500/25 p-6">
+    <main id="contenido" tabIndex={-1} className="flex h-dvh w-full overflow-y-auto bg-slate-950 p-4">
+      <form onSubmit={handleSubmit} className="family-panel m-auto w-full max-w-md space-y-4 rounded-3xl border border-indigo-500/25 p-6">
         <h1 className="font-display text-xl font-bold text-white">Antes de continuar</h1>
         <p className="text-sm text-slate-300">
           Actualizamos los términos de uso y la política de privacidad. Para seguir usando la cuenta familiar, léelos y acéptalos.

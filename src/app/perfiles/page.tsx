@@ -62,7 +62,7 @@ export default function PerfilesPage() {
 
   if (loading || !user) {
     return (
-      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+      <main id="contenido" tabIndex={-1} className="flex h-dvh w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-indigo-200">
           Cargando…
         </p>
@@ -71,7 +71,7 @@ export default function PerfilesPage() {
   }
 
   return (
-    <main id="contenido" tabIndex={-1} className="min-h-screen w-full bg-slate-950 px-6 py-10 md:py-14">
+    <main id="contenido" tabIndex={-1} className="h-dvh w-full overflow-y-auto bg-slate-950 px-6 py-10 md:py-14">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 md:max-w-4xl md:gap-10 lg:max-w-5xl xl:max-w-6xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">

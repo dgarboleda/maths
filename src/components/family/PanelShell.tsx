@@ -40,7 +40,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
 
   if (loading || !user) {
     return (
-      <main id="contenido" tabIndex={-1} className="flex min-h-screen w-full items-center justify-center bg-slate-950">
+      <main id="contenido" tabIndex={-1} className="flex h-dvh w-full items-center justify-center bg-slate-950">
         <p role="status" className="text-indigo-200">
           Cargando…
         </p>
@@ -64,8 +64,8 @@ export function PanelShell({ children }: { children: ReactNode }) {
 
   return (
     <FamilyProvider>
-      <div className="min-h-dvh bg-slate-950 lg:flex">
-        <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-indigo-500/20 bg-slate-900/40 p-4 lg:flex">
+      <div className="h-dvh overflow-hidden bg-slate-950 lg:flex">
+        <aside className="hidden h-full w-60 shrink-0 flex-col border-r border-indigo-500/20 bg-slate-900/40 p-4 lg:flex">
           <Link href="/panel" className="mb-6 flex items-center gap-2.5 px-1.5">
             <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white">
               <Sparkles className="size-4.5" aria-hidden="true" />
@@ -117,8 +117,8 @@ export function PanelShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-20 flex items-center justify-between border-b border-indigo-500/20 bg-slate-950/85 px-4 py-2.5 backdrop-blur-md lg:hidden">
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+          <header className="z-20 flex shrink-0 items-center justify-between border-b border-indigo-500/20 bg-slate-950/85 px-4 py-2.5 backdrop-blur-md lg:hidden">
             <Link href="/panel" className="flex items-center gap-2">
               <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white">
                 <Sparkles className="size-4" aria-hidden="true" />
@@ -137,7 +137,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
             </button>
           </header>
 
-          <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-5xl px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8">
+          <main id="contenido" tabIndex={-1} className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-y-auto px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8">
             {children}
           </main>
         </div>
