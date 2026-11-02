@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { dailyQuestions, initialDaily, planDaily } from "../src/lib/learning/domain";
-import { crearHijo, entrarAlEspacio, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
+import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
 
 test("repaso diario: entra desde el inicio, cruza unidades y agenda la próxima vuelta", async ({ page }) => {
   test.setTimeout(180_000);
@@ -39,6 +39,7 @@ test("repaso diario: entra desde el inicio, cruza unidades y agenda la próxima 
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await page.goto(base);
   await expect(page.getByRole("link", { name: /Repaso de hoy hecho/ })).toBeVisible();
+  await entrarComoFamilia(page, correo);
   await page.goto("/panel");
   await expect(page.getByRole("region", { name: "Progreso de Alex", exact: true }).getByText(/^1 día de repaso/)).toBeVisible();
 

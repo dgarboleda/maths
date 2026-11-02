@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { crearHijo, entrarAlEspacio, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
+import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
 import { LESSONS } from "../src/lib/learning/domain";
 
 test("plan, mapa e informe usan las clases actuales sin cargar el sistema anterior", async ({ page }, testInfo) => {
@@ -19,6 +19,7 @@ test("plan, mapa e informe usan las clases actuales sin cargar el sistema anteri
   const childId = await entrarAlEspacio(page, profile.nombre, profile.pin);
   const base = `/jugar/${childId}`;
   await sembrarClasesTerminadas(email, childId, LESSONS.filter((lesson) => lesson.unitId === "numeros").map((lesson) => lesson.id));
+  await entrarComoFamilia(page, email);
   await page.goto("/panel/plan");
   await page.getByRole("checkbox", { name: /^Ángulos y polígonos/ }).check();
   await page.getByRole("button", { name: "Guardar plan", exact: true }).click();

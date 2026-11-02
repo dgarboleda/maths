@@ -3,7 +3,7 @@ import { createServer } from "node:net";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import lighthouse from "lighthouse";
 import budgets from "./budgets.json";
-import { registrarPadre, crearHijo, entrarAlPerfil, idDeHijo, sembrarNivelConTerminal } from "../e2e/utilidades";
+import { registrarPadre, crearHijo, entrarAlPerfil, entrarComoFamilia, idDeHijo, sembrarNivelConTerminal } from "../e2e/utilidades";
 
 /**
  * En CI las cinco auditorías se reparten en dos runners con `PERF_GRUPO`
@@ -93,6 +93,7 @@ test("presupuesto de producción: login, clase, aventura, nivel y editor con ses
       }
       if (toca("editor")) {
         const editorRoute = `/panel/editor/${levelId}`;
+        await entrarComoFamilia(page, email);
         await page.goto(new URL(editorRoute, baseURL).href);
         await expect(page.getByRole("textbox", { name: "Nombre del nivel" })).toBeVisible();
         await audit("editor", editorRoute);

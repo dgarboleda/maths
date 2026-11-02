@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { assertChildSessionCurrent } from "./childSession";
 import { getAdventure, type AdventureDef } from "./learning/adventures";
 import { getLesson } from "./learning/catalog";
 import {
@@ -242,6 +243,7 @@ export const recordLearningAction = onCall(
                 )
               : []),
           ]);
+        assertChildSessionCurrent(request, profile);
         if (!profile.exists || profile.data()?.deleting)
           throw new HttpsError(
             "failed-precondition",

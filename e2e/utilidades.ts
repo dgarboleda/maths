@@ -12,7 +12,7 @@ import { ensureWorld, saveWorld } from "../src/lib/gameworld/persistence/worldRe
 import { DEFAULT_WORLD_RULES } from "../src/lib/gameworld/defaults";
 import type { AvatarCatalog, WorldNode, WorldRules, WorldStory } from "../src/lib/gameworld/schema";
 
-export const CLAVE_PADRE = "secreto123";
+export const CLAVE_PADRE = "secreto-largo-123";
 
 /** Cada prueba usa su propia cuenta: así pueden correr en paralelo. */
 export function correoDePrueba(): string {
@@ -30,6 +30,16 @@ export async function registrarPadre(page: Page): Promise<string> {
   await page.getByRole("button", { name: "Crear cuenta" }).click();
   await expect(page.getByRole("heading", { name: "¿Quién va a jugar?" })).toBeVisible();
   return correo;
+}
+
+/** En un dispositivo compartido, entrar como hijo cierra la sesión familiar:
+ * para volver al panel, la persona adulta inicia sesión otra vez. */
+export async function entrarComoFamilia(page: Page, correo: string): Promise<void> {
+  await page.goto("/login");
+  await page.getByLabel("Correo").fill(correo);
+  await page.getByLabel("Contraseña").fill(CLAVE_PADRE);
+  await page.getByRole("button", { name: "Entrar al panel" }).click();
+  await expect(page.getByRole("heading", { name: "¿Quién va a jugar?" })).toBeVisible();
 }
 
 /** Da de alta un perfil de hijo desde /perfiles. */

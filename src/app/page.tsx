@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, loading, role, childId } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
-    router.replace(user ? "/perfiles" : "/login");
-  }, [user, loading, router]);
+    if (!user) router.replace("/login");
+    else if (role === "child" && childId) router.replace(`/jugar/${encodeURIComponent(childId)}`);
+    else if (role === "parent") router.replace("/perfiles");
+    else router.replace("/login");
+  }, [user, loading, role, childId, router]);
 
   return (
     <main id="contenido"

@@ -31,7 +31,11 @@ service cloud.firestore {
     function isAnyChildOf(parentId) {
       return request.auth != null
         && request.auth.token.get('role', null) == 'child'
-        && request.auth.token.get('parentId', null) == parentId;
+        && request.auth.token.get('parentId', null) == parentId
+        && request.auth.token.get('childId', null) is string
+        && exists(/databases/$(database)/documents/parents/$(parentId)/children/$(request.auth.token.childId))
+        && get(/databases/$(database)/documents/parents/$(parentId)/children/$(request.auth.token.childId)).data.get('deleting', false) != true
+        && get(/databases/$(database)/documents/parents/$(parentId)/children/$(request.auth.token.childId)).data.get('sessionVersion', 0) == request.auth.token.get('sessionVersion', 0);
     }
 
     // Ese hijo puntual (para sus propios datos de progreso).
@@ -83,7 +87,7 @@ service cloud.firestore {
         // El hash del PIN es un HMAC con un secreto de Functions
         // (`setChildPin`): ningún navegador, ni el de la familia, lo escribe.
         allow create: if isParent(parentId)
-          && !request.resource.data.keys().hasAny(['pinHash', 'pinHashVersion']);
+          && !request.resource.data.keys().hasAny(['pinHash', 'pinHashVersion', 'sessionVersion']);
         allow delete: if isParent(parentId);
         // El hijo solo puede tocar su propio documento para su propio
         // progreso de juego — nunca su nombre, PIN, ni nada que el padre
@@ -93,7 +97,7 @@ service cloud.firestore {
         // vista, Fase 30, mapa/page.tsx) y `streakDays`/`lastPlayedDay`
         // (racha de días jugados, Fase 35, src/lib/streak.ts).
         allow update: if (isParent(parentId)
-              && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pinHash', 'pinHashVersion']))
+              && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pinHash', 'pinHashVersion', 'sessionVersion']))
           || (isChild(parentId, childId)
               && request.resource.data.diff(resource.data).affectedKeys()
                   .hasOnly(['placementStatus', 'avatarId', 'seenStoryIds', 'streakDays', 'lastPlayedDay']));

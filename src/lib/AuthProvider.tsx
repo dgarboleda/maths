@@ -46,6 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
+    let generation = 0;
+    let lastUid: string | null = null;
     getFirebase()
       .then(({ auth }) => {
         if (cancelled) return;
@@ -54,6 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // token, y este evento es el que se dispara también justo después
         // de `signInWithCustomToken`.
         unsubscribe = onIdTokenChanged(auth, (u) => {
+          const current = ++generation;
+          // Solo un cambio de identidad (familia → hijo, cierre de sesión)
+          // vuelve a "cargando". La renovación horaria del token también
+          // dispara este evento y no debe desmontar la pantalla en uso.
+          const uid = u?.uid ?? null;
+          const refresh = uid !== null && uid === lastUid;
+          if (!refresh) setLoading(true);
+          lastUid = uid;
           setUser(u);
           if (!u) {
             setClaims({ role: null });
@@ -62,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           u.getIdTokenResult()
             .then((result) => {
+              if (cancelled || current !== generation) return;
               const role = result.claims.role === "child" ? "child" : "parent";
               setClaims({
                 role,
@@ -70,10 +81,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
             })
             .catch((err) => {
+              if (cancelled || current !== generation) return;
               console.error("No se pudieron leer los claims de la sesión", err);
-              setClaims({ role: "parent", parentId: u.uid });
+              // En una renovación se conservan los claims ya validados; en
+              // una sesión nueva sin claims legibles no se asume ningún rol.
+              if (!refresh) setClaims({ role: null });
             })
-            .finally(() => setLoading(false));
+            .finally(() => { if (!cancelled && current === generation) setLoading(false); });
         });
       })
       .catch((err) => {
@@ -95,6 +109,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+/** Destino de una sesión que no es de la familia: el juego del hijo o, sin
+ * sesión infantil válida, el login. */
+export function childHome({ user, role, childId }: Pick<AuthContextValue, "user" | "role" | "childId">): string {
+  return user && role === "child" && childId ? `/jugar/${encodeURIComponent(childId)}` : "/login";
 }
 
 export function useAuth() {

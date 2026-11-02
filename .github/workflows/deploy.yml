@@ -1,0 +1,124 @@
+name: Despliegue a producción
+
+# Ejecución manual (también desde la app móvil de GitHub: Actions →
+# «Despliegue a producción» → Run workflow). Reproduce `npm run deploy`
+# (scripts/deploy.mjs) con credenciales guardadas en el entorno
+# `production` del repositorio, para no depender de un ordenador.
+#
+# `parte` permite un despliegue escalonado y compatible hacia atrás:
+#   1. firebase  → Functions, reglas e índices de Firestore y reglas de Storage.
+#   2. frontend  → Worker de Cloudflare (solo después de que 1 funcione).
+#   todo         → ambos, en ese orden, como `npm run deploy`.
+# El Worker nuevo necesita las Functions nuevas; al revés sí es compatible.
+#
+# Requisitos en Settings → Environments → production:
+#   Secrets:   FIREBASE_SERVICE_ACCOUNT (JSON de la cuenta de servicio),
+#              CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+#   Variables: FIREBASE_PROJECT_ID, MATHS_APP_URL y las seis
+#              NEXT_PUBLIC_FIREBASE_* (API_KEY, AUTH_DOMAIN, PROJECT_ID,
+#              STORAGE_BUCKET, MESSAGING_SENDER_ID, APP_ID). Son públicas:
+#              terminan en el JavaScript del navegador.
+on:
+  workflow_dispatch:
+    inputs:
+      parte:
+        description: "Qué desplegar"
+        type: choice
+        options: [firebase, frontend, todo]
+        default: firebase
+
+concurrency:
+  group: despliegue-produccion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  desplegar:
+    name: Desplegar (${{ inputs.parte }}) desde ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      MATHS_APP_URL: ${{ vars.MATHS_APP_URL }}
+      MATHS_RELEASE: ${{ github.sha }}
+      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
+      NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_KEY: ${{ vars.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Comprobar configuración
+        run: |
+          missing=0
+          for name in FIREBASE_PROJECT_ID MATHS_APP_URL NEXT_PUBLIC_FIREBASE_API_KEY NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
+                      NEXT_PUBLIC_FIREBASE_PROJECT_ID NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET \
+                      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID NEXT_PUBLIC_FIREBASE_APP_ID; do
+            if [ -z "${!name}" ]; then echo "::error::Falta la variable $name en el entorno production"; missing=1; fi
+          done
+          if [ "$NEXT_PUBLIC_FIREBASE_PROJECT_ID" != "$FIREBASE_PROJECT_ID" ]; then
+            echo "::error::NEXT_PUBLIC_FIREBASE_PROJECT_ID no coincide con FIREBASE_PROJECT_ID"; missing=1
+          fi
+          case "$FIREBASE_PROJECT_ID" in demo-*) echo "::error::Proyecto demo-: no es producción"; missing=1;; esac
+          exit $missing
+
+      - run: npm ci
+      - run: npm ci --prefix functions
+
+      # Mismas comprobaciones que scripts/deploy.mjs, antes de tocar nada externo.
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run audit:security
+      - run: npm run functions:build
+      - name: Compilar el frontend
+        if: inputs.parte != 'firebase'
+        run: npm run build
+
+      - name: Credenciales de Google Cloud
+        if: inputs.parte != 'frontend'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Desplegar Functions, reglas e índices
+        if: inputs.parte != 'frontend'
+        run: >-
+          node node_modules/firebase-tools/lib/bin/firebase.js deploy
+          --only functions,firestore:rules,firestore:indexes,storage
+          --project "$FIREBASE_PROJECT_ID" --non-interactive --force
+
+      - name: Comprobar Functions
+        if: inputs.parte != 'frontend'
+        run: |
+          region="${FIREBASE_FUNCTIONS_REGION:-us-central1}"
+          status=$(curl -fsS "https://${region}-${FIREBASE_PROJECT_ID}.cloudfunctions.net/deploymentStatus")
+          echo "$status"
+          echo "$status" | grep -q "\"release\":\"$MATHS_RELEASE\"" || { echo "::error::Functions no anuncia $MATHS_RELEASE"; exit 1; }
+
+      - name: Desplegar el Worker de Cloudflare
+        if: inputs.parte != 'firebase'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node node_modules/@opennextjs/cloudflare/dist/cli/index.js deploy
+
+      - name: Verificar frontend y Functions
+        if: inputs.parte != 'firebase'
+        run: npm run verify:deployment
+
+      - name: Comprobar el manifiesto de la PWA
+        if: inputs.parte != 'firebase'
+        run: |
+          code=$(curl -sS -o manifest.json -w '%{http_code}' "$MATHS_APP_URL/manifest.webmanifest")
+          echo "HTTP $code"; cat manifest.json
+          test "$code" = 200

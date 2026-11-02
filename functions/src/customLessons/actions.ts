@@ -1,6 +1,7 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { validateCustomLesson } from "./schema";
+import { assertChildSessionCurrent } from "../childSession";
 
 /** La respuesta y el progreso se comprueban usando la versión publicada del servidor. */
 export const answerCustomLesson = onCall(async (request) => {
@@ -16,6 +17,7 @@ export const answerCustomLesson = onCall(async (request) => {
   const progress = child.collection("customLessonProgress").doc(lessonId);
   return db.runTransaction(async (tx) => {
     const [profile, snapshot, previous] = await Promise.all([tx.get(child), tx.get(lessonRef), tx.get(progress)]);
+    assertChildSessionCurrent(request, profile);
     const lesson: unknown = snapshot.data();
     if (!profile.exists || profile.data()?.deleting || !validateCustomLesson(lesson) || !lesson.published) throw new HttpsError("not-found", "Clase no disponible.");
     if (lesson.updatedAt !== lessonVersion) throw new HttpsError("failed-precondition", "La clase cambió. Vuelve a cargarla.");
