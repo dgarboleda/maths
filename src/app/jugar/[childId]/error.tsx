@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { ProfilesLink } from "@/components/jugar/ProfilesLink";
 import { useParams } from "next/navigation";
 import { reportError } from "@/lib/reportError";
 
@@ -40,9 +41,9 @@ export default function JugarError({ error, retry }: { error: Error & { digest?:
               Volver al mapa
             </Link>
           )}
-          <Link href="/perfiles" className="mt-1 text-xs text-slate-400 underline underline-offset-2">
+          <ProfilesLink className="mt-1 text-xs text-slate-400 underline underline-offset-2" childFallback="Volver al inicio">
             Volver a perfiles
-          </Link>
+          </ProfilesLink>
         </div>
       </div>
     </main>

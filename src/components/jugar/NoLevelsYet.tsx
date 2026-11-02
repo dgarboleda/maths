@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ProfilesLink } from "@/components/jugar/ProfilesLink";
 import { useRouter } from "next/navigation";
 import { Sparkles, Wand2 } from "lucide-react";
 import { getFirebase } from "@/lib/firebase";
@@ -70,9 +71,9 @@ export function NoLevelsYet({ childId, childName, parentId }: { childId: string;
             <Sparkles className="size-4" aria-hidden="true" />
             {seeding ? "Cargando…" : "Cargar el mundo de ejemplo"}
           </button>
-          <Link href="/perfiles" className="mt-1 text-xs text-slate-400 underline underline-offset-2">
+          <ProfilesLink className="mt-1 text-xs text-slate-400 underline underline-offset-2">
             Volver a perfiles
-          </Link>
+          </ProfilesLink>
         </div>
       </div>
     </main>

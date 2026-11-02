@@ -25,7 +25,7 @@ export function StudyPlanEditor({ parentId, child }: { parentId: string; child: 
   }
   return <div className="space-y-5">
     <p className="max-w-3xl text-sm leading-relaxed text-slate-300">Elige las clases prioritarias para {child.name}. El recorrido recomienda primero sus bases. Todas las clases siguen disponibles; esta elección no cambia el progreso ni concede logros.</p>
-    <form onSubmit={(event) => { event.preventDefault(); void save(); }} className="space-y-5">
+    <form onSubmit={(event) => { event.preventDefault(); void save(); }} className="space-y-5 pb-20 lg:pb-0">
       <div className="flex flex-wrap items-center gap-3">
         <button disabled={saving} type="button" className="min-h-11 rounded-xl border border-slate-600 px-4 text-sm text-slate-200" onClick={() => { setSelected([]); setMessage(""); }}>Seguir el programa completo</button>
         <Link href={`/jugar/${child.id}/mapa`} className="inline-flex min-h-11 items-center px-2 text-sm text-cyan-200 underline">Ver mapa de aprendizaje</Link>
@@ -43,7 +43,9 @@ export function StudyPlanEditor({ parentId, child }: { parentId: string; child: 
           </div>
         </fieldset>)}
       </fieldset>
-      <div className="sticky bottom-24 rounded-2xl border border-slate-600 bg-slate-950 p-3 shadow-xl lg:bottom-0">
+      {/* En móvil, fija justo encima del menú inferior (min-h-14): `sticky` dentro de
+          un <main> con padding inferior quedaba flotando a media pantalla. */}
+      <div className="fixed inset-x-4 bottom-16 z-10 rounded-2xl border border-slate-600 bg-slate-950 p-3 shadow-xl lg:sticky lg:inset-x-auto lg:bottom-0">
         <div className="flex items-center justify-between gap-3">
           <p className="min-w-0 text-xs text-slate-300">{selected.length === 0 ? "Programa completo" : `${selected.length} ${selected.length === 1 ? "clase prioritaria" : "clases prioritarias"}`}</p>
           <button disabled={saving} type="submit" className="min-h-11 shrink-0 rounded-xl bg-cyan-300 px-4 text-sm font-bold text-slate-950 disabled:opacity-50">{saving ? "Guardando…" : "Guardar plan"}</button>

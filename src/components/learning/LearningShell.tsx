@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ProfilesLink } from "@/components/jugar/ProfilesLink";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import {
@@ -69,13 +70,10 @@ export function LearningShell({
                 Tu próxima idea
               </span>
             </Link>
-            <Link
-              href="/perfiles"
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
-            >
+            <ProfilesLink className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white">
               <ArrowLeft size={16} aria-hidden="true" />
               Perfiles
-            </Link>
+            </ProfilesLink>
           </div>
           <nav aria-label="Tu espacio" className={styles.navigation}>
             {items.map(({ href, text, icon: Icon }) => {
@@ -142,9 +140,9 @@ export function LearningLoadError({ message }: { message: string }) {
         >
           Volver a cargar
         </button>
-        <Link href="/perfiles" className="ml-4 underline">
+        <ProfilesLink className="ml-4 underline" childFallback="Volver al inicio">
           Volver a perfiles
-        </Link>
+        </ProfilesLink>
       </div>
     </main>
   );

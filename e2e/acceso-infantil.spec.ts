@@ -23,6 +23,8 @@ test("un navegador sin la sesión del padre entra con el callable real y su PIN"
     await pin.press("Enter");
     await expect(child).toHaveURL(/\/jugar\/[^/]+$/);
     await expect(child.getByRole("heading", { name: "Hola, Sofía. ¿Qué vamos a descubrir?" })).toBeVisible();
+    // Sin sesión familiar no hay perfiles que elegir: el enlace no se ofrece.
+    await expect(child.getByRole("link", { name: "Perfiles" })).toHaveCount(0);
     await child.getByRole("link", { name: "Comenzar mi primera clase" }).click();
     await child.getByRole("button", { name: "Ir a la clase", exact: true }).click();
     await expect(child.getByRole("heading", { name: "El cero separa dos sentidos" })).toBeVisible();
