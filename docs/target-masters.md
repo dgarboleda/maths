@@ -1,24 +1,19 @@
 # Target Masters: guía de trabajo
 
-Target Masters forma parte de Practicar en Math Quest. El jugador combina todas las fichas para alcanzar un objetivo y abrir un portal. La versión inicial está pensada para estudiantes de 11 años en adelante y funciona con botones táctiles o teclado.
+Target Masters forma parte de Practicar en Math Quest. El jugador combina todas las fichas para alcanzar un objetivo y abrir un portal. El juego está pensado para estudiantes de 11 años en adelante y funciona con botones táctiles o teclado.
 
 ## Experiencia disponible
 
-- Aventura con 100 desafíos deterministas agrupados en cinco mundos; se desbloquea el siguiente al resolver cada nivel.
-- Práctica libre e infinito con desafíos generados, y un reto diario compartido que cambia según la fecha de Lima.
-- Suma, resta, multiplicación y división exacta; se admiten resultados enteros no negativos. El primer mundo limita las operaciones disponibles.
-- Pistas que calculan una ruta desde el tablero actual, deshacer y reiniciar. Se aceptan todas las soluciones que usen todas las fichas y cumplan las reglas.
-- Hasta tres estrellas según las pistas usadas. Las estrellas y el progreso se guardan por perfil en el navegador, independientemente del dominio académico.
+- Aventura con 100 desafíos deterministas agrupados en cinco mundos; cada vigésimo nivel enfrenta al guardián de las gemelas. Se desbloquea el siguiente nivel al resolver el anterior.
+- Las fichas gemelas deben combinarse entre sí; las congeladas se liberan tras otro movimiento; las cambiantes permiten escoger entre dos valores.
+- Práctica configurable por operaciones y dificultad; infinito, reto diario común según la fecha de Lima y contrarreloj opcional de 90 segundos.
+- Suma, resta, multiplicación y división exacta; se admiten resultados enteros no negativos. Se aceptan todas las soluciones que usen las fichas y cumplan las reglas.
+- Pistas calculadas desde el tablero actual, deshacer, reiniciar y laboratorio que busca otra expresión válida con los valores iniciales.
+- Hasta tres estrellas: una por terminar, una por hacerlo sin pistas y una por no deshacer ni hacer movimientos inválidos. Las insignias diarias son cosméticas.
+- El dispositivo registra por perfil las estrellas, los niveles desbloqueados, inicios de intentos, operaciones, pistas, desafíos completados e insignias. Esta información no acredita dominio de una competencia.
 
-## Criterios de calidad
+## Pendiente de validación y sincronización
 
-Cada desafío debe tener una solución verificable, controles accesibles y retroalimentación comprensible. El juego debe poder completarse sin cronómetro y funcionar tanto en pantallas pequeñas como en escritorio. Las puntuaciones del juego no acreditan dominio de una competencia.
+El progreso continúa en el navegador; no se sincroniza entre dispositivos. No se escribe en `learningProgress`, pues esa colección es evidencia académica validada por Functions. Para sincronizar sin perder progreso de dispositivos simultáneos se requiere diseñar un recurso de juego aislado por familia y perfil, una estrategia de combinación de eventos idempotentes, reglas de acceso, migración del historial local y pruebas con emuladores. No se debe considerar al navegador una fuente de dominio académico.
 
-## Pendiente del diseño completo
-
-1. Incorporar fichas especiales y reglas que diversifiquen los niveles.
-2. Diseñar enfrentamientos con guardianes, con mecánicas propias y validación educativa.
-3. Añadir condiciones de estrellas por logro y eficiencia, y un laboratorio que compare soluciones alternativas.
-4. Implementar un modo contrarreloj opcional y selección de operaciones y dificultad en práctica libre.
-5. Ampliar el registro de intentos, pistas y operaciones practicadas, decidir cómo sincronizarlo con los perfiles y probar la experiencia completa con estudiantes.
-6. Mejorar la variedad de los desafíos, la ambientación visual y las recompensas cosméticas del reto diario.
+Se necesitan sesiones con estudiantes y revisión pedagógica para evaluar comprensión de reglas, dificultad y diversión. También conviene ampliar los desafíos y la variedad narrativa de guardianes antes de considerar completo el contenido previsto.
