@@ -4,11 +4,11 @@ Target Masters forma parte de Practicar en Math Quest. El jugador combina todas 
 
 ## Experiencia disponible
 
-- Aventura con 100 desafíos deterministas agrupados en cinco mundos; cada vigésimo nivel enfrenta al guardián de las gemelas. Se desbloquea el siguiente nivel al resolver el anterior.
+- Aventura con 100 desafíos deterministas agrupados en cinco mundos; cada vigésimo nivel enfrenta al guardián de las gemelas. Se desbloquea el siguiente nivel al resolver el anterior. Los diez primeros presentan cuatro fichas y un acertijo para descubrir el objetivo; los veinte primeros requieren multiplicar o dividir, ya que no pueden resolverse solo sumando y restando. Revelar el objetivo consume una pista.
 - Las fichas gemelas deben combinarse entre sí; las congeladas se liberan tras otro movimiento; las cambiantes permiten escoger entre dos valores.
 - Al entrar se elige un modo; dentro del tablero, «Cambiar modo» abre el selector y permite volver a la partida sin perderla. El contrarreloj se pausa mientras el selector está abierto.
 - Práctica configurable por operaciones y dificultad; infinito, reto diario común según la fecha de Lima y contrarreloj opcional de 90 segundos.
-- Suma, resta, multiplicación y división exacta; se admiten resultados enteros no negativos. Se aceptan todas las soluciones que usen las fichas y cumplan las reglas.
+- Suma, resta, multiplicación y división exacta disponibles desde el inicio; se admiten resultados enteros no negativos. Se aceptan todas las soluciones que usen las fichas y cumplan las reglas.
 - Pistas calculadas desde el tablero actual, deshacer, reiniciar y laboratorio que busca otra expresión válida con los valores iniciales.
 - Hasta tres estrellas: una por terminar, una por hacerlo sin pistas y una por no deshacer ni hacer movimientos inválidos. Las insignias diarias son cosméticas.
 - El juego registra por perfil las estrellas, los niveles desbloqueados, inicios de intentos, operaciones, pistas, desafíos completados e insignias. Esta información no acredita dominio de una competencia.
