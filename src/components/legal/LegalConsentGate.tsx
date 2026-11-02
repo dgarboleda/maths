@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { signOut } from "firebase/auth";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
-import { acceptLegalTerms, hasCurrentConsent } from "@/lib/legal";
+import { acceptLegalTerms, acceptLegalTermsErrorMessage, hasCurrentConsent } from "@/lib/legal";
 import { ConsentCheckbox } from "./ConsentCheckbox";
 
 type Status = "checking" | "ok" | "needed";
@@ -21,7 +21,6 @@ const BACKEND_BEHIND = new Set([
   "functions/unavailable",
   "functions/unimplemented",
   "functions/deadline-exceeded",
-  "functions/failed-precondition",
 ]);
 
 export function backendBehind(err: unknown): boolean {
@@ -83,7 +82,7 @@ export function LegalConsentGate({ children }: { children: ReactNode }) {
         setChecked({ uid, ok: true });
         return;
       }
-      setError("No se pudo guardar tu aceptación. Revisa la conexión e inténtalo de nuevo.");
+      setError(acceptLegalTermsErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

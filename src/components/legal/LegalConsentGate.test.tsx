@@ -63,14 +63,14 @@ describe("LegalConsentGate", () => {
     accept.mockRejectedValue(Object.assign(new Error("denied"), { code: "functions/permission-denied" }));
     renderGate();
     await acceptTerms();
-    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar tu aceptación");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Tu sesión no es válida para aceptar");
     expect(screen.queryByText("Panel familiar")).not.toBeInTheDocument();
   });
 
   test("clasifica los errores de servidor desactualizado", () => {
-    for (const code of ["functions/not-found", "functions/internal", "functions/unavailable", "functions/failed-precondition"])
+    for (const code of ["functions/not-found", "functions/internal", "functions/unavailable"])
       expect(backendBehind({ code })).toBe(true);
-    for (const code of ["functions/permission-denied", "functions/unauthenticated", undefined])
+    for (const code of ["functions/permission-denied", "functions/unauthenticated", "functions/failed-precondition", undefined])
       expect(backendBehind({ code })).toBe(false);
   });
 });
