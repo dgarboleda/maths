@@ -153,6 +153,15 @@ export function LearningHome({
     >
       <div className="space-y-8 sm:space-y-10">
         {view === "learn" && <CustomLessonList childId={childId} />}
+        {view === "practice" && (
+          <Link href={`/jugar/${childId}/practicar/target-masters`} className="block rounded-3xl border border-violet-300/30 bg-gradient-to-r from-violet-950 to-slate-900 p-6 transition hover:border-violet-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-300">
+            <span className="text-xs font-bold uppercase tracking-widest text-violet-200">Minijuego · números y estrategia</span>
+            <h2 className="mt-2 text-2xl font-bold text-white">✨ Target Masters</h2>
+            <p className="mt-2 text-sm text-slate-300">Combina fichas, alcanza el objetivo y abre portales mágicos.</p>
+            <span className="mt-4 inline-block font-bold text-cyan-200">Jugar ahora →</span>
+          </Link>
+        )}
+
         {view === "home" ? (
           <section
             aria-label="Tu siguiente paso"

@@ -110,6 +110,18 @@ describe("firestore.rules — sesión propia del hijo (custom token)", () => {
     }
   });
 
+  test("sincroniza registros del juego solo en su propio perfil", async () => {
+    const { app, db, parentId, childId, otherChildId } = await nuevaFamiliaConDosHijos();
+    try {
+      const own = firestoreFns.doc(db, "parents", parentId, "children", childId, "records", "target-masters-v1-dispositivo");
+      const other = firestoreFns.doc(db, "parents", parentId, "children", otherChildId, "records", "target-masters-v1-dispositivo");
+      await firestoreFns.setDoc(own, { unlocked: 12, stars: { "1": 3 }, daily: "" });
+      expect((await firestoreFns.getDoc(own)).data()?.unlocked).toBe(12);
+      await expect(firestoreFns.getDoc(other)).rejects.toThrow();
+      await expect(firestoreFns.setDoc(other, { unlocked: 99 })).rejects.toThrow();
+    } finally { await deleteApp(app); }
+  });
+
   test("puede crear intentos, pero no escribir directamente estrellas ni saldo", async () => {
     const { app, db, parentId, childId } = await nuevaFamiliaConDosHijos();
     try {
