@@ -2,25 +2,63 @@ export type Operation = '+' | '−' | '×' | '÷';
 export const OPERATIONS: Operation[] = ['+', '−', '×', '÷'];
 export type Tile = { id: string; value: number; expression: string };
 export type Step = { left: number; op: Operation; right: number; result: number };
-export type Puzzle = { target: number; numbers: number[]; operations: Operation[]; solution: Step[] };
+export type Puzzle = { target: number; numbers: number[]; operations: Operation[]; solution: Step[]; clue?: string };
 
 export function calculate(a: number, op: Operation, b: number): number | null {
   const n = op === '+' ? a + b : op === '−' ? a - b : op === '×' ? a * b : b === 0 ? NaN : a / b;
   return Number.isSafeInteger(n) && n >= 0 && n <= 9999 ? n : null;
 }
 
-/** Deterministic puzzles are built backwards from a valid sequence. */
+/** The opening puzzles require multiplication or division, even with all four operations available. */
+const OPENING: { numbers: [number, number, number, number]; clue: string }[] = [
+  { numbers: [3, 5, 4, 6], clue: 'Soy el número primo entre 12 y 14. ¿Quién soy?' },
+  { numbers: [7, 3, 2, 11], clue: 'Soy una docena. ¿Quién soy?' },
+  { numbers: [3, 7, 10, 11], clue: 'Soy el doble de diez. ¿Quién soy?' },
+  { numbers: [2, 10, 9, 7], clue: 'Mi mitad es once. ¿Quién soy?' },
+  { numbers: [5, 4, 9, 6], clue: 'Soy el número primo entre 22 y 24. ¿Quién soy?' },
+  { numbers: [11, 2, 10, 4], clue: 'Tengo cuatro grupos de siete. ¿Quién soy?' },
+  { numbers: [4, 9, 2, 8], clue: 'Tengo cinco grupos de seis. ¿Quién soy?' },
+  { numbers: [6, 5, 9, 3], clue: 'Soy seis multiplicado por sí mismo. ¿Quién soy?' },
+  { numbers: [5, 9, 2, 10], clue: 'Soy el número primo entre 36 y 38. ¿Quién soy?' },
+  { numbers: [9, 4, 10, 6], clue: 'Soy el doble de veinte. ¿Quién soy?' },
+];
+
+/** Build each challenge from valid moves; the first pair also respects special-tile rules. */
 export function makePuzzle(seed: number): Puzzle {
-  const n = Math.max(0, Math.floor(seed));
-  const a = 2 + n % 8, b = 2 + Math.floor(n / 8) % 8, c = 2 + Math.floor(n / 64) % 8;
-  const group = Math.floor(n / 20) % 5;
-  const first: Operation = group === 0 ? '+' : group === 1 ? '×' : group === 2 ? '×' : group === 3 ? '+' : '×';
-  const second: Operation = group === 0 ? '+' : group === 1 ? '+' : group === 2 ? '÷' : group === 3 ? '−' : '−';
-  const intermediate = calculate(a, first, b)!;
-  const right = second === '÷' ? b : second === '−' ? Math.min(c, intermediate) : c;
-  const target = calculate(intermediate, second, right)!;
-  return { target, numbers: [a, b, right], operations: group === 0 ? ['+', '−'] : OPERATIONS,
-    solution: [{ left: a, op: first, right: b, result: intermediate }, { left: intermediate, op: second, right, result: target }] };
+  const n = Number.isFinite(seed) ? Math.max(0, Math.floor(seed)) : 0;
+  if (n < OPENING.length) {
+    const { numbers, clue } = OPENING[n];
+    const [a, b, c, d] = numbers;
+    const product = a * b, subtotal = product + c, target = subtotal - d;
+    return { numbers: [...numbers], target, operations: [...OPERATIONS], clue, solution: [
+      { left: a, op: '×', right: b, result: product },
+      { left: product, op: '+', right: c, result: subtotal },
+      { left: subtotal, op: '−', right: d, result: target },
+    ] };
+  }
+  const a = 2 + n % 8, b = 2 + Math.floor(n / 8) % 8;
+  const c = 2 + Math.floor(n / 64) % 8, d = 2 + Math.floor(n / 173) % 8;
+  let numbers: number[], first: Step, second: Step, third: Step;
+  if (n % 3 === 0) {
+    const bonus = d === c ? (d % 8) + 2 : d;
+    numbers = [a * b, b, c, bonus];
+    first = { left: a * b, op: '÷', right: b, result: a };
+    second = { left: a, op: '+', right: c, result: a + c };
+    third = { left: a + c, op: '×', right: bonus, result: (a + c) * bonus };
+  } else {
+    const useSumFirst = n % 3 === 1;
+    const firstResult = useSumFirst ? a + b : a * b;
+    const secondResult = useSumFirst ? firstResult * c : firstResult + c;
+    let subtrahend = Math.min(d, secondResult - 1);
+    if (subtrahend === c) subtrahend = subtrahend > 2 ? subtrahend - 1 : 3;
+    numbers = [a, b, c, subtrahend];
+    first = { left: a, op: useSumFirst ? '+' : '×', right: b, result: firstResult };
+    second = { left: firstResult, op: useSumFirst ? '×' : '+', right: c, result: secondResult };
+    third = { left: secondResult, op: '−', right: subtrahend, result: secondResult - subtrahend };
+  }
+  const target = third.result;
+  const clue = n % 3 === 0 && target % 2 === 0 ? `Soy el doble de ${target / 2}. ¿Quién soy?` : undefined;
+  return { numbers, target, operations: [...OPERATIONS], solution: [first, second, third], clue };
 }
 
 /** Find a valid next move from the current board; all tiles must be used. */

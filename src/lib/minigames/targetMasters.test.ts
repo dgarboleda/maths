@@ -63,3 +63,39 @@ it('crea prácticas sin fichas neutras que regalen una operación', async () => 
     expect(makePracticePuzzle(seed, [op], 1).numbers.every(value => value > 1)).toBe(true);
   }
 });
+
+describe('acertijos iniciales', () => {
+  it('propone cuatro fichas y exige multiplicar o dividir en los diez primeros niveles', async () => {
+    const { OPERATIONS } = await import('./targetMasters');
+    const targets = [13, 12, 20, 22, 23, 28, 30, 36, 37, 40];
+    for (let seed = 0; seed < 10; seed++) {
+      const puzzle = makePuzzle(seed);
+      expect(puzzle.clue).toBeTruthy();
+      expect(puzzle.target).toBe(targets[seed]);
+      expect(puzzle.numbers).toHaveLength(4);
+      expect(puzzle.operations).toEqual(OPERATIONS);
+      expect(solve(puzzle.numbers, puzzle.target, ['+', '−'])).toBeNull();
+      expect(solve(puzzle.numbers, puzzle.target, puzzle.operations)).not.toBeNull();
+    }
+  });
+  it('evita que los primeros veinte niveles se resuelvan solo con sumas y restas', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const puzzle = makePuzzle(seed);
+      expect(solve(puzzle.numbers, puzzle.target, ['+', '−']), `nivel ${seed + 1}`).toBeNull();
+    }
+  });
+  it('genera soluciones coherentes para semillas de aventura y retos diarios', () => {
+    for (const seed of [...Array.from({ length: 1000 }, (_, i) => i), 20261102, 20261231]) {
+      const p = makePuzzle(seed);
+      expect(p.numbers).toHaveLength(4);
+      const values = [...p.numbers];
+      for (const step of p.solution) {
+        const left = values.indexOf(step.left); expect(left).toBeGreaterThanOrEqual(0); values.splice(left, 1);
+        const right = values.indexOf(step.right); expect(right).toBeGreaterThanOrEqual(0); values.splice(right, 1);
+        expect(calculate(step.left, step.op, step.right)).toBe(step.result);
+        values.push(step.result);
+      }
+      expect(values).toEqual([p.target]);
+    }
+  });
+});
