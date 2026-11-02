@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ProfilesLink } from "@/components/jugar/ProfilesLink";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
@@ -120,9 +121,9 @@ export default function JugarNivelPage() {
     return (
       <main id="contenido" tabIndex={-1} className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-slate-950 px-6 text-center">
         <p className="text-slate-400">No encontré ese perfil.</p>
-        <Link href="/perfiles" className="text-sm text-slate-400 underline underline-offset-2">
+        <ProfilesLink className="text-sm text-slate-400 underline underline-offset-2" childFallback="Volver al inicio">
           Volver a perfiles
-        </Link>
+        </ProfilesLink>
       </main>
     );
   }

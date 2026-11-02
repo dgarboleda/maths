@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ProfilesLink } from "@/components/jugar/ProfilesLink";
 import { getBadge } from "@/lib/badges";
 import { moduleHref, type ModuleDef } from "@/lib/curriculum";
 import { Avatar } from "./Avatar";
@@ -167,12 +168,9 @@ export function WorldTopBar({
           >
             <span aria-hidden="true">{soundOn ? "🔊" : "🔇"}</span>
           </button>
-          <Link
-            href="/perfiles"
-            className="rounded-full border border-white/15 bg-slate-900/70 px-3 py-2 text-xs font-bold text-slate-200 hover:border-white/40"
-          >
+          <ProfilesLink className="rounded-full border border-white/15 bg-slate-900/70 px-3 py-2 text-xs font-bold text-slate-200 hover:border-white/40">
             Cambiar de perfil
-          </Link>
+          </ProfilesLink>
         </div>
       </div>
     </header>
