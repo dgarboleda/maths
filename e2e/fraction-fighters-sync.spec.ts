@@ -30,3 +30,17 @@ test('conserva la victoria y las estrellas al entrar desde otro dispositivo', as
     await expect(other.getByText('Progreso sincronizado con tu perfil.', { exact: false })).toBeVisible({ timeout: 30000 });
   } finally { await second.close(); }
 });
+
+test('respeta movimiento reducido en los personajes durante el combate', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/jugar/perfil-de-prueba/practicar/fraction-fighters');
+  await page.getByRole('button', { name: /El primer claro/ }).click();
+  await page.getByRole('button', { name: /Escudo ·/ }).click();
+  await page.getByRole('button', { name: /Usar poder/ }).click();
+  const hero = page.getByTestId('guardiana-animada');
+  const creature = page.getByTestId('criatura-animada');
+  await expect(hero).toHaveAttribute('data-motion', 'defensa');
+  await expect(creature).toHaveAttribute('data-motion', 'ataque');
+  await expect(hero).toHaveCSS('animation-name', 'none');
+  await expect(creature).toHaveCSS('animation-name', 'none');
+});
