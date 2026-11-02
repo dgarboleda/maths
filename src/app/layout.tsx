@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { AuthProvider } from "@/lib/AuthProvider";
+import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
 
 // Archivos incluidos en el repositorio: el arranque y la compilación no
@@ -28,7 +29,12 @@ export const metadata: Metadata = {
     template: "%s · Math Quest",
   },
   description: "Clases de matemáticas para adolescentes: comprende las ideas, practica con ayuda y aplica lo aprendido en una aventura.",
+  applicationName: "Math Quest",
+  appleWebApp: { capable: true, title: "Math Quest", statusBarStyle: "black-translucent" },
+  icons: { apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }] },
 };
+
+export const viewport: Viewport = { themeColor: "#0f172a" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -40,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <a className="skip-link" href="#contenido">
           Saltar al contenido
         </a>
+        <PwaRegister />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
