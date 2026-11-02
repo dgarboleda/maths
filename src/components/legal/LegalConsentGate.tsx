@@ -10,6 +10,25 @@ import { ConsentCheckbox } from "./ConsentCheckbox";
 type Status = "checking" | "ok" | "needed";
 
 /**
+ * Errores que indican que el servidor no puede registrar la aceptación (la
+ * función aún no existe, otra versión de los textos, Functions caído), no que
+ * la persona no tenga permiso. Un callable inexistente responde 404 sin CORS,
+ * que el SDK reporta como `functions/internal`.
+ */
+const BACKEND_BEHIND = new Set([
+  "functions/not-found",
+  "functions/internal",
+  "functions/unavailable",
+  "functions/unimplemented",
+  "functions/deadline-exceeded",
+  "functions/failed-precondition",
+]);
+
+export function backendBehind(err: unknown): boolean {
+  return BACKEND_BEHIND.has((err as { code?: string })?.code ?? "");
+}
+
+/**
  * Las cuentas familiares sin la aceptación de la versión vigente (anteriores a
  * los textos legales o a un cambio de versión) no ven el panel ni los perfiles
  * hasta aceptarla. Las sesiones propias de un hijo no pasan por aquí.
@@ -56,6 +75,14 @@ export function LegalConsentGate({ children }: { children: ReactNode }) {
       setChecked({ uid, ok: true });
     } catch (err) {
       console.error("No se pudo registrar la aceptación", err);
+      if (backendBehind(err)) {
+        // La web puede publicarse antes que Functions (Workers despliega al
+        // fusionar; Firebase, con `npm run deploy`). La familia ya marcó la
+        // casilla: entra en esta visita y la próxima vez se vuelve a pedir,
+        // hasta que el servidor pueda registrarla.
+        setChecked({ uid, ok: true });
+        return;
+      }
       setError("No se pudo guardar tu aceptación. Revisa la conexión e inténtalo de nuevo.");
     } finally {
       setSubmitting(false);
