@@ -6,7 +6,13 @@ function getAudioContext(): AudioContext | null {
     const Ctor =
       window.AudioContext ||
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    audioCtx = new Ctor();
+    if (!Ctor) return null;
+    try {
+      audioCtx = new Ctor();
+    } catch {
+      // El audio es opcional: una API bloqueada no debe interrumpir el juego.
+      return null;
+    }
   }
   return audioCtx;
 }

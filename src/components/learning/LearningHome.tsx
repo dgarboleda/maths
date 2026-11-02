@@ -162,6 +162,15 @@ export function LearningHome({
           </Link>
         )}
 
+        {view === "practice" && (
+          <Link href={`/jugar/${childId}/practicar/fraction-fighters`} className="block rounded-3xl border border-emerald-300/30 bg-gradient-to-r from-emerald-950 to-slate-900 p-6 transition hover:border-emerald-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-200">Minijuego · fracciones y estrategia</span>
+            <h2 className="mt-2 text-2xl font-bold text-white">🌿 Fraction Fighters</h2>
+            <p className="mt-2 text-sm text-slate-300">Administra tu energía y devuelve la luz al bosque mágico.</p>
+            <span className="mt-4 inline-block font-bold text-cyan-200">Explorar el bosque →</span>
+          </Link>
+        )}
+
         {view === "home" ? (
           <section
             aria-label="Tu siguiente paso"
