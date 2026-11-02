@@ -6,6 +6,7 @@ Target Masters forma parte de Practicar en Math Quest. El jugador combina todas 
 
 - Aventura con 100 desafíos deterministas agrupados en cinco mundos; cada vigésimo nivel enfrenta al guardián de las gemelas. Se desbloquea el siguiente nivel al resolver el anterior.
 - Las fichas gemelas deben combinarse entre sí; las congeladas se liberan tras otro movimiento; las cambiantes permiten escoger entre dos valores.
+- Al entrar se elige un modo; dentro del tablero, «Cambiar modo» abre el selector y permite volver a la partida sin perderla. El contrarreloj se pausa mientras el selector está abierto.
 - Práctica configurable por operaciones y dificultad; infinito, reto diario común según la fecha de Lima y contrarreloj opcional de 90 segundos.
 - Suma, resta, multiplicación y división exacta; se admiten resultados enteros no negativos. Se aceptan todas las soluciones que usen las fichas y cumplan las reglas.
 - Pistas calculadas desde el tablero actual, deshacer, reiniciar y laboratorio que busca otra expresión válida con los valores iniciales.

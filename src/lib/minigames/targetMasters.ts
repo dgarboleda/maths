@@ -74,10 +74,10 @@ function solveFixed(tiles: GameTile[], target: number, operations: Operation[]):
 export function makePracticePuzzle(seed: number, operations: Operation[], difficulty: number): Puzzle {
   const allowed = operations.length ? operations : ['+'] as Operation[];
   const range = [5, 9, 15][Math.max(0, Math.min(2, difficulty))];
-  const a = 2 + seed % range, b = 2 + Math.floor(seed / 7) % range;
+  const a = 2 + seed % range, b = 2 + Math.floor(seed / 7) % range, c = 2 + Math.floor(seed / 31) % range;
   const op = allowed[seed % allowed.length];
   // Construct operands so subtraction and division are always valid.
-  const numbers = op === '−' ? [a + b, b, 0] : op === '÷' ? [a * b, b, 1] : op === '×' ? [a, b, 1] : [a, b, 0];
+  const numbers = op === '−' ? [a + b + c, b, c] : op === '÷' ? [a * b * c, b, c] : [a, b, c];
   const first = calculate(numbers[0], op, numbers[1])!;
   const target = calculate(first, op, numbers[2])!;
   return { numbers, target, operations: allowed, solution: [{ left: numbers[0], op, right: numbers[1], result: first }, { left: first, op, right: numbers[2], result: target }] };

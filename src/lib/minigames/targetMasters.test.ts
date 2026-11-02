@@ -56,3 +56,10 @@ it('encuentra una expresión alternativa válida en el laboratorio', async () =>
   expect(alternative?.expression).not.toBe('((2 + 3) × 4)');
   expect(alternative?.steps.at(-1)?.result).toBe(20);
 });
+
+it('crea prácticas sin fichas neutras que regalen una operación', async () => {
+  const { makePracticePuzzle, OPERATIONS } = await import('./targetMasters');
+  for (const op of OPERATIONS) for (let seed = 0; seed < 100; seed++) {
+    expect(makePracticePuzzle(seed, [op], 1).numbers.every(value => value > 1)).toBe(true);
+  }
+});
