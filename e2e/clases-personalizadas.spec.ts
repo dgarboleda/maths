@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
+import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre } from "./utilidades";
 
 test("una familia publica una clase y el alumno resuelve sus preguntas", async ({ page }) => {
-  await registrarPadre(page);
+  const correo = await registrarPadre(page);
   const child = await crearHijo(page, { nombre: "Alex" });
   const childId = await entrarAlEspacio(page, child.nombre, child.pin);
+  await entrarComoFamilia(page, correo);
   await page.goto("/panel/clases");
   await page.getByLabel("Tema", { exact: true }).fill("Aritmética");
   await page.getByLabel("Título de la clase").fill("Sumar dos números");
@@ -45,9 +46,10 @@ test("una familia publica una clase y el alumno resuelve sus preguntas", async (
 });
 
 test("una clase personalizada muestra respuestas de texto en el minijuego", async ({ page }) => {
-  await registrarPadre(page);
+  const correo = await registrarPadre(page);
   const child = await crearHijo(page, { nombre: "Sol" });
   const childId = await entrarAlEspacio(page, child.nombre, child.pin);
+  await entrarComoFamilia(page, correo);
   await page.goto("/panel/clases");
   await page.getByLabel("Tema", { exact: true }).fill("Formas");
   await page.getByLabel("Título de la clase").fill("Formas planas");

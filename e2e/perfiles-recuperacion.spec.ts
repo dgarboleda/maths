@@ -22,6 +22,7 @@ import {
   CLAVE_PADRE,
   crearHijo,
   entrarAlEspacio,
+  entrarComoFamilia,
   registrarPadre,
 } from "./utilidades";
 
@@ -68,7 +69,7 @@ test("Ada con un id antiguo respeta el bloqueo del PIN, se restablece y se borra
     nacimiento: "2011-05-10",
   });
   const childId = await entrarAlEspacio(page, "Ada", "1234");
-  await page.goto("/perfiles");
+  await entrarComoFamilia(page, email);
   await crearHijo(page, { nombre: "Bruno" });
   await family(email, async (db, parentId) => {
     await updateDoc(doc(db, "parents", parentId, "children", childId), {
@@ -104,8 +105,8 @@ test("Ada con un id antiguo respeta el bloqueo del PIN, se restablece y se borra
     expect(data?.pinLockedUntil).toBeUndefined();
     expect(data?.pinFailCount).toBe(0);
     expect(data?.pinHashVersion).toBe(2);
-    // Con la sesión de la familia solo confirma; no emite token infantil.
-    await expect(verify(childId, "4321")).resolves.toHaveProperty("data.ok", true);
+    // También con la sesión de la familia emite la sesión infantil que la reemplaza.
+    await expect(verify(childId, "4321")).resolves.toHaveProperty("data.token");
   });
   await page.goto("/perfiles");
   await page
@@ -117,6 +118,7 @@ test("Ada con un id antiguo respeta el bloqueo del PIN, se restablece y se borra
     page.getByRole("heading", { name: /¿Qué vamos a descubrir/ }),
   ).toBeVisible();
   expect(new URL(page.url()).pathname).toBe(`/jugar/${childId}`);
+  await entrarComoFamilia(page, email);
   await page.goto("/panel/ajustes");
   await row.getByRole("button", { name: "Borrar perfil" }).click();
   const deletion = page.getByRole("dialog", { name: /Borrar.*Ada/ });
@@ -154,7 +156,7 @@ test("un borrado pendiente se identifica y puede terminarse desde Ajustes", asyn
       deleting: true,
     });
   });
-  await page.goto("/perfiles");
+  await entrarComoFamilia(page, email);
   await expect(
     page.getByText("Borrado pendiente", { exact: true }),
   ).toBeVisible();

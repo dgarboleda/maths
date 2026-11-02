@@ -19,7 +19,7 @@ export { acceptLegalTerms, deleteAccount } from "./account";
 
 export const deploymentStatus = onRequest((_request, response) => {
   const { release } = JSON.parse(readFileSync(path.join(__dirname, "release.json"), "utf8"));
-  response.set("Cache-Control", "no-store").json({ service: "maths-functions", protocol: 13, release });
+  response.set("Cache-Control", "no-store").json({ service: "maths-functions", protocol: 14, release });
 });
 
 /**

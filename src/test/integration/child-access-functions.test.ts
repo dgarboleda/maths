@@ -64,8 +64,8 @@ describe("acceso infantil — callables reales", () => {
       expect(profile?.pinHash).toMatch(/^[0-9a-f]{64}$/);
       await expect(call(guest, "verifyChildPin", { ...data, pin: "0000" })).rejects.toMatchObject({ code: "functions/failed-precondition" });
       expect((await getDoc(family.profile)).data()?.pinFailCount ?? 0).toBe(0);
-      // La familia confirma el PIN sin clave y sin recibir un token infantil.
-      expect(await call(family.app, "verifyChildPin", { ...data, pin: "1234" })).toEqual({ ok: true });
+      // En el dispositivo de la familia no hace falta la clave; se emite una sesión infantil que reemplaza a la familiar.
+      expect(await call(family.app, "verifyChildPin", { ...data, pin: "1234" })).toMatchObject({ ok: true, token: expect.any(String) });
     } finally { await Promise.all([deleteApp(family.app), deleteApp(guest)]); }
   });
 
@@ -83,7 +83,7 @@ describe("acceso infantil — callables reales", () => {
       await expect(call(guest, "setChildPin", { ...data, pin: "9999" })).rejects.toMatchObject({ code: "functions/permission-denied" });
       await call(family.app, "setChildPin", { ...data, pin: "4321" });
       await expect(call(family.app, "verifyChildPin", { ...data, pin: "1234" })).rejects.toMatchObject({ code: "functions/permission-denied" });
-      expect(await call(family.app, "verifyChildPin", { ...data, pin: "4321" })).toEqual({ ok: true });
+      expect(await call(family.app, "verifyChildPin", { ...data, pin: "4321" })).toMatchObject({ ok: true, token: expect.any(String) });
     } finally { await Promise.all([deleteApp(family.app), deleteApp(guest)]); }
   });
 
@@ -136,7 +136,8 @@ describe("acceso infantil — callables reales", () => {
       await expect(call(guest, "updateStarBalance", { ...movement, delta: -1, reason: "redemption" })).rejects.toMatchObject({ code: "functions/permission-denied" });
       await expect(call(guest, "initializeStarBalance", { ...scope, reconcile: true })).rejects.toMatchObject({ code: "functions/permission-denied" });
       await updateDoc(family.profile, { deleting: true });
-      await expect(call(guest, "updateStarBalance", { ...movement, operationId: crypto.randomUUID() })).rejects.toMatchObject({ code: "functions/failed-precondition" });
+      // Un perfil en borrado deja de tener sesiones infantiles vigentes.
+      await expect(call(guest, "updateStarBalance", { ...movement, operationId: crypto.randomUUID() })).rejects.toMatchObject({ code: "functions/permission-denied" });
       await expect(call(guest, "verifyChildPin", { ...scope, pin: "1234", accessKey: family.accessKey })).rejects.toMatchObject({ code: "functions/permission-denied" });
     } finally { await Promise.all([deleteApp(family.app), deleteApp(guest)]); }
   });

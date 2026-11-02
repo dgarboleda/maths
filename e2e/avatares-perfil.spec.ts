@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { registrarPadre, entrarAlEspacio } from "./utilidades";
+import { registrarPadre, entrarAlEspacio, entrarComoFamilia } from "./utilidades";
 
 test("elige los tres personajes al crear perfiles, conserva el avatar y lo comparte con el dispositivo del hijo", async ({ page, browser }, testInfo) => {
   test.setTimeout(180_000);
-  await registrarPadre(page);
+  const correo = await registrarPadre(page);
   const choices = [
     { label: "Ánimo", id: "maths-animo", name: "Álex", src: "/avatars/animo.jpg" },
     { label: "Sonrisa", id: "maths-sonrisa", name: "Leo", src: "/avatars/sonrisa.jpg" },
@@ -36,6 +36,7 @@ test("elige los tres personajes al crear perfiles, conserva el avatar y lo compa
   await page.screenshot({ path: testInfo.outputPath("perfiles-con-personajes.png"), fullPage: true });
   await entrarAlEspacio(page, "Noa", "1234");
   await expect(page.getByRole("img", { name: "Avatar de Noa" })).toHaveAttribute("src", "/avatars/saludo.jpg");
+  await entrarComoFamilia(page, correo);
   await page.goto("/panel/ajustes");
   const row = page.getByRole("listitem").filter({ has: page.getByText("Noa", { exact: true }) });
   await row.getByRole("button", { name: "Avatar", exact: true }).click();

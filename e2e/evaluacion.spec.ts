@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { crearHijo, entrarAlEspacio, entrarAPerfilSinEvaluar, idDeHijo, registrarPadre, sembrarEvaluacion, sesionDeHijo } from "./utilidades";
+import { crearHijo, entrarAlEspacio, entrarComoFamilia, entrarAPerfilSinEvaluar, idDeHijo, registrarPadre, sembrarEvaluacion, sesionDeHijo } from "./utilidades";
 
 /**
  * Evaluación de ubicación — uno de los recorridos núcleo de la app (ver
@@ -124,6 +124,7 @@ test.describe("Evaluación de ubicación en el navegador", () => {
       grantedModuleIds: ["aritmetica-d1", "aritmetica-d2"],
     });
 
+    await entrarComoFamilia(page, correo);
     await page.goto(`/panel/archivo/${childId}`);
     await expect(page.getByText("1.º (22/100)")).toBeVisible();
     await expect(page.getByText("✓ Dominado (evaluación inicial)").first()).toBeVisible();

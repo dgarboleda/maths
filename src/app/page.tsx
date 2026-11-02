@@ -13,6 +13,7 @@ export default function Home() {
     if (!user) router.replace("/login");
     else if (role === "child" && childId) router.replace(`/jugar/${encodeURIComponent(childId)}`);
     else if (role === "parent") router.replace("/perfiles");
+    else router.replace("/login");
   }, [user, loading, role, childId, router]);
 
   return (

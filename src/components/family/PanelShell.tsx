@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { BookOpen, ChartLine, Gift, LayoutDashboard, LogOut, Settings, Sparkles, Users } from "lucide-react";
-import { useAuth } from "@/lib/AuthProvider";
+import { childHome, useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { FamilyProvider } from "./FamilyProvider";
 
@@ -26,13 +26,13 @@ const NAV = [
  * Monta `FamilyProvider` una sola vez para toda la sección `/panel/*`.
  */
 export function PanelShell({ children }: { children: ReactNode }) {
-  const { user, loading, role } = useAuth();
+  const { user, loading, role, childId } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && (!user || role !== "parent")) router.replace("/login");
-  }, [user, loading, role, router]);
+    if (!loading && role !== "parent") router.replace(childHome({ user, role, childId }));
+  }, [user, loading, role, childId, router]);
 
   function isActive(item: (typeof NAV)[number]): boolean {
     return item.exact ? pathname === item.href : pathname.startsWith(item.href);

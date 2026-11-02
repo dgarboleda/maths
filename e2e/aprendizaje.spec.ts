@@ -1,10 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { getLesson, placementQuestion, type Question } from "../src/lib/learning/domain";
-import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
+import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre } from "./utilidades";
 
+const familyEmail = new WeakMap<Page, string>();
 async function learner(page: Page) {
-  await registrarPadre(page);
+  familyEmail.set(page, await registrarPadre(page));
   const { nombre, pin } = await crearHijo(page, {
     nombre: "Alex",
     nacimiento: "2012-06-12",
@@ -120,6 +121,7 @@ test("clase, ejemplos, práctica con reintento, comprobación y aplicación con 
   await expect(
     page.getByRole("progressbar", { name: "Clases terminadas", exact: true }),
   ).toHaveAttribute("value", "1");
+  await entrarComoFamilia(page, familyEmail.get(page)!);
   await page.goto("/panel/progreso");
   await expect(
     page.getByRole("region", { name: "Aprendizaje de Alex" }),
@@ -345,6 +347,7 @@ test("la evaluación de ubicación recomienda por dónde empezar y la familia ve
     ? target.choices.find((c) => c.id !== target.answer && !c.feedback?.startsWith("Revisa esa"))!.id
     : String(target.errors![0].value);
   await answer(page, target, wrong);
+  await entrarComoFamilia(page, familyEmail.get(page)!);
   await page.goto("/panel/progreso");
   const panel = page.getByRole("region", { name: "Errores frecuentes" });
   await expect(panel.getByText(/Perímetro y área · 1 vez/)).toBeVisible();

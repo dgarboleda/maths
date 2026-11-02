@@ -13,6 +13,7 @@ describe("inicio de la aplicación", () => {
     [{ user: null, loading: false, role: null }, "/login"],
     [{ user: {}, loading: false, role: "parent" }, "/perfiles"],
     [{ user: {}, loading: false, role: "child", childId: "hijo-1" }, "/jugar/hijo-1"],
+    [{ user: {}, loading: false, role: null }, "/login"],
   ])("dirige la sesión a su destino", async (auth, destination) => {
     useAuth.mockReturnValue(auth);
     render(<Home />);

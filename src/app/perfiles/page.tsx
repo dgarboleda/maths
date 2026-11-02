@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut, signInWithCustomToken } from "firebase/auth";
-import { useAuth } from "@/lib/AuthProvider";
+import { childHome, useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { confirmChildPin, setChildPin } from "@/lib/pin";
 import { Avatar } from "@/components/world/Avatar";
@@ -20,15 +20,16 @@ interface ChildDoc extends ChildProfile {
 }
 
 export default function PerfilesPage() {
-  const { user, loading, role } = useAuth();
+  const { user, loading, role, childId } = useAuth();
   const router = useRouter();
   const [children, setChildren] = useState<ChildDoc[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && (!user || role !== "parent")) router.replace("/login");
-  }, [user, loading, role, router]);
+    // Tras el PIN la sesión pasa a ser del hijo: su sitio es su juego, no el login.
+    if (!loading && role !== "parent") router.replace(childHome({ user, role, childId }));
+  }, [user, loading, role, childId, router]);
 
   useEffect(() => {
     if (!user || role !== "parent") return;
