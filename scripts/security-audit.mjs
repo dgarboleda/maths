@@ -3,16 +3,19 @@ import { mkdirSync, writeFileSync } from "node:fs";
 
 mkdirSync("security-reports", { recursive: true });
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+// En Windows, Node exige shell:true para ejecutar .cmd (ej. npm.cmd); sin ello spawnSync falla con EINVAL
+// sin producir ninguna salida del proceso hijo.
+const shell = process.platform === "win32";
 let failed = false;
 for (const [name, prefix] of [["frontend", []], ["functions", ["--prefix", "functions"]]]) {
   // Informe completo para revisar también herramientas de desarrollo.
-  const full = spawnSync(npm, [...prefix, "audit", "--json"], { encoding: "utf8" });
+  const full = spawnSync(npm, [...prefix, "audit", "--json"], { encoding: "utf8", shell });
   writeFileSync(`security-reports/${name}.json`, full.stdout || "{}");
   let report;
   try { report = JSON.parse(full.stdout); } catch { failed = true; continue; }
   if (report.error || full.status === null || full.status > 1) { console.error(`No se pudo auditar ${name}.`); failed = true; continue; }
   console.log(`${name}:`, report.metadata?.vulnerabilities);
-  const runtime = spawnSync(npm, [...prefix, "audit", "--omit=dev", "--audit-level=high"], { stdio: "inherit" });
+  const runtime = spawnSync(npm, [...prefix, "audit", "--omit=dev", "--audit-level=high"], { stdio: "inherit", shell });
   if (runtime.status !== 0) failed = true;
 }
 if (failed) process.exitCode = 1;

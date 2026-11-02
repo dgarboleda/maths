@@ -24,6 +24,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Limita la carga simultánea de jsdom en Windows para evitar timeouts de interacción.
+    maxWorkers: 4,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     // La suite de integración (vitest.integration.config.mts) vive bajo

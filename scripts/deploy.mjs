@@ -16,7 +16,9 @@ if (execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).trim())
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const env = { ...process.env, MATHS_RELEASE: release };
 function run(command, args) {
-  const result = spawnSync(command, args, { env, stdio: "inherit" });
+  // En Windows, Node exige shell:true para ejecutar .cmd (ej. npm.cmd); sin ello spawnSync falla con EINVAL
+  // sin producir ninguna salida del proceso hijo.
+  const result = spawnSync(command, args, { env, stdio: "inherit", shell: process.platform === "win32" && command.endsWith(".cmd") });
   if (result.status !== 0) throw new Error(`Falló ${command} ${args.join(" ")}`);
 }
 // Construir ambas partes antes de modificar los recursos externos.
