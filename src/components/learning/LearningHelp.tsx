@@ -78,6 +78,8 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
   const [sessionSeen, setSessionSeen] = useState<string[]>([]);
   const sessionSeenRef = useRef<string[]>([]);
   const [preferredIdea, setPreferredIdea] = useState<string>();
+  // Desde el aviso de símbolo nuevo, el formulario cede el primer plano al símbolo.
+  const [fromNotice, setFromNotice] = useState(false);
   const [assisted, setAssisted] = useState(false);
   const raw = useSyncExternalStore(subscribeSeen, () => readSeen(childId), () => "[]");
   const seen = new Set([...parseSeen(raw), ...sessionSeen]);
@@ -94,7 +96,7 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
       window.dispatchEvent(new Event("maths-help-seen"));
     } catch { /* El almacenamiento bloqueado no impide consultar la ayuda. */ }
   }, [childId]);
-  async function show() {
+  async function show(notice = false) {
     if (pending.current || disabled) return;
     pending.current = true;
     setBusy(true);
@@ -103,6 +105,7 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
     try {
       if (onOpen && !(await onOpen())) { setError(true); return; }
       setPreferredIdea(novel?.id);
+      setFromNotice(notice);
       setAssisted(recordsAssistance);
       onChange(true);
     } catch { setError(true); } finally { pending.current = false; setBusy(false); }
@@ -115,7 +118,7 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
     <>
       <div className={styles.dock}>
         {error && <p role="alert" className={styles.notice}>No se pudo abrir la ayuda. Reintenta cuando se guarde tu avance.</p>}
-        {!open && novel && <button type="button" className={styles.notice} onClick={() => void show()} disabled={disabled || busy}>
+        {!open && novel && <button type="button" className={styles.notice} onClick={() => void show(true)} disabled={disabled || busy}>
           <span className={styles.newLabel}>Nuevo símbolo</span>
           ¿Qué significa <MathText text={novel.symbol} />?
           {onOpen && <span className={styles.helpWarning}>Consultar cuenta como ayuda</span>}
@@ -128,13 +131,13 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
         </button>
         {onOpen && <span id={`${id}-warning`} className="sr-only">Consultar cuenta como ayuda en esta comprobación.</span>}
       </div>
-      {open && createPortal(<HelpPanel id={id} help={help} preferredIdea={preferredIdea} onClose={close} assisted={assisted} onIdeaSeen={markSeen} />, document.body)}
+      {open && createPortal(<HelpPanel id={id} help={help} preferredIdea={preferredIdea} formulasOpen={!fromNotice} onClose={close} assisted={assisted} onIdeaSeen={markSeen} />, document.body)}
     </>
   );
 }
 
-function HelpPanel({ id, help, preferredIdea, onClose, assisted, onIdeaSeen }: {
-  id: string; help: ScreenHelp; preferredIdea?: string; onClose: () => void; assisted: boolean; onIdeaSeen: (id: string) => void;
+function HelpPanel({ id, help, preferredIdea, formulasOpen, onClose, assisted, onIdeaSeen }: {
+  id: string; help: ScreenHelp; preferredIdea?: string; formulasOpen: boolean; onClose: () => void; assisted: boolean; onIdeaSeen: (id: string) => void;
 }) {
   const { dialogRef, handleKeyDown } = useDialogFocus(onClose);
   const ideas = [...help.ideas.filter((idea) => idea.id === preferredIdea), ...help.ideas.filter((idea) => idea.id !== preferredIdea)];
@@ -148,6 +151,16 @@ function HelpPanel({ id, help, preferredIdea, onClose, assisted, onIdeaSeen }: {
           <button type="button" aria-label="Cerrar explicación" className={styles.close} onClick={onClose}><X size={20} aria-hidden="true" /></button>
         </header>
         <p id={`${id}-description`} className={styles.description}>{help.description}</p>
+        {help.formulas && help.formulas.length > 0 && <details className={styles.formulas} open={formulasOpen ? true : undefined}>
+          <summary>Fórmulas de este tema</summary>
+          <ul>
+            {help.formulas.map((formula) => <li key={formula.name} className={styles.formula}>
+              <p className={styles.formulaName}>{formula.name}</p>
+              <p className={styles.expression}><MathText text={formula.expression} /></p>
+              {formula.legend && <p className={styles.legend}><MathText text={formula.legend} /></p>}
+            </li>)}
+          </ul>
+        </details>}
         {ideas.map((idea, index) => <details key={idea.id} className={styles.idea} open={index === 0 ? true : undefined}
           ref={(element) => { if (element?.open) onIdeaSeen(idea.id); }}
           onToggle={(event) => { if (event.currentTarget.open) onIdeaSeen(idea.id); }}>

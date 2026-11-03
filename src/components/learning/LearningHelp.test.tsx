@@ -130,3 +130,15 @@ test("confirma la ayuda de esa consulta y no avisa que se registrará otra al vo
   expect(screen.queryByText(/Esta consulta cuenta como ayuda/)).not.toBeInTheDocument();
   expect(guard).toHaveBeenCalledOnce();
 });
+
+test("muestra las fórmulas del tema con notación matemática y nombre accesible", async () => {
+  const user = userEvent.setup();
+  render(setup({ help: { ...help, ideas: [], formulas: [{ name: "Suma aritmética", expression: "Sₙ = (n · (a₁ + aₙ))/2", legend: "n: cantidad de términos." }] } }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  const dialog = screen.getByRole("dialog");
+  expect(screen.getByText("Fórmulas de este tema")).toBeInTheDocument();
+  expect(screen.getByText("Suma aritmética")).toBeInTheDocument();
+  expect(dialog.querySelector(".math-frac")).not.toBeNull();
+  expect(screen.getByText("(n · (a₁ + aₙ))/2")).toHaveClass("sr-only");
+  expect(await axe(dialog)).toHaveNoViolations();
+});

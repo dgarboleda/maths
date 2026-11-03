@@ -88,3 +88,10 @@
   .panel { max-height: calc(100dvh - 3rem); }
 }
 @media (prefers-reduced-motion: reduce) { .filament { animation: none; } }
+.formulas { margin-top: 1rem; padding: 0.25rem 1rem 1rem; border: 1px solid #a16207; border-radius: 1rem; background: #1c1917; }
+.formulas summary { min-height: 2.75rem; align-content: center; cursor: pointer; font-size: 0.95rem; font-weight: 800; color: #fde68a; }
+.formula { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #44403c; }
+.formula:first-child { margin-top: 0.25rem; padding-top: 0; border-top: 0; }
+.formulaName { font-size: 0.8rem; font-weight: 700; color: #e7e5e4; }
+.expression { margin-top: 0.35rem; overflow-x: auto; padding: 0.35rem 0; font-size: 1.15rem; line-height: 2; color: #fef3c7; }
+.legend { margin-top: 0.2rem; font-size: 0.8rem; line-height: 1.5; color: #d6d3d1; }

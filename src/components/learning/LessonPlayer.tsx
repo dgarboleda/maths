@@ -29,7 +29,7 @@ import {
   useLearningData,
 } from "@/lib/learning/useLearningData";
 import { useLearningClock } from "@/lib/learning/useLearningClock";
-import { lessonScreenHelp } from "@/lib/learning/screenHelp";
+import { hasHelpContent, lessonScreenHelp } from "@/lib/learning/screenHelp";
 import { useLearningHelpOpen } from "./LearningHelp";
 import { AnswerResult } from "./AnswerResult";
 import {
@@ -111,7 +111,7 @@ export function LessonPlayer({
       eyebrow="Una idea que puedes comprender y usar"
       help={requestedStage && !launched ? undefined : help}
       helpDisabled={mutation.blocked}
-      onHelpOpen={!(requestedStage && !launched) && help.ideas.length > 0 && question && helpIsAssistance
+      onHelpOpen={!(requestedStage && !launched) && hasHelpContent(help) && question && helpIsAssistance
         ? () => run({ kind: "hint", questionId: question.id }) : undefined}
     >
       <Link
