@@ -9,6 +9,7 @@ import type { ScreenHelp } from "@/lib/learning/screenHelp";
 import styles from "./help.module.css";
 
 const GlossarySearch = lazy(() => import("./GlossarySearch"));
+const TopicSearch = lazy(() => import("./TopicSearch"));
 
 const HelpOpenContext = createContext(false);
 export const useLearningHelpOpen = () => useContext(HelpOpenContext);
@@ -131,13 +132,13 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
         </button>
         {onOpen && <span id={`${id}-warning`} className="sr-only">Consultar cuenta como ayuda en esta comprobación.</span>}
       </div>
-      {open && createPortal(<HelpPanel id={id} help={help} preferredIdea={preferredIdea} formulasOpen={!fromNotice} onClose={close} assisted={assisted} onIdeaSeen={markSeen} />, document.body)}
+      {open && createPortal(<HelpPanel id={id} childId={childId} help={help} preferredIdea={preferredIdea} formulasOpen={!fromNotice} onClose={close} assisted={assisted} onIdeaSeen={markSeen} />, document.body)}
     </>
   );
 }
 
-function HelpPanel({ id, help, preferredIdea, formulasOpen, onClose, assisted, onIdeaSeen }: {
-  id: string; help: ScreenHelp; preferredIdea?: string; formulasOpen: boolean; onClose: () => void; assisted: boolean; onIdeaSeen: (id: string) => void;
+function HelpPanel({ id, childId, help, preferredIdea, formulasOpen, onClose, assisted, onIdeaSeen }: {
+  id: string; childId: string; help: ScreenHelp; preferredIdea?: string; formulasOpen: boolean; onClose: () => void; assisted: boolean; onIdeaSeen: (id: string) => void;
 }) {
   const { dialogRef, handleKeyDown } = useDialogFocus(onClose);
   const ideas = [...help.ideas.filter((idea) => idea.id === preferredIdea), ...help.ideas.filter((idea) => idea.id !== preferredIdea)];
@@ -168,6 +169,7 @@ function HelpPanel({ id, help, preferredIdea, formulasOpen, onClose, assisted, o
           <p><MathText text={idea.meaning} /></p>
           {idea.example && <p className={styles.example}><strong>Por ejemplo:</strong> <MathText text={idea.example} /></p>}
         </details>)}
+        <Suspense fallback={<p>Cargando buscador de temas…</p>}><TopicSearch childId={childId} currentLessonId={help.lessonId} /></Suspense>
         <Suspense fallback={<p>Cargando buscador de palabras…</p>}><GlossarySearch /></Suspense>
         {assisted && <p className={styles.assisted}>Esta consulta cuenta como ayuda en la comprobación. Puedes seguir aprendiendo a tu ritmo.</p>}
         <button type="button" className={styles.done} onClick={onClose}>Entendido, seguir</button>

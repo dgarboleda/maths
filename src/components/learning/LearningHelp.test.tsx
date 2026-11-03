@@ -142,3 +142,20 @@ test("muestra las fórmulas del tema con notación matemática y nombre accesibl
   expect(screen.getByText("(n · (a₁ + aₙ))/2")).toHaveClass("sr-only");
   expect(await axe(dialog)).toHaveNoViolations();
 });
+
+test("el buscador de temas enlaza a la clase y a su práctica, salvo la clase en curso", async () => {
+  const user = userEvent.setup();
+  render(setup({ help: { ...help, lessonId: "pitagoras" } }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  const search = await screen.findByRole("searchbox", { name: "¿Qué tema viste en el colegio?" });
+  await user.type(search, "sucesiones");
+  expect(screen.getByRole("link", { name: "Ver la clase: Progresiones aritméticas y geométricas" })).toHaveAttribute("href", "/jugar/ana/aprende/progresiones");
+  expect(screen.getByRole("link", { name: "Practicar: Progresiones aritméticas y geométricas" })).toHaveAttribute("href", "/jugar/ana/aprende/progresiones?modo=practice");
+  await user.clear(search);
+  await user.type(search, "pitagoras");
+  expect(screen.getByText("Estás en esta clase.")).toBeInTheDocument();
+  await user.clear(search);
+  await user.type(search, "zzzz");
+  expect(screen.getByText(/No encontramos ese tema/)).toBeInTheDocument();
+  expect(await axe(screen.getByRole("dialog"))).toHaveNoViolations();
+});

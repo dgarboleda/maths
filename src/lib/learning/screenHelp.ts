@@ -15,6 +15,8 @@ export interface ScreenHelp {
   ideas: HelpIdea[];
   /** Formulario del tema; no se ofrece en el punto de partida ni en el repaso mixto. */
   formulas?: LessonFormula[];
+  /** Clase en curso, para que el buscador de temas no la ofrezca como destino. */
+  lessonId?: string;
 }
 
 /** ¿Tiene la ayuda contenido matemático? Si lo tiene, consultarla en una
@@ -71,6 +73,8 @@ export function questionHelp(lesson: Lesson, question: Question, { formulas = tr
     description: "Primero identifica qué te preguntan y qué significa cada símbolo. Después decide qué operación o idea necesitas. Puedes responder con calma.",
     ideas: ideasForText([question.prompt, ...(question.choices?.map((choice) => choice.label) ?? [])].join(" "), lesson.vocabulary),
     formulas: formulas ? formulasFor(lesson.id) : [],
+    // En el repaso mixto no se delata de qué clase viene el problema.
+    lessonId: formulas ? lesson.id : undefined,
   };
 }
 
@@ -89,6 +93,7 @@ export function lessonScreenHelp(lesson: Lesson, progress: LearningProgress, que
         "Primero comprende la idea, después practica y al final comprueba qué puedes resolver por tu cuenta. Puedes volver a la explicación cuando lo necesites.",
     ideas: ideasForText(text, lesson.vocabulary),
     formulas: progress.stage === "diagnostic" ? [] : formulasFor(lesson.id),
+    lessonId: lesson.id,
   };
 }
 

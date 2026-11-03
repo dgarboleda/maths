@@ -95,3 +95,9 @@
 .formulaName { font-size: 0.8rem; font-weight: 700; color: #e7e5e4; }
 .expression { margin-top: 0.35rem; overflow-x: auto; padding: 0.35rem 0; font-size: 1.15rem; line-height: 2; color: #fef3c7; }
 .legend { margin-top: 0.2rem; font-size: 0.8rem; line-height: 1.5; color: #d6d3d1; }
+ul.results { list-style: none; padding: 0; }
+.topicMeta { font-size: 0.8rem; color: #cbd5e1; }
+.topicLinks { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.topicLinks a { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 0.85rem; border-radius: 0.65rem; background: #0e7490; color: #fff; font-size: 0.85rem; font-weight: 700; }
+.topicLinks a:last-child { background: #1e293b; border: 1px solid #475569; }
+.topicLinks a:focus-visible { outline: 3px solid #67e8f9; outline-offset: 2px; }
