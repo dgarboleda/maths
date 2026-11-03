@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { TopoGeneric } from "./TopoGeneric";
+import { TopoGeneric, topoPrompt } from "./TopoGeneric";
+import type { LessonExercise } from "@/lib/minigames/lessonExercise";
 import * as problemModule from "@/lib/problem";
 
 vi.mock("@/lib/gameSound", () => ({ playSound: () => {} }));
@@ -26,6 +27,35 @@ async function waitMole(name: string) {
   for (let i = 0; i < 100 && !screen.queryByRole("button", { name }); i++) tick(100);
   return screen.getByRole("button", { name });
 }
+
+describe("instrucción para elegir un topo", () => {
+  test.each([
+    ["Escribe 3/4 como decimal.", "Elige el topo que muestre 3/4 como decimal."],
+    ["¿Qué fracción es mayor? Escribe la mayor.", "¿Qué fracción es mayor? Elige el topo que muestre la mayor."],
+    ["Una compañera escribe 3/4. ¿Es correcto?", "Una compañera escribe 3/4. ¿Es correcto?"],
+    ["¿Cuánto es 7 − 2?", "¿Cuánto es 7 − 2?"],
+    ["Reduce 5x + 2x y escribe el coeficiente de x.", "Reduce 5x + 2x y elige el topo que muestre el coeficiente de x."],
+    ["Escribe 0,5 como porcentaje. Introduce el número antes de %.", "Elige el topo que muestre 0,5 como porcentaje. Elige el topo que muestre el número antes de %."],
+    ["Una compañera calcula y escribe 7. ¿Es correcto?", "Una compañera calcula y escribe 7. ¿Es correcto?"],
+  ])("adapta solo instrucciones directas: %s", (prompt, expected) => {
+    expect(topoPrompt(prompt)).toBe(expected);
+  });
+
+  test("en la clase muestra la instrucción adaptada y envía el valor original", async () => {
+    vi.useFakeTimers();
+    const onResponse = vi.fn(async () => true);
+    const problem = { id: "decimal", difficulty: 1, kind: "lesson-practice", prompt: "Escribe 20% como decimal.", answer: 0.2, inputType: "decimal" as const, choices: [0.2, 0.1, 0.3, 0.4, 0.5] };
+    const exercise: LessonExercise = { problem, solved: false, disabled: false, paused: false, timed: false, input: null, onResponse };
+    render(<TopoGeneric moduleId="" soundOn={false} onAnswer={vi.fn()} exercise={exercise} />);
+    fireEvent.click(screen.getByRole("button", { name: "¡Empezar!" }));
+    expect(screen.getByText("Elige el topo que muestre 20% como decimal.")).toBeInTheDocument();
+    expect(problem.prompt).toBe("Escribe 20% como decimal.");
+    fireEvent.click(await waitMole("Topo con 0,2"));
+    await act(async () => {});
+    expect(onResponse).toHaveBeenCalledExactlyOnceWith(0.2);
+    vi.useRealTimers();
+  });
+});
 
 describe("TopoGeneric", () => {
   afterEach(() => {

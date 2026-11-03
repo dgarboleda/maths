@@ -45,6 +45,14 @@ type Mole = { value: number; until: number } | null;
 
 const emptyHoles = (): Mole[] => Array.from({ length: HOLES }, () => null);
 
+/** Adapta instrucciones de entrada escrita sin cambiar el contenido matemático. */
+export function topoPrompt(prompt: string): string {
+  const instruction = (verb: string) => /^[A-Z]/.test(verb) ? "Elige el topo que muestre" : "elige el topo que muestre";
+  return prompt
+    .replace(/(^|[.!?]\s+)([Ee]scribe|[Ii]ntroduce)\b/g, (_match, prefix: string, verb: string) => `${prefix}${instruction(verb)}`)
+    .replace(/^(\s*(?:Reduce|Calcula|Resuelve|Simplifica|Compara|Determina)\b[^.!?]*?\by\s+)(escribe|introduce)\b/i, (_match, prefix: string, verb: string) => `${prefix}${instruction(verb)}`);
+}
+
 /**
  * Topos numéricos — mismo contrato que el resto de la serie retro
  * (docs/plan-minijuegos-retro.md). Primer juego que se responde solo
@@ -89,6 +97,7 @@ export function TopoGeneric({
   const [lives, setLives] = useState(LIVES_START);
   const [legacyProblem, setProblem] = useState<Problem>(newProblem);
   const problem = exercise?.problem ?? legacyProblem;
+  const displayedPrompt = topoPrompt(problem.prompt);
   const [correctCount, setCorrectCount] = useState(0);
   const [starsThisRound, setStarsThisRound] = useState(0);
   const [win, setWin] = useState(false);
@@ -412,8 +421,8 @@ export function TopoGeneric({
                   {problem.flavor}
                 </p>
               )}
-              <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(problem.prompt)} font-black text-lime-200 outline-none`}>
-                <PromptText problem={problem} />
+              <p ref={promptFocus} tabIndex={-1} id={promptId} className={`${gamePromptSize(displayedPrompt)} font-black text-lime-200 outline-none`}>
+                <PromptText problem={{ ...problem, prompt: displayedPrompt }} />
               </p>
             </div>
 
