@@ -67,13 +67,11 @@ test("clase, ejemplos, práctica con reintento, comprobación y aplicación con 
   ).toBeVisible();
   await page.getByRole("button", { name: "Continuar la explicación" }).click();
   await page.getByRole("button", { name: "Ver cómo se resuelve" }).click();
-  await expect(
-    page.getByText(
-      "Calculamos el valor de un cuarto repartiendo el total entre cuatro.",
-      { exact: false },
-    ),
-  ).toBeVisible();
   const lesson = getLesson("fraccion-cantidad")!;
+  // El texto sale del catálogo: editar un ejemplo no debe romper la prueba.
+  await expect(
+    page.getByText(lesson.examples[0].steps[0].why, { exact: false }),
+  ).toBeVisible();
   for (let i = 1; i < lesson.examples.length; i++)
     await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
   await page.getByRole("button", { name: "Ahora, hazlo con ayuda" }).click();
