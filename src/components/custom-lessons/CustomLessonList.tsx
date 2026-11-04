@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { validateCustomLesson, type CustomLesson } from "../../../functions/src/customLessons/schema";
+import { groupLessons } from "./editor/groupLessons";
 
 export function CustomLessonList({ childId }: { childId: string }) {
   const { parentId } = useAuth();
@@ -17,5 +18,17 @@ export function CustomLessonList({ childId }: { childId: string }) {
   }, [parentId]);
   if (error) return <p role="alert">No se pudieron cargar las clases creadas para ti.</p>;
   if (!items.length) return null;
-  return <section aria-label="Clases creadas para ti" className="space-y-3 rounded-2xl border border-violet-500 bg-slate-900 p-5"><h2 className="text-xl font-bold">Clases creadas para ti</h2><ul className="space-y-2">{items.map(item => <li key={item.id}><Link className="text-cyan-200 underline" href={`/jugar/${childId}/personalizadas/${item.id}`}>{item.topic}: {item.title}</Link></li>)}</ul></section>;
+  return (
+    <section aria-label="Clases creadas para ti" className="space-y-3 rounded-2xl border border-violet-500 bg-slate-900 p-5">
+      <h2 className="text-xl font-bold">Clases creadas para ti</h2>
+      {groupLessons(items).map((group) => (
+        <div key={group.key || "sin-tema"} className="space-y-1">
+          <h3 className="font-bold text-violet-200">{group.topic}</h3>
+          <ul className="space-y-2 pl-2">
+            {group.lessons.map((item) => <li key={item.id}><Link className="text-cyan-200 underline" href={`/jugar/${childId}/personalizadas/${item.id}`}>{item.title}</Link></li>)}
+          </ul>
+        </div>
+      ))}
+    </section>
+  );
 }
