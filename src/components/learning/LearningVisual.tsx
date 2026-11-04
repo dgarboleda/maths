@@ -114,6 +114,11 @@ function NumberLineVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Restar un número equivale a sumar su opuesto: {sg(start)} − {term(-move)} = {sg(end)}.
       </p>
+      <Challenge goals={[
+        { text: "Partiendo de 3, llega a −4. ¿Qué número sumaste?", met: start === 3 && end === -4 },
+        { text: "Suma un número negativo y termina a la derecha del cero.", met: move < 0 && end > 0 },
+        { text: "Elige un punto de partida y un salto que terminen exactamente en 0.", met: end === 0 && move !== 0 },
+      ]} />
     </>
   );
 }
@@ -144,6 +149,11 @@ function AreaVisual({ id }: { id: string }) {
         Perímetro = 2 × ({width} + {height}) = <strong>{2 * (width + height)} cm</strong> (borde que rodea).<br />
         Triángulo con la misma base y altura: <MathText text={`(${width} × ${height})/2 = ${(width * height) / 2}`} /> cm².
       </p>
+      <Challenge goals={[
+        { text: "Haz que el área y el perímetro tengan el mismo número.", met: width * height === 2 * (width + height), hint: "Prueba con rectángulos pequeños, como de 4 o 6 de base." },
+        { text: "Con un área de 36 cm², consigue el menor perímetro posible.", met: width * height === 36 && width === height },
+        { text: "Consigue que el triángulo de la misma base y altura mida 10 cm².", met: width * height === 20 },
+      ]} />
     </>
   );
 }
@@ -230,6 +240,11 @@ function ProbabilityVisual({ id }: { id: string }) {
           ? "La bolsa está vacía: no hay casos posibles."
           : <><MathText text={`P(roja) = casos favorables ÷ casos posibles = ${red}/${total} = ${(red / total).toLocaleString("es", { maximumFractionDigits: 3 })}`} /><br /><MathText text={`P(no roja) = 1 − ${red}/${total} = ${blue}/${total}`} /></>}
       </p>
+      <Challenge goals={[
+        { text: "Haz que sacar roja tenga probabilidad 1/2.", met: red > 0 && red === blue },
+        { text: "Consigue P(roja) = 0,25.", met: red > 0 && 4 * red === total },
+        { text: "Haz que sacar roja sea un suceso seguro.", met: red > 0 && blue === 0 },
+      ]} />
     </>
   );
 }
@@ -491,6 +506,33 @@ function ClassicVisual({ kind }: { kind: Visual }) {
           )}
         </>
       )}
+      <Challenge goals={classicGoals(kind, { parts, taken, total, factor })} />
     </section>
   );
+}
+
+/** Retos de los modelos clásicos, según el tipo de idea. */
+function classicGoals(kind: Visual, { parts, taken, total, factor }: { parts: number; taken: number; total: number; factor: number }) {
+  switch (kind) {
+    case "fraction":
+      return [
+        { text: "Representa 5/4: más de una unidad.", met: parts === 4 && taken === 5 },
+        { text: "Con sextos, representa una fracción igual a 1/2.", met: parts === 6 && taken === 3 },
+      ];
+    case "equivalence":
+      return [{ text: "Muestra que 2/4 = 4/8.", met: taken === 2 }];
+    case "percent":
+      return [{ text: "Representa el 40 %. ¿Qué fracción simplificada es?", met: taken === 40 }];
+    case "quantity":
+      return [{ text: "Haz que un cuarto del total sea 40.", met: total === 160 }];
+    case "ratio":
+      return [{ text: "Consigue 12 azules manteniendo la razón 2:3. ¿Cuántos verdes hay?", met: factor === 6 }];
+    case "change":
+      return [{ text: "Haz que se paguen 450 tras el descuento del 25 %.", met: factor === 6 }];
+    case "balance":
+    case "equation":
+      return [{ text: "Encuentra el x que hace que el lado izquierdo valga 24.", met: factor === 6 }];
+    default:
+      return [{ text: "Consigue un costo total de 35 créditos.", met: factor === 7 }];
+  }
 }
