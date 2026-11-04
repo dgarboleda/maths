@@ -135,7 +135,7 @@ export default function PanelPage() {
               icon={<ChartLine className="size-4" aria-hidden="true" />}
               action={<ChildSwitcher />}
             >
-              {selectedDashboard ? <WeeklyChart noun="respuestas" week={selectedDashboard.weeklyProblems} /> : <SkeletonRows rows={3} />}
+              {selectedDashboard ? <WeeklyChart noun="respuestas" week={selectedDashboard.weeklyProblems} previousTotal={selectedDashboard.loading ? undefined : selectedDashboard.previousWeekProblems} /> : <SkeletonRows rows={3} />}
             </SectionCard>
 
             <SectionCard title="Actividad reciente" icon={<History className="size-4" aria-hidden="true" />}>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MathText } from "@/components/MathText";
-import { curve, Handle, num, Plane, Slider, snap, Toggle } from "./GraphVisuals";
+import { Challenge, curve, GhostNote, Handle, Legend, niceRange, num, Plane, PointMarks, PointReader, Slider, snap, Toggle, useGhost, ValueTable } from "./GraphVisuals";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
 const median = (xs: number[]) => {
@@ -30,10 +30,11 @@ export function SystemVisual({ id }: { id: string }) {
       ) : (
         <Slider id={`${id}-k`} label="k en x + y = k" value={k} min={2} max={14} onChange={setK} />
       )}
-      <p className="font-mono text-lg">
-        x + y = {s} · {cross ? `x − y = ${num(d)}` : `x + y = ${k}`}
-      </p>
-      <Plane x={[-2, 14]} y={[-6, 12]} xStep={2} yStep={2}
+      <Legend items={[
+        { label: `x + y = ${s}`, className: "stroke-cyan-300" },
+        { label: cross ? `x − y = ${num(d)}` : `x + y = ${k}`, className: "stroke-amber-300", dash: "6 4" },
+      ]} />
+      <Plane x={[-2, 14]} y={[-6, 12]} xStep={2} yStep={2} xLabel="x" yLabel="y"
         label={cross
           ? `Las rectas x + y = ${s} y x − y = ${num(d)} se cortan en (${num(x)}, ${num(y)}): esa es la solución.`
           : k === s
@@ -42,7 +43,7 @@ export function SystemVisual({ id }: { id: string }) {
         {(sc) => (
           <>
             <path d={curve((t) => s - t, [-2, 14], sc, 2)} className="fill-none stroke-cyan-300" strokeWidth={2.5} />
-            <path d={curve((t) => (cross ? t - d : k - t), [-2, 14], sc, 2)} className="fill-none stroke-amber-300" strokeWidth={2.5} strokeDasharray={!cross && k === s ? "6 4" : undefined} />
+            <path d={curve((t) => (cross ? t - d : k - t), [-2, 14], sc, 2)} className="fill-none stroke-amber-300" strokeWidth={2.5} strokeDasharray="6 4" />
             {cross && (
               <Handle x={sc.sx(x)} y={sc.sy(y)} className="fill-rose-300"
                 onDrag={(px, py) => {
@@ -57,11 +58,16 @@ export function SystemVisual({ id }: { id: string }) {
       </Plane>
       <p className="text-sm">
         {cross
-          ? <>Solución: x = ({s} + {num(d)}) ÷ 2 = <strong>{num(x)}</strong>, y = ({s} − {num(d)}) ÷ 2 = <strong>{num(y)}</strong>. Arrastra el punto de corte: las dos ecuaciones cambian para seguir cumpliéndose.</>
+          ? <>Solución: <MathText text={`x = (${s} + ${num(d)})/2 = ${num(x)}`} />, <MathText text={`y = (${s} − ${num(d)})/2 = ${num(y)}`} />. Arrastra el punto de corte: las dos ecuaciones cambian para seguir cumpliéndose.</>
           : k === s
             ? "Las dos ecuaciones dicen lo mismo: cualquier punto de la recta es solución."
             : "Las rectas tienen la misma inclinación y nunca se cortan: ningún par cumple las dos ecuaciones."}
       </p>
+      <Challenge goals={[
+        { text: "Consigue un sistema cuya solución sea (5, 3).", met: cross && x === 5 && y === 3, hint: "Si x = 5 e y = 3, ¿cuánto valen x + y y x − y?" },
+        { text: "Haz un sistema sin solución.", met: !cross && k !== s },
+        { text: "Haz que la solución tenga y negativa.", met: cross && y < 0 },
+      ]} />
     </>
   );
 }
@@ -70,29 +76,40 @@ export function SystemVisual({ id }: { id: string }) {
 export function ExponentialVisual({ id }: { id: string }) {
   const [a, setA] = useState(10);
   const [b, setB] = useState(1.5);
+  const [pick, setPick] = useState<number | null>(null);
+  const ghost = useGhost({ a, b });
   const step = a * (b - 1);
   const exp = (n: number) => a * b ** n,
     lin = (n: number) => a + step * n;
   const ns = [0, 1, 2, 3, 4, 5, 6, 7, 8];
   const overtakes = ns.find((n) => n > 1 && exp(n) > lin(n) + 1e-9);
+  const { range, step: yStep } = niceRange([...ns.map(exp), ...ns.map(lin)]);
+  const points = ns.map((n) => ({ x: n, y: exp(n), label: `n = ${n} → y = ${num(exp(n))}` }));
   return (
     <>
       <Slider id={`${id}-a`} label="Valor inicial a" value={a} min={2} max={20} onChange={setA} />
       <Slider id={`${id}-b`} label="Factor de cambio b" value={b} min={0.5} max={2} step={0.1} onChange={setB} />
-      <p className="font-mono text-lg">
+      <p className="text-lg font-semibold">
         y = {a} · {num(b)}ⁿ <span className="text-slate-400">frente a</span> y = {a} {step < 0 ? "−" : "+"} {num(Math.abs(step))} · n
       </p>
-      <Plane x={[0, 8]} y={[0, 100]} yStep={20}
+      <Legend items={[
+        { label: "Exponencial (multiplica)", className: "stroke-cyan-300", marker: "dot" },
+        { label: "Lineal (suma)", className: "stroke-amber-300", dash: "5 4" },
+      ]} />
+      <Plane x={[0, 8]} y={range} yStep={yStep} xLabel="n" yLabel="y"
         label={`Exponencial con factor ${num(b)} (cian) y lineal que suma ${num(step)} por paso (ámbar). ${b > 1 && overtakes ? `Desde n = ${overtakes} la exponencial queda por encima.` : b < 1 ? "Con factor menor que 1, la exponencial disminuye cada vez menos." : ""}`}>
         {(s) => (
           <>
+            {ghost && <path d={curve((n) => ghost.a * ghost.b ** n, [0, 8], s)} className="fill-none stroke-slate-500" strokeWidth={2} strokeDasharray="4 4" />}
             <path d={curve(lin, [0, 8], s, 2)} className="fill-none stroke-amber-300" strokeWidth={2} strokeDasharray="5 4" />
             <path d={curve(exp, [0, 8], s)} className="fill-none stroke-cyan-300" strokeWidth={2.5} />
-            {ns.map((n) => <circle key={n} cx={s.sx(n)} cy={s.sy(Math.min(exp(n), 1e4))} r={3.5} className="fill-cyan-300" />)}
+            <PointMarks points={points} scale={s} selected={pick} onSelect={setPick} />
           </>
         )}
       </Plane>
-      <table className="w-full text-left text-sm">
+      <GhostNote show={Boolean(ghost)} />
+      <PointReader id={`${id}-pt`} points={points} selected={pick} onSelect={setPick} />
+      <table className="w-full text-left text-sm tabular-nums">
         <caption className="sr-only">Valores de la exponencial y de la lineal</caption>
         <thead><tr><th className="p-2">n</th><th className="p-2">Exponencial</th><th className="p-2">Lineal</th></tr></thead>
         <tbody>
@@ -109,6 +126,11 @@ export function ExponentialVisual({ id }: { id: string }) {
         Las dos empiezan en {a} y dan el mismo primer paso. La lineal suma siempre {num(step)}; la exponencial multiplica por {num(b)}, así que
         {b > 1 ? " cada paso es mayor que el anterior." : b < 1 ? " cada paso es menor que el anterior." : " con b = 1 no cambia."}
       </p>
+      <Challenge goals={[
+        { text: "Haz que la cantidad se reduzca a la mitad en cada paso.", met: Math.abs(b - 0.5) < 1e-9 },
+        { text: "Consigue que la exponencial pase de 100 antes de n = 4.", met: exp(3) > 100, hint: "Prueba con un factor mayor o un valor inicial mayor." },
+        { text: "Haz que las dos gráficas sean la misma recta horizontal.", met: Math.abs(b - 1) < 1e-9 },
+      ]} />
     </>
   );
 }
@@ -134,18 +156,20 @@ export function TrigVisual({ id }: { id: string }) {
         <line x1={O[0]} y1={O[1]} x2={B[0]} y2={B[1]} className="stroke-amber-300" strokeWidth={4} />
         <path d={`M${B[0] - 12},${B[1]} v-12 h12`} className="fill-none stroke-slate-400" />
         <path d={`M${O[0] + 30},${O[1]} A30,30 0 0 0 ${O[0] + 30 * Math.cos(rad(angle))},${O[1] - 30 * Math.sin(rad(angle))}`} className="fill-none stroke-cyan-300" strokeWidth={2} />
-        <text x={O[0] + 38} y={O[1] - 8} className="fill-cyan-200 text-[11px] font-bold">α</text>
+        <text x={O[0] + 38} y={O[1] - 8} className="fill-cyan-200 text-[13px] font-bold">α</text>
         {/* Si el triángulo es ancho, la etiqueta va por dentro para no salirse. */}
-        <text x={B[0] > 190 ? B[0] - 6 : B[0] + 6} y={(B[1] + C[1]) / 2} textAnchor={B[0] > 190 ? "end" : "start"} className="fill-rose-200 text-[11px]">opuesto {num(opp)}</text>
-        <text x={(O[0] + B[0]) / 2} y={O[1] + 16} textAnchor="middle" className="fill-amber-200 text-[11px]">adyacente {num(adj)}</text>
+        <text x={B[0] > 190 ? B[0] - 6 : B[0] + 6} y={(B[1] + C[1]) / 2} textAnchor={B[0] > 190 ? "end" : "start"} className="fill-rose-200 text-[12px]">opuesto {num(opp)}</text>
+        <text x={(O[0] + B[0]) / 2} y={O[1] + 16} textAnchor="middle" className="fill-amber-200 text-[12px]">adyacente {num(adj)}</text>
         <Handle x={C[0]} y={C[1]} className="fill-cyan-300"
           onDrag={(px, py) => {
             const deg = (Math.atan2(O[1] - py, px - O[0]) * 180) / Math.PI;
             setAngle(snap(deg, 10, 80));
           }} />
       </svg>
-      <p className="font-mono text-sm">
-        sen α = {num(opp)} ÷ {hyp} = <strong>{num(Math.sin(rad(angle)))}</strong> · cos α = {num(adj)} ÷ {hyp} = <strong>{num(Math.cos(rad(angle)))}</strong> · tan α = <strong>{num(Math.tan(rad(angle)))}</strong>
+      <p className="text-sm font-semibold">
+        <MathText text={`sen α = opuesto/hipotenusa = ${num(opp)}/${hyp} ≈ ${num(Math.sin(rad(angle)))}`} />
+        <br /><MathText text={`cos α = adyacente/hipotenusa = ${num(adj)}/${hyp} ≈ ${num(Math.cos(rad(angle)))}`} />
+        <br /><MathText text={`tan α = opuesto/adyacente ≈ ${num(Math.tan(rad(angle)))}`} />
       </p>
       <p className="text-sm text-slate-300">
         Cambia el tamaño: los lados crecen, pero los cocientes no cambian. Mueve el vértice para cambiar el ángulo: ahí sí cambian. Con α = 37° el triángulo es casi un 3-4-5.
@@ -179,12 +203,12 @@ export function BoxplotVisual({ id }: { id: string }) {
         <rect x={sx(q1)} y={64} width={Math.max(1, sx(q3) - sx(q1))} height={32} className="fill-amber-300/25 stroke-amber-300" strokeWidth={2} />
         <line x1={sx(med)} x2={sx(med)} y1={64} y2={96} className="stroke-white" strokeWidth={3} />
         {[0, 10, 20, 30, 40].map((t) => (
-          <text key={t} x={sx(t)} y={122} textAnchor="middle" className="fill-slate-400 text-[11px]">{t}</text>
+          <text key={t} x={sx(t)} y={122} textAnchor="middle" className="fill-slate-300 text-[13px]">{t}</text>
         ))}
         <Handle x={sx(extreme)} y={30} r={3} className="fill-transparent"
           onDrag={(px) => setExtreme(snap(((px - 16) / 288) * (hi - lo) + lo, 0, 40))} />
       </svg>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         Q1 = {num(q1)} · mediana = {num(med)} · Q3 = {num(q3)} · RIC = <strong>{num(q3 - q1)}</strong> · rango = <strong>{data[7] - data[0]}</strong>
       </p>
       <p className="text-sm text-slate-300">
@@ -215,7 +239,7 @@ export function CountingVisual({ id }: { id: string }) {
           </span>
         ))}
       </div>
-      <p className="font-mono text-sm">{a} polos · {b} pantalones = <strong>{a * b} atuendos</strong> (cada polo con cada pantalón)</p>
+      <p className="text-sm font-semibold">{a} polos · {b} pantalones = <strong>{a * b} atuendos</strong> (cada polo con cada pantalón)</p>
       <Slider id={`${id}-n`} label="Personas para elegir 2" value={n} min={3} max={8} onChange={setN} />
       <Toggle label="¿Importa el orden?" value={ordered} onChange={setOrdered}
         options={[["sin", "Sin orden (delegados)"], ["con", "Con orden (presidente y secretario)"]]} />
@@ -225,16 +249,16 @@ export function CountingVisual({ id }: { id: string }) {
           const counted = i !== j && (ordered === "con" || i < j);
           return (
             <span key={`${r}${c}`} aria-hidden="true"
-              className={`grid size-7 place-items-center text-[10px] ${i === j ? "bg-slate-900 text-slate-400" : counted ? "bg-amber-300 font-bold text-slate-950" : "bg-slate-800 text-slate-400"}`}>
+              className={`grid size-7 place-items-center text-[12px] ${i === j ? "bg-slate-900 text-slate-400" : counted ? "bg-amber-300 font-bold text-slate-950" : "bg-slate-800 text-slate-400"}`}>
               {r}{c}
             </span>
           );
         }))}
       </div>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold">
         {ordered === "con"
           ? <>{n} · {n - 1} = <strong>{pairs}</strong>: AB y BA cuentan por separado.</>
-          : <>{n} · {n - 1} ÷ 2 = <strong>{pairs}</strong>: AB y BA son la misma pareja.</>}
+          : <><MathText text={`(${n} · ${n - 1})/2 = ${pairs}`} />: AB y BA son la misma pareja.</>}
       </p>
     </>
   );
@@ -278,13 +302,13 @@ export function TransformVisual({ id }: { id: string }) {
       {kind === "rotacion" && (
         <Toggle label="Giro alrededor del origen" value={turn} onChange={setTurn} options={[["90", "90° antihorario"], ["180", "180°"]]} />
       )}
-      <p className="font-mono text-lg">{rule}</p>
-      <Plane x={[-8, 8]} y={[-8, 8]} xStep={2} yStep={2}
+      <p className="text-lg font-semibold">{rule}</p>
+      <Plane x={[-8, 8]} y={[-8, 8]} xStep={2} yStep={2} xLabel="x" yLabel="y"
         label={`Triángulo ${base.map(fmtP).join(", ")} y su imagen ${image.map(fmtP).join(", ")} por ${rule}. Las longitudes y los ángulos se conservan.`}>
         {(s) => (
           <>
             <polygon points={base.map(([x, y]) => `${s.sx(x)},${s.sy(y)}`).join(" ")} className="fill-cyan-300/30 stroke-cyan-300" strokeWidth={2} />
-            <polygon points={image.map(([x, y]) => `${s.sx(x)},${s.sy(y)}`).join(" ")} className="fill-amber-300/30 stroke-amber-300" strokeWidth={2} />
+            <polygon points={image.map(([x, y]) => `${s.sx(x)},${s.sy(y)}`).join(" ")} className="fill-amber-300/30 stroke-amber-300" strokeWidth={2} strokeDasharray="5 3" />
             {kind === "traslacion" && (
               <Handle x={s.sx(image[0][0])} y={s.sy(image[0][1])}
                 onDrag={(px, py) => {
@@ -321,35 +345,52 @@ export function InterestVisual({ id }: { id: string }) {
   const [capital, setCapital] = useState(1000);
   const [rate, setRate] = useState(10);
   const [years, setYears] = useState(10);
+  const [pick, setPick] = useState<number | null>(null);
+  const ghost = useGhost({ capital, rate });
   const simple = (t: number) => capital * (1 + (rate * t) / 100),
     compound = (t: number) => capital * (1 + rate / 100) ** t;
-  const top = Math.max(compound(years), simple(years)) * 1.1;
   const gap = compound(years) - simple(years);
+  const { range, step } = niceRange([compound(years), simple(years), ...(ghost ? [ghost.capital * (1 + ghost.rate / 100) ** years] : [])]);
+  const points = Array.from({ length: years + 1 }, (_, t) => ({ x: t, y: compound(t), label: `Año ${t}: S/ ${num(compound(t))}` }));
   return (
     <>
       <Slider id={`${id}-c`} label="Capital (soles)" value={capital} min={500} max={5000} step={500} onChange={setCapital} />
       <Slider id={`${id}-r`} label="Tasa anual (%)" value={rate} min={1} max={25} onChange={setRate} />
-      <Slider id={`${id}-t`} label="Años" value={years} min={1} max={20} onChange={setYears} />
-      <p className="font-mono text-sm">
-        Simple: {num(capital)} · (1 + {rate} · {years} ÷ 100) = {num(simple(years))}
+      <Slider id={`${id}-t`} label="Años" value={years} min={1} max={20} onChange={(t) => { setYears(t); setPick(null); }} />
+      <p className="text-sm font-semibold">
+        <MathText text={`Simple: ${num(capital)} · (1 + (${rate} · ${years})/100) = ${num(simple(years))}`} />
         <br />
         Compuesto: {num(capital)} · {num(1 + rate / 100)}<sup>{years}</sup> = {num(compound(years))}
       </p>
-      <Plane x={[0, years]} y={[0, top]} xStep={years > 10 ? 2 : 1} yStep={Math.max(500, Math.ceil(top / 5 / 500) * 500)}
+      <Legend items={[
+        { label: "Compuesto (curva)", className: "stroke-cyan-300", marker: "dot" },
+        { label: "Simple (recta)", className: "stroke-amber-300", dash: "5 4" },
+      ]} />
+      <Plane x={[0, years]} y={range} xStep={years > 10 ? 2 : 1} yStep={step} xLabel="años" yLabel="S/"
         label={`Monto con interés simple (ámbar, recta) y compuesto (cian, curva) durante ${years} años al ${rate}%: al final el compuesto da ${num(gap)} soles más.`}>
         {(s) => (
           <>
+            {ghost && <path d={curve((t) => ghost.capital * (1 + ghost.rate / 100) ** t, [0, years], s)} className="fill-none stroke-slate-500" strokeWidth={2} strokeDasharray="4 4" />}
             <path d={curve(simple, [0, years], s, 2)} className="fill-none stroke-amber-300" strokeWidth={2} strokeDasharray="5 4" />
             <path d={curve(compound, [0, years], s)} className="fill-none stroke-cyan-300" strokeWidth={2.5} />
+            <PointMarks points={points.slice(0, -1)} scale={s} selected={pick !== null && pick < years ? pick : null} onSelect={setPick} />
             <Handle x={s.sx(years)} y={s.sy(compound(years))} className="fill-cyan-300"
               onDrag={(px) => setYears(snap(s.ix(px), 1, 20))} />
           </>
         )}
       </Plane>
+      <GhostNote show={Boolean(ghost)} />
+      <PointReader id={`${id}-pt`} points={points} selected={pick} onSelect={setPick} noun="año" />
+      <ValueTable caption="Monto por año con interés simple y compuesto" headers={["Año", "Simple", "Compuesto", "Diferencia"]}
+        rows={points.map(({ x: t }) => [t, num(simple(t)), num(compound(t)), num(compound(t) - simple(t))])} />
       <p className="text-sm text-slate-300">
         Diferencia al final: <strong>{num(gap)} soles</strong>. El simple gana {num((capital * rate) / 100)} cada año; el compuesto gana
         cada año un poco más, porque el {rate}% se aplica a un monto que ya incluye intereses.
       </p>
+      <Challenge goals={[
+        { text: "Consigue que el compuesto supere al simple en más de 1000 soles.", met: gap > 1000 },
+        { text: "Encuentra una tasa con la que el capital se duplique en 10 años o menos con interés compuesto.", met: years <= 10 && compound(years) >= 2 * capital },
+      ]} />
     </>
   );
 }
@@ -360,15 +401,21 @@ export function SequenceVisual({ id }: { id: string }) {
   const [first, setFirst] = useState(2);
   const [d, setD] = useState(3);
   const [r, setR] = useState(2);
+  const [pick, setPick] = useState<number | null>(null);
   const arith = mode === "aritmetica";
+  const ghost = useGhost({ mode, first, d, r });
   const term = (n: number) => (arith ? first + (n - 1) * d : first * r ** (n - 1));
+  const ghostTerm = ghost && ghost.mode === mode
+    ? (n: number) => (arith ? ghost.first + (n - 1) * ghost.d : ghost.first * ghost.r ** (n - 1))
+    : undefined;
   const ns = [1, 2, 3, 4, 5, 6, 7, 8];
   const values = ns.map(term);
-  const lo = Math.min(0, ...values),
-    hi = Math.max(1, ...values) * 1.1;
+  const { range, step } = niceRange([...values, ...(ghostTerm ? ns.map(ghostTerm) : [])]);
+  const points = ns.map((n) => ({ x: n, y: term(n), label: `a${"₀₁₂₃₄₅₆₇₈₉"[n]} = ${num(term(n))}` }));
+  const jump = arith ? `${d < 0 ? "−" : "+"}${num(Math.abs(d))}` : `×${num(r)}`;
   return (
     <>
-      <Toggle label="Tipo de progresión" value={mode} onChange={setMode}
+      <Toggle label="Tipo de progresión" value={mode} onChange={(m) => { setMode(m); setPick(null); }}
         options={[["aritmetica", "Aritmética (+ d)"], ["geometrica", "Geométrica (× r)"]]} />
       <Slider id={`${id}-a`} label="Primer término a₁" value={first} min={1} max={10} onChange={setFirst} />
       {arith ? (
@@ -376,14 +423,24 @@ export function SequenceVisual({ id }: { id: string }) {
       ) : (
         <Slider id={`${id}-r`} label="Razón r" value={r} min={0.5} max={3} step={0.5} onChange={setR} />
       )}
-      <p className="font-mono text-lg">
+      <p className="text-lg font-semibold">
         {arith ? `aₙ = ${first} + (n − 1) · ${num(d)}` : `aₙ = ${first} · ${num(r)}ⁿ⁻¹`}
       </p>
-      <Plane x={[0, 9]} y={[lo, hi]} yStep={Math.max(1, Math.ceil((hi - lo) / 6))}
+      <Plane x={[0, 9]} y={range} xStep={1} yStep={step} xLabel="n" yLabel="aₙ"
         label={`Primeros 8 términos: ${values.map(num).join(", ")}. ${arith ? "Los puntos quedan alineados: crece lo mismo en cada paso." : "Los saltos cambian de tamaño: cada término es " + num(r) + " veces el anterior."}`}>
         {(s) => (
           <>
-            {ns.map((n) => <circle key={n} cx={s.sx(n)} cy={s.sy(term(n))} r={4} className="fill-cyan-300" />)}
+            {ghostTerm && ns.map((n) => <circle key={`g${n}`} cx={s.sx(n)} cy={s.sy(ghostTerm(n))} r={3.5} className="fill-none stroke-slate-500" strokeWidth={1.5} />)}
+            {/* Saltos entre términos: avanzar un lugar y sumar d (o multiplicar por r). */}
+            {ns.slice(0, 4).map((n) => (
+              <g key={`j${n}`} aria-hidden="true">
+                <path d={`M${s.sx(n)},${s.sy(term(n))} H${s.sx(n + 1)} V${s.sy(term(n + 1))}`} className="fill-none stroke-amber-300/80" strokeWidth={1.5} strokeDasharray="3 3" />
+                <text x={s.sx(n + 1) + 3} y={(s.sy(term(n)) + s.sy(term(n + 1))) / 2 + 4} className="fill-amber-200 text-[12px] font-bold">{jump}</text>
+              </g>
+            ))}
+            <PointMarks points={points.filter((_, i) => i !== 1)} scale={s}
+              selected={pick === null || pick === 1 ? null : pick > 1 ? pick - 1 : pick}
+              onSelect={(i) => setPick(i >= 1 ? i + 1 : i)} />
             <Handle x={s.sx(2)} y={s.sy(term(2))} className="fill-amber-300"
               onDrag={(_, py) => {
                 const v = s.iy(py);
@@ -393,11 +450,20 @@ export function SequenceVisual({ id }: { id: string }) {
           </>
         )}
       </Plane>
+      <GhostNote show={Boolean(ghostTerm)} />
+      <PointReader id={`${id}-pt`} points={points} selected={pick} onSelect={setPick} noun="término" />
+      <ValueTable caption="Términos de la progresión" headers={["n", "aₙ", arith ? "Cambio" : "Cociente"]}
+        rows={ns.map((n) => [n, num(term(n)), n === 1 ? "—" : arith ? `${d < 0 ? "−" : "+"}${num(Math.abs(d))}` : `×${num(r)}`])} />
       <p className="text-sm text-slate-300">
         {arith
-          ? `Suma de los 8 términos: 8 · (${first} + ${num(term(8))}) ÷ 2 = ${num((8 * (first + term(8))) / 2)}. Arrastra el segundo punto para cambiar la diferencia.`
+          ? <>Suma de los 8 términos: <MathText text={`(8 · (${first} + ${num(term(8))}))/2 = ${num((8 * (first + term(8))) / 2)}`} />. Cada salto ámbar sube lo mismo ({jump}). Arrastra el segundo punto para cambiar la diferencia.</>
           : `De un término al siguiente se multiplica por ${num(r)}: ${r > 1 ? "los saltos crecen" : r < 1 ? "los saltos se achican" : "no cambia"}. Arrastra el segundo punto para cambiar la razón.`}
       </p>
+      <Challenge goals={[
+        { text: "Con una progresión aritmética, consigue que a₅ = 18.", met: arith && first + 4 * d === 18, hint: "De a₁ a a₅ hay 4 saltos iguales." },
+        { text: "Haz una progresión que decrezca.", met: arith ? d < 0 : r < 1 },
+        { text: "Con una progresión geométrica, consigue que a₄ = 24.", met: !arith && Math.abs(first * r ** 3 - 24) < 1e-9, hint: "De a₁ a a₄ se multiplica 3 veces por r." },
+      ]} />
     </>
   );
 }
@@ -425,11 +491,11 @@ export function DistanceVisual({ id }: { id: string }) {
           <Slider id={`${id}-by`} label="B: y" value={by} min={-6} max={8} onChange={setBy} />
         </div>
       </div>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold">
         <MathText text={`Δx = ${num(dx)} · Δy = ${num(dy)} · d = √(${num(dx * dx)} + ${num(dy * dy)}) ${Number.isInteger(dist) ? "=" : "≈"} ${num(dist)}`} />
-        <br />M = ({num(mx)}, {num(my)})
+        <br /><MathText text={`M = ((${num(ax)} + ${num(bx)})/2, (${num(ay)} + ${num(by)})/2) = (${num(mx)}, ${num(my)})`} />
       </p>
-      <Plane x={[-6, 6]} y={[-6, 8]} xStep={2} yStep={2}
+      <Plane x={[-6, 6]} y={[-6, 8]} xStep={2} yStep={2} xLabel="x" yLabel="y"
         label={`A(${num(ax)}, ${num(ay)}) y B(${num(bx)}, ${num(by)}): catetos ${num(Math.abs(dx))} y ${num(Math.abs(dy))}, distancia ${num(dist)}, punto medio (${num(mx)}, ${num(my)}).`}>
         {(s) => (
           <>
@@ -438,7 +504,7 @@ export function DistanceVisual({ id }: { id: string }) {
             <circle cx={s.sx(mx)} cy={s.sy(my)} r={5} className="fill-rose-300" />
             <Handle x={s.sx(ax)} y={s.sy(ay)} className="fill-emerald-300"
               onDrag={(px, py) => { setAx(snap(s.ix(px), -6, 6)); setAy(snap(s.iy(py), -6, 8)); }} />
-            <Handle x={s.sx(bx)} y={s.sy(by)} className="fill-amber-300"
+            <Handle x={s.sx(bx)} y={s.sy(by)} className="fill-amber-300" shape="square"
               onDrag={(px, py) => { setBx(snap(s.ix(px), -6, 6)); setBy(snap(s.iy(py), -6, 8)); }} />
           </>
         )}
@@ -456,6 +522,7 @@ export function VertexVisual({ id }: { id: string }) {
   const [a, setA] = useState(1);
   const [h, setH] = useState(2);
   const [k, setK] = useState(-3);
+  const ghost = useGhost({ a, h, k });
   const f = (x: number) => a * (x - h) ** 2 + k;
   const kind = a > 0 ? "mínimo" : a < 0 ? "máximo" : null;
   const form = `y = ${a === 1 ? "" : a === -1 ? "−" : num(a)}(x ${h < 0 ? "+" : "−"} ${num(Math.abs(h))})² ${k < 0 ? "−" : "+"} ${num(Math.abs(k))}`;
@@ -464,13 +531,14 @@ export function VertexVisual({ id }: { id: string }) {
       <Slider id={`${id}-a`} label="Coeficiente a" value={a} min={-2} max={2} step={0.5} onChange={setA} />
       <Slider id={`${id}-h`} label="h (corrimiento horizontal)" value={h} min={-4} max={4} onChange={setH} />
       <Slider id={`${id}-k`} label="k (corrimiento vertical)" value={k} min={-6} max={6} onChange={setK} />
-      <p className="font-mono text-lg">{a === 0 ? `y = ${num(k)}` : form}</p>
-      <Plane x={[-6, 6]} y={[-8, 8]} xStep={2} yStep={2}
+      <p className="text-lg font-semibold">{a === 0 ? `y = ${num(k)}` : form}</p>
+      <Plane x={[-6, 6]} y={[-8, 8]} xStep={2} yStep={2} xLabel="x" yLabel="y"
         label={a === 0
           ? `Con a = 0 no hay parábola: es la recta horizontal y = ${num(k)}.`
           : `Parábola ${form}, abre hacia ${a > 0 ? "arriba" : "abajo"} con vértice (${num(h)}, ${num(k)}): es un ${kind}, y = ${num(k)}.`}>
         {(s) => (
           <>
+            {ghost && <path d={curve((x) => ghost.a * (x - ghost.h) ** 2 + ghost.k, [-6, 6], s)} className="fill-none stroke-slate-500" strokeWidth={2} strokeDasharray="4 4" />}
             <line x1={s.sx(h)} x2={s.sx(h)} y1={s.sy(-8)} y2={s.sy(8)} className="stroke-slate-600" strokeDasharray="3 3" />
             <path d={curve(f, [-6, 6], s)} className="fill-none stroke-cyan-300" strokeWidth={2.5} />
             <Handle x={s.sx(h)} y={s.sy(k)} className="fill-rose-300"
@@ -478,11 +546,19 @@ export function VertexVisual({ id }: { id: string }) {
           </>
         )}
       </Plane>
+      <GhostNote show={Boolean(ghost)} />
+      <ValueTable caption="Valores de la parábola alrededor del vértice" headers={["x", "y"]}
+        rows={[-2, -1, 0, 1, 2].map((dx) => [num(h + dx), num(f(h + dx))])} />
       <p className="text-sm text-slate-300">
         {a === 0
           ? "Sin el término al cuadrado, la función no cambia con x."
-          : `El vértice (${num(h)}, ${num(k)}) es el ${kind}: (x − ${num(h)})² vale 0 en x = ${num(h)} y es positivo en el resto, así que y ${a > 0 ? "solo puede crecer" : "solo puede bajar"} desde ${num(k)}. Cuanto mayor es |a|, más estrecha es la parábola.`}
+          : `El vértice (${num(h)}, ${num(k)}) es el ${kind}: (x − ${num(h)})² vale 0 en x = ${num(h)} y es positivo en el resto, así que y ${a > 0 ? "solo puede crecer" : "solo puede bajar"} desde ${num(k)}. Cuanto mayor es |a|, más estrecha es la parábola. En la tabla, los valores a la misma distancia del vértice son iguales: es la simetría.`}
       </p>
+      <Challenge goals={[
+        { text: "Dibuja una parábola con un máximo en (−1, 4).", met: a < 0 && h === -1 && k === 4 },
+        { text: "Haz la parábola más estrecha posible con el vértice en el origen.", met: Math.abs(a) === 2 && h === 0 && k === 0 },
+        { text: "Consigue una parábola que no corte el eje x y abra hacia arriba.", met: a > 0 && k > 0 },
+      ]} />
     </>
   );
 }
@@ -498,8 +574,8 @@ export function SolidsVisual({ id }: { id: string }) {
   const max = Math.max(cylinder, sphere);
   const bars: [string, number, string][] = [
     ["Cilindro π·r²·h", cylinder, "fill-amber-300"],
-    ["Cono π·r²·h ÷ 3", cone, "fill-cyan-300"],
-    ["Esfera 4·π·r³ ÷ 3", sphere, "fill-rose-300"],
+    ["Cono (π·r²·h)/3", cone, "fill-cyan-300"],
+    ["Esfera (4·π·r³)/3", sphere, "fill-rose-300"],
   ];
   const scale = 44 / 8;
   return (
@@ -526,12 +602,12 @@ export function SolidsVisual({ id }: { id: string }) {
       <div className="space-y-2" aria-hidden="true">
         {bars.map(([label, value, color]) => (
           <div key={label} className="flex items-center gap-2 text-xs">
-            <span className="w-32 shrink-0 text-slate-300">{label}</span>
+            <span className="w-32 shrink-0 text-slate-300"><MathText text={label} /></span>
             <svg viewBox="0 0 200 12" className="h-3 w-full max-w-xs"><rect width={(value / max) * 200} height={12} rx={3} className={color} /></svg>
           </div>
         ))}
       </div>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         Cilindro: {num(cylinder)} cm³ · Cono: {num(cone)} cm³ · Esfera: {num(sphere)} cm³
       </p>
       <p className="text-sm text-slate-300">
@@ -576,7 +652,7 @@ export function TwoWayVisual({ id }: { id: string }) {
           <tr><th className="p-2" scope="row">Total</th><td className="p-2">{f4 + f5}</td><td className="bg-rose-950/40 p-2">{v4 + v5}</td><td className="p-2">{total}</td></tr>
         </tbody>
       </table>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold">
         <MathText text={`P(vóley | 5.°) = ${frac(v5, f5 + v5)}`} />
         <br /><MathText text={`P(5.° | vóley) = ${frac(v5, v4 + v5)}`} />
         <br /><MathText text={`P(vóley) = ${frac(v4 + v5, total)}`} />

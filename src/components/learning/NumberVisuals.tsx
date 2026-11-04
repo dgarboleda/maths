@@ -153,7 +153,7 @@ export function IntegerProductVisual({ id }: { id: string }) {
         {Array.from({ length: 13 }, (_, i) => -30 + i * 5).map((t) => (
           <g key={t}>
             <line x1={x(t)} x2={x(t)} y1={47} y2={57} className="stroke-slate-500" />
-            <text x={x(t)} y={72} textAnchor="middle" className={`text-[11px] ${t === 0 ? "fill-white" : "fill-slate-400"}`}>{sg(t)}</text>
+            <text x={x(t)} y={72} textAnchor="middle" className={`text-[12px] ${t === 0 ? "fill-white" : "fill-slate-400"}`}>{sg(t)}</text>
           </g>
         ))}
         {jumps.map(([from, to], i) => (

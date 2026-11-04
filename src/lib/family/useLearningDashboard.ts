@@ -37,7 +37,7 @@ export function useLearningDashboard(childId: string) {
     getFirebase().then(({ db, firestore: { collection, query, where, orderBy, onSnapshot } }) => {
       if (cancelled) return;
       const path = ["parents", parentId!, "children", childId] as const;
-      unsubscribes.push(onSnapshot(query(collection(db, ...path, "learningEvidence"), where("createdAt", ">=", new Date(weekStart)), orderBy("createdAt", "desc")),
+      unsubscribes.push(onSnapshot(query(collection(db, ...path, "learningEvidence"), where("createdAt", ">=", new Date(weekStart - 7 * DAY)), orderBy("createdAt", "desc")),
         (snap) => receive("events", { events: snap.docs.map((doc) => ({ ...doc.data(), id: doc.id }) as Event) }), fail));
       unsubscribes.push(onSnapshot(query(collection(db, ...path, "redemptionRequests"), orderBy("createdAt", "desc")),
         (snap) => receive("requests", { requests: snap.docs.map((doc) => ({ ...doc.data(), id: doc.id }) as RequestDoc) }), fail));
@@ -54,6 +54,11 @@ export function useLearningDashboard(childId: string) {
       return { day: new Date(at).toLocaleDateString("es", { weekday: "narrow", timeZone: "America/Lima" }).toUpperCase(),
         problems: answers.filter((event) => limaDay(timestampMillis(event.createdAt)) === day).length };
     });
+    // La semana anterior (7 días antes de `weekStart`), para comparar el ritmo.
+    const previousWeekProblems = answers.filter((event) => {
+      const at = timestampMillis(event.createdAt);
+      return at >= weekStart - 7 * DAY && at < weekStart;
+    }).length;
     const times = [...Object.values(progress).map((p) => p.updatedAt), ...Object.values(adventures).map((p) => p.updatedAt), daily?.updatedAt ?? 0, placement?.updatedAt ?? 0].filter((at) => at > 0);
     const lastAt = Math.max(0, ...times);
     const activity: ActivityItem[] = current.events.slice(0, 8).map((event) => ({
@@ -67,7 +72,7 @@ export function useLearningDashboard(childId: string) {
       { id: "retained", emoji: "🌱", label: "Lo recuerdo", description: "Superar un repaso diferido sin apoyo.", unlocked: summary.retained > 0 },
       { id: "daily", emoji: "🔥", label: "Hábito de repaso", description: "Terminar una sesión de repaso diario.", unlocked: (daily?.sessions ?? 0) > 0 },
     ].map((badge) => ({ ...badge, image: undefined }));
-    return { ...summary, totalStars, weeklyProblems, activity, badges,
+    return { ...summary, totalStars, weeklyProblems, previousWeekProblems, activity, badges,
       loading: loading || (!current.error && current.loaded.length < 2), error: error ?? current.error,
       daysSinceLastAttempt: lastAt ? Math.max(0, Math.floor((now - lastAt) / DAY)) : null,
       pendingRedemptions: current.requests.filter((r) => r.status === "pendiente"),

@@ -31,7 +31,7 @@ export function AnglesVisual({ id }: { id: string }) {
   };
   const label = (mid: number, text: string, cls: string) => {
     const [x, y] = at(mid, 42);
-    return <text x={x} y={y + 4} textAnchor="middle" className={`${cls} text-[11px] font-bold`}>{text}</text>;
+    return <text x={x} y={y + 4} textAnchor="middle" className={`${cls} text-[12px] font-bold`}>{text}</text>;
   };
   // Triángulo con base fija: el vértice superior sale de cortar los dos lados.
   const B0: [number, number] = [0, 0],
@@ -113,7 +113,7 @@ export function PythagorasVisual({ id }: { id: string }) {
         <text x={center(sqB)[0]} y={center(sqB)[1]} textAnchor="middle" className="fill-amber-100 text-[12px] font-bold">{b * b}</text>
         <text x={center(sqC)[0]} y={center(sqC)[1]} textAnchor="middle" className="fill-rose-100 text-[12px] font-bold">{a * a + b * b}</text>
       </svg>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         <MathText text={`a² + b² = c² → ${a * a} + ${b * b} = ${a * a + b * b} → c = √${a * a + b * b} = `} /><strong>{num(c)}</strong>
       </p>
       <p className="text-sm text-slate-300">
@@ -135,15 +135,15 @@ export function CircleVisual({ id }: { id: string }) {
         <circle cx={60} cy={60} r={r * u} className="fill-cyan-300/15 stroke-cyan-300" strokeWidth={2.5} />
         <rect x={60} y={60 - r * u} width={r * u} height={r * u} className="fill-amber-300/25 stroke-amber-300" />
         <line x1={60} y1={60} x2={60 + r * u} y2={60} className="stroke-rose-300" strokeWidth={2} />
-        <text x={60 + (r * u) / 2} y={74} textAnchor="middle" className="fill-rose-200 text-[11px]">r</text>
+        <text x={60 + (r * u) / 2} y={74} textAnchor="middle" className="fill-rose-200 text-[12px]">r</text>
         <Handle x={60 + r * u} y={60} className="fill-rose-300" r={5} onDrag={(px) => setR(snap((px - 60) / u, 1, 5))} />
         <line x1={10} x2={10 + C * u} y1={140} y2={140} className="stroke-cyan-300" strokeWidth={4} />
         {[0, 1, 2, 3].map((i) => (
           <line key={i} x1={10 + i * 2 * r * u} x2={10 + i * 2 * r * u} y1={130} y2={150} className="stroke-slate-300" />
         ))}
-        <text x={10} y={124} className="fill-slate-300 text-[11px]">borde desenrollado: 3 diámetros y un poco más</text>
+        <text x={10} y={124} className="fill-slate-300 text-[12px]">borde desenrollado: 3 diámetros y un poco más</text>
       </svg>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         Longitud = 2 · π · {r} ≈ <strong>{num(C)}</strong> · Área = π · {r}² ≈ <strong>{num(Math.PI * r * r)}</strong>
       </p>
       <p className="text-sm text-slate-300">
@@ -204,14 +204,18 @@ export function VolumeVisual({ id }: { id: string }) {
       <Slider id={`${id}-h`} label="Altura (capas)" value={h} min={1} max={5} onChange={setH} />
       <svg role="img" viewBox="0 0 200 192" className="max-h-64 w-full max-w-sm rounded-xl bg-slate-950"
         aria-label={`Prisma de ${l} por ${w} por ${h} cubos: ${h} capas de ${l * w} cubos, ${l * w * h} en total.`}>
-        <polygon points={poly([P(0, 0, 0), P(l, 0, 0), P(l, h, 0), P(0, h, 0)])} className="fill-cyan-300/20" />
+        {/* Una cara por capa: las capas nuevas «caen» sobre la pila (sin animación si se pidió reducir movimiento). */}
+        {Array.from({ length: h }, (_, j) => (
+          <polygon key={`capa-${j}`} points={poly([P(0, j, 0), P(l, j, 0), P(l, j + 1, 0), P(0, j + 1, 0)])}
+            className={`anim-layer ${j % 2 ? "fill-cyan-300/25" : "fill-cyan-300/15"}`} />
+        ))}
         <polygon points={poly([P(0, h, 0), P(l, h, 0), P(l, h, w), P(0, h, w)])} className="fill-amber-300/30" />
         <polygon points={poly([P(l, 0, 0), P(l, 0, w), P(l, h, w), P(l, h, 0)])} className="fill-cyan-300/10" />
         {lines.map(([a, b], i) => (
           <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} className="stroke-slate-300" strokeWidth={1} />
         ))}
       </svg>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         Base = {l} × {w} = {l * w} cubos por capa · Volumen = {l * w} × {h} = <strong>{l * w * h} cubos</strong>
       </p>
       <p className="text-sm text-slate-300">
@@ -245,7 +249,7 @@ export function TreeVisual({ id }: { id: string }) {
   const edge = (x1: number, y1: number, x2: number, y2: number, text: string) => (
     <>
       <line x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-slate-500" strokeWidth={1.5} />
-      <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 5} textAnchor="middle" className="fill-slate-200 text-[11px]">{text}</text>
+      <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 5} textAnchor="middle" className="fill-slate-200 text-[12px]">{text}</text>
     </>
   );
   const firstY = { R: 55, B: 155 },
@@ -272,7 +276,7 @@ export function TreeVisual({ id }: { id: string }) {
         <circle cx={20} cy={105} r={6} className="fill-slate-300" />
         {leaves.map((l, i) => (
           // Probabilidad de la rama como fracción apilada, igual que en el texto.
-          <g key={l.path} className="fill-slate-100 text-[11px] font-mono">
+          <g key={l.path} className="fill-slate-100 text-[12px] font-semibold">
             <text x={228} y={leafY[i] + 4}>{l.path}:</text>
             <text x={266} y={leafY[i] - 2} textAnchor="middle">{l.p}</text>
             <line x1={256} x2={276} y1={leafY[i] + 1.5} y2={leafY[i] + 1.5} className="stroke-slate-100" strokeWidth={1} />
@@ -326,7 +330,7 @@ export function PowersVisual({ id }: { id: string }) {
     <>
       <Slider id={`${id}-a`} label="Número entre 1 y 10" value={a} min={1} max={9.9} step={0.1} onChange={setA} />
       <Slider id={`${id}-n`} label="Exponente n" value={n} min={lo} max={8} onChange={setN} />
-      <p className="font-mono text-lg">
+      <p className="text-lg font-semibold tabular-nums">
         {num(a)} × 10{sup(n)} = <strong>{expandScientific(a, n)}</strong>
       </p>
       <svg role="img" viewBox="0 0 320 72" className="w-full max-w-md rounded-xl bg-slate-950"
@@ -335,11 +339,11 @@ export function PowersVisual({ id }: { id: string }) {
         {Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).map((e) => (
           <g key={e}>
             <line x1={pos(e)} x2={pos(e)} y1={31} y2={41} className="stroke-slate-500" />
-            {e % 3 === 0 && <text x={pos(e)} y={58} textAnchor={e === hi ? "end" : e === lo ? "start" : "middle"} className="fill-slate-400 text-[11px]">10{sup(e)}</text>}
+            {e % 3 === 0 && <text x={pos(e)} y={58} textAnchor={e === hi ? "end" : e === lo ? "start" : "middle"} className="fill-slate-400 text-[12px]">10{sup(e)}</text>}
           </g>
         ))}
         {refs.map((r) => (
-          <text key={r.text} x={Math.min(305, pos(r.e))} y={18} textAnchor={r.e > 7 ? "end" : "middle"} className="fill-slate-300 text-[11px]">{r.text}</text>
+          <text key={r.text} x={Math.min(305, pos(r.e))} y={18} textAnchor={r.e > 7 ? "end" : "middle"} className="fill-slate-300 text-[12px]">{r.text}</text>
         ))}
         <Handle x={pos(n + Math.log10(a))} y={36} className="fill-cyan-300"
           onDrag={(px) => {
@@ -382,7 +386,7 @@ export function DecimalGridVisual({ id }: { id: string }) {
           );
         })}
       </div>
-      <p className="font-mono text-lg">
+      <p className="text-lg font-semibold tabular-nums">
         <MathText text={`0,${a} × 0,${b} = ${a * b}/100 = `} /><strong>{num((a * b) / 100)}</strong>
       </p>
       <p className="text-sm text-slate-300">

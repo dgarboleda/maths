@@ -5,6 +5,7 @@ import { MathText } from "@/components/MathText";
 import { useId, useState } from "react";
 import type { Visual } from "@/lib/learning/domain";
 import {
+  Challenge,
   InequalityVisual,
   LinearVisual,
   ParabolaVisual,
@@ -96,7 +97,7 @@ function NumberLineVisual({ id }: { id: string }) {
       <input id={`${id}-move`} type="range" min={-10} max={10} value={move}
         onChange={(e) => setMove(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
       <div role="img" aria-label={`Recta numérica: de ${sg(start)} se avanza ${sg(move)} y se llega a ${sg(end)}`}
-        className="grid grid-cols-[repeat(21,minmax(0,1fr))] gap-px rounded-lg bg-slate-950 p-1 text-center text-[11px] sm:text-xs">
+        className="grid grid-cols-[repeat(21,minmax(0,1fr))] gap-px rounded-lg bg-slate-950 p-1 text-center text-[12px] sm:text-xs">
         {ticks.map((t) => (
           <span key={t} aria-hidden="true"
             className={`rounded py-1 tabular-nums ${t === start ? "bg-slate-400 font-bold text-slate-950" : t === end ? "bg-cyan-300 font-bold text-slate-950" : t > lo && t < hi ? "bg-cyan-900/70 text-cyan-100" : t === 0 ? "text-white" : "text-slate-400"}`}>
@@ -131,24 +132,39 @@ function AreaVisual({ id }: { id: string }) {
       <div role="img" aria-label={`Rectángulo de ${width} por ${height} cuadrados de 1 cm²`}
         className="grid w-fit gap-px rounded bg-cyan-300/40 p-px"
         style={{ gridTemplateColumns: `repeat(${width}, 1.25rem)` }}>
-        {Array.from({ length: width * height }, (_, i) => (
-          <span key={i} aria-hidden="true" className="size-5 bg-slate-800" />
-        ))}
+        {Array.from({ length: width * height }, (_, i) => {
+          const row = Math.floor(i / width),
+            col = i % width;
+          return <span key={`${row}-${col}`} aria-hidden="true" className="anim-pop size-5 bg-slate-800"
+            style={{ animationDelay: `${(row + col) * 25}ms` }} />;
+        })}
       </div>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         Área = {width} × {height} = <strong>{width * height} cm²</strong> (cuadrados que cubren).<br />
         Perímetro = 2 × ({width} + {height}) = <strong>{2 * (width + height)} cm</strong> (borde que rodea).<br />
-        Triángulo con la misma base y altura: {width} × {height} ÷ 2 = {(width * height) / 2} cm².
+        Triángulo con la misma base y altura: <MathText text={`(${width} × ${height})/2 = ${(width * height) / 2}`} /> cm².
       </p>
     </>
   );
 }
 
+/** Modas de una lista: los valores que más se repiten (ninguna si ninguno se repite). */
+export function modes(values: number[]): number[] {
+  const counts = new Map<number, number>();
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+  const top = Math.max(...counts.values());
+  return top < 2 ? [] : [...counts].filter(([, c]) => c === top).map(([v]) => v).sort((a, b) => a - b);
+}
+
 function DataVisual({ id }: { id: string }) {
   const [extra, setExtra] = useState(9);
   const values = [3, 4, 4, 5, 6, extra].sort((a, b) => a - b);
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const sum = values.reduce((a, b) => a + b, 0);
+  const mean = sum / values.length;
   const median = (values[2] + values[3]) / 2;
+  const mode = modes(values);
+  const fmt = (n: number) => n.toLocaleString("es", { maximumFractionDigits: 2 });
+  const sx = (v: number) => 16 + (v / 30) * 288;
   return (
     <>
       <label htmlFor={`${id}-x`} className="block text-sm">
@@ -156,15 +172,38 @@ function DataVisual({ id }: { id: string }) {
       </label>
       <input id={`${id}-x`} type="range" min={0} max={30} value={extra}
         onChange={(e) => setExtra(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
-      <p className="font-mono text-lg">Datos ordenados: {values.join(", ")}</p>
+      <p className="text-lg font-semibold tabular-nums">Datos ordenados: {values.join(", ")}</p>
+      <svg role="img" viewBox="0 0 320 118" className="w-full max-w-md rounded-xl bg-slate-950"
+        aria-label={`Diagrama de puntos de ${values.join(", ")}: media ${fmt(mean)} (triángulo cian) y mediana ${fmt(median)} (línea ámbar).`}>
+        <line x1={16} x2={304} y1={70} y2={70} className="stroke-slate-500" />
+        {[0, 5, 10, 15, 20, 25, 30].map((t) => (
+          <g key={t}>
+            <line x1={sx(t)} x2={sx(t)} y1={66} y2={74} className="stroke-slate-500" />
+            <text x={sx(t)} y={110} textAnchor="middle" className="fill-slate-300 text-[13px]">{t}</text>
+          </g>
+        ))}
+        {values.map((v, i) => (
+          <circle key={i} cx={sx(v)} cy={58 - 13 * values.slice(0, i).filter((w) => w === v).length} r={5.5}
+            className={v === extra && i === values.lastIndexOf(extra) ? "fill-rose-300" : "fill-slate-200"} />
+        ))}
+        <line x1={sx(median)} x2={sx(median)} y1={14} y2={70} className="stroke-amber-300" strokeWidth={2.5} strokeDasharray="5 3" />
+        <text x={sx(median)} y={11} textAnchor="middle" className="fill-amber-200 text-[12px] font-bold">mediana</text>
+        <path d={`M${sx(mean)},74 l-7,12 h14 z`} className="fill-cyan-300" />
+        <text x={sx(mean)} y={98} textAnchor="middle" className="fill-cyan-200 text-[12px] font-bold">media</text>
+      </svg>
       <p className="text-sm">
-        Media = suma ÷ cantidad = {values.reduce((a, b) => a + b, 0)} ÷ 6 = <strong>{mean.toLocaleString("es", { maximumFractionDigits: 2 })}</strong>.<br />
-        Mediana = promedio de los dos centrales = <strong>{median.toLocaleString("es")}</strong>.<br />
-        Moda = <strong>4</strong> · Rango = {values[5]} − {values[0]} = <strong>{values[5] - values[0]}</strong>.
+        <MathText text={`Media = (suma)/(cantidad) = ${sum}/6 ≈ ${fmt(mean)}`} />.<br />
+        Mediana = promedio de los dos centrales = <strong>{fmt(median)}</strong>.<br />
+        Moda = <strong>{mode.length ? mode.join(" y ") : "no hay (ningún dato se repite)"}</strong>{mode.length > 1 ? " (dos modas)" : ""} · Rango = {values[5]} − {values[0]} = <strong>{values[5] - values[0]}</strong>.
       </p>
       <p className="text-sm text-slate-300">
-        Lleva el dato a 30: la media cambia mucho y la mediana casi nada. Por eso la mediana resiste los valores extremos.
+        Lleva el dato a 30: el triángulo de la media se desplaza mucho y la línea de la mediana casi nada. Por eso la mediana resiste los valores extremos.
       </p>
+      <Challenge goals={[
+        { text: "Elige el dato para que la media sea exactamente 6.", met: sum === 36 },
+        { text: "Consigue que los datos tengan dos modas.", met: mode.length === 2 },
+        { text: "Haz que la media y la mediana coincidan.", met: Math.abs(mean - median) < 1e-9 },
+      ]} />
     </>
   );
 }
@@ -186,7 +225,7 @@ function ProbabilityVisual({ id }: { id: string }) {
           <span key={i} aria-hidden="true" className={`size-5 rounded-full ${i < red ? "bg-rose-400" : "bg-sky-400"}`} />
         ))}
       </div>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         {total === 0
           ? "La bolsa está vacía: no hay casos posibles."
           : <><MathText text={`P(roja) = casos favorables ÷ casos posibles = ${red}/${total} = ${(red / total).toLocaleString("es", { maximumFractionDigits: 3 })}`} /><br /><MathText text={`P(no roja) = 1 − ${red}/${total} = ${blue}/${total}`} /></>}
@@ -346,7 +385,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
                 onChange={(e) => setTotal(Number(e.target.value))}
                 className="min-h-8 w-full accent-cyan-300"
               />
-              <p className="rounded-xl bg-slate-950 p-3 font-mono text-sm">
+              <p className="rounded-xl bg-slate-950 p-3 text-sm font-semibold">
                 Un cuarto: {total} ÷ 4 = {total / 4}.<br />
                 <MathText text={`${taken}/4 del total: ${total / 4} × ${taken} = ${(total / 4) * taken}.`} />
               </p>
@@ -380,7 +419,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
           />
           {kind === "ratio" ? (
             <div className="space-y-3">
-              <p className="font-mono text-lg">
+              <p className="text-lg font-semibold">
                 Azules:verdes = {2 * factor}:{3 * factor} = 2:3
               </p>
               <p className="text-sm">
@@ -389,7 +428,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
             </div>
           ) : kind === "change" ? (
             <div className="space-y-3">
-              <p className="font-mono text-lg">
+              <p className="text-lg font-semibold">
                 Base: {factor * 100}. Descuento: 25%.
               </p>
               <p>
@@ -406,7 +445,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
               <div
                 role="img"
                 aria-label={`Los dos lados valen ${3 * factor + 6}`}
-                className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl bg-slate-950 p-4 text-center font-mono text-lg"
+                className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl bg-slate-950 p-4 text-center text-lg font-semibold tabular-nums"
               >
                 <span>3 × {factor} + 6</span>
                 <span>=</span>
