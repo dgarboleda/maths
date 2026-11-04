@@ -1,5 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre } from "./utilidades";
+
+/** Escribe las respuestas de una pregunta (una fila por respuesta) y marca la correcta. */
+async function answers(question: Locator, options: string[], correct: string) {
+  for (let i = 2; i < options.length; i++) await question.getByRole("button", { name: "Añadir respuesta" }).click();
+  for (const [i, option] of options.entries()) await question.getByLabel(`Respuesta ${i + 1}`, { exact: true }).fill(option);
+  await question.getByLabel(`La respuesta ${options.indexOf(correct) + 1} es la correcta`).check();
+}
 
 test("una familia publica una clase y el alumno resuelve sus preguntas", async ({ page }) => {
   const correo = await registrarPadre(page);
@@ -12,20 +19,19 @@ test("una familia publica una clase y el alumno resuelve sus preguntas", async (
   await page.getByLabel("Contenido de la clase").fill("Sumar es reunir cantidades.");
   await page.getByRole("button", { name: "Añadir pregunta" }).click();
   await page.getByLabel("Enunciado").fill("¿Cuánto es 2 + 2?");
-  await page.getByLabel("Respuestas (una por línea)").fill("3\n4");
-  await page.getByLabel("Respuestas (una por línea)").blur();
-  await page.getByLabel("Respuesta correcta").selectOption({ label: "4" });
-  await page.getByLabel("Explicación").fill("Dos más dos son cuatro.");
+  const first = page.getByRole("group", { name: "Pregunta 1" });
+  await answers(first, ["3", "4"], "4");
+  await first.getByLabel("Explicación").fill("Dos más dos son cuatro.");
   await page.getByRole("button", { name: "Añadir pregunta" }).click();
   const second = page.getByRole("group", { name: "Pregunta 2" });
   await second.getByLabel("Enunciado").fill("¿Cuánto es 1 + 1?");
-  await second.getByLabel("Respuestas (una por línea)").fill("2\n3");
-  await second.getByLabel("Respuestas (una por línea)").blur();
-  await second.getByLabel("Respuesta correcta").selectOption({ label: "2" });
+  await answers(second, ["2", "3"], "2");
   await page.getByRole("button", { name: "Publicar para alumnos" }).click();
   await expect(page.getByText("Clase publicada para tus alumnos.")).toBeVisible();
   await page.goto(`/jugar/${childId}/aprende`);
-  await page.getByRole("link", { name: "Aritmética: Sumar dos números" }).click();
+  const mine = page.getByRole("region", { name: "Clases creadas para ti" });
+  await expect(mine.getByRole("heading", { name: "Aritmética", exact: true })).toBeVisible();
+  await mine.getByRole("link", { name: "Sumar dos números" }).click();
   await expect(page.getByText("Sumar es reunir cantidades.")).toBeVisible();
   await page.getByRole("button", { name: "Empezar preguntas" }).click();
   await page.getByRole("button", { name: "3", exact: true }).click();
@@ -57,13 +63,11 @@ test("una clase personalizada muestra respuestas de texto en el minijuego", asyn
   await page.getByLabel("Minijuego").selectOption("breakout");
   await page.getByRole("button", { name: "Añadir pregunta" }).click();
   await page.getByLabel("Enunciado").fill("¿Qué figura tiene tres lados?");
-  await page.getByLabel("Respuestas (una por línea)").fill("Círculo\nCuadrado\nTriángulo\nÓvalo\nRectángulo");
-  await page.getByLabel("Respuestas (una por línea)").blur();
-  await page.getByLabel("Respuesta correcta").selectOption({ label: "Triángulo" });
+  await answers(page.getByRole("group", { name: "Pregunta 1" }), ["Círculo", "Cuadrado", "Triángulo", "Óvalo", "Rectángulo"], "Triángulo");
   await page.getByRole("button", { name: "Publicar para alumnos" }).click();
   await expect(page.getByText("Clase publicada para tus alumnos.")).toBeVisible();
   await page.goto(`/jugar/${childId}/aprende`);
-  await page.getByRole("link", { name: "Formas: Formas planas" }).click();
+  await page.getByRole("region", { name: "Clases creadas para ti" }).getByRole("link", { name: "Formas planas" }).click();
   await page.getByRole("button", { name: "Empezar preguntas" }).click();
   await page.getByRole("button", { name: "¡Empezar!" }).click();
   await page.getByRole("button", { name: "Apuntar al bloque Triángulo" }).click();
