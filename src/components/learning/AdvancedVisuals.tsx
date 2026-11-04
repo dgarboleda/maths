@@ -174,6 +174,11 @@ export function TrigVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Cambia el tamaño: los lados crecen, pero los cocientes no cambian. Mueve el vértice para cambiar el ángulo: ahí sí cambian. Con α = 37° el triángulo es casi un 3-4-5.
       </p>
+      <Challenge goals={[
+        { text: "Consigue que sen α valga 0,5.", met: angle === 30, hint: "El cateto opuesto debe medir la mitad de la hipotenusa." },
+        { text: "Haz que el cateto opuesto y el adyacente midan lo mismo. ¿Cuánto vale tan α?", met: angle === 45 },
+        { text: "Consigue que tan α sea mayor que 2.", met: Math.tan(rad(angle)) > 2 },
+      ]} />
     </>
   );
 }
@@ -215,6 +220,11 @@ export function BoxplotVisual({ id }: { id: string }) {
         Arrastra el punto extremo o usa el control. El rango cambia con cada movimiento; la caja (el 50% central) apenas se mueve.
         {outlier ? " Ahora el dato supera Q3 + 1,5 · RIC: es atípico." : ""}
       </p>
+      <Challenge goals={[
+        { text: "Convierte el dato extremo en un valor atípico.", met: outlier, hint: "Debe superar Q3 + 1,5 · RIC." },
+        { text: "Consigue que el rango sea exactamente 11.", met: data[7] - data[0] === 11 },
+        { text: "Haz que la mediana baje sin que cambie el dato mayor de los demás (15).", met: med < 11 },
+      ]} />
     </>
   );
 }
@@ -260,6 +270,11 @@ export function CountingVisual({ id }: { id: string }) {
           ? <>{n} · {n - 1} = <strong>{pairs}</strong>: AB y BA cuentan por separado.</>
           : <><MathText text={`(${n} · ${n - 1})/2 = ${pairs}`} />: AB y BA son la misma pareja.</>}
       </p>
+      <Challenge goals={[
+        { text: "Consigue exactamente 12 atuendos distintos.", met: a * b === 12 },
+        { text: "Con 6 personas, ¿cuántas parejas de delegados (sin orden) hay? Compruébalo.", met: n === 6 && ordered === "sin" },
+        { text: "¿Cuántas personas hacen falta para 20 elecciones de presidente y secretario?", met: ordered === "con" && n * (n - 1) === 20 },
+      ]} />
     </>
   );
 }
@@ -335,6 +350,11 @@ export function TransformVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         La figura cian es la original y la ámbar, su imagen. {kind === "traslacion" ? "Arrastra el vértice A′ para cambiar el vector." : "Compara los signos de cada coordenada con la regla."} El tamaño y los ángulos no cambian.
       </p>
+      <Challenge goals={[
+        { text: "Traslada el triángulo para que A′ quede en (−2, 4).", met: kind === "traslacion" && image[0][0] === -2 && image[0][1] === 4, hint: "A está en (1, 1): ¿cuánto hay que moverlo en cada dirección?" },
+        { text: "Encuentra una transformación que lleve A(1, 1) a (−1, 1). ¿Hay más de una?", met: kind !== "traslacion" && image[0][0] === -1 && image[0][1] === 1 },
+        { text: "Consigue que toda la imagen quede en el tercer cuadrante (x e y negativas).", met: image.every(([x, y]) => x < 0 && y < 0) },
+      ]} />
     </>
   );
 }
@@ -513,6 +533,11 @@ export function DistanceVisual({ id }: { id: string }) {
         Los tramos ámbar son los catetos; el segmento cian es la hipotenusa: siempre más corto que |Δx| + |Δy| = {num(Math.abs(dx) + Math.abs(dy))},
         salvo que los puntos estén en la misma fila o columna. El punto rosa promedia las coordenadas.
       </p>
+      <Challenge goals={[
+        { text: "Coloca A y B a una distancia exacta de 5.", met: dist === 5, hint: "Piensa en el triángulo 3-4-5." },
+        { text: "Haz que el punto medio sea el origen (0, 0).", met: mx === 0 && my === 0 },
+        { text: "Pon A y B en la misma fila. ¿Qué cateto desaparece?", met: ay === by && ax !== bx },
+      ]} />
     </>
   );
 }
@@ -614,6 +639,11 @@ export function SolidsVisual({ id }: { id: string }) {
         Con la misma base y altura, tres conos llenan el cilindro. Duplica el radio y observa: el cono y el cilindro se multiplican por 4 (r²), la esfera por 8 (r³).
         {h === 2 * r && <MathText text=" Ahora h = 2r: la esfera ocupa exactamente 2/3 del cilindro que la envuelve." />}
       </p>
+      <Challenge goals={[
+        { text: "Haz que el cono y la esfera tengan el mismo volumen.", met: h === 4 * r, hint: "Iguala π·r²·h/3 y 4·π·r³/3: ¿qué relación hay entre h y r?" },
+        { text: "Consigue un cilindro de más de 1000 cm³ con la menor altura posible.", met: cylinder > 1000 && PI * r * r * (h - 1) <= 1000 },
+        { text: "Con h = 2r y otro radio distinto de 3, ¿la esfera sigue siendo 2/3 del cilindro?", met: h === 2 * r && r !== 3 },
+      ]} />
     </>
   );
 }
@@ -663,6 +693,11 @@ export function TwoWayVisual({ id }: { id: string }) {
           ? " Ahora P(vóley | 5.°) = P(vóley): el grado no cambia la preferencia (independientes)."
           : " Prueba a que P(vóley | 5.°) sea igual a P(vóley): entonces grado y deporte serían independientes."}
       </p>
+      <Challenge goals={[
+        { text: "Haz que el grado y el deporte sean independientes.", met: independent },
+        { text: "Consigue que P(vóley | 5.°) sea exactamente 1/2.", met: v5 > 0 && 2 * v5 === f5 + v5 },
+        { text: "Haz que P(5.° | vóley) sea mayor que P(vóley | 5.°).", met: v4 + v5 > 0 && f5 + v5 > 0 && v5 / (v4 + v5) > v5 / (f5 + v5) },
+      ]} />
     </>
   );
 }

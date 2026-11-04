@@ -21,6 +21,13 @@ describe("Modelos visuales de las clases", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
+  test.each(KINDS)("%s: si tiene reto, no empieza ya conseguido", async (kind) => {
+    render(<LearningVisual kind={kind} />);
+    await screen.findAllByRole("slider");
+    const label = screen.queryByText(/^Reto 1 de \d$/);
+    if (label) expect(label.parentElement).not.toHaveTextContent("¡Conseguido!");
+  });
+
   test("cada tema con gráfico propio usa su modelo, no uno prestado", () => {
     const expected: Record<string, Visual> = {
       "funciones-lineales": "linear",
