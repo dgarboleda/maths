@@ -28,6 +28,26 @@ describe("Modelos visuales de las clases", () => {
     if (label) expect(label.parentElement).not.toHaveTextContent("¡Conseguido!");
   });
 
+  test.each(KINDS)("%s: en los extremos de los controles no aparecen números rotos ni signos dobles", async (kind) => {
+    const { container } = render(<LearningVisual kind={kind} />);
+    await screen.findAllByRole("slider");
+    const problems: string[] = [];
+    const check = (where: string) => {
+      const text = container.textContent ?? "";
+      for (const bad of [/NaN|Infinity|undefined/, /[+−×÷·] [−-]\d/]) {
+        const m = bad.exec(text);
+        if (m) problems.push(`${where}: «${text.slice(Math.max(0, m.index - 25), m.index + 15)}»`);
+      }
+    };
+    for (const edge of ["min", "max"] as const) {
+      for (const slider of screen.getAllByRole("slider") as HTMLInputElement[]) {
+        fireEvent.change(slider, { target: { value: slider[edge] } });
+        check(`${slider.id || slider.getAttribute("aria-label")} = ${edge}`);
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
   test("cada tema con gráfico propio usa su modelo, no uno prestado", () => {
     const expected: Record<string, Visual> = {
       "funciones-lineales": "linear",

@@ -119,7 +119,7 @@ export function FractionProductVisual({ id }: { id: string }) {
             <MathText text={`${a}/${b} × ${c}/${d} = (${a} × ${c})/(${b} × ${d}) = ${a * c}/${b * d}${gcd(a * c, b * d) > 1 ? ` = ${frac(a * c, b * d)}` : ""}`} />
           </p>
           <p className="text-sm text-slate-300">
-            <MathText text={`Las columnas marcan ${a}/${b} y las filas ${c}/${d}. Donde se cruzan (verde) está «${a}/${b} de ${c}/${d}»: ${a * c} de las ${b * d} casillas del cuadrado. El resultado es menor que cada fracción porque se toma una parte de una parte.`} />
+            <MathText text={`Las columnas marcan ${a}/${b} y las filas ${c}/${d}. Donde se cruzan (verde) está «${a}/${b} de ${c}/${d}»: ${a * c} de las ${b * d} casillas del cuadrado. ${a === b || c === d ? `Una de las fracciones vale 1 (el entero): multiplicar por 1 no cambia la otra.` : "El resultado es menor que cada fracción porque se toma una parte de una parte."}`} />
           </p>
         </>
       ) : (
@@ -179,7 +179,9 @@ export function IntegerProductVisual({ id }: { id: string }) {
           : k > 0
             ? `${k} grupos de ${sg(n)}: se salta ${k} veces ${n > 0 ? "hacia la derecha" : "hacia la izquierda"}.`
             : `Con el primer factor negativo se toma el opuesto: ${Math.abs(k)} saltos de ${sg(-n)}. Por eso ${result > 0 ? "negativo por negativo da positivo" : "negativo por positivo da negativo"}.`}{" "}
-        Dividir deshace la multiplicación: {sg(result)} ÷ {sg(k || 1)} = {k === 0 ? "—" : sg(result / k)}.
+        {k === 0
+          ? "No se puede deshacer dividiendo entre 0: la división entre 0 no está definida."
+          : <>Dividir deshace la multiplicación: {sg(result)} ÷ {k < 0 ? `(${sg(k)})` : sg(k)} = {sg(result / k)}.</>}
       </p>
       <Challenge goals={[
         { text: "Consigue un producto de 12 con los dos factores negativos.", met: k < 0 && n < 0 && k * n === 12 },

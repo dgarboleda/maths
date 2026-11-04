@@ -5,6 +5,8 @@ import { MathText } from "@/components/MathText";
 import { Challenge, curve, GhostNote, Handle, Legend, niceRange, num, Plane, PointMarks, PointReader, Slider, snap, Toggle, useGhost, ValueTable } from "./GraphVisuals";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
+/** Un negativo como operando va entre paréntesis: 10 − (−2), no 10 − −2. */
+const paren = (n: number) => (n < 0 ? `(${num(n)})` : num(n));
 const median = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b),
     m = s.length / 2;
@@ -58,7 +60,7 @@ export function SystemVisual({ id }: { id: string }) {
       </Plane>
       <p className="text-sm">
         {cross
-          ? <>Solución: <MathText text={`x = (${s} + ${num(d)})/2 = ${num(x)}`} />, <MathText text={`y = (${s} − ${num(d)})/2 = ${num(y)}`} />. Arrastra el punto de corte: las dos ecuaciones cambian para seguir cumpliéndose.</>
+          ? <>Solución: <MathText text={`x = (${s} + ${paren(d)})/2 = ${num(x)}`} />, <MathText text={`y = (${s} − ${paren(d)})/2 = ${num(y)}`} />. Arrastra el punto de corte: las dos ecuaciones cambian para seguir cumpliéndose.</>
           : k === s
             ? "Las dos ecuaciones dicen lo mismo: cualquier punto de la recta es solución."
             : "Las rectas tienen la misma inclinación y nunca se cortan: ningún par cumple las dos ecuaciones."}
@@ -444,7 +446,7 @@ export function SequenceVisual({ id }: { id: string }) {
         <Slider id={`${id}-r`} label="Razón r" value={r} min={0.5} max={3} step={0.5} onChange={setR} />
       )}
       <p className="text-lg font-semibold">
-        {arith ? `aₙ = ${first} + (n − 1) · ${num(d)}` : `aₙ = ${first} · ${num(r)}ⁿ⁻¹`}
+        {arith ? `aₙ = ${first} + (n − 1) · ${paren(d)}` : `aₙ = ${first} · ${num(r)}ⁿ⁻¹`}
       </p>
       <Plane x={[0, 9]} y={range} xStep={1} yStep={step} xLabel="n" yLabel="aₙ"
         label={`Primeros 8 términos: ${values.map(num).join(", ")}. ${arith ? "Los puntos quedan alineados: crece lo mismo en cada paso." : "Los saltos cambian de tamaño: cada término es " + num(r) + " veces el anterior."}`}>
@@ -476,7 +478,7 @@ export function SequenceVisual({ id }: { id: string }) {
         rows={ns.map((n) => [n, num(term(n)), n === 1 ? "—" : arith ? `${d < 0 ? "−" : "+"}${num(Math.abs(d))}` : `×${num(r)}`])} />
       <p className="text-sm text-slate-300">
         {arith
-          ? <>Suma de los 8 términos: <MathText text={`(8 · (${first} + ${num(term(8))}))/2 = ${num((8 * (first + term(8))) / 2)}`} />. Cada salto ámbar sube lo mismo ({jump}). Arrastra el segundo punto para cambiar la diferencia.</>
+          ? <>Suma de los 8 términos: <MathText text={`(8 · (${first} + ${paren(term(8))}))/2 = ${num((8 * (first + term(8))) / 2)}`} />. Cada salto ámbar sube lo mismo ({jump}). Arrastra el segundo punto para cambiar la diferencia.</>
           : `De un término al siguiente se multiplica por ${num(r)}: ${r > 1 ? "los saltos crecen" : r < 1 ? "los saltos se achican" : "no cambia"}. Arrastra el segundo punto para cambiar la razón.`}
       </p>
       <Challenge goals={[
@@ -513,7 +515,7 @@ export function DistanceVisual({ id }: { id: string }) {
       </div>
       <p className="text-sm font-semibold">
         <MathText text={`Δx = ${num(dx)} · Δy = ${num(dy)} · d = √(${num(dx * dx)} + ${num(dy * dy)}) ${Number.isInteger(dist) ? "=" : "≈"} ${num(dist)}`} />
-        <br /><MathText text={`M = ((${num(ax)} + ${num(bx)})/2, (${num(ay)} + ${num(by)})/2) = (${num(mx)}, ${num(my)})`} />
+        <br /><MathText text={`M = ((${num(ax)} + ${paren(bx)})/2, (${num(ay)} + ${paren(by)})/2) = (${num(mx)}, ${num(my)})`} />
       </p>
       <Plane x={[-6, 6]} y={[-6, 8]} xStep={2} yStep={2} xLabel="x" yLabel="y"
         label={`A(${num(ax)}, ${num(ay)}) y B(${num(bx)}, ${num(by)}): catetos ${num(Math.abs(dx))} y ${num(Math.abs(dy))}, distancia ${num(dist)}, punto medio (${num(mx)}, ${num(my)}).`}>
@@ -577,7 +579,7 @@ export function VertexVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         {a === 0
           ? "Sin el término al cuadrado, la función no cambia con x."
-          : `El vértice (${num(h)}, ${num(k)}) es el ${kind}: (x − ${num(h)})² vale 0 en x = ${num(h)} y es positivo en el resto, así que y ${a > 0 ? "solo puede crecer" : "solo puede bajar"} desde ${num(k)}. Cuanto mayor es |a|, más estrecha es la parábola. En la tabla, los valores a la misma distancia del vértice son iguales: es la simetría.`}
+          : `El vértice (${num(h)}, ${num(k)}) es el ${kind}: ${h === 0 ? "x²" : `(x ${h < 0 ? "+" : "−"} ${num(Math.abs(h))})²`} vale 0 en x = ${num(h)} y es positivo en el resto, así que y ${a > 0 ? "solo puede crecer" : "solo puede bajar"} desde ${num(k)}. Cuanto mayor es |a|, más estrecha es la parábola. En la tabla, los valores a la misma distancia del vértice son iguales: es la simetría.`}
       </p>
       <Challenge goals={[
         { text: "Dibuja una parábola con un máximo en (−1, 4).", met: a < 0 && h === -1 && k === 4 },
