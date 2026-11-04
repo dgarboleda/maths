@@ -129,6 +129,12 @@ export interface Lesson {
     review?: { reviewer: string; date: string; version: number; notes: string };
   };
 }
+/** Lo que el navegador necesita de una clase que no está abierta: sin
+ *  bancos ni ejemplos (ver `lessonIndex.ts`). */
+export type LessonSummary = Pick<
+  Lesson,
+  "id" | "unitId" | "title" | "objective" | "prerequisites" | "legacyModuleIds"
+>;
 export interface ResponseEvidence {
   firstCorrect: boolean;
   correct: boolean;

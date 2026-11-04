@@ -10,11 +10,11 @@ import {
   currentQuestion,
   errorFeedback,
   evidenceKey,
-  getLesson,
+  getLessonSummary,
   parseNumber,
   initialProgress,
   learningStatus,
-  LESSONS,
+  LESSON_INDEX,
   ADVENTURES,
   questionsFor,
   STAGE_LABELS,
@@ -24,7 +24,7 @@ import {
   type Lesson,
   type Question,
   type ResponseEvidence,
-} from "@/lib/learning/domain";
+} from "@/lib/learning/core";
 import {
   useLearningAction,
   useLearningData,
@@ -57,13 +57,16 @@ const LessonArcade = dynamic(
 );
 
 type RequestedStage = "practice" | "review" | null;
+/** `lesson` llega del servidor: el navegador no carga el catálogo completo. */
 export function LessonPlayer({
   childId,
   lessonId,
+  lesson,
   requestedStage = null,
 }: {
   childId: string;
   lessonId: string;
+  lesson: Lesson | undefined;
   requestedStage?: RequestedStage;
 }) {
   const data = useLearningData(childId);
@@ -71,7 +74,6 @@ export function LessonPlayer({
   const mutation = useLearningAction(data.parentId, childId);
   const [launched, setLaunched] = useState(false);
   const { session: arcadeSession } = useMemo(() => ({ lessonId, session: createArcadeSession() }), [lessonId]);
-  const lesson = getLesson(lessonId);
   const saved = data.progress[lessonId];
   const confirmed =
     mutation.confirmed?.lessonId === lessonId
@@ -343,7 +345,7 @@ export function LessonPlayer({
                       className="text-sm text-cyan-200 underline underline-offset-4"
                       href={`/jugar/${childId}/aprende/${id}`}
                     >
-                      {getLesson(id)?.title}
+                      {getLessonSummary(id)?.title}
                     </Link>
                   </li>
                 ))}
@@ -760,7 +762,7 @@ function LessonSummary({
   run: (action: LearningAction) => Promise<boolean>;
   disabled: boolean;
 }) {
-  const next = LESSONS[LESSONS.findIndex((item) => item.id === lesson.id) + 1];
+  const next = LESSON_INDEX[LESSON_INDEX.findIndex((item) => item.id === lesson.id) + 1];
   const adventure = ADVENTURES.find((item) => item.lessonIds.at(-1) === lesson.id);
   const result =
     progress.lastReview &&

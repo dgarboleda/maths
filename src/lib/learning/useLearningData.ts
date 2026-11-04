@@ -6,7 +6,8 @@ import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase, getFirebaseFunctions } from "@/lib/firebase";
 import type { ChildProfile } from "@/lib/types";
 import {
-  getLesson,
+  CONTENT_VERSION,
+  getLessonSummary,
   migrateProgress,
   type AdventureAction,
   type AdventureState,
@@ -16,7 +17,7 @@ import {
   type PlacementAction,
   type PlacementState,
   type DailyReviewState,
-} from "./domain";
+} from "./core";
 
 interface Snapshot {
   key: string;
@@ -115,9 +116,8 @@ export function useLearningData(childId: string) {
                 progress: Object.fromEntries(
                   snap.docs.filter((item) => !item.id.startsWith("repaso-") && item.id !== "ubicacion" && item.id !== "diario").map((item) => {
                     const saved = item.data() as LearningProgress;
-                    const lesson = getLesson(item.id);
                     // Misma migración que aplica el servidor en la próxima acción.
-                    return [item.id, lesson ? migrateProgress(lesson, saved) : saved];
+                    return [item.id, getLessonSummary(item.id) ? migrateProgress({ version: CONTENT_VERSION }, saved) : saved];
                   }),
                 ),
               }),

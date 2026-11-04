@@ -52,7 +52,7 @@ export function initialProgress(lesson: Lesson): LearningProgress {
  *  fechas e historial de comprobaciones, y reinicia solo la ronda en curso,
  *  porque sus respuestas pertenecen a preguntas que ya no existen. */
 export function migrateProgress(
-  lesson: Lesson,
+  lesson: Pick<Lesson, "version">,
   progress: LearningProgress,
 ): LearningProgress {
   if (progress.contentVersion === lesson.version) return progress;

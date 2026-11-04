@@ -1,5 +1,5 @@
 import { Check, TriangleAlert, X } from "lucide-react";
-import { independent, type ResponseEvidence } from "@/lib/learning/domain";
+import { independent, type ResponseEvidence } from "@/lib/learning/core";
 
 /** El texto acompaña al icono para que el resultado no dependa del color. */
 export function AnswerResult({ evidence }: { evidence?: ResponseEvidence }) {
