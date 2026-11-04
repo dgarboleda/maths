@@ -58,10 +58,10 @@ export const DATA_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Consumos: 8, 5, 9, 5, 13. Calcula media, mediana y moda.", [
-        ["Suma 40; 40 ÷ 5 = 8", "La media reparte el total por igual."],
-        ["Ordenados: 5, 5, 8, 9, 13 → 8", "Mediana: el valor central."],
-        ["Moda: 5", "Es el valor que más se repite."],
-      ], "Media 8, mediana 8, moda 5, rango 8."),
+        ["8 + 5 + 9 + 5 + 13 = 40; 40 ÷ 5 = 8", "La media reparte el total por igual entre los 5 datos."],
+        ["Ordenados: 5, 5, 8, 9, 13 → 8", "Mediana: con 5 datos ordenados, el central es el tercero."],
+        ["Moda: 5", "Es el único valor que aparece dos veces."],
+      ], "Media 8, mediana 8 y moda 5. Además, el rango es 13 − 5 = 8."),
       ex("Las notas de un grupo son 6, 7, 7, 8 y la de un quinto estudiante falta. La media es 7. ¿Cuál es la nota que falta?", [
         ["5 × 7 = 35", "La media por la cantidad da la suma total."],
         ["6 + 7 + 7 + 8 = 28", "Suma de las notas conocidas."],
@@ -80,8 +80,8 @@ export const DATA_LESSONS: Lesson[] = [
         [count, mean, known] = [[5, 8, [6, 9, 7, 12]], [4, 12, [10, 15, 14]], [6, 5, [4, 6, 3, 7, 8]], [5, 15, [12, 18, 14, 20]], [4, 9, [8, 12, 10]], [5, 6, [5, 8, 4, 9]]][v] as [number, number, number[]];
       const missing = count * mean - sum(known);
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               `Los consumos ${list(outlier)} tienen un valor muy alto. ¿Qué medida describe mejor el consumo típico?`,
               [
@@ -91,8 +91,8 @@ export const DATA_LESSONS: Lesson[] = [
               ],
               1,
               "La mediana resiste los valores extremos.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "¿Qué significa que la media de consumo sea 8?",
               [
@@ -103,6 +103,18 @@ export const DATA_LESSONS: Lesson[] = [
               2,
               "La media es el reparto equitativo del total.",
             ),
+          c(
+            "q0",
+            "Las notas 10, 12 y 14 tienen media 12. Si se añade una nota de 20, ¿qué ocurre con la media?",
+            [
+              "Sube a 14: el nuevo dato está por encima de la media",
+              ["No cambia: la media es el dato central", "Eso describe la mediana; la media usa todos los valores."],
+              ["Baja, porque ahora hay más datos", "Más datos no bajan la media si el nuevo está por encima de ella."],
+            ],
+            0,
+            "(10 + 12 + 14 + 20) ÷ 4 = 56 ÷ 4 = 14.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Calcula la media de ${list(data)}.`,
@@ -228,13 +240,13 @@ export const DATA_LESSONS: Lesson[] = [
     examples: [
       ex("Se lanza un dado. ¿Cuál es la probabilidad de obtener un número mayor que 4?", [
         ["Casos posibles: 6", "Los resultados 1 a 6 son equiprobables."],
-        ["Favorables: 5 y 6 → 2", "Contamos los que cumplen."],
-        ["P = 2/6 = 1/3", "Simplificamos."],
+        ["Favorables: 5 y 6 → 2", "«Mayor que 4» no incluye el 4: solo cumplen 5 y 6."],
+        ["P = 2/6 = 1/3", "Favorables entre posibles; simplificamos dividiendo entre 2."],
       ], "P(mayor que 4) = 1/3 ≈ 33%."),
       ex("De 40 sensores, 6 están averiados. Se elige uno al azar. ¿Probabilidad de que funcione?", [
-        ["P(averiado) = 6/40", "Favorables sobre posibles."],
-        ["P(funciona) = 1 − 6/40", "Complemento."],
-        ["= 34/40 = 0,85 = 85%", "Expresamos en decimal y porcentaje."],
+        ["P(averiado) = 6/40", "Es más rápido contar los averiados: 6 de los 40 posibles."],
+        ["P(funciona) = 1 − 6/40", "Funcionar es el complemento de estar averiado: las dos probabilidades suman 1."],
+        ["= 34/40 = 0,85 = 85%", "Comprobación directa: funcionan 40 − 6 = 34 sensores de 40."],
       ], "Funciona con probabilidad 0,85."),
     ],
     diagnostic: [
@@ -249,8 +261,8 @@ export const DATA_LESSONS: Lesson[] = [
         [r2, b2, g2] = [[2, 3, 1], [4, 1, 3], [3, 4, 2], [5, 2, 3], [1, 4, 2], [6, 2, 4]][v];
       const favDie = { 4: 2, 3: 2, 5: 4, 2: 2, 6: 6, 1: 1 }[die]!;
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Cuándo se puede calcular una probabilidad como casos favorables ÷ casos posibles?",
               [
@@ -260,8 +272,8 @@ export const DATA_LESSONS: Lesson[] = [
               ],
               0,
               "La regla de Laplace exige resultados equiprobables.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "Una moneda salió cara cinco veces seguidas. ¿Qué es más probable en el siguiente lanzamiento?",
               [
@@ -272,6 +284,18 @@ export const DATA_LESSONS: Lesson[] = [
               2,
               "Los resultados anteriores no cambian la probabilidad de un lanzamiento independiente.",
             ),
+          c(
+            "q0",
+            "Una caja tiene 1 fusible rojo y 9 azules. Alguien dice que P(rojo) = 1/2 porque «sale rojo o no sale». ¿Qué falla?",
+            [
+              ["Nada: hay dos resultados posibles", "Rojo y azul no son igual de probables: hay 9 azules por cada rojo."],
+              "Los dos resultados no son equiprobables: cada fusible es un caso, y P(rojo) = 1/10",
+              ["Debería ser 1/9", "Se divide entre los 10 fusibles posibles, no solo entre los azules."],
+            ],
+            1,
+            "Favorables ÷ posibles solo vale con resultados equiprobables: 1 fusible rojo de 10.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Una caja tiene ${red} fusibles rojos y ${blue} azules. Se saca uno al azar. ¿Cuál es la probabilidad de que sea rojo?`,
@@ -398,14 +422,14 @@ export const DATA_LESSONS: Lesson[] = [
     examples: [
       ex("Dos semáforos independientes están en verde con probabilidad 0,6 y 0,5. ¿Probabilidad de pasar ambos en verde?", [
         ["P = 0,6 × 0,5", "Ambos deben ocurrir y son independientes."],
-        ["= 0,3", "Multiplicamos las dos probabilidades."],
-        ["30%", "Ocurre en 3 de cada 10 trayectos."],
+        ["= 0,3", "El primero está en verde en 6 de cada 10 trayectos; de esos, el segundo lo está en la mitad: 3 de cada 10."],
+        ["30%", "Expresamos 0,3 como porcentaje: menor que cada probabilidad por separado, como debe ser."],
       ], "P(ambos verdes) = 0,3."),
-      ex("De una bolsa con 3 rojas y 2 azules se sacan dos fichas sin devolver. ¿Probabilidad de dos rojas?", [
-        ["P(1.ª roja) = 3/5", "Hay 3 rojas de 5."],
-        ["P(2.ª roja | 1.ª roja) = 2/4", "Queda una roja menos y una ficha menos."],
-        ["3/5 × 2/4 = 6/20 = 3/10", "Multiplicamos las etapas."],
-      ], "Sin reemplazo, la segunda etapa depende de la primera."),
+      ex("Una caja tiene 4 fusibles buenos y 2 defectuosos. Se sacan dos sin devolver el primero. ¿Probabilidad de que ambos sean buenos?", [
+        ["P(1.° bueno) = 4/6", "Al principio hay 4 buenos entre 6 fusibles."],
+        ["P(2.° bueno | 1.° bueno) = 3/5", "Si el primero fue bueno y no se devuelve, quedan 3 buenos entre 5 fusibles."],
+        ["4/6 × 3/5 = 12/30 = 2/5", "Multiplicamos las probabilidades de cada etapa de la rama «bueno, bueno»."],
+      ], "P = 2/5 = 0,4. Si se devolviera el primero, sería 4/6 × 4/6 = 4/9 ≈ 0,44: sin reemplazo, la segunda etapa depende de la primera."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 1/2 × 1/3?", 1 / 6, ["(1 × 1)/(2 × 3) = 1/6."], ["Multiplica numeradores.", "Multiplica denominadores.", "1/6."]),
@@ -421,8 +445,8 @@ export const DATA_LESSONS: Lesson[] = [
         fail = [0.1, 0.2, 0.05, 0.15, 0.3, 0.25][v];
       const both = Math.round(pa * pb * 1000) / 1000;
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Por qué al lanzar dos dados hay 36 resultados posibles?",
               [
@@ -432,8 +456,8 @@ export const DATA_LESSONS: Lesson[] = [
               ],
               0,
               "En un experimento de dos etapas se combinan todos los resultados: 6 × 6.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "¿Por qué P(cara y cara) = 1/2 × 1/2?",
               [
@@ -444,6 +468,18 @@ export const DATA_LESSONS: Lesson[] = [
               1,
               "Para sucesos independientes, P(A y B) = P(A) × P(B).",
             ),
+          c(
+            "q0",
+            "Se lanzan una moneda y un dado. ¿Cuántos resultados posibles hay?",
+            [
+              ["8, porque 2 + 6 = 8", "No se suman: cada lado de la moneda se combina con cada cara del dado."],
+              "12, porque 2 × 6 = 12",
+              ["6, los resultados del dado", "Cada cara del dado puede salir con cara o con cruz."],
+            ],
+            1,
+            "Principio multiplicativo: 2 × 6 = 12 resultados igual de probables.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Se lanzan dos dados. ¿Cuál es la probabilidad de que la suma sea ${target}?`,
@@ -468,17 +504,41 @@ export const DATA_LESSONS: Lesson[] = [
           ["Sin devolver, cambian las fichas en la segunda extracción.", "Queda una roja menos y una ficha menos.", "Multiplica las dos probabilidades."],
           { errors: [{ value: (rr / (rr + bb)) ** 2, feedback: "Eso sería con reemplazo. Sin devolver, la segunda probabilidad cambia." }] },
         ),
-        c(
-          "q4",
-          "Alguien dice que la probabilidad de sacar al menos una cara en dos lanzamientos es 1/2 + 1/2 = 1. ¿Qué falla?",
-          [
-            ["Nada: es seguro", "Puede salir cruz-cruz, así que no es seguro."],
-            ["Debía multiplicar: 1/4", "1/4 es la probabilidad de dos caras."],
-            "Sumar cuenta dos veces el caso cara-cara; se calcula 1 − P(ninguna) = 3/4",
-          ],
-          2,
-          "Para «al menos uno», conviene restar de 1 la probabilidad de ninguno.",
-        ),
+        [
+          c(
+            "q4",
+            "Alguien dice que la probabilidad de sacar al menos una cara en dos lanzamientos es 1/2 + 1/2 = 1. ¿Qué falla?",
+            [
+              ["Nada: es seguro", "Puede salir cruz-cruz, así que no es seguro."],
+              ["Debía multiplicar: 1/4", "1/4 es la probabilidad de dos caras."],
+              "Sumar cuenta dos veces el caso cara-cara; se calcula 1 − P(ninguna) = 3/4",
+            ],
+            2,
+            "Para «al menos uno», conviene restar de 1 la probabilidad de ninguno.",
+          ),
+          c(
+            "q4",
+            "Una bolsa tiene 2 fichas rojas y 3 azules. Se sacan dos sin devolver y alguien calcula P(dos rojas) = 2/5 × 2/5. ¿Qué falla?",
+            [
+              ["Nada: cada extracción tiene probabilidad 2/5", "Sin devolución, en la segunda queda una roja menos y una ficha menos."],
+              "La segunda probabilidad es 1/4: P = 2/5 × 1/4 = 1/10",
+              ["Debía sumar: 2/5 + 2/5", "Para que ocurran las dos cosas se multiplica, no se suma."],
+            ],
+            1,
+            "Sin reemplazo, la segunda etapa cambia: 2/5 × 1/4 = 2/20 = 1/10.",
+          ),
+          c(
+            "q4",
+            "Dos semáforos independientes están en verde con probabilidad 0,5 cada uno. Alguien dice que P(los dos en verde) = 0,5 + 0,5 = 1. ¿Qué falla?",
+            [
+              ["Nada: es seguro", "Alguno puede estar en rojo, así que no es seguro."],
+              "Para que ocurran ambos se multiplica: 0,5 × 0,5 = 0,25",
+              ["Debía restar: 0,5 − 0,5 = 0", "Ambos pueden estar en verde: la probabilidad no es 0."],
+            ],
+            1,
+            "Si los sucesos son independientes, P(A y B) = P(A) × P(B).",
+          ),
+        ][v % 3],
         n(
           "q5",
           `Dos semáforos independientes están en verde con probabilidades ${fmt(pa)} y ${fmt(pb)}. ¿Cuál es la probabilidad de encontrar los dos en verde?`,

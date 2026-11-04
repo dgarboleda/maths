@@ -68,19 +68,19 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "Hay 8 cables negros y 20 en total.",
       ),
       ex(
-        "Una caja de 35 piezas mantiene la razón rojas:negras = 3:2. ¿Cuántas son rojas?",
+        "Un pedido de 36 piezas mantiene la razón tornillos:tuercas = 5:4. ¿Cuántos tornillos hay?",
         [
-          ["3 + 2 = 5 partes", "La razón compara dos partes del total."],
+          ["5 + 4 = 9 piezas por conjunto", "Cada conjunto de la razón tiene 5 tornillos y 4 tuercas."],
           [
-            "35 ÷ 5 = 7 piezas por parte",
-            "Repartimos el total según las cinco partes de la composición.",
+            "36 ÷ 9 = 4 conjuntos",
+            "Repartimos el total entre el tamaño de un conjunto.",
           ],
           [
-            "3 × 7 = 21 rojas",
-            "Tomamos las tres partes que corresponden a las rojas.",
+            "5 × 4 = 20 tornillos",
+            "Cada conjunto aporta 5 tornillos; hay 4 conjuntos.",
           ],
         ],
-        "Las otras 14 son negras; 21 + 14 = 35 y 21:14 = 3:2.",
+        "Hay 20 tornillos y 16 tuercas; 20 + 16 = 36 y 20:16 = 5:4 (dividiendo entre 4).",
       ),
       ex(
         "La mezcla A tiene 2 azules por cada 3 verdes; la B, 3 azules por cada 5 verdes. ¿Cuál es más azul?",
@@ -695,8 +695,8 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         [x1, y1, y2] = [[2, 6, 15], [4, 20, 35], [3, 12, 32], [5, 30, 54], [6, 12, 22], [2, 14, 49]][v],
         rate = y1 / x1;
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Cuál es una condición de proporcionalidad directa?",
               [
@@ -706,8 +706,8 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
               ],
               1,
               "En y = kx, dividir y entre x distinto de cero devuelve siempre k.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               `En una relación y = ${k}x, ¿qué ocurre con y si x se triplica?`,
               [
@@ -718,6 +718,18 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
               1,
               `${k} × (3x) = 3 × (${k}x): si x se multiplica por 3, y también.`,
             ),
+          c(
+            "q0",
+            "Un taxi cobra 5 soles fijos más 2 soles por kilómetro. ¿Es el precio proporcional a los kilómetros?",
+            [
+              ["Sí: cada kilómetro cuesta lo mismo", "Un aumento constante no basta: con 0 km ya se pagan 5 soles."],
+              "No: por el cargo fijo, 10 km no cuestan el doble que 5 km",
+              ["Sí: a más kilómetros, más precio", "Que las dos cantidades aumenten no significa que su razón sea constante."],
+            ],
+            1,
+            "5 km cuestan 15 soles y 10 km cuestan 25: duplicar los kilómetros no duplica el precio.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Cada sensor consume ${k} unidades y no hay consumo fijo. ¿Cuánto consumen ${x} sensores?`,
@@ -942,13 +954,13 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "El aumento es del 25% respecto de las 120 unidades iniciales.",
       ),
       ex(
-        "Tras un descuento del 20%, un repuesto cuesta 64 créditos. ¿Cuál era el precio original?",
+        "Tras un descuento del 30%, un repuesto cuesta 42 créditos. ¿Cuál era el precio original?",
         [
-          ["100% − 20% = 80%", "Después del descuento se paga el 80% del precio original."],
-          ["64 = 0,8 × precio", "El precio original es la base, y es la incógnita."],
-          ["precio = 64 ÷ 0,8 = 80", "Comprobación: 20% de 80 = 16; 80 − 16 = 64."],
+          ["100% − 30% = 70%", "Después del descuento se paga el 70% del precio original."],
+          ["42 = 0,7 × precio", "El precio original es la base, y es la incógnita."],
+          ["precio = 42 ÷ 0,7 = 60", "Comprobación: 30% de 60 = 18; 60 − 18 = 42."],
         ],
-        "Sumar el 20% a 64 daría 76,8: el 20% se calculó sobre 80, no sobre 64.",
+        "Sumar el 30% a 42 daría 54,6: el 30% se calculó sobre 60, no sobre 42.",
       ),
     ],
     diagnostic: [

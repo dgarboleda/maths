@@ -121,6 +121,23 @@ describe("Contrato editorial del programa inicial", () => {
     }
   });
 
+  test("en las fórmulas, «·» solo multiplica: varias fórmulas se separan con «;»", () => {
+    // «I = C · r · t ÷ 100 · M = C + I» se leía como un solo producto.
+    const separator = /·\s*(?:[a-záéíóú]{4,}\s*:|V_|(?:sen|cos|tan) α =|eje |M =|\d+°:)/i;
+    for (const l of LESSONS) for (const s of l.sections) expect(s.formula ?? "", l.id).not.toMatch(separator);
+  });
+
+  test("las comprobaciones no repiten enunciados recién vistos en guiada y práctica", () => {
+    // Superar la comprobación no debe depender de recordar una pregunta ya
+    // resuelta con ayuda: las conceptuales rotan entre tres formulaciones.
+    for (const l of LESSONS) {
+      const seen = new Set([...l.guided, ...l.practice].map((q) => q.prompt));
+      for (const q of l.checks[0]) expect(seen.has(q.prompt), `${l.id} ${q.id}`).toBe(false);
+      const first = new Set(l.checks[0].map((q) => q.prompt));
+      for (const q of l.checks[1]) expect(first.has(q.prompt), `${l.id} ${q.id}`).toBe(false);
+    }
+  });
+
   test("las formas paralelas no repiten respuestas ni posiciones", () => {
     for (const l of LESSONS) {
       const [a, b] = l.checks;
