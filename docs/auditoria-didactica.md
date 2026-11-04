@@ -17,7 +17,7 @@ Las pruebas `catalog.test.ts` impiden que vuelvan los dos últimos problemas: la
 
 ## Pendiente (requiere decisión o revisión docente)
 
-- **La comprobación B y el repaso diferido** pueden reutilizar la formulación conceptual de la guiada o la práctica. Evitarlo exige una cuarta formulación por clase.
+- **Resuelto después:** cada clase tiene ahora una cuarta formulación conceptual reservada a la comprobación B (`functions/src/learning/checkConcepts.ts`, 50 preguntas). La evaluación de ubicación de fracciones, que usa la conceptual de la forma B, también la muestra. El repaso diferido sigue recuperando la formulación de la práctica, días después.
 - **893 preguntas tienen un solo paso de desarrollo** (sobre todo diagnósticos y conceptuales) y 135 explicaciones tienen menos de seis palabras («9 − 4 = 5.»). Son aceptables en preguntas de un paso; conviene revisarlas en las de procedimiento.
 - **`CONTENT_VERSION` no cambia**: los identificadores de las preguntas se conservan. Una comprobación en curso puede mostrar el enunciado nuevo en una posición ya respondida; la evidencia guardada no se pierde.
 - La revisión docente debe validar los contextos (precios en soles, «créditos», nombres de cursos) y la adecuación al CNEB.

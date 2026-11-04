@@ -138,6 +138,17 @@ describe("Contrato editorial del programa inicial", () => {
     }
   });
 
+  test("la conceptual de la comprobación B no comparte plantilla con ningún otro banco", () => {
+    // Cambiar solo los números (también los exponentes) no es otra formulación.
+    const template = (s: string) => s.replace(/−?[\d⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+([,.]\d+)?/g, "#");
+    for (const l of LESSONS) {
+      const concept = l.checks[1].find((q) => q.task === 0)!;
+      expect(concept.intent, l.id).toBe("concept");
+      const others = [...l.diagnostic, ...l.guided, ...l.practice, ...l.checks[0], ...l.review, ...l.mixed, l.application];
+      for (const q of others) expect(template(q.prompt), `${l.id} ${q.id}`).not.toBe(template(concept.prompt));
+    }
+  });
+
   test("las formas paralelas no repiten respuestas ni posiciones", () => {
     for (const l of LESSONS) {
       const [a, b] = l.checks;
