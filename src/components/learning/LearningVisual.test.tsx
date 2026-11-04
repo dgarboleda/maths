@@ -21,11 +21,13 @@ describe("Modelos visuales de las clases", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  test.each(KINDS)("%s: si tiene reto, no empieza ya conseguido", async (kind) => {
+  test.each(KINDS)("%s: tiene al menos un reto y no empieza ya conseguido", async (kind) => {
     render(<LearningVisual kind={kind} />);
     await screen.findAllByRole("slider");
-    const label = screen.queryByText(/^Reto 1 de \d$/);
-    if (label) expect(label.parentElement).not.toHaveTextContent("¡Conseguido!");
+    const label = screen.getByText(/^Reto 1 de \d$/);
+    expect(label.parentElement).not.toHaveTextContent("¡Conseguido!");
+    // El contenedor pide predecir antes de mover y explicar después.
+    expect(screen.getByText(/predice qué sucederá/i)).toBeInTheDocument();
   });
 
   test.each(KINDS)("%s: en los extremos de los controles no aparecen números rotos ni signos dobles", async (kind) => {
@@ -75,6 +77,7 @@ describe("Modelos visuales de las clases", () => {
       "potencias-raices": "square-root",
       "productos-notables": "binomial-square",
       "propiedad-distributiva": "distributive",
+      "expresiones-algebraicas": "expression",
       "volumen-conos-esferas": "solids",
       "probabilidad-condicional": "two-way",
       "funciones-exponenciales": "exponential",

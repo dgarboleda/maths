@@ -61,12 +61,13 @@ const OrderOfOperationsVisual = numberVisual("OrderOfOperationsVisual");
 const SquareRootVisual = numberVisual("SquareRootVisual");
 
 // Productos notables y distributiva: modelos de área propios de álgebra.
-const algebraVisual = (name: "BinomialSquareVisual" | "DistributiveVisual") =>
+const algebraVisual = (name: "BinomialSquareVisual" | "DistributiveVisual" | "ExpressionVisual") =>
   dynamic<{ id: string }>(() => import("./AlgebraVisuals").then((module) => module[name]), {
     loading: () => <p role="status">Preparando el modelo…</p>,
   });
 const BinomialSquareVisual = algebraVisual("BinomialSquareVisual");
 const DistributiveVisual = algebraVisual("DistributiveVisual");
+const ExpressionVisual = algebraVisual("ExpressionVisual");
 const BalanceVisual = dynamic<{ id: string; initial: "balance" | "equation" }>(
   () => import("./AlgebraVisuals").then((module) => module.BalanceVisual),
   { loading: () => <p role="status">Preparando el modelo…</p> },
@@ -307,6 +308,7 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   "square-root": SquareRootVisual,
   "binomial-square": BinomialSquareVisual,
   distributive: DistributiveVisual,
+  expression: ExpressionVisual,
   balance: ({ id }) => <BalanceVisual id={id} initial="balance" />,
   equation: ({ id }) => <BalanceVisual id={id} initial="equation" />,
 };
@@ -530,6 +532,11 @@ function ClassicVisual({ kind }: { kind: Visual }) {
             </div>
           )}
         </>
+      )}
+      {!fractional && (
+        <p className="text-sm text-slate-300">
+          Antes de mover el control, predice qué sucederá. Después explica el cambio con tus palabras.
+        </p>
       )}
       <Challenge goals={classicGoals(kind, { parts, taken, total, factor })} />
     </section>

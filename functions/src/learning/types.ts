@@ -88,7 +88,8 @@ export type Visual =
   | "order"
   | "square-root"
   | "binomial-square"
-  | "distributive";
+  | "distributive"
+  | "expression";
 export type UnitId =
   | "numeros"
   | "fracciones"

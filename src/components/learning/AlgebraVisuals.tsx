@@ -238,3 +238,100 @@ export function BalanceVisual({ id, initial }: { id: string; initial: "balance" 
     </>
   );
 }
+
+/** Término con signo para escribir una expresión: «+ 3x», «− x», «+ 7». */
+function term(coef: number, variable: boolean, first: boolean) {
+  if (coef === 0) return "";
+  const abs = Math.abs(coef),
+    body = variable ? `${abs === 1 ? "" : abs}x` : `${abs}`;
+  if (first) return coef < 0 ? `−${body}` : body;
+  return coef < 0 ? ` − ${body}` : ` + ${body}`;
+}
+function expr(terms: [number, boolean][]) {
+  let out = "";
+  for (const [coef, variable] of terms) out += term(coef, variable, out === "");
+  return out || "0";
+}
+
+/**
+ * Fichas algebraicas: barras x (cian; −x en rosa) y cuadritos de 1. Agrupar
+ * junta los términos semejantes y anula los pares x y −x; sustituir da el
+ * valor para el x elegido.
+ */
+export function ExpressionVisual({ id }: { id: string }) {
+  const [a, setA] = useState(4);
+  const [b, setB] = useState(7);
+  const [c, setC] = useState(-1);
+  const [d, setD] = useState(2);
+  const [x, setX] = useState(2);
+  const [grouped, setGrouped] = useState(false);
+  const original = expr([[a, true], [b, false], [c, true], [d, false]]);
+  const simple = expr([[a + c, true], [b + d, false]]);
+  const value = (a + c) * x + b + d;
+  const sub = (coef: number) => `${coef === 1 ? "" : coef === -1 ? "−" : `${coef} · `}${x < 0 ? `(${x})` : x}`.replace("-", "−");
+  // Fichas en el orden de la expresión o agrupadas (los pares x / −x se anulan).
+  type Tile = { kind: "x" | "-x" | "1"; key: string; cancelled?: boolean };
+  const tiles = (coef: number, kind: "x" | "1", tag: string): Tile[] =>
+    Array.from({ length: Math.abs(coef) }, (_, i) => ({ kind: kind === "x" ? (coef < 0 ? "-x" : "x") : "1", key: `${tag}${i}` }));
+  let row: Tile[] = [...tiles(a, "x", "a"), ...tiles(b, "1", "b"), ...tiles(c, "x", "c"), ...tiles(d, "1", "d")];
+  if (grouped) {
+    const pos = row.filter((t) => t.kind === "x"),
+      neg = row.filter((t) => t.kind === "-x"),
+      cancel = Math.min(pos.length, neg.length);
+    row = [
+      ...pos.map((t, i) => ({ ...t, cancelled: i < cancel })),
+      ...neg.map((t, i) => ({ ...t, cancelled: i < cancel })),
+      ...row.filter((t) => t.kind === "1"),
+    ];
+  }
+  let cursor = 10,
+    line = 0;
+  const placed = row.map((t) => {
+    const w = t.kind === "1" ? 16 : 40;
+    if (cursor + w > 310) { cursor = 10; line += 1; }
+    const at = { ...t, x: cursor, y: 14 + line * 34, w };
+    cursor += w + 5;
+    return at;
+  });
+  const height = 14 + (line + 1) * 34 + 6;
+  return (
+    <>
+      <div className="grid gap-x-4 sm:grid-cols-2">
+        <Slider id={`${id}-a`} label="Primer término en x" value={a} min={-3} max={5} onChange={setA} />
+        <Slider id={`${id}-b`} label="Primer número" value={b} min={0} max={8} onChange={setB} />
+        <Slider id={`${id}-c`} label="Segundo término en x" value={c} min={-3} max={3} onChange={setC} />
+        <Slider id={`${id}-d`} label="Segundo número" value={d} min={0} max={6} onChange={setD} />
+      </div>
+      <p className="text-lg font-semibold">{grouped ? `${original} = ${simple}` : original}</p>
+      <svg role="img" viewBox={`0 0 320 ${height}`} className="w-full max-w-md rounded-xl bg-slate-950"
+        aria-label={`Fichas de ${original}: ${Math.abs(a) + Math.abs(c)} barras x y ${b + d} unidades.${grouped ? ` Agrupadas: ${simple}.` : ""}`}>
+        {placed.map((t) => t.kind === "1"
+          ? <rect key={t.key} x={t.x} y={t.y + 8} width={16} height={16} rx={2} className="anim-pop fill-amber-300 stroke-slate-950" />
+          : (
+            <g key={t.key} opacity={t.cancelled ? 0.35 : 1}>
+              <rect x={t.x} y={t.y} width={40} height={24} rx={4} className={`anim-pop ${t.kind === "x" ? "fill-cyan-300" : "fill-rose-300"} stroke-slate-950`} strokeDasharray={t.cancelled ? "4 3" : undefined} />
+              <text x={t.x + 20} y={t.y + 17} textAnchor="middle" className="fill-slate-950 text-[13px] font-bold">{t.kind === "x" ? "x" : "−x"}</text>
+              {t.cancelled && <line x1={t.x + 2} x2={t.x + 38} y1={t.y + 22} y2={t.y + 2} className="stroke-slate-950" strokeWidth={2} />}
+            </g>
+          ))}
+      </svg>
+      <button type="button" aria-pressed={grouped} onClick={() => setGrouped((g) => !g)}
+        className="min-h-11 rounded-lg border border-cyan-300/60 px-3 text-sm font-semibold text-cyan-100">
+        {grouped ? "Volver al orden original" : "Agrupar términos semejantes"}
+      </button>
+      <Slider id={`${id}-x`} label="Valor de x para sustituir" value={x} min={-3} max={5} onChange={setX} />
+      <p className="text-sm font-semibold">
+        <MathText text={a + c === 0 ? `Con x = ${x}: ${simple} = ${value}` : `Con x = ${x}: ${simple} = ${sub(a + c)} + ${b + d} = ${value}`} />
+      </p>
+      <p className="text-sm text-slate-300">
+        Solo se suman entre sí los términos semejantes: las x con las x y los números con los números. {c < 0 && a > 0 ? "Cada −x rosa anula una x cian. " : ""}
+        Sustituir en la expresión original o en la simplificada da lo mismo: comprueba que {original} con x = {x} también vale {value}.
+      </p>
+      <Challenge goals={[
+        { text: "Consigue una expresión que se simplifique a 2x + 9.", met: a + c === 2 && b + d === 9 },
+        { text: "Haz que los términos en x se anulen por completo.", met: a + c === 0 && (a !== 0 || c !== 0) },
+        { text: "Elige x para que la expresión simplificada valga 0.", met: value === 0, hint: "Prueba con valores negativos de x." },
+      ]} />
+    </>
+  );
+}
