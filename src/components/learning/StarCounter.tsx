@@ -24,9 +24,11 @@ export function StarCounter({ childId }: { childId: string }) {
   if (!parentId) return null;
   return (
     <>
-      <button ref={trigger} type="button" onClick={() => setOpen(true)} aria-label={`Mis estrellas: ${stars ?? "cargando"}`}
+      <button ref={trigger} type="button" onClick={() => setOpen(true)}
         className="relative inline-flex min-h-11 items-center gap-2 rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 text-sm font-bold text-amber-200 hover:bg-amber-300/20">
         <span aria-hidden="true">⭐</span>
+        {/* El nombre accesible sale del propio texto: «Mis estrellas: 12». */}
+        <span className="sr-only">Mis estrellas: </span>
         <span className="tabular-nums">{stars ?? "…"}</span>
         {gain.amount > 0 && (
           <span aria-hidden="true" className="anim-pop absolute -right-2 -top-3 rounded-full bg-emerald-300 px-2 py-0.5 text-xs font-bold text-slate-950">+{gain.amount}</span>

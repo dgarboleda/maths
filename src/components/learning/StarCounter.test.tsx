@@ -11,7 +11,7 @@ import { StarCounter } from "./StarCounter";
 test("el contador muestra las estrellas y anuncia las que se ganan", () => {
   vi.useFakeTimers();
   const view = render(<StarCounter childId="ana" />);
-  expect(screen.getByRole("button", { name: "Mis estrellas: 10" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^Mis estrellas: ?10$/ })).toBeInTheDocument();
   total.value = 15;
   view.rerender(<StarCounter childId="ana" />);
   expect(screen.getByText("+5")).toBeInTheDocument();
