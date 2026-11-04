@@ -28,16 +28,16 @@ export const NOTABLE_PRODUCT_LESSONS: Lesson[] = [
       ex("Desarrolla (2x + 3)(2x − 3).", [["(2x)² − 3²", "Son conjugados: los mismos términos, uno con + y otro con −. Los productos cruzados +6x y −6x se anulan."], ["2²x² − 3²", "El cuadrado afecta a todo el término 2x: al coeficiente 2 y a la x."], ["4x² − 9", "Calculamos 2² = 4 y 3² = 9. Comprobación con x = 1 → 5 × (−1) = −5 y 4 − 9 = −5."]], "Los términos cruzados se cancelan: queda una diferencia de cuadrados. Escribir 2x² − 9 olvidaría elevar el coeficiente."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es 3²?", 9, ["3² = 3 × 3 = 9."], ["Un cuadrado es un producto.", "Multiplica 3 por sí mismo.", "3 × 3 = 9."]),
+      n("d-1", "¿Cuánto es 3²?", 9, ["Elevar al cuadrado es multiplicar el número por sí mismo.", "3² = 3 × 3 = 9."], ["Un cuadrado es un producto.", "Multiplica 3 por sí mismo.", "3 × 3 = 9."]),
       c("d-2", "¿Cuál es el resultado de 2(x + 3)?", ["2x + 3", "2x + 6", "x + 6"], 1, "El 2 multiplica a ambos términos: 2x + 6."),
-      n("d-3", "Reduce 3x + 4x. ¿Cuál es el coeficiente de x?", 7, ["3x + 4x = 7x."], ["Son términos semejantes.", "Suma los coeficientes.", "3 + 4 = 7."]),
+      n("d-3", "Reduce 3x + 4x. ¿Cuál es el coeficiente de x?", 7, ["3x y 4x son términos semejantes: los dos cuentan veces x.", "3 veces x más 4 veces x son 7 veces x: el coeficiente es 7."], ["Son términos semejantes.", "Suma los coeficientes.", "3 + 4 = 7."]),
     ],
     questions(v) {
       const k = [2, 3, 4, 5, 6, 7][v];
       return [
         c("q0", `¿Cuál es el desarrollo de (x + ${k})²?`, [[`x² + ${k * k}`, "Faltan los dos productos cruzados."], `x² + ${2 * k}x + ${k * k}`, [`x² + ${2 * k}x − ${k * k}`, "El cuadrado del segundo término es positivo."]], 1, "El cuadrado de una suma incluye los dos productos cruzados y el cuadrado de cada término."),
         c("q1", `Desarrolla (x − ${k})².`, [`x² − ${2 * k}x + ${k * k}`, [`x² − ${k * k}`, "Este patrón corresponde al producto de conjugados."], [`x² − ${2 * k}x − ${k * k}`, "El producto de dos términos negativos es positivo."]], 0, "Los productos cruzados son negativos y el cuadrado del segundo término es positivo.", "procedure"),
-        n("q2", `Completa (x + ${k})² = x² + __x + ${k * k}.`, 2 * k, [`El coeficiente central es 2 × ${k} = ${2 * k}.`], ["Busca los dos productos cruzados.", `Cada uno es ${k}x.`, `Suma ${k} + ${k}.`], { step: true }),
+        n("q2", `Completa (x + ${k})² = x² + __x + ${k * k}.`, 2 * k, [`(x + ${k})² = (x + ${k})(x + ${k}): los productos cruzados son ${k}x y ${k}x.`, `Juntos forman 2 × ${k} × x = ${2 * k}x: el coeficiente central es ${2 * k}.`, `(x + ${k})² = x² + ${2 * k}x + ${k * k}.`], ["Busca los dos productos cruzados.", `Cada uno es ${k}x.`, `Suma ${k} + ${k}.`], { step: true }),
         c("q3", `Desarrolla (2x + ${k})(2x − ${k}).`, [`4x² − ${k * k}`, [`2x² − ${k * k}`, "También debes elevar 2 al cuadrado."], [`4x² + ${k * k}`, "El producto de conjugados es una diferencia de cuadrados."]], 0, "Los términos cruzados se cancelan y (2x)² = 4x².", "procedure"),
         c("q4", `Una persona afirma que (x + ${k})² = x² + ${k * k}. ¿Qué falta?`, [`El término ${2 * k}x`, ["Nada, la igualdad es correcta", "Faltan los dos productos cruzados."], [`El término −${2 * k}x`, "Los dos productos cruzados son positivos."]], 0, "Los dos productos cruzados suman 2 × x × el segundo término."),
         n("q5", `Un cuadrado tiene lado ${k} + 10 metros. Usando (10 + ${k})², ¿cuál es su área en metros cuadrados?`, (10 + k) ** 2, [`10² + 2 × 10 × ${k} + ${k}² = ${(10 + k) ** 2}.`], ["El área es lado por lado.", "Usa el cuadrado de una suma.", `Suma 100 + ${20 * k} + ${k * k}.`], { intent: "transfer", unit: "m²" }),

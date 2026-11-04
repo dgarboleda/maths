@@ -66,8 +66,8 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       ], "La expresión reducida tiene el mismo valor para cualquier x."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto vale 3 × 4 + 2?", 14, ["3 × 4 = 12; 12 + 2 = 14."], ["Multiplica primero.", "12 + 2.", "14."]),
-      n("d-2", "¿Cuánto es −6 + 2?", -4, ["Signos distintos: 6 − 2 = 4, gana el signo de −6."], ["Empieza en −6.", "Avanza 2.", "−4."]),
+      n("d-1", "¿Cuánto vale 3 × 4 + 2?", 14, ["La multiplicación va antes que la suma: 3 × 4 = 12.", "Después se suma: 12 + 2 = 14."], ["Multiplica primero.", "12 + 2.", "14."]),
+      n("d-2", "¿Cuánto es −6 + 2?", -4, ["Empezamos en −6 y avanzamos 2 hacia la derecha.", "−6 → −5 → −4: el resultado es −4, todavía negativo porque 6 está más lejos del cero que 2."], ["Empieza en −6.", "Avanza 2.", "−4."]),
       c("d-3", "En 2x + 7 = 15, ¿qué valor tiene x?", ["4", "11", "8"], 0, "2x = 8, así que x = 4."),
     ],
     questions(v) {
@@ -115,7 +115,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q1",
           `Evalúa ${a}x${t(b)} para x = ${sg(x)}.`,
           a * x + b,
-          [`${a} × ${p(x)}${t(b)} = ${sg(a * x)}${t(b)} = ${sg(a * x + b)}.`],
+          [`Sustituimos x por ${p(x)}${x < 0 ? ", entre paréntesis porque es negativo," : ""} y queda ${a} × ${p(x)}${t(b)}.`, `Primero la multiplicación: ${a} × ${p(x)} = ${sg(a * x)}.`, `Después el término fijo: ${sg(a * x)}${t(b)} = ${sg(a * x + b)}.`],
           ["Sustituye x por su valor entre paréntesis.", "Multiplica antes de sumar.", `${a} × ${p(x)} = ${sg(a * x)}.`],
           {
             errors: [
@@ -128,7 +128,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q2",
           `Completa: ${c1}x + ${c2}x = __x.`,
           c1 + c2,
-          [`${c1} veces x más ${c2} veces x son ${c1 + c2} veces x.`],
+          [`${c1}x y ${c2}x son términos semejantes: tienen la misma parte literal, x.`, `${c1} veces x más ${c2} veces x son ${c1} + ${c2} = ${c1 + c2} veces x.`, `Comprobación con x = 1 → ${c1} + ${c2} = ${c1 + c2}.`],
           ["Son términos semejantes.", "Suma los coeficientes.", `${c1} + ${c2}.`],
           { step: true, errors: [{ value: c1 * c2, feedback: "Al sumar términos semejantes se suman los coeficientes, no se multiplican." }] },
         ),
@@ -253,8 +253,8 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       ], "También podía dividirse primero entre 3 → x + 4 = 9."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es 4 × (2 + 5)?", 28, ["2 + 5 = 7; 4 × 7 = 28."], ["Paréntesis primero.", "4 × 7.", "28."]),
-      n("d-2", "¿Cuánto es (−3) × (−4)?", 12, ["Signos iguales: positivo."], ["Multiplica 3 × 4.", "Dos negativos dan positivo.", "12."]),
+      n("d-1", "¿Cuánto es 4 × (2 + 5)?", 28, ["El paréntesis va primero: 2 + 5 = 7.", "4 × 7 = 28. Con la distributiva: 4 × 2 + 4 × 5 = 8 + 20 = 28."], ["Paréntesis primero.", "4 × 7.", "28."]),
+      n("d-2", "¿Cuánto es (−3) × (−4)?", 12, ["Los dos factores son negativos: signos iguales dan positivo.", "3 × 4 = 12, así que (−3) × (−4) = 12."], ["Multiplica 3 × 4.", "Dos negativos dan positivo.", "12."]),
       c("d-3", "¿Cuánto es 2x + 5x?", ["7x", "10x", "7x²"], 0, "Son términos semejantes: 2 + 5 = 7."),
     ],
     questions(v) {
@@ -299,7 +299,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q2",
           `Completa: ${a}(x + ${b}) = ${a}x + __.`,
           a * b,
-          [`${a} × ${b} = ${a * b}.`],
+          [`El ${a} multiplica a cada término del paréntesis, no solo al primero.`, `${a} × x = ${a}x y ${a} × ${b} = ${a * b}.`, `${a}(x + ${b}) = ${a}x + ${a * b}. Comprobación con x = 1 → ${a} × ${1 + b} = ${a * (1 + b)} = ${a} + ${a * b}.`],
           ["El factor multiplica a cada término.", `Multiplica ${a} por ${b}.`, `${a * b}.`],
           { step: true, errors: [{ value: b, feedback: `El ${a} también multiplica al ${b}.` }] },
         ),
@@ -426,8 +426,8 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       ], "Con 6 horas cuestan lo mismo. Con más horas conviene A: cada hora extra suma 3 en A y 5 en B (con 7 horas, A = 41 y B = 43)."),
     ],
     diagnostic: [
-      n("d-1", "Resuelve 3x + 4 = 19.", 5, ["3x = 15; x = 5."], ["Resta 4.", "Divide entre 3.", "5."]),
-      n("d-2", "Desarrolla 2(x + 6). ¿Cuál es el término sin x?", 12, ["2 × 6 = 12."], ["El 2 multiplica a ambos términos.", "2 × 6.", "12."]),
+      n("d-1", "Resuelve 3x + 4 = 19.", 5, ["Restamos 4 a ambos lados: 3x = 15.", "Dividimos entre 3 y queda x = 5. Comprobación: 3 × 5 + 4 = 19."], ["Resta 4.", "Divide entre 3.", "5."]),
+      n("d-2", "Desarrolla 2(x + 6). ¿Cuál es el término sin x?", 12, ["El 2 multiplica a cada término del paréntesis: 2 × x = 2x y 2 × 6 = 12.", "2(x + 6) = 2x + 12: el término sin x es 12."], ["El 2 multiplica a ambos términos.", "2 × 6.", "12."]),
       c("d-3", "¿Qué conserva una igualdad?", ["Restar 2x solo a un lado", "Restar 2x a ambos lados", "Cambiar x por 2"], 1, "La misma operación en ambos lados."),
     ],
     questions(v) {
@@ -473,7 +473,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q2",
           `Completa: ${a}x + ${b} = ${cc}x + ${d} → ${a - cc}x = __.`,
           d - b,
-          [`Restando ${cc}x y ${b} a ambos lados: ${a - cc}x = ${d} − ${b} = ${d - b}.`],
+          [`Restamos ${cc}x a ambos lados para reunir la incógnita: ${a - cc}x + ${b} = ${d}.`, `Restamos ${b} a ambos lados para aislar el término con x: ${a - cc}x = ${d} − ${b} = ${d - b}.`, `Cada paso se hace en los dos lados, así que la igualdad se conserva.`],
           ["Reúne x a la izquierda y los números a la derecha.", `Resta ${b} a ${d}.`, `${d - b}.`],
           { step: true, errors: [{ value: d + b, feedback: `El ${b} se resta a ambos lados.` }] },
         ),
@@ -599,7 +599,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
     ],
     diagnostic: [
       c("d-1", "¿Qué número cumple x > 7?", ["7", "8", "6"], 1, "8 es mayor que 7; 7 no es mayor que sí mismo."),
-      n("d-2", "Resuelve 4x + 1 = 21.", 5, ["4x = 20; x = 5."], ["Resta 1.", "Divide entre 4.", "5."]),
+      n("d-2", "Resuelve 4x + 1 = 21.", 5, ["Restamos 1 a ambos lados: 4x = 20.", "Dividimos entre 4 y queda x = 5. Comprobación: 4 × 5 + 1 = 21."], ["Resta 1.", "Divide entre 4.", "5."]),
       c("d-3", "¿Cuál es mayor: −3 o −8?", ["−3", "−8", "Son iguales"], 0, "−3 está a la derecha de −8."),
     ],
     questions(v) {
@@ -650,7 +650,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q2",
           `Completa: ${a}x + ${b} ≤ ${cc} → ${a}x ≤ __.`,
           cc - b,
-          [`Restamos ${b} a ambos lados: ${cc} − ${b} = ${cc - b}.`],
+          [`Sumar o restar el mismo número a ambos lados conserva la desigualdad.`, `Restamos ${b} en ambos lados y queda ${a}x + ${b} − ${b} ≤ ${cc} − ${b}, así que ${a}x ≤ ${cc - b}.`, `El sentido no cambia: solo se invierte al multiplicar o dividir por un negativo.`],
           ["Igual que en una ecuación.", `Resta ${b} a ambos lados.`, `${cc - b}.`],
           { step: true, errors: [{ value: cc + b, feedback: `El ${b} se resta a ambos lados.` }] },
         ),
@@ -775,9 +775,9 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       ], "y = −4x + 54."),
     ],
     diagnostic: [
-      n("d-1", "Evalúa 4x + 3 para x = 5.", 23, ["4 × 5 + 3 = 23."], ["Sustituye x.", "Multiplica primero.", "23."]),
+      n("d-1", "Evalúa 4x + 3 para x = 5.", 23, ["Sustituimos x por 5 y queda 4 × 5 + 3.", "Primero la multiplicación: 4 × 5 = 20; después la suma: 20 + 3 = 23."], ["Sustituye x.", "Multiplica primero.", "23."]),
       c("d-2", "En la secuencia 5, 8, 11, 14, ¿cuánto aumenta cada vez?", ["3", "5", "14"], 0, "8 − 5 = 3, y así sucesivamente."),
-      n("d-3", "¿Cuánto es (20 − 8) ÷ 4?", 3, ["12 ÷ 4 = 3."], ["Paréntesis primero.", "12 ÷ 4.", "3."]),
+      n("d-3", "¿Cuánto es (20 − 8) ÷ 4?", 3, ["El paréntesis va primero: 20 − 8 = 12.", "Después la división: 12 ÷ 4 = 3."], ["Paréntesis primero.", "12 ÷ 4.", "3."]),
     ],
     questions(v) {
       const [m, b] = [[3, 4], [5, 2], [4, 9], [-2, 15], [6, 1], [-3, 20]][v],
@@ -814,7 +814,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q1",
           `Tabla: x = 0, 1, 2, 3; y = ${b}, ${b + m}, ${b + 2 * m}, ${b + 3 * m}. ¿Cuál es la pendiente?`,
           m,
-          [`Diferencias: ${sg(m)} en cada paso.`, `m = ${sg(m)}.`],
+          [`x aumenta de 1 en 1, así que la pendiente es lo que cambia y en cada paso.`, `Diferencias entre valores de y: ${sg(m)} en cada paso.`, `m = ${sg(m)}: ${m > 0 ? "y aumenta" : "y disminuye"} ${Math.abs(m)} por cada unidad de x.`],
           ["Mira cuánto cambia y de una fila a la siguiente.", `${b + m} − ${b}.`, `m = ${sg(m)}.`],
           { errors: [{ value: b, feedback: "Ese es el valor inicial. La pendiente es el cambio entre filas." }, ...(m < 0 ? [{ value: -m, feedback: "y disminuye: la pendiente es negativa." }] : [])] },
         ),
@@ -822,7 +822,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q2",
           `Completa: si y = ${cx(m)}${t(b)}, para x = ${xk}, y = ${sg(m)} × ${xk}${t(b)} = __.`,
           m * xk + b,
-          [`${sg(m * xk)}${t(b)} = ${sg(m * xk + b)}.`],
+          [`Predecir es sustituir x en la función: y = ${cx(m)}${t(b)} con x = ${xk}.`, `Primero la multiplicación: ${sg(m)} × ${xk} = ${sg(m * xk)}.`, `Después el valor inicial: ${sg(m * xk)}${t(b)} = ${sg(m * xk + b)}.`],
           ["Sustituye x.", "Multiplica antes de sumar.", `${m} × ${xk} = ${sg(m * xk)}.`],
           { step: true, errors: [{ value: m * (xk + b), feedback: "Multiplica primero y suma después el valor inicial." }].filter((e) => e.value !== m * xk + b) },
         ),
@@ -830,7 +830,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           "q3",
           `Una función lineal pasa por (${x1}, ${sg(m * x1 + b)}) y (${x2}, ${sg(m * x2 + b)}). ¿Cuál es su pendiente?`,
           m,
-          [`m = (${sg(m * x2 + b)} − ${p(m * x1 + b)}) ÷ (${x2} − ${x1}) = ${sg(m * (x2 - x1))} ÷ ${x2 - x1} = ${sg(m)}.`],
+          [`La pendiente compara cuánto cambia y con cuánto cambia x: m = (y₂ − y₁) ÷ (x₂ − x₁).`, `Cambio de y: ${sg(m * x2 + b)} − ${p(m * x1 + b)} = ${sg(m * (x2 - x1))}. Cambio de x: ${x2} − ${x1} = ${x2 - x1}.`, `m = ${sg(m * (x2 - x1))} ÷ ${x2 - x1} = ${sg(m)}.`],
           ["La pendiente es el cambio de y dividido entre el cambio de x.", `Cambio de y: ${sg(m * x2 + b)} − ${p(m * x1 + b)}.`, `Divide entre ${x2 - x1}.`],
           { errors: [{ value: m * (x2 - x1), feedback: `Falta dividir entre el cambio de x, ${x2 - x1}.` }] },
         ),

@@ -57,9 +57,9 @@ export const INVERSE_LESSONS: Lesson[] = [
       ], "Al duplicar x, y se reduce a la mitad."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es 48 ÷ 6?", 8, ["6 × 8 = 48."], ["Busca un factor.", "6 × 8.", "8."]),
+      n("d-1", "¿Cuánto es 48 ÷ 6?", 8, ["Dividir 48 entre 6 es buscar el número que, multiplicado por 6, da 48.", "6 × 8 = 48, así que 48 ÷ 6 = 8."], ["Busca un factor.", "6 × 8.", "8."]),
       c("d-2", "Si 3 sensores consumen 12, ¿cuánto consumen 6 al mismo ritmo?", ["6", "24", "12"], 1, "Es directa: el doble de sensores, el doble de consumo."),
-      n("d-3", "¿Cuánto es 5 × 12?", 60, ["5 × 12 = 60."], ["Cinco grupos de 12.", "50 + 10.", "60."]),
+      n("d-3", "¿Cuánto es 5 × 12?", 60, ["Se puede descomponer 12 en 10 + 2, así que 5 × 10 = 50 y 5 × 2 = 10.", "50 + 10 = 60."], ["Cinco grupos de 12.", "50 + 10.", "60."]),
     ],
     questions(v) {
       const [w1, t1, w2] = [[2, 12, 4], [3, 8, 6], [4, 15, 6], [5, 16, 4], [6, 10, 4], [8, 9, 12]][v],
@@ -118,7 +118,7 @@ export const INVERSE_LESSONS: Lesson[] = [
           "q2",
           `Completa la constante: si ${w1} técnicos tardan ${t1} días, x · y = ${w1} × ${t1} = __.`,
           k,
-          [`${w1} × ${t1} = ${k}.`],
+          [`En una proporcionalidad inversa, el producto x · y es el trabajo total y no cambia.`, `${w1} × ${t1} = ${k} días-técnico.`, `Con cualquier otro equipo, técnicos × días debe seguir dando ${k}.`],
           ["Multiplica ambas cantidades.", `${w1} × ${t1}.`, `${k}.`],
           { step: true, errors: [{ value: t1 / w1, feedback: "En una relación inversa se conserva el producto, no el cociente." }] },
         ),

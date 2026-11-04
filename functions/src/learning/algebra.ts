@@ -92,7 +92,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         "d-1",
         "¿Cuánto es 8 + 5?",
         13,
-        ["8 + 5 = 13."],
+        ["Desde 8 se avanzan 5: de 8 a 10 hay 2 y faltan 3 más.", "10 + 3 = 13, así que 8 + 5 = 13."],
         [
           "Puedes completar diez primero.",
           "8 + 2 = 10; faltan 3.",
@@ -103,7 +103,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         "d-2",
         "¿Cuánto es 13 − 5?",
         8,
-        ["13 − 5 = 8."],
+        ["Restar 5 a 13: de 13 a 10 se quitan 3 y faltan 2 más.", "10 − 2 = 8. Comprobación: 8 + 5 = 13."],
         [
           "Busca el número que sumado a 5 da 13.",
           "5 + 8 = 13.",
@@ -186,7 +186,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           "q2",
           `Comprueba si x = ${x} cumple la igualdad. Completa: x + ${b} = ${x} + ${b} = __.`,
           total,
-          [`Sustituir x por ${x} da ${x} + ${b} = ${total}.`],
+          [`Comprobar es sustituir: se cambia x por ${x} en la igualdad.`, `${x} + ${b} = ${total}.`, `Como el resultado coincide con el otro lado, x = ${x} hace verdadera la igualdad.`],
           [
             "La comprobación reemplaza la letra por un número.",
             `Suma ${x} y ${b}.`,
@@ -198,7 +198,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           "q3",
           `En __ = ${b} + ${x}, ¿qué número completa la igualdad?`,
           total,
-          [`Ambos lados deben valer ${b} + ${x} = ${total}.`],
+          [`El signo = exige que los dos lados valgan lo mismo.`, `El lado derecho vale ${b} + ${x} = ${total}.`, `Por eso el número que falta es ${total}.`],
           [
             "El signo igual funciona en ambos sentidos.",
             "Calcula el lado derecho.",
@@ -392,7 +392,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         "d-2",
         "¿Cuánto es 24 ÷ 4?",
         6,
-        ["4 × 6 = 24."],
+        ["Dividir 24 entre 4 es buscar el número que, multiplicado por 4, da 24.", "4 × 6 = 24, así que 24 ÷ 4 = 6."],
         [
           "Son cuatro grupos iguales.",
           "Busca el número que multiplicado por 4 da 24.",
@@ -403,7 +403,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         "d-3",
         "¿Cuánto es 3 − 5?",
         -2,
-        ["Desde 3, retroceder 5 en la recta lleva a −2."],
+        ["Restar 5 es retroceder 5 en la recta, empezando en 3.", "De 3 a 0 se retroceden 3; faltan 2 más, que llevan a −2. Comprobación: −2 + 5 = 3."],
         [
           "El resultado puede ser negativo.",
           "De 3 a 0 recorres tres pasos; faltan dos.",
@@ -454,7 +454,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           "q2",
           `Completa la solución: x − ${b} = ${rhs}; x = ${rhs} + ${b} = __.`,
           rhs + b,
-          [`Sumamos ${b} a ambos lados; x = ${rhs + b}.`],
+          [`A x se le restó ${b}: se deshace sumando ${b} a ambos lados.`, `x − ${b} + ${b} = ${rhs} + ${b}, así que x = ${rhs + b}.`, `Comprobación: ${rhs + b} − ${b} = ${rhs}.`],
           [
             "Se deshace una resta.",
             `Suma ${b} a ambos lados.`,
@@ -657,7 +657,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         "d-1",
         "Resuelve 3x = 18.",
         6,
-        ["x = 18 ÷ 3 = 6."],
+        ["3x significa 3 veces x: se deshace dividiendo ambos lados entre 3.", "x = 18 ÷ 3 = 6. Comprobación: 3 × 6 = 18."],
         ["Deshaz la multiplicación.", "Divide ambos lados entre 3.", "x = 6."],
       ),
       c(
@@ -671,7 +671,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         "d-3",
         "Si x = 4, ¿cuánto vale 2x + 3?",
         11,
-        ["2 × 4 + 3 = 8 + 3 = 11."],
+        ["Sustituimos x por 4 y queda 2 × 4 + 3.", "Primero la multiplicación: 2 × 4 = 8; después la suma: 8 + 3 = 11."],
         ["Sustituye la letra.", "Multiplica antes de sumar.", "8 + 3 = 11."],
       ),
     ],
@@ -760,7 +760,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           "q2",
           `Completa el paso intermedio: ${m}x + ${b} = ${total} → ${m}x = __.`,
           m * x,
-          [`Restamos ${b} a ambos lados: ${total} − ${b} = ${m * x}.`],
+          [`La última operación aplicada a x fue sumar ${b}: se deshace primero.`, `Restamos ${b} a ambos lados: ${total} − ${b} = ${m * x}, así que ${m}x = ${m * x}.`, `El siguiente paso sería dividir entre ${m}, con lo que x = ${x}.`],
           [
             "Todavía no se busca x; se busca cuánto vale el término multiplicado.",
             `Resta ${b} al total.`,
@@ -967,7 +967,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         "d-1",
         "Resuelve 2x + 5 = 17.",
         6,
-        ["2x = 12; x = 6."],
+        ["Primero se deshace la suma: restamos 5 a ambos lados, 2x = 12.", "Después se deshace la multiplicación: x = 12 ÷ 2 = 6. Comprobación: 2 × 6 + 5 = 17."],
         ["Resta 5 a ambos lados.", "Divide 12 entre 2.", "x = 6."],
       ),
       c(
@@ -1065,7 +1065,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           "q2",
           `Completa la verificación: ${price} × ${count} + ${fixed} = __ créditos.`,
           budget,
-          [`${price * count} + ${fixed} = ${budget}.`],
+          [`Verificar es sustituir la solución en el modelo completo, incluido el cargo fijo.`, `${price} × ${count} = ${price * count}; ${price * count} + ${fixed} = ${budget}.`, `El resultado coincide con el gasto: la solución es correcta.`],
           [
             "La comprobación usa el costo completo.",
             "Calcula primero el precio de los sensores.",

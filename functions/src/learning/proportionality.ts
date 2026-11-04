@@ -97,7 +97,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "d-1",
         "Completa: 2/3 = __/12.",
         8,
-        ["3 × 4 = 12; 2 × 4 = 8."],
+        ["El denominador pasa de 3 a 12: se multiplicó por 12 ÷ 3 = 4.", "Para conservar el valor, el numerador también se multiplica por 4, y 2 × 4 = 8, así que 2/3 = 8/12."],
         ["Busca el factor del denominador.", "El factor es 4.", "2 × 4 = 8."],
         { step: true },
       ),
@@ -105,7 +105,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "d-2",
         "Si hay 8 piezas azules y 12 verdes, ¿cuántas hay en total?",
         20,
-        ["8 + 12 = 20."],
+        ["El total reúne las dos partes: azules y verdes.", "8 + 12 = 20 piezas."],
         ["El total reúne los dos tipos.", "Suma 8 y 12.", "El total es 20."],
       ),
       c(
@@ -165,7 +165,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           "q2",
           `Completa: ${a}:${b} = ${a * k}:__.`,
           b * k,
-          [`Multiplica ambos términos por ${k} → ${b} × ${k} = ${b * k}.`],
+          [`El primer término pasó de ${a} a ${a * k}: se multiplicó por ${k}.`, `Para conservar la razón, el segundo término se multiplica por el mismo factor: ${b} × ${k} = ${b * k}.`, `Comprobación: ${a * k}:${b * k} dividido entre ${k} vuelve a ${a}:${b}.`],
           [
             "Una razón equivalente conserva el factor entre ambas cantidades.",
             `El primer término se multiplicó por ${k}.`,
@@ -379,7 +379,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "d-1",
         "¿Cuánto es 24 ÷ 6?",
         4,
-        ["6 × 4 = 24."],
+        ["Dividir 24 entre 6 es buscar el número que, multiplicado por 6, da 24.", "6 × 4 = 24, así que 24 ÷ 6 = 4."],
         [
           "Busca el valor de cada grupo.",
           "Seis grupos iguales suman 24.",
@@ -397,7 +397,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "d-3",
         "Cuatro grupos tienen 3 piezas cada uno. ¿Cuántas piezas hay?",
         12,
-        ["4 × 3 = 12."],
+        ["Cuatro grupos de 3 piezas: 3 + 3 + 3 + 3.", "4 × 3 = 12 piezas."],
         ["Son grupos iguales.", "Suma cuatro veces 3.", "El total es 12."],
       ),
     ],
@@ -463,7 +463,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           "q1",
           `${count} sensores cuestan ${cost} créditos al mismo precio por unidad. ¿Cuánto cuesta un sensor?`,
           rate,
-          [`${cost} ÷ ${count} = ${rate} créditos/sensor.`],
+          [`El precio por unidad reparte el costo total entre la cantidad: ${cost} ÷ ${count}.`, `${cost} ÷ ${count} = ${rate} créditos/sensor.`, `Comprobación: ${count} × ${rate} = ${cost} créditos.`],
           [
             "Busca el precio de una sola unidad.",
             "Divide precio total entre cantidad.",
@@ -480,7 +480,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           "q2",
           `Completa: ${order} sensores a ${rate} créditos/sensor cuestan __ créditos.`,
           order * rate,
-          [`${order} × ${rate} = ${order * rate}.`],
+          [`Si cada sensor cuesta ${rate} créditos, el costo crece ${rate} por cada sensor.`, `${order} × ${rate} = ${order * rate} créditos.`, `Esto vale mientras el precio por unidad no cambie (sin cargos fijos ni descuentos).`],
           [
             "Ya conoces el precio de una unidad.",
             "Toma una vez ese precio por cada sensor.",
@@ -492,7 +492,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           "q3",
           `Un dron recorre ${hours * speed} km en ${hours} horas a velocidad constante. ¿Cuál es su velocidad en km/h?`,
           speed,
-          [`${hours * speed} km ÷ ${hours} h = ${speed} km/h.`],
+          [`La velocidad es la distancia que corresponde a 1 hora: distancia ÷ tiempo.`, `${hours * speed} km ÷ ${hours} h = ${speed} km/h.`, `Comprobación: ${speed} km/h × ${hours} h = ${hours * speed} km.`],
           [
             "Se pregunta por la distancia que corresponde a una hora.",
             "Divide distancia entre tiempo.",
@@ -664,14 +664,14 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "d-1",
         "Si 5 sensores consumen 20 unidades al mismo ritmo, ¿cuánto consume uno?",
         4,
-        ["20 ÷ 5 = 4."],
+        ["Al mismo ritmo, cada sensor consume lo mismo: se reparte el total entre los sensores.", "20 ÷ 5 = 4 unidades por sensor. Comprobación: 5 × 4 = 20."],
         ["Busca el consumo por unidad.", "Divide entre cinco.", "Consume 4."],
       ),
       n(
         "d-2",
         "¿Cuál es el doble de 7?",
         14,
-        ["2 × 7 = 14."],
+        ["El doble es multiplicar por 2, o sumar el número consigo mismo.", "2 × 7 = 7 + 7 = 14."],
         ["Duplicar es tomar dos veces.", "Suma 7 + 7.", "El doble es 14."],
       ),
       c(
@@ -734,7 +734,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           "q1",
           `Cada sensor consume ${k} unidades y no hay consumo fijo. ¿Cuánto consumen ${x} sensores?`,
           k * x,
-          [`y = ${k}x; para x = ${x}, y = ${k} × ${x} = ${k * x}.`],
+          [`Sin consumo fijo, el consumo es proporcional: y = ${k}x, con ${k} unidades por sensor.`, `Para x = ${x}: y = ${k} × ${x} = ${k * x}.`, `Comprobación: ${k * x} ÷ ${x} = ${k}, la misma razón por sensor.`],
           [
             "El consumo por sensor se mantiene.",
             `Multiplica la cantidad de sensores por ${k}.`,
@@ -750,7 +750,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           "q2",
           `Completa el factor: si ${x} sensores consumen ${k * x}, entonces y = __ × x.`,
           k,
-          [`k = ${k * x} ÷ ${x} = ${k}.`],
+          [`En y = kx, la constante es el cociente y ÷ x.`, `k = ${k * x} ÷ ${x} = ${k}: cada sensor consume ${k}.`, `Comprobación: ${k} × ${x} = ${k * x}.`],
           [
             "Busca cuánto corresponde a un sensor.",
             "Divide consumo entre sensores.",
@@ -968,7 +968,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "d-1",
         "Escribe 20% como decimal.",
         0.2,
-        ["20/100 = 0,2."],
+        ["20% significa 20 de cada 100, es decir, 20/100.", "20 ÷ 100 = 0,2: la coma se desplaza dos posiciones a la izquierda."],
         [
           "Por ciento significa por cada cien.",
           "Divide 20 entre 100.",
@@ -979,7 +979,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "d-2",
         "¿Cuánto es 1/4 de 80?",
         20,
-        ["80 ÷ 4 = 20."],
+        ["1/4 de 80 es repartir 80 en 4 partes iguales.", "80 ÷ 4 = 20. Comprobación: 4 × 20 = 80."],
         [
           "Reparte 80 en cuatro partes iguales.",
           "Calcula 80 ÷ 4.",
@@ -1053,7 +1053,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           "q1",
           `Calcula ${p}% de ${base} créditos.`,
           delta,
-          [`${base} × ${p}/100 = ${delta}.`],
+          [`${p}% de ${base} significa ${p} de cada 100 partes de ${base}: la base es ${base}.`, `${base} × ${p}/100 = ${delta}.`, `Comprobación: ${delta} es una fracción de ${base} pequeña, como corresponde a un ${p}%.`],
           [
             "Identifica el valor que representa el cien por ciento.",
             `Multiplica ${base} por ${p}/100.`,
@@ -1072,7 +1072,9 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
           `Completa el precio final: ${base} − ${delta} = __ después de un descuento del ${p}%.`,
           final,
           [
-            `El descuento es ${delta}; el precio final es ${base} − ${delta} = ${final}.`,
+            `El descuento se calcula sobre el precio original: ${p}% de ${base} = ${delta}.`,
+            `El precio final es lo que queda al restar la rebaja: ${base} − ${delta} = ${final}.`,
+            `Comprobación: ${final} es el ${100 - p}% de ${base}.`,
           ],
           [
             "El descuento y el precio final son cantidades diferentes.",

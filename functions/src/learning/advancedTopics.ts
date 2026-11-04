@@ -69,8 +69,8 @@ export const INTEREST_LESSONS: Lesson[] = [
       ], "El monto es unos S/ 2249,73."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es el 10% de 450?", 45, ["450 ÷ 10 = 45."], ["El 10% es dividir entre 10.", "450 ÷ 10.", "45."]),
-      n("d-2", "¿Cuánto es 1,05 × 200?", 210, ["1,05 × 200 = 200 + 10 = 210."], ["1 × 200 = 200.", "0,05 × 200 = 10.", "Suma."]),
+      n("d-1", "¿Cuánto es el 10% de 450?", 45, ["10% es 10 de cada 100, es decir, la décima parte.", "450 ÷ 10 = 45. Comprobación: 45 × 10 = 450."], ["El 10% es dividir entre 10.", "450 ÷ 10.", "45."]),
+      n("d-2", "¿Cuánto es 1,05 × 200?", 210, ["1,05 = 1 + 0,05: multiplicar por 1,05 es tomar el total y añadir su 5%.", "200 × 1 = 200 y 200 × 0,05 = 10; 200 + 10 = 210."], ["1 × 200 = 200.", "0,05 × 200 = 10.", "Suma."]),
       c("d-3", "Un precio de 100 soles sube 10% y luego otro 10%. ¿Cuánto cuesta al final?", ["121 soles", "120 soles", "110 soles"], 0, "El segundo 10% se aplica sobre 110 → 110 + 11 = 121."),
     ],
     questions(v) {
@@ -258,8 +258,8 @@ export const SEQUENCE_LESSONS: Lesson[] = [
       ], "Ahorró 220 soles."),
     ],
     diagnostic: [
-      n("d-1", "Continúa la secuencia: 3, 7, 11, 15, __", 19, ["Se suma 4 → 15 + 4 = 19."], ["¿Cuánto aumenta de un número al siguiente?", "Aumenta 4.", "15 + 4."]),
-      n("d-2", "¿Cuánto es 2⁵?", 32, ["2 · 2 · 2 · 2 · 2 = 32."], ["Multiplica 2 por sí mismo 5 veces.", "2 · 2 · 2 = 8.", "8 · 2 · 2."]),
+      n("d-1", "Continúa la secuencia: 3, 7, 11, 15, __", 19, ["Cada término se obtiene sumando la misma cantidad: 7 − 3 = 4, 11 − 7 = 4.", "El siguiente es 15 + 4 = 19."], ["¿Cuánto aumenta de un número al siguiente?", "Aumenta 4.", "15 + 4."]),
+      n("d-2", "¿Cuánto es 2⁵?", 32, ["2⁵ es multiplicar 2 por sí mismo 5 veces: 2 · 2 · 2 · 2 · 2.", "2 → 4 → 8 → 16 → 32."], ["Multiplica 2 por sí mismo 5 veces.", "2 · 2 · 2 = 8.", "8 · 2 · 2."]),
       c("d-3", "¿Qué expresión da el término de la posición n en 5, 10, 15, 20…?", ["5n", "n + 5", "5 + 5 + n"], 0, "Cada término es 5 veces su posición."),
     ],
     questions(v) {
@@ -311,7 +311,7 @@ export const SEQUENCE_LESSONS: Lesson[] = [
           "q2",
           `Completa: en la progresión geométrica ${geo.slice(0, 3).join(", ")}… el término 5 es ${g1} · ${r}⁴ = __.`,
           g(5),
-          [`${r}⁴ = ${r ** 4}.`, `${g1} · ${r ** 4} = ${g(5)}.`],
+          [`En una progresión geométrica, el término n es a₁ · rⁿ⁻¹: para el término 5 se multiplica 4 veces por ${r}.`, `${r}⁴ = ${r ** 4}.`, `${g1} · ${r ** 4} = ${g(5)}.`],
           [`Calcula ${r}⁴.`, `Multiplica por ${g1}.`, `${g(5)}.`],
           {
             step: true,
@@ -438,8 +438,8 @@ export const COORDINATE_LESSONS: Lesson[] = [
       ], "B = (7, −2)."),
     ],
     diagnostic: [
-      n("d-1", "Un triángulo rectángulo tiene catetos de 6 y 8. ¿Cuánto mide la hipotenusa?", 10, ["√(36 + 64) = √100 = 10."], ["Eleva cada cateto al cuadrado.", "Suma: 36 + 64.", "Saca la raíz cuadrada."]),
-      n("d-2", "¿Cuánto es −2 − 5?", -7, ["Desde −2 se retroceden 5 → −7."], ["Ubica −2 en la recta.", "Restar 5 es moverse 5 a la izquierda.", "−7."]),
+      n("d-1", "Un triángulo rectángulo tiene catetos de 6 y 8. ¿Cuánto mide la hipotenusa?", 10, ["En un triángulo rectángulo, la hipotenusa cumple c² = a² + b².", "6² + 8² = 36 + 64 = 100, y √100 = 10."], ["Eleva cada cateto al cuadrado.", "Suma: 36 + 64.", "Saca la raíz cuadrada."]),
+      n("d-2", "¿Cuánto es −2 − 5?", -7, ["Restar 5 es retroceder 5 en la recta, empezando en −2.", "−2 → −7: el resultado es −7, más lejos del cero."], ["Ubica −2 en la recta.", "Restar 5 es moverse 5 a la izquierda.", "−7."]),
       c("d-3", "¿En qué cuadrante está el punto (−2, 3)?", ["Segundo (II)", "Primero (I)", "Cuarto (IV)"], 0, "x negativa y y positiva: segundo cuadrante."),
     ],
     questions(v) {
@@ -488,7 +488,7 @@ export const COORDINATE_LESSONS: Lesson[] = [
           "q2",
           `Completa: la coordenada x del punto medio entre ${pt(mx1, my1)} y ${pt(mx2, my2)} es (${sg(mx1)} + ${sg(mx2)}) ÷ 2 = __.`,
           (mx1 + mx2) / 2,
-          [`${sg(mx1)} + ${sg(mx2)} = ${sg(mx1 + mx2)}.`, `${sg(mx1 + mx2)} ÷ 2 = ${sg((mx1 + mx2) / 2)}.`],
+          [`El punto medio está a la misma distancia de los dos extremos: su x es el promedio de las dos x.`, `${sg(mx1)} + ${sg(mx2)} = ${sg(mx1 + mx2)}.`, `${sg(mx1 + mx2)} ÷ 2 = ${sg((mx1 + mx2) / 2)}.`],
           ["Suma las dos coordenadas x.", "Divide entre 2.", `${sg((mx1 + mx2) / 2)}.`],
           { step: true, errors: [{ value: (mx2 - mx1) / 2, feedback: "El punto medio promedia: se suman las coordenadas, no se restan." }] },
         ),
@@ -496,7 +496,7 @@ export const COORDINATE_LESSONS: Lesson[] = [
           "q3",
           `¿Cuál es la coordenada y del punto medio entre ${pt(mx1, my1)} y ${pt(mx2, my2)}?`,
           (my1 + my2) / 2,
-          [`(${sg(my1)} + ${sg(my2)}) ÷ 2 = ${sg((my1 + my2) / 2)}.`],
+          [`La y del punto medio es el promedio de las dos y.`, `${sg(my1)} + ${sg(my2)} = ${sg(my1 + my2)}.`, `${sg(my1 + my2)} ÷ 2 = ${sg((my1 + my2) / 2)}.`],
           ["Usa las coordenadas y.", "Súmalas.", "Divide entre 2."],
           { errors: [{ value: my1 + my2, feedback: "Falta dividir entre 2: el punto medio es el promedio." }] },
         ),
@@ -621,8 +621,8 @@ export const QUADRATIC_FUNCTION_LESSONS: Lesson[] = [
       ], "La altura máxima es 20 m, a los 2 segundos."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es (−3)²?", 9, ["(−3) · (−3) = 9."], ["Multiplica −3 por sí mismo.", "Menos por menos es más.", "9."]),
-      n("d-2", "Si y = x² + 1, ¿cuánto vale y cuando x = 4?", 17, ["4² + 1 = 16 + 1 = 17."], ["Eleva 4 al cuadrado.", "16.", "Suma 1."]),
+      n("d-1", "¿Cuánto es (−3)²?", 9, ["(−3)² significa (−3) · (−3).", "Signos iguales dan positivo: 3 · 3 = 9."], ["Multiplica −3 por sí mismo.", "Menos por menos es más.", "9."]),
+      n("d-2", "Si y = x² + 1, ¿cuánto vale y cuando x = 4?", 17, ["Sustituimos x por 4 y queda y = 4² + 1.", "Primero la potencia: 4² = 16; después la suma: 16 + 1 = 17."], ["Eleva 4 al cuadrado.", "16.", "Suma 1."]),
       c("d-3", "¿Qué forma tiene la gráfica de y = x²?", ["Una parábola que abre hacia arriba", "Una recta", "Una parábola que abre hacia abajo"], 0, "x² nunca es negativo y crece hacia ambos lados del 0."),
     ],
     questions(v) {
@@ -670,7 +670,7 @@ export const QUADRATIC_FUNCTION_LESSONS: Lesson[] = [
           "q2",
           `Completa: el vértice de y = ${quad(b, cc)} está en x = −(${sg(b)}) ÷ 2 = __.`,
           xv,
-          [`−(${sg(b)}) = ${sg(-b)}.`, `${sg(-b)} ÷ 2 = ${sg(xv)}.`],
+          [`Con a = 1, el vértice está en x = −b ÷ 2: el punto medio entre las raíces.`, `Aquí b = ${sg(b)}, así que −b = ${sg(-b)}.`, `${sg(-b)} ÷ 2 = ${sg(xv)}.`],
           ["Cambia el signo de b.", "Divide entre 2.", `${sg(xv)}.`],
           { step: true, errors: [{ value: b / 2, feedback: "Falta el signo menos: el vértice está en x = −b ÷ 2." }] },
         ),
@@ -799,8 +799,8 @@ export const SOLID_LESSONS: Lesson[] = [
       ], "Caben unos 113 040 litros."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuál es el área de un círculo de radio 2? Usa π ≈ 3,14.", 12.56, ["3,14 · 2² = 3,14 · 4 = 12,56."], ["El área es π · r².", "2² = 4.", "3,14 · 4."]),
-      n("d-2", "¿Cuánto es 2³ · 3?", 24, ["2³ = 8; 8 · 3 = 24."], ["2³ = 2 · 2 · 2.", "Es 8.", "Multiplica por 3."]),
+      n("d-1", "¿Cuál es el área de un círculo de radio 2? Usa π ≈ 3,14.", 12.56, ["El área del círculo es π × r²: con r = 2, r² = 2 × 2 = 4.", "3,14 · 4 = 12,56."], ["El área es π · r².", "2² = 4.", "3,14 · 4."]),
+      n("d-2", "¿Cuánto es 2³ · 3?", 24, ["La potencia va primero: 2³ = 2 · 2 · 2 = 8.", "Después la multiplicación: 8 · 3 = 24."], ["2³ = 2 · 2 · 2.", "Es 8.", "Multiplica por 3."]),
       c("d-3", "¿Cuál de estos cuerpos tiene una base circular y termina en punta?", ["El cono", "El cilindro", "La esfera"], 0, "El cono tiene una base circular y un vértice."),
     ],
     questions(v) {
@@ -977,8 +977,8 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
       ], "Solo un 27% aproximado de los positivos está infectado."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es 12/20 como decimal?", 0.6, ["12 ÷ 20 = 0,6."], ["Simplifica: 12/20 = 3/5.", "3 ÷ 5.", "0,6."]),
-      n("d-2", "En un aula de 30 estudiantes, 12 son mujeres. ¿Qué fracción son mujeres? Escríbela como decimal.", 0.4, ["12/30 = 0,4."], ["Mujeres ÷ total.", "12 ÷ 30.", "0,4."]),
+      n("d-1", "¿Cuánto es 12/20 como decimal?", 0.6, ["Una fracción es una división: 12/20 = 12 ÷ 20.", "Simplificando, 12/20 = 3/5 = 0,6."], ["Simplifica: 12/20 = 3/5.", "3 ÷ 5.", "0,6."]),
+      n("d-2", "En un aula de 30 estudiantes, 12 son mujeres. ¿Qué fracción son mujeres? Escríbela como decimal.", 0.4, ["La fracción compara la parte con el total: 12 mujeres de 30 estudiantes, 12/30.", "12/30 = 2/5 = 0,4, dividiendo ambos términos entre 6."], ["Mujeres ÷ total.", "12 ÷ 30.", "0,4."]),
       c("d-3", "Al lanzar un dado, ¿cuál es la probabilidad de obtener un número par?", ["1/2", "1/3", "1/6"], 0, "Hay 3 pares (2, 4, 6) de 6 resultados."),
     ],
     questions(v) {
@@ -1026,7 +1026,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
           "q2",
           `Completa: con los datos (${table}), P(fútbol | 4.°) = ${f4} ÷ (${f4} + ${v4}) = __.`,
           pf4,
-          [`${f4} + ${v4} = ${f4 + v4}.`, `${f4} ÷ ${f4 + v4} = ${fmt(pf4)}.`],
+          [`«Sabiendo que es de 4.°» limita el cálculo a ese grupo.`, `Total de 4.°: ${f4} + ${v4} = ${f4 + v4}.`, `De ellos prefieren fútbol ${f4}, así que ${f4} ÷ ${f4 + v4} = ${fmt(pf4)}.`],
           ["Suma los de 4.°.", "Divide los de 4.° que prefieren fútbol entre ese total.", `${fmt(pf4)}.`],
           { step: true, errors: [{ value: r6(f4 / total), feedback: `El denominador es el total de 4.° (${f4 + v4}), no el de la encuesta.` }] },
         ),
