@@ -1,4 +1,4 @@
-import { CONTENT_VERSION } from "./defineLesson";
+import { CONTENT_VERSION } from "./version";
 import { getLesson, LESSONS } from "./catalog";
 import { independent, LearningError } from "./engine";
 import { dailyTarget, pickCalibrated, type CalibrationData } from "./calibration";

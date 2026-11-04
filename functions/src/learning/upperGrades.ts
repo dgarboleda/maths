@@ -78,8 +78,8 @@ export const SYSTEM_LESSONS: Lesson[] = [
       ], "La entrada de adulto cuesta 7 soles y la de niño 5 soles."),
     ],
     diagnostic: [
-      n("d-1", "Si x = 3, ¿cuánto vale 2x + 5?", 11, ["2 × 3 + 5 = 11."], ["Sustituye x por 3.", "2 × 3 = 6.", "6 + 5 = 11."]),
-      n("d-2", "Resuelve 3x − 4 = 11.", 5, ["3x = 15 → x = 5."], ["Suma 4 a ambos lados.", "3x = 15.", "Divide entre 3."]),
+      n("d-1", "Si x = 3, ¿cuánto vale 2x + 5?", 11, ["Sustituimos x por 3 y queda 2 × 3 + 5.", "Primero la multiplicación: 6; después la suma: 6 + 5 = 11."], ["Sustituye x por 3.", "2 × 3 = 6.", "6 + 5 = 11."]),
+      n("d-2", "Resuelve 3x − 4 = 11.", 5, ["Sumamos 4 a ambos lados para deshacer la resta: 3x = 15.", "Dividimos entre 3 y queda x = 5. Comprobación: 3 × 5 − 4 = 11."], ["Suma 4 a ambos lados.", "3x = 15.", "Divide entre 3."]),
       c("d-3", "¿Qué par cumple x + y = 7?", ["(3, 4)", "(3, 5)", "(2, 6)"], 0, "3 + 4 = 7."),
     ],
     questions(v) {
@@ -122,7 +122,7 @@ export const SYSTEM_LESSONS: Lesson[] = [
           "q1",
           `Resuelve el sistema x + y = ${s}, x − y = ${d}. ¿Cuánto vale x?`,
           x,
-          [`Sumamos las ecuaciones: 2x = ${s + d}.`, `x = ${x}.`],
+          [`Al sumar las ecuaciones, +y y −y se anulan: (x + y) + (x − y) = ${s} + ${d}.`, `2x = ${s + d}.`, `x = ${s + d} ÷ 2 = ${x}.`],
           ["Suma las dos ecuaciones: ¿qué pasa con y?", `Queda 2x = ${s + d}.`, "Divide entre 2."],
           {
             errors: [
@@ -135,7 +135,7 @@ export const SYSTEM_LESSONS: Lesson[] = [
           "q2",
           `Completa: si x = ${x} y x + y = ${s}, entonces y = __.`,
           y,
-          [`${x} + y = ${s} → y = ${s} − ${x} = ${y}.`],
+          [`Sustituimos el valor conocido de x en una de las ecuaciones.`, `${x} + y = ${s} → y = ${s} − ${x} = ${y}.`, `Comprobación en la otra ecuación: ${x} − ${y} = ${x - y}.`],
           ["Sustituye x en la ecuación.", `${x} + y = ${s}.`, `Resta ${x}.`],
           { step: true, errors: [{ value: s + x, feedback: `Se resta ${x} a ambos lados, no se suma.` }] },
         ),
@@ -274,8 +274,8 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
       ], "Vale 640 soles, no 600."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es 2⁵?", 32, ["2 × 2 × 2 × 2 × 2 = 32."], ["Multiplica 2 por sí mismo cinco veces.", "2, 4, 8, 16…", "32."]),
-      n("d-2", "¿Cuánto es el 10% de 300?", 30, ["300 ÷ 10 = 30."], ["10% es una décima parte.", "Divide entre 10.", "30."]),
+      n("d-1", "¿Cuánto es 2⁵?", 32, ["2⁵ es multiplicar 2 por sí mismo 5 veces: cada paso duplica.", "2 → 4 → 8 → 16 → 32."], ["Multiplica 2 por sí mismo cinco veces.", "2, 4, 8, 16…", "32."]),
+      n("d-2", "¿Cuánto es el 10% de 300?", 30, ["10% es la décima parte de la cantidad.", "300 ÷ 10 = 30. Comprobación: 30 × 10 = 300."], ["10% es una décima parte.", "Divide entre 10.", "30."]),
       c("d-3", "¿Qué secuencia aumenta siempre en la misma cantidad?", ["3, 6, 12, 24", "5, 8, 11, 14", "2, 4, 8, 16"], 1, "5, 8, 11, 14 suma 3 cada vez."),
     ],
     questions(v) {
@@ -328,7 +328,7 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
           "q1",
           `Una población empieza con ${a} individuos y se multiplica por ${b} cada año. ¿Cuántos hay a los ${k} años?`,
           grown,
-          [`${a} · ${b}${sup(k)} = ${a} · ${b ** k}.`, `= ${grown}.`],
+          [`Cada paso multiplica por ${b}: después de ${k} pasos, el factor acumulado es ${b}${sup(k)} = ${b ** k}.`, `${a} · ${b ** k} = ${grown}.`, `Multiplicar ${b} × ${k} = ${b * k} sería un error: el factor se eleva, no se multiplica por los pasos.`],
           ["El factor se aplica una vez por año.", `Calcula ${b}${sup(k)}.`, `Multiplica por ${a}.`],
           {
             errors: [
@@ -341,7 +341,7 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
           "q2",
           `Completa: aumentar un ${pct}% equivale a multiplicar por __.`,
           r6(1 + pct / 100),
-          [`100% + ${pct}% = ${100 + pct}% = ${fmt(r6(1 + pct / 100))}.`],
+          [`Después del aumento se tiene el 100% original más el ${pct}% añadido.`, `100% + ${pct}% = ${100 + pct}%.`, `${100 + pct}% = ${100 + pct}/100 = ${fmt(r6(1 + pct / 100))}: es el factor de cambio.`],
           ["Al valor original (100%) se le suma el aumento.", `${100 + pct}%.`, "Escríbelo como decimal."],
           {
             step: true,
@@ -486,8 +486,8 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
       ], "El edificio mide unos 16,8 m sobre la altura de los ojos."),
     ],
     diagnostic: [
-      n("d-1", "Un triángulo rectángulo tiene catetos de 3 y 4. ¿Cuánto mide la hipotenusa?", 5, ["√(9 + 16) = √25 = 5."], ["Usa a² + b² = c².", "9 + 16 = 25.", "√25 = 5."]),
-      n("d-2", "Escribe 12/16 como decimal.", 0.75, ["12 ÷ 16 = 0,75."], ["Simplifica: 12/16 = 3/4.", "3 ÷ 4.", "0,75."]),
+      n("d-1", "Un triángulo rectángulo tiene catetos de 3 y 4. ¿Cuánto mide la hipotenusa?", 5, ["En un triángulo rectángulo, la hipotenusa cumple c² = a² + b².", "3² + 4² = 9 + 16 = 25, y √25 = 5."], ["Usa a² + b² = c².", "9 + 16 = 25.", "√25 = 5."]),
+      n("d-2", "Escribe 12/16 como decimal.", 0.75, ["Primero se simplifica: 12/16 = 3/4, dividiendo ambos términos entre 4.", "3 ÷ 4 = 0,75."], ["Simplifica: 12/16 = 3/4.", "3 ÷ 4.", "0,75."]),
       c("d-3", "En un triángulo rectángulo, ¿cuál es el lado más largo?", ["Uno de los catetos", "La hipotenusa", "Depende del ángulo"], 1, "La hipotenusa, opuesta al ángulo recto, es siempre el lado mayor."),
     ],
     questions(v) {
@@ -536,7 +536,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
           "q1",
           `En un triángulo rectángulo, el cateto opuesto al ángulo α mide ${opp} y la hipotenusa ${hyp}. ¿Cuánto vale sen α? Puedes escribirlo como fracción o decimal.`,
           opp / hyp,
-          [`sen α = opuesto ÷ hipotenusa = ${opp}/${hyp}.`, `= ${fmt(opp / hyp)}.`],
+          [`El seno de α es el cateto opuesto dividido entre la hipotenusa.`, `sen α = ${opp}/${hyp}.`, `${opp} ÷ ${hyp} = ${fmt(opp / hyp)}; es menor que 1 porque la hipotenusa es el lado mayor.`],
           ["¿Qué lados usa el seno?", "Opuesto ÷ hipotenusa.", `${opp} ÷ ${hyp}.`],
           {
             errors: [
@@ -549,7 +549,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
           "q2",
           `Completa: si el cateto adyacente a α mide ${adj} y la hipotenusa ${hyp}, cos α = ${adj} ÷ ${hyp} = __.`,
           adj / hyp,
-          [`${adj} ÷ ${hyp} = ${fmt(adj / hyp)}.`],
+          [`El coseno de α es el cateto adyacente dividido entre la hipotenusa.`, `cos α = ${adj}/${hyp}.`, `${adj} ÷ ${hyp} = ${fmt(adj / hyp)}.`],
           ["Divide el adyacente entre la hipotenusa.", `${adj} ÷ ${hyp}.`, "Escribe el decimal o la fracción."],
           {
             step: true,
@@ -687,8 +687,8 @@ export const SPREAD_LESSONS: Lesson[] = [
       ], "La sección A es más homogénea."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuál es la mediana de 3; 5; 8; 10?", 6.5, ["(5 + 8) ÷ 2 = 6,5."], ["Con cuatro datos hay dos centrales.", "5 y 8.", "Promédialos."]),
-      n("d-2", "¿Cuánto es 19 − 4?", 15, ["19 − 4 = 15."], ["Resta.", "19 − 4.", "15."]),
+      n("d-1", "¿Cuál es la mediana de 3; 5; 8; 10?", 6.5, ["Con 4 datos ordenados hay dos centrales: 5 y 8.", "La mediana es su media: (5 + 8) ÷ 2 = 13 ÷ 2 = 6,5."], ["Con cuatro datos hay dos centrales.", "5 y 8.", "Promédialos."]),
+      n("d-2", "¿Cuánto es 19 − 4?", 15, ["Restar 4 a 19: de 19 a 15 se retroceden 4.", "19 − 4 = 15. Comprobación: 15 + 4 = 19."], ["Resta.", "19 − 4.", "15."]),
       c("d-3", "¿Qué mide el rango de un conjunto de datos?", ["El valor más repetido", "La diferencia entre el mayor y el menor", "El valor central"], 1, "Rango = máximo − mínimo."),
     ],
     questions(v) {
@@ -760,7 +760,7 @@ export const SPREAD_LESSONS: Lesson[] = [
           "q2",
           `Completa: en ${list(data)}, la mitad inferior es ${list(data.slice(0, 4))}, así que Q1 = (${data[1]} + ${data[2]}) ÷ 2 = __.`,
           q1,
-          [`(${data[1]} + ${data[2]}) ÷ 2 = ${fmt(q1)}.`],
+          [`Q1 es la mediana de la mitad inferior: ${data.slice(0, 4).join("; ")}.`, `Con 4 datos, la mediana es la media de los dos centrales: ${data[1]} y ${data[2]}.`, `(${data[1]} + ${data[2]}) ÷ 2 = ${fmt(q1)}.`],
           ["Suma los dos datos centrales de la mitad inferior.", `${data[1]} + ${data[2]} = ${data[1] + data[2]}.`, "Divide entre 2."],
           { step: true, errors: [{ value: data[1] + data[2], feedback: "Falta dividir la suma entre 2." }] },
         ),
@@ -768,7 +768,7 @@ export const SPREAD_LESSONS: Lesson[] = [
           "q3",
           `Datos sin ordenar: ${list(mixed)}. ¿Cuál es el rango?`,
           range,
-          [`Mayor: ${data[7]}; menor: ${data[0]}.`, `Rango = ${data[7]} − ${data[0]} = ${range}.`],
+          [`El rango mide la dispersión total: mayor menos menor.`, `Ordenados, el menor es ${data[0]} y el mayor, ${data[7]}.`, `Rango = ${data[7]} − ${data[0]} = ${range}.`],
           ["Busca el mayor y el menor dato.", "No importa el orden en que aparecen.", "Réstalos."],
           {
             errors: [
@@ -902,8 +902,8 @@ export const COUNTING_LESSONS: Lesson[] = [
       ], "Hay 15 partidos. Compara con el ejemplo anterior: mismo 6 · 5, pero aquí hay que dividir porque el orden no importa."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es 4 × 3 × 2?", 24, ["4 × 3 = 12; 12 × 2 = 24."], ["Multiplica de izquierda a derecha.", "4 × 3 = 12.", "12 × 2."]),
-      n("d-2", "Al lanzar un dado, ¿cuál es la probabilidad de sacar 5? Escríbela como fracción.", 1 / 6, ["1 caso favorable de 6 posibles: 1/6."], ["¿Cuántas caras tiene el dado?", "¿Cuántas muestran un 5?", "Favorables ÷ posibles."]),
+      n("d-1", "¿Cuánto es 4 × 3 × 2?", 24, ["Se multiplica de izquierda a derecha: 4 × 3 = 12.", "12 × 2 = 24."], ["Multiplica de izquierda a derecha.", "4 × 3 = 12.", "12 × 2."]),
+      n("d-2", "Al lanzar un dado, ¿cuál es la probabilidad de sacar 5? Escríbela como fracción.", 1 / 6, ["Las 6 caras del dado son igual de probables: hay 6 casos posibles.", "Solo una muestra el 5: P = 1/6."], ["¿Cuántas caras tiene el dado?", "¿Cuántas muestran un 5?", "Favorables ÷ posibles."]),
       c("d-3", "¿En cuál de estas situaciones importa el orden?", ["Elegir 2 frutas para un jugo", "Elegir el 1.° y el 2.° puesto de una carrera", "Elegir 3 libros para leer"], 1, "En un podio no es lo mismo ganar que quedar segundo."),
     ],
     questions(v) {
@@ -943,7 +943,7 @@ export const COUNTING_LESSONS: Lesson[] = [
           "q1",
           `Hay ${a} polos, ${b} pantalones y ${cc} pares de zapatillas. ¿Cuántos atuendos distintos se pueden formar con una prenda de cada tipo?`,
           a * b * cc,
-          [`${a} · ${b} · ${cc} = ${a * b * cc}.`],
+          [`Cada polo se combina con cada pantalón: ${a} · ${b} = ${a * b} combinaciones.`, `Cada una de ellas admite ${cc} opciones de zapatillas: ${a * b} · ${cc} = ${a * b * cc}.`, `Principio multiplicativo: las opciones se multiplican, no se suman.`],
           ["Cada polo se combina con cada pantalón.", "Y cada combinación, con cada par de zapatillas.", "Multiplica las opciones."],
           { errors: [{ value: a + b + cc, feedback: "Sumar cuenta prendas, no combinaciones: se multiplican las opciones." }] },
         ),
@@ -951,7 +951,7 @@ export const COUNTING_LESSONS: Lesson[] = [
           "q2",
           `Completa: los podios posibles (1.°, 2.° y 3.°) entre ${runners} corredores son ${runners} · ${runners - 1} · ${runners - 2} = __.`,
           podium,
-          [`${runners} · ${runners - 1} = ${runners * (runners - 1)}; · ${runners - 2} = ${podium}.`],
+          [`Para el 1.° puesto hay ${runners} opciones; para el 2.°, ${runners - 1}, porque nadie repite.`, `${runners} · ${runners - 1} = ${runners * (runners - 1)}.`, `Para el 3.° quedan ${runners - 2} opciones; en total, ${runners * (runners - 1)} · ${runners - 2} = ${podium}.`],
           ["Multiplica los dos primeros.", "Multiplica por el tercero.", `${podium}.`],
           {
             step: true,
@@ -1086,9 +1086,9 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
       ], "P′ = (−1, 4)."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es −3 + 5?", 2, ["−3 + 5 = 2."], ["Parte de −3 en la recta.", "Avanza 5 a la derecha.", "2."]),
+      n("d-1", "¿Cuánto es −3 + 5?", 2, ["Empezamos en −3 y avanzamos 5 hacia la derecha.", "De −3 a 0 hay 3; faltan 2 más: el resultado es 2."], ["Parte de −3 en la recta.", "Avanza 5 a la derecha.", "2."]),
       c("d-2", "¿En qué cuadrante está el punto (−2, 3)?", ["Primero", "Segundo", "Tercero"], 1, "x negativa e y positiva: segundo cuadrante."),
-      n("d-3", "¿Cuál es el opuesto de −7?", 7, ["El opuesto cambia el signo: 7."], ["El opuesto está a la misma distancia del 0.", "Del otro lado.", "7."]),
+      n("d-3", "¿Cuál es el opuesto de −7?", 7, ["El opuesto está a la misma distancia del cero, al otro lado.", "−7 está 7 unidades a la izquierda; su opuesto, 7, está 7 a la derecha."], ["El opuesto está a la misma distancia del 0.", "Del otro lado.", "7."]),
     ],
     questions(v) {
       const [x, y] = [[2, -1], [3, 4], [-2, 5], [4, -3], [-5, 2], [1, 6]][v],
@@ -1135,7 +1135,7 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
           "q1",
           `Traslada A${pt(x, y)} con el vector ${pt(a, b)}. ¿Cuál es la coordenada y de A′?`,
           y + b,
-          [`y′ = ${sg(y)} + ${b < 0 ? `(${sg(b)})` : sg(b)} = ${sg(y + b)}.`],
+          [`Trasladar con el vector (a, b) suma a a la x y b a la y.`, `La segunda componente del vector es ${sg(b)}: se suma a la y.`, `y′ = ${sg(y)} + ${b < 0 ? `(${sg(b)})` : sg(b)} = ${sg(y + b)}.`],
           ["La traslación suma el vector.", "La y se suma con la segunda componente.", `${sg(y)} + ${sg(b)}.`],
           {
             errors: [
@@ -1148,7 +1148,7 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
           "q2",
           `Completa: al reflejar P${pt(x, y)} respecto al eje x, P′ = (${sg(x)}, __).`,
           -y,
-          [`Respecto al eje x cambia de signo la y: ${sg(-y)}.`],
+          [`Al reflejar respecto al eje x, el punto queda a la misma distancia del eje, al otro lado.`, `La x no cambia y la y cambia de signo: (x, y) → (x, −y).`, `La y pasa de ${sg(y)} a ${sg(-y)}.`],
           ["¿Qué coordenada cambia en esta reflexión?", "La que mide la distancia al eje x.", `El opuesto de ${sg(y)}.`],
           {
             step: true,

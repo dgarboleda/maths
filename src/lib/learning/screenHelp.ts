@@ -1,4 +1,4 @@
-import { getLesson, type Lesson, type LearningProgress, type Question } from "./domain";
+import { getLessonSummary, type Lesson, type LearningProgress, type Question } from "./core";
 import { formulasFor, relatedFormula, type LessonFormula } from "./formulas";
 
 export interface HelpIdea {
@@ -31,7 +31,7 @@ function lessonContext(lesson: Lesson) {
     lessonId: lesson.id,
     unitId: lesson.unitId,
     prerequisites: lesson.prerequisites.flatMap((id) => {
-      const prerequisite = getLesson(id);
+      const prerequisite = getLessonSummary(id);
       return prerequisite ? [{ id, title: prerequisite.title }] : [];
     }),
   };

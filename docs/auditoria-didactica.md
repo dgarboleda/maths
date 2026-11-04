@@ -15,9 +15,13 @@ Alcance: las 50 clases de `functions/src/learning` (secciones, vocabulario, 116 
 
 Las pruebas `catalog.test.ts` impiden que vuelvan los dos últimos problemas: las fórmulas no usan «·» como separador y las comprobaciones no repiten enunciados recién vistos.
 
-## Pendiente (requiere decisión o revisión docente)
+## Resuelto después de la primera entrega
 
-- **La comprobación B y el repaso diferido** pueden reutilizar la formulación conceptual de la guiada o la práctica. Evitarlo exige una cuarta formulación por clase.
-- **893 preguntas tienen un solo paso de desarrollo** (sobre todo diagnósticos y conceptuales) y 135 explicaciones tienen menos de seis palabras («9 − 4 = 5.»). Son aceptables en preguntas de un paso; conviene revisarlas en las de procedimiento.
-- **`CONTENT_VERSION` no cambia**: los identificadores de las preguntas se conservan. Una comprobación en curso puede mostrar el enunciado nuevo en una posición ya respondida; la evidencia guardada no se pierde.
-- La revisión docente debe validar los contextos (precios en soles, «créditos», nombres de cursos) y la adecuación al CNEB.
+- **Cuarta formulación conceptual:** cada clase tiene una pregunta conceptual reservada a la comprobación B (`functions/src/learning/checkConcepts.ts`, 50 preguntas). La evaluación de ubicación de fracciones, que usa la conceptual de la forma B, también la muestra. El repaso diferido sigue recuperando la formulación de la práctica, días después.
+- **Explicaciones de procedimiento:** 182 plantillas tenían un desarrollo de un paso o una explicación de menos de 12 palabras (88 de los bancos y 94 diagnósticos). Ahora cada una dice qué idea se aplica, hace el cálculo y lo comprueba o interpreta, sin cambiar enunciados, respuestas ni pistas. `catalog.test.ts` exige al menos dos pasos y 12 palabras en toda pregunta de procedimiento. Las conceptuales de opción múltiple explican cada error en el feedback de su alternativa.
+- **`CONTENT_VERSION` 3:** una ronda en curso con la versión anterior se reinicia sin perder logros, agenda ni resultados.
+- **Peso de la página de clase:** el navegador ya no carga el catálogo completo, solo la clase abierta (ver [operación](operacion.md)).
+
+## Pendiente
+
+- La revisión docente debe validar los contextos (precios en soles, «créditos», nombres de cursos), las 50 formulaciones nuevas, las explicaciones ampliadas y la adecuación al CNEB.

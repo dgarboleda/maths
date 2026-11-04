@@ -1,7 +1,6 @@
 import { LessonPlayer } from "@/components/learning/LessonPlayer";
-import { MixedReviewPlayer } from "@/components/learning/MixedReviewPlayer";
-import { PlacementPlayer } from "@/components/learning/PlacementPlayer";
-import { DailyReviewPlayer } from "@/components/learning/DailyReviewPlayer";
+import { SessionPlayer } from "@/components/learning/SessionPlayer";
+import { getLesson } from "@/lib/learning/domain";
 
 export default async function LessonPage({
   params,
@@ -14,17 +13,15 @@ export default async function LessonPage({
     params,
     searchParams,
   ]);
-  if (lessonId === "diario")
-    return <DailyReviewPlayer key={childId} childId={childId} />;
-  if (lessonId === "ubicacion")
-    return <PlacementPlayer key={childId} childId={childId} />;
-  if (lessonId.startsWith("repaso-"))
-    return <MixedReviewPlayer key={`${childId}/${lessonId}`} childId={childId} reviewId={lessonId} />;
+  if (lessonId === "diario" || lessonId === "ubicacion" || lessonId.startsWith("repaso-"))
+    return <SessionPlayer key={`${childId}/${lessonId}`} childId={childId} sessionId={lessonId} />;
   return (
     <LessonPlayer
       key={`${childId}/${lessonId}/${modo ?? ""}`}
       childId={childId}
       lessonId={lessonId}
+      // Solo esta clase viaja al navegador, como dato serializado.
+      lesson={getLesson(lessonId)}
       requestedStage={modo === "practice" || modo === "review" ? modo : null}
     />
   );

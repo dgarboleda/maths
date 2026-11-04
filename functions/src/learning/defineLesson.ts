@@ -1,8 +1,8 @@
+import { CHECK_CONCEPTS } from "./checkConcepts";
 import type { Lesson, Question } from "./types";
+import { CONTENT_VERSION } from "./version";
 
-/** Versión del contenido: al cambiar los bancos se incrementa y el motor
- *  migra el avance guardado (`migrateProgress`) sin perder logros. */
-export const CONTENT_VERSION = 2;
+export { CONTENT_VERSION };
 
 type Draft = Omit<
   Lesson,
@@ -76,8 +76,12 @@ export function defineLesson(raw: Draft): Lesson {
   const draft: Draft = { ...typesetDeep({ ...raw, questions: undefined }), questions: (v: number) => typesetDeep(questionsRaw(v)) };
   const { questions, editorial, application, diagnostic, ...content } = draft;
   const arrange = (q: Question) => arrangeChoices(q, content.id);
+  const checkConcept = CHECK_CONCEPTS[content.id];
+  if (!checkConcept) throw new Error(`Falta la formulación conceptual de la comprobación B: ${content.id}`);
   const bank = (variant: number, prefix: string, indexes: number[]) => {
     const items = questions(variant);
+    // La comprobación B usa su propia formulación conceptual (ver checkConcepts.ts).
+    if (prefix === "b") items[0] = typesetDeep(checkConcept);
     return indexes.map((index, i) => arrange({ ...items[index], id: `${prefix}-${i + 1}`, task: index }));
   };
   return {

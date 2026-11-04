@@ -115,7 +115,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         "d-2",
         "Si divides 12 objetos en 3 grupos iguales, ¿cuántos hay en cada grupo?",
         4,
-        ["12 ÷ 3 = 4."],
+        ["Repartir en 3 grupos iguales es dividir entre 3.", "12 ÷ 3 = 4. Comprobación: 3 grupos de 4 son 12."],
         [
           "Piensa en un reparto igual.",
           "Reparte los 12 entre 3 grupos.",
@@ -163,7 +163,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           "q1",
           `Una barra tiene ${den} partes iguales y ${num} están marcadas. Escribe la fracción marcada.`,
           num / den,
-          [`Hay ${num} partes marcadas de ${den} → ${num}/${den}.`],
+          [`La unidad es la barra completa, dividida en ${den} partes iguales: el denominador es ${den}.`, `Están marcadas ${num} de esas partes: el numerador es ${num}.`, `La fracción marcada es ${num}/${den}; sin marcar quedan ${den - num}/${den}.`],
           [
             "Identifica el total de partes iguales.",
             "El total va en el denominador; las marcadas, en el numerador.",
@@ -187,7 +187,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           "q2",
           `Completa: si una unidad se divide en ${den} partes iguales, cada parte es 1/__.`,
           den,
-          [`Cada parte es 1/${den} de la unidad.`],
+          [`Dividir la unidad en ${den} partes iguales significa que ${den} de ellas la completan.`, `Por eso cada parte es 1/${den} de la unidad.`, `Comprobación: ${den} × 1/${den} = ${den}/${den} = 1.`],
           [
             "Se pregunta cuántas partes forman una unidad.",
             "El denominador cuenta las partes iguales.",
@@ -395,7 +395,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         "d-2",
         "Completa: 3 × __ = 12.",
         4,
-        ["3 × 4 = 12."],
+        ["Buscamos el número que, multiplicado por 3, da 12: es preguntar 12 ÷ 3.", "12 ÷ 3 = 4. Comprobación: 3 × 4 = 12."],
         [
           "Busca cuántos grupos de 3 hay en 12.",
           "Calcula 12 ÷ 3.",
@@ -461,7 +461,9 @@ export const FRACTION_LESSONS: Lesson[] = [
           `Completa la equivalencia: ${a}/${b} = __/${b * k}.`,
           a * k,
           [
-            `El denominador se multiplicó por ${k}; el numerador también: ${a} × ${k} = ${a * k}.`,
+            `Para pasar de ${b} a ${b * k} partes, el denominador se multiplicó por ${k}: cada parte se dividió en ${k}.`,
+            `Para conservar la cantidad, el numerador se multiplica por el mismo número: ${a} × ${k} = ${a * k}.`,
+            `${a}/${b} = ${a * k}/${b * k}: hay ${k} veces más partes, cada una ${k} veces más pequeña.`,
           ],
           [
             "Busca cómo cambió el denominador.",
@@ -660,7 +662,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         "d-1",
         "Escribe 1/2 como decimal.",
         0.5,
-        ["1 ÷ 2 = 0,5."],
+        ["Una fracción es una división: 1/2 = 1 ÷ 2.", "1 ÷ 2 = 0,5: la mitad es cinco décimas. Comprobación: 0,5 + 0,5 = 1."],
         [
           "Piensa en repartir una unidad entre dos.",
           "Cinco décimos completan una mitad.",
@@ -678,7 +680,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         "d-3",
         "¿Cuánto es 30 ÷ 10?",
         3,
-        ["30 ÷ 10 = 3."],
+        ["Dividir entre 10 es buscar cuántos grupos de 10 hay en 30.", "30 ÷ 10 = 3. Comprobación: 3 × 10 = 30."],
         [
           "Cuenta grupos de diez.",
           "Tres grupos de diez forman treinta.",
@@ -744,8 +746,9 @@ export const FRACTION_LESSONS: Lesson[] = [
           `Escribe ${dec(decimal)} como porcentaje. Introduce el número que va antes de %.`,
           p,
           [
-            `Multiplica ${dec(decimal)} por 100 → ${p}.`,
-            `La representación es ${p}%.`,
+            `Un porcentaje dice cuántas partes de cada 100: hay que expresar ${dec(decimal)} en centésimas.`,
+            `${dec(decimal)} × 100 = ${p}, es decir, ${p} centésimas.`,
+            `La representación es ${p}%: la misma cantidad, otra escritura.`,
           ],
           [
             "El porcentaje compara con cien.",
@@ -764,7 +767,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           "q2",
           `Completa: ${p}% = ${p}/100 = __ en decimal.`,
           decimal,
-          [`${p} ÷ 100 = ${dec(decimal)}.`],
+          [`${p}% significa ${p} de cada 100, es decir, ${p}/100.`, `Dividir entre 100 desplaza la coma dos posiciones a la izquierda: ${p} ÷ 100 = ${dec(decimal)}.`, `Comprobación: ${dec(decimal)} × 100 = ${p}.`],
           [
             "El símbolo % indica dividir entre cien.",
             `Calcula ${p} ÷ 100.`,
@@ -781,7 +784,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           "q3",
           `Escribe como decimal la fracción ${fn}/${fd}.`,
           fn / fd,
-          [`Divide el numerador entre el denominador: ${fn} ÷ ${fd} = ${dec(fn / fd)}.`],
+          [`Una fracción es una división: ${fn}/${fd} = ${fn} ÷ ${fd}.`, `${fn} ÷ ${fd} = ${dec(fn / fd)}.`, `Comprobación: ${dec(fn / fd)} × ${fd} = ${fn}.`],
           [
             "Una fracción también es una división.",
             `Calcula ${fn} ÷ ${fd}.`,
@@ -957,7 +960,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         "d-2",
         "¿Cuánto es 60 ÷ 4?",
         15,
-        ["4 × 15 = 60, así que 60 ÷ 4 = 15."],
+        ["Repartir 60 entre 4 es buscar el número que, multiplicado por 4, da 60.", "4 × 15 = 60, así que 60 ÷ 4 = 15. También: la mitad de 60 es 30 y la mitad de 30 es 15."],
         [
           "Piensa en cuatro grupos iguales.",
           "4 × 10 = 40 y faltan 20.",
@@ -968,7 +971,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         "d-3",
         "¿Cuánto es 3 × 15?",
         45,
-        ["15 + 15 + 15 = 45."],
+        ["3 × 15 son 3 grupos de 15, es decir, 15 + 15 + 15.", "15 + 15 = 30 y 30 + 15 = 45."],
         ["Son tres grupos de 15.", "15 + 15 = 30.", "30 + 15 = 45."],
       ),
     ],
@@ -1004,7 +1007,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           "q1",
           `Calcula ${num}/${den} de ${total}.`,
           taken,
-          [`${total} ÷ ${den} = ${part}.`, `${part} × ${num} = ${taken}.`],
+          [`El denominador ${den} reparte ${total} en ${den} grupos iguales: ${total} ÷ ${den} = ${part}.`, `El numerador ${num} indica cuántos grupos tomar: ${part} × ${num} = ${taken}.`, `Comprobación: ${taken} es menor que ${total}, como debe ser con una fracción menor que 1.`],
           [
             `Calcula primero 1/${den} del total.`,
             `${total} ÷ ${den} = ${part}.`,
@@ -1032,7 +1035,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           "q2",
           `Completa el primer paso: ${num}/${den} de ${total} = (${total} ÷ ${den}) × ${num} = __ × ${num}.`,
           part,
-          [`1/${den} de ${total} es ${total} ÷ ${den} = ${part}.`],
+          [`Calcular 1/${den} de ${total} es repartir ${total} en ${den} partes iguales.`, `${total} ÷ ${den} = ${part}.`, `Comprobación: ${den} × ${part} = ${total}.`],
           [
             `Este paso busca una sola de las ${den} partes.`,
             `Divide ${total} entre ${den}.`,

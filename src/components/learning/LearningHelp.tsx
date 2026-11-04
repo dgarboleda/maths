@@ -5,7 +5,7 @@ import { MathText } from "@/components/MathText";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Printer, X } from "lucide-react";
-import { getLesson } from "@/lib/learning/domain";
+import { getLessonSummary } from "@/lib/learning/core";
 import { formulaByKey, formulasFor } from "@/lib/learning/formulas";
 import { useHelpUsage } from "@/lib/learning/helpUsage";
 import { FormulaCard } from "./FormulaCard";
@@ -153,7 +153,7 @@ function HelpPanel({ id, childId, help, helpUsage, preferredIdea, formulasOpen, 
   const shown = new Set(formulas.map((formula) => formula.key));
   const saved = usage.favorites.filter((key) => !shown.has(key)).flatMap((key) => {
     const found = formulaByKey(key);
-    return found ? [{ ...found, lessonTitle: getLesson(found.lessonId)?.title }] : [];
+    return found ? [{ ...found, lessonTitle: getLessonSummary(found.lessonId)?.title }] : [];
   });
   const unitHasFormulas = help.unitId && help.lessonId && formulasFor(help.lessonId).length > 0;
   const formulario = `/jugar/${childId}/formulario${unitHasFormulas ? `?unidad=${help.unitId}` : ""}`;

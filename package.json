@@ -29,7 +29,8 @@
     "verify:deployment": "node scripts/verify-deployment.mjs",
     "deploy:all": "npm run deploy",
     "deploy:frontend": "npm run build && opennextjs-cloudflare deploy",
-    "analisis:items": "node scripts/analisis-items.mjs"
+    "analisis:items": "node scripts/analisis-items.mjs",
+    "indice:lecciones": "node scripts/indice-lecciones.mjs"
   },
   "dependencies": {
     "firebase": "^12.18.0",
