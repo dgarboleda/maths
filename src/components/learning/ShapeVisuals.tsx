@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MathText } from "@/components/MathText";
-import { Handle, num, Slider, snap, Toggle } from "./GraphVisuals";
+import { Challenge, Handle, num, Slider, snap, Toggle } from "./GraphVisuals";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
 /** viewBox ajustado a los puntos con margen, para figuras que cambian de forma. */
@@ -31,7 +31,7 @@ export function AnglesVisual({ id }: { id: string }) {
   };
   const label = (mid: number, text: string, cls: string) => {
     const [x, y] = at(mid, 42);
-    return <text x={x} y={y + 4} textAnchor="middle" className={`${cls} text-[11px] font-bold`}>{text}</text>;
+    return <text x={x} y={y + 4} textAnchor="middle" className={`${cls} text-[12px] font-bold`}>{text}</text>;
   };
   // Triángulo con base fija: el vértice superior sale de cortar los dos lados.
   const B0: [number, number] = [0, 0],
@@ -77,6 +77,11 @@ export function AnglesVisual({ id }: { id: string }) {
       <p className="text-sm">
         {ta}° + {tb}° + <strong>{tc}°</strong> = 180°. Por más que deformes el triángulo, el tercer ángulo compensa a los otros dos.
       </p>
+      <Challenge goals={[
+        { text: "Haz que los cuatro ángulos del cruce midan lo mismo. ¿Cuánto miden?", met: a === 90 },
+        { text: "Construye un triángulo rectángulo.", met: ta === 90 || tb === 90 || tc === 90 },
+        { text: "Construye un triángulo isósceles que tenga un ángulo de 40°.", met: [ta, tb, tc].includes(40) && new Set([ta, tb, tc]).size === 2, hint: "Hay dos maneras: el 40° puede ser el ángulo distinto o uno de los iguales." },
+      ]} />
     </>
   );
 }
@@ -113,12 +118,17 @@ export function PythagorasVisual({ id }: { id: string }) {
         <text x={center(sqB)[0]} y={center(sqB)[1]} textAnchor="middle" className="fill-amber-100 text-[12px] font-bold">{b * b}</text>
         <text x={center(sqC)[0]} y={center(sqC)[1]} textAnchor="middle" className="fill-rose-100 text-[12px] font-bold">{a * a + b * b}</text>
       </svg>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         <MathText text={`a² + b² = c² → ${a * a} + ${b * b} = ${a * a + b * b} → c = √${a * a + b * b} = `} /><strong>{num(c)}</strong>
       </p>
       <p className="text-sm text-slate-300">
         Arrastra los extremos de los catetos. El área del cuadrado rosa (sobre la hipotenusa) siempre es la suma de las otras dos. Prueba 3 y 4, o 6 y 8: la hipotenusa sale entera.
       </p>
+      <Challenge goals={[
+        { text: "Consigue una hipotenusa de exactamente 10.", met: c === 10 },
+        { text: "Encuentra otros catetos (no 3 y 4) con hipotenusa entera.", met: Number.isInteger(c) && !(a === 3 && b === 4) && !(a === 4 && b === 3) },
+        { text: "Haz que el cuadrado sobre la hipotenusa mida 50.", met: a * a + b * b === 50 },
+      ]} />
     </>
   );
 }
@@ -135,20 +145,25 @@ export function CircleVisual({ id }: { id: string }) {
         <circle cx={60} cy={60} r={r * u} className="fill-cyan-300/15 stroke-cyan-300" strokeWidth={2.5} />
         <rect x={60} y={60 - r * u} width={r * u} height={r * u} className="fill-amber-300/25 stroke-amber-300" />
         <line x1={60} y1={60} x2={60 + r * u} y2={60} className="stroke-rose-300" strokeWidth={2} />
-        <text x={60 + (r * u) / 2} y={74} textAnchor="middle" className="fill-rose-200 text-[11px]">r</text>
+        <text x={60 + (r * u) / 2} y={74} textAnchor="middle" className="fill-rose-200 text-[12px]">r</text>
         <Handle x={60 + r * u} y={60} className="fill-rose-300" r={5} onDrag={(px) => setR(snap((px - 60) / u, 1, 5))} />
         <line x1={10} x2={10 + C * u} y1={140} y2={140} className="stroke-cyan-300" strokeWidth={4} />
         {[0, 1, 2, 3].map((i) => (
           <line key={i} x1={10 + i * 2 * r * u} x2={10 + i * 2 * r * u} y1={130} y2={150} className="stroke-slate-300" />
         ))}
-        <text x={10} y={124} className="fill-slate-300 text-[11px]">borde desenrollado: 3 diámetros y un poco más</text>
+        <text x={10} y={124} className="fill-slate-300 text-[12px]">borde desenrollado: 3 diámetros y un poco más</text>
       </svg>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         Longitud = 2 · π · {r} ≈ <strong>{num(C)}</strong> · Área = π · {r}² ≈ <strong>{num(Math.PI * r * r)}</strong>
       </p>
       <p className="text-sm text-slate-300">
         Arrastra el extremo del radio. El borde mide unos 3,14 diámetros. El área cabe en unos 3,14 cuadrados ámbar de lado r: por eso es π · r².
       </p>
+      <Challenge goals={[
+        { text: "Consigue una circunferencia de longitud mayor que 30.", met: 2 * Math.PI * r > 30 },
+        { text: "Consigue un área de unos 50 (entre 48 y 52).", met: Math.PI * r * r > 48 && Math.PI * r * r < 52 },
+        { text: "Haz que la longitud sea 4π (unos 12,57).", met: r === 2 },
+      ]} />
     </>
   );
 }
@@ -180,6 +195,11 @@ export function SimilarityVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Arrastra el vértice de la copia. Los ángulos no cambian. Las longitudes se multiplican por k, pero el área por k²: con k = 2 caben 4 triángulos ámbar en la copia.
       </p>
+      <Challenge goals={[
+        { text: "Haz que la copia tenga 9 veces el área del original.", met: k === 3, hint: "El área se multiplica por k²." },
+        { text: "Consigue que el área se multiplique por 2,25.", met: k === 1.5 },
+        { text: "Haz una copia del mismo tamaño (congruente).", met: k === 1 },
+      ]} />
     </>
   );
 }
@@ -204,19 +224,28 @@ export function VolumeVisual({ id }: { id: string }) {
       <Slider id={`${id}-h`} label="Altura (capas)" value={h} min={1} max={5} onChange={setH} />
       <svg role="img" viewBox="0 0 200 192" className="max-h-64 w-full max-w-sm rounded-xl bg-slate-950"
         aria-label={`Prisma de ${l} por ${w} por ${h} cubos: ${h} capas de ${l * w} cubos, ${l * w * h} en total.`}>
-        <polygon points={poly([P(0, 0, 0), P(l, 0, 0), P(l, h, 0), P(0, h, 0)])} className="fill-cyan-300/20" />
+        {/* Una cara por capa: las capas nuevas «caen» sobre la pila (sin animación si se pidió reducir movimiento). */}
+        {Array.from({ length: h }, (_, j) => (
+          <polygon key={`capa-${j}`} points={poly([P(0, j, 0), P(l, j, 0), P(l, j + 1, 0), P(0, j + 1, 0)])}
+            className={`anim-layer ${j % 2 ? "fill-cyan-300/25" : "fill-cyan-300/15"}`} />
+        ))}
         <polygon points={poly([P(0, h, 0), P(l, h, 0), P(l, h, w), P(0, h, w)])} className="fill-amber-300/30" />
         <polygon points={poly([P(l, 0, 0), P(l, 0, w), P(l, h, w), P(l, h, 0)])} className="fill-cyan-300/10" />
         {lines.map(([a, b], i) => (
           <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} className="stroke-slate-300" strokeWidth={1} />
         ))}
       </svg>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         Base = {l} × {w} = {l * w} cubos por capa · Volumen = {l * w} × {h} = <strong>{l * w * h} cubos</strong>
       </p>
       <p className="text-sm text-slate-300">
         La cara ámbar es la base. El volumen cuenta cuántas capas iguales a la base se apilan: área de la base × altura. Con un cilindro la idea es la misma: π · r² × altura.
       </p>
+      <Challenge goals={[
+        { text: "Construye un prisma de exactamente 30 cubos.", met: l * w * h === 30 },
+        { text: "Haz un cubo de 27 cubitos.", met: l === 3 && w === 3 && h === 3 },
+        { text: "Con solo 2 capas, consigue la base más grande posible.", met: h === 2 && l === 6 && w === 4 },
+      ]} />
     </>
   );
 }
@@ -245,7 +274,7 @@ export function TreeVisual({ id }: { id: string }) {
   const edge = (x1: number, y1: number, x2: number, y2: number, text: string) => (
     <>
       <line x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-slate-500" strokeWidth={1.5} />
-      <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 5} textAnchor="middle" className="fill-slate-200 text-[11px]">{text}</text>
+      <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 5} textAnchor="middle" className="fill-slate-200 text-[12px]">{text}</text>
     </>
   );
   const firstY = { R: 55, B: 155 },
@@ -272,7 +301,7 @@ export function TreeVisual({ id }: { id: string }) {
         <circle cx={20} cy={105} r={6} className="fill-slate-300" />
         {leaves.map((l, i) => (
           // Probabilidad de la rama como fracción apilada, igual que en el texto.
-          <g key={l.path} className="fill-slate-100 text-[11px] font-mono">
+          <g key={l.path} className="fill-slate-100 text-[12px] font-semibold">
             <text x={228} y={leafY[i] + 4}>{l.path}:</text>
             <text x={266} y={leafY[i] - 2} textAnchor="middle">{l.p}</text>
             <line x1={256} x2={276} y1={leafY[i] + 1.5} y2={leafY[i] + 1.5} className="stroke-slate-100" strokeWidth={1} />
@@ -290,6 +319,11 @@ export function TreeVisual({ id }: { id: string }) {
           ? "Con reemplazo la segunda extracción no depende de la primera: las fracciones se repiten."
           : "Sin reemplazo la bolsa tiene una ficha menos y la segunda probabilidad depende de lo que salió primero."}
       </p>
+      <Challenge goals={[
+        { text: "Sin reemplazo, haz que sacar dos rojas sea imposible.", met: !back && r === 1 },
+        { text: "Con reemplazo, consigue que P(RB) = 1/4.", met: back && r === b, hint: "P(RB) = (r/n) · (b/n): ¿cuándo vale 1/4?" },
+        { text: "Consigue que sacar dos azules sea el resultado más probable.", met: leaves.every((l) => l.path === "BB" || l.p / l.q < leaves[3].p / leaves[3].q) },
+      ]} />
     </>
   );
 }
@@ -326,7 +360,7 @@ export function PowersVisual({ id }: { id: string }) {
     <>
       <Slider id={`${id}-a`} label="Número entre 1 y 10" value={a} min={1} max={9.9} step={0.1} onChange={setA} />
       <Slider id={`${id}-n`} label="Exponente n" value={n} min={lo} max={8} onChange={setN} />
-      <p className="font-mono text-lg">
+      <p className="text-lg font-semibold tabular-nums">
         {num(a)} × 10{sup(n)} = <strong>{expandScientific(a, n)}</strong>
       </p>
       <svg role="img" viewBox="0 0 320 72" className="w-full max-w-md rounded-xl bg-slate-950"
@@ -335,11 +369,11 @@ export function PowersVisual({ id }: { id: string }) {
         {Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).map((e) => (
           <g key={e}>
             <line x1={pos(e)} x2={pos(e)} y1={31} y2={41} className="stroke-slate-500" />
-            {e % 3 === 0 && <text x={pos(e)} y={58} textAnchor={e === hi ? "end" : e === lo ? "start" : "middle"} className="fill-slate-400 text-[11px]">10{sup(e)}</text>}
+            {e % 3 === 0 && <text x={pos(e)} y={58} textAnchor={e === hi ? "end" : e === lo ? "start" : "middle"} className="fill-slate-400 text-[12px]">10{sup(e)}</text>}
           </g>
         ))}
         {refs.map((r) => (
-          <text key={r.text} x={Math.min(305, pos(r.e))} y={18} textAnchor={r.e > 7 ? "end" : "middle"} className="fill-slate-300 text-[11px]">{r.text}</text>
+          <text key={r.text} x={Math.min(305, pos(r.e))} y={18} textAnchor={r.e > 7 ? "end" : "middle"} className="fill-slate-300 text-[12px]">{r.text}</text>
         ))}
         <Handle x={pos(n + Math.log10(a))} y={36} className="fill-cyan-300"
           onDrag={(px) => {
@@ -352,6 +386,11 @@ export function PowersVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Arrastra el punto por la escala. Cada paso de la escala multiplica por 10. Sube n en 1 y la coma se desplaza un lugar a la derecha; bájalo y se desplaza a la izquierda. Con n negativo el número es menor que 1.
       </p>
+      <Challenge goals={[
+        { text: "Escribe 4 500 000 en notación científica.", met: Math.abs(a - 4.5) < 1e-9 && n === 6 },
+        { text: "Representa 0,00072.", met: Math.abs(a - 7.2) < 1e-9 && n === -4 },
+        { text: "Consigue el número más grande posible con exponente 3.", met: Math.abs(a - 9.9) < 1e-9 && n === 3 },
+      ]} />
     </>
   );
 }
@@ -382,12 +421,17 @@ export function DecimalGridVisual({ id }: { id: string }) {
           );
         })}
       </div>
-      <p className="font-mono text-lg">
+      <p className="text-lg font-semibold tabular-nums">
         <MathText text={`0,${a} × 0,${b} = ${a * b}/100 = `} /><strong>{num((a * b) / 100)}</strong>
       </p>
       <p className="text-sm text-slate-300">
         Arrastra sobre la cuadrícula para elegir columnas y filas. Todo el cuadrado es 1. Tomar 0,{a} de 0,{b} deja {a * b} de las 100 casillas: cada décima por décima es una centésima, por eso el producto tiene dos decimales y es menor que ambos factores.
       </p>
+      <Challenge goals={[
+        { text: "Consigue un producto de 0,24 con factores distintos de 0,3 y 0,4.", met: a * b === 24 && !(a === 3 && b === 4) && !(a === 4 && b === 3) },
+        { text: "Haz que el producto sea 0,81.", met: a === 9 && b === 9 },
+        { text: "Consigue un producto menor que 0,1. ¿Por qué es menor que los dos factores?", met: a * b < 10 },
+      ]} />
     </>
   );
 }

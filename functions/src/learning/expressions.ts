@@ -21,7 +21,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       "Las tarifas de la ciudad se escriben como expresiones. Para compararlas hay que saber evaluarlas y simplificarlas sin cambiar su valor.",
     prerequisites: ["ecuaciones-dos-pasos", "enteros-suma-resta"],
     legacyModuleIds: ["algebra-d6", "algebra-d1"],
-    visual: "linear",
+    visual: "expression",
     vocabulary: [
       { term: "Expresión algebraica", meaning: "Combinación de números, letras y operaciones, sin signo igual: 3x + 5." },
       { term: "Términos semejantes", meaning: "Términos con la misma parte literal: 3x y −5x; se pueden sumar." },
@@ -197,7 +197,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       "Los pedidos de la ciudad se hacen por paquetes que combinan varios artículos. La distributiva permite contar el total de dos maneras equivalentes.",
     prerequisites: ["expresiones-algebraicas"],
     legacyModuleIds: ["algebra-d6", "algebra-d7"],
-    visual: "area",
+    visual: "distributive",
     vocabulary: [
       { term: "Desarrollar", meaning: "Escribir a(x + b) como ax + ab." },
       { term: "Factor común", meaning: "Un factor que divide a todos los términos: 6x + 9 = 3(2x + 3)." },

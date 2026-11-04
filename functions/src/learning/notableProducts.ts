@@ -11,7 +11,7 @@ export const NOTABLE_PRODUCT_LESSONS: Lesson[] = [
     purpose: "Reconocer estos patrones permite multiplicar expresiones y calcular áreas sin repetir todos los pasos cada vez.",
     prerequisites: ["propiedad-distributiva", "potencias-raices"],
     legacyModuleIds: [],
-    visual: "linear",
+    visual: "binomial-square",
     vocabulary: [
       { term: "Binomio", meaning: "Expresión formada por dos términos, como x + 3." },
       { term: "Producto notable", meaning: "Producto que sigue un patrón algebraico que se puede obtener con la propiedad distributiva." },

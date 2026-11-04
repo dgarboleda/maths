@@ -21,6 +21,35 @@ describe("Modelos visuales de las clases", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
+  test.each(KINDS)("%s: tiene al menos un reto y no empieza ya conseguido", async (kind) => {
+    render(<LearningVisual kind={kind} />);
+    await screen.findAllByRole("slider");
+    const label = screen.getByText(/^Reto 1 de \d$/);
+    expect(label.parentElement).not.toHaveTextContent("¡Conseguido!");
+    // El contenedor pide predecir antes de mover y explicar después.
+    expect(screen.getByText(/predice qué sucederá/i)).toBeInTheDocument();
+  });
+
+  test.each(KINDS)("%s: en los extremos de los controles no aparecen números rotos ni signos dobles", async (kind) => {
+    const { container } = render(<LearningVisual kind={kind} />);
+    await screen.findAllByRole("slider");
+    const problems: string[] = [];
+    const check = (where: string) => {
+      const text = container.textContent ?? "";
+      for (const bad of [/NaN|Infinity|undefined/, /[+−×÷·] [−-]\d/]) {
+        const m = bad.exec(text);
+        if (m) problems.push(`${where}: «${text.slice(Math.max(0, m.index - 25), m.index + 15)}»`);
+      }
+    };
+    for (const edge of ["min", "max"] as const) {
+      for (const slider of screen.getAllByRole("slider") as HTMLInputElement[]) {
+        fireEvent.change(slider, { target: { value: slider[edge] } });
+        check(`${slider.id || slider.getAttribute("aria-label")} = ${edge}`);
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
   test("cada tema con gráfico propio usa su modelo, no uno prestado", () => {
     const expected: Record<string, Visual> = {
       "funciones-lineales": "linear",
@@ -46,6 +75,9 @@ describe("Modelos visuales de las clases", () => {
       "enteros-producto-cociente": "integer-product",
       "jerarquia-operaciones": "order",
       "potencias-raices": "square-root",
+      "productos-notables": "binomial-square",
+      "propiedad-distributiva": "distributive",
+      "expresiones-algebraicas": "expression",
       "volumen-conos-esferas": "solids",
       "probabilidad-condicional": "two-way",
       "funciones-exponenciales": "exponential",
@@ -58,23 +90,24 @@ describe("Modelos visuales de las clases", () => {
       expect(LESSONS.find((l) => l.id === id)?.visual, id).toBe(visual);
   });
 
-  test("la función lineal se dibuja en un plano y la etiqueta sigue a la pendiente", () => {
+  test("la función lineal se dibuja en un plano y la etiqueta sigue a la pendiente", async () => {
     render(<LearningVisual kind="linear" />);
-    fireEvent.change(screen.getByLabelText(/pendiente/), { target: { value: -2 } });
+    fireEvent.change(await screen.findByLabelText(/pendiente/), { target: { value: -2 } });
     expect(screen.getByRole("img", { name: /sube −2 por cada unidad/ })).toBeInTheDocument();
   });
 
-  test("directa e inversa conservan cociente y producto", () => {
+  test("directa e inversa conservan cociente y producto", async () => {
     render(<LearningVisual kind="inverse" />);
-    expect(screen.getByRole("img", { name: /Hipérbola x por y = 24/ })).toBeInTheDocument();
+    expect(await screen.findByRole("img", { name: /Hipérbola x por y = 24/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Directa" }));
     expect(screen.getByRole("img", { name: /Recta que pasa por el origen/ })).toBeInTheDocument();
   });
 
-  test("la parábola marca sus raíces y el árbol suma 1", () => {
+  test("la parábola marca sus raíces y el árbol suma 1", async () => {
     render(<LearningVisual kind="parabola" />);
-    expect(screen.getByRole("img", { name: /corta el eje x en −1 y en 3/ })).toBeInTheDocument();
+    expect(await screen.findByRole("img", { name: /corta el eje x en −1 y en 3/ })).toBeInTheDocument();
     render(<LearningVisual kind="tree" />);
+    await screen.findByRole("button", { name: "Sin reemplazo" });
     // 3 rojas y 2 azules con reemplazo: RR 9/25, RB 6/25, BR 6/25, BB 4/25.
     expect(screen.getByRole("img", { name: /RR: 9\/25, RB: 6\/25, BR: 6\/25, BB: 4\/25/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Sin reemplazo" }));

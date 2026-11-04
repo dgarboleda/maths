@@ -30,7 +30,7 @@ export default function ChildLearningPage() {
     <HelpUsageReport childId={childId} childName={child.name} />
     <SectionCard title="Siguiente paso"><p className="font-bold text-white">{dashboard.nextLesson.title}</p><p className="mt-2 text-sm text-slate-300">{dashboard.nextLesson.objective}</p><Link href="/panel/plan" className="mt-3 inline-flex min-h-11 items-center text-cyan-200 underline">Preparar su plan de estudio</Link></SectionCard>
     {dashboard.error && <p role="alert" className="text-amber-200">{dashboard.error}</p>}
-    <SectionCard title="Ritmo de la semana"><WeeklyChart noun="respuestas" week={dashboard.weeklyProblems} /></SectionCard>
+    <SectionCard title="Ritmo de la semana"><WeeklyChart noun="respuestas" week={dashboard.weeklyProblems} previousTotal={dashboard.loading ? undefined : dashboard.previousWeekProblems} /></SectionCard>
     <SectionCard title="Actividad reciente">{dashboard.activity.length ? <ul>{dashboard.activity.map((item) => <ActivityRow key={item.id} item={item} />)}</ul> : <EmptyState icon="📘" title="Sin actividad todavía" text="Las clases y los repasos aparecerán aquí al comenzar." />}</SectionCard>
     <Link href={`/panel/archivo/${childId}`} className="inline-flex min-h-11 items-center text-sm text-slate-400 underline">Consultar el historial de actividades anteriores</Link>
   </div>;

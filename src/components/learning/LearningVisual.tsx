@@ -4,22 +4,32 @@ import dynamic from "next/dynamic";
 import { MathText } from "@/components/MathText";
 import { useId, useState } from "react";
 import type { Visual } from "@/lib/learning/domain";
-import {
-  InequalityVisual,
-  LinearVisual,
-  ParabolaVisual,
-  ProportionVisual,
-} from "./GraphVisuals";
-import {
-  AnglesVisual,
-  CircleVisual,
-  DecimalGridVisual,
-  PowersVisual,
-  PythagorasVisual,
-  SimilarityVisual,
-  TreeVisual,
-  VolumeVisual,
-} from "./ShapeVisuals";
+import { Challenge } from "./Challenge";
+// Las gráficas cartesianas y las de geometría también se cargan bajo demanda:
+// cada clase descarga solo su modelo (presupuesto de JS de la clase).
+const graphVisual = (name: "LinearVisual" | "ParabolaVisual" | "InequalityVisual") =>
+  dynamic<{ id: string }>(() => import("./GraphVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const LinearVisual = graphVisual("LinearVisual");
+const ParabolaVisual = graphVisual("ParabolaVisual");
+const InequalityVisual = graphVisual("InequalityVisual");
+const ProportionVisual = dynamic<{ id: string; initial: "direct" | "inverse" }>(
+  () => import("./GraphVisuals").then((module) => module.ProportionVisual),
+  { loading: () => <p role="status">Preparando el modelo…</p> },
+);
+const shapeVisual = (name: "AnglesVisual" | "CircleVisual" | "DecimalGridVisual" | "PowersVisual" | "PythagorasVisual" | "SimilarityVisual" | "TreeVisual" | "VolumeVisual") =>
+  dynamic<{ id: string }>(() => import("./ShapeVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const AnglesVisual = shapeVisual("AnglesVisual");
+const CircleVisual = shapeVisual("CircleVisual");
+const DecimalGridVisual = shapeVisual("DecimalGridVisual");
+const PowersVisual = shapeVisual("PowersVisual");
+const PythagorasVisual = shapeVisual("PythagorasVisual");
+const SimilarityVisual = shapeVisual("SimilarityVisual");
+const TreeVisual = shapeVisual("TreeVisual");
+const VolumeVisual = shapeVisual("VolumeVisual");
 // Las clases básicas no necesitan descargar los modelos avanzados.
 const advancedVisual = (name: keyof typeof import("./AdvancedVisuals")) =>
   dynamic<{ id: string }>(() => import("./AdvancedVisuals").then((module) => module[name]), {
@@ -49,6 +59,19 @@ const FractionProductVisual = numberVisual("FractionProductVisual");
 const IntegerProductVisual = numberVisual("IntegerProductVisual");
 const OrderOfOperationsVisual = numberVisual("OrderOfOperationsVisual");
 const SquareRootVisual = numberVisual("SquareRootVisual");
+
+// Productos notables y distributiva: modelos de área propios de álgebra.
+const algebraVisual = (name: "BinomialSquareVisual" | "DistributiveVisual" | "ExpressionVisual") =>
+  dynamic<{ id: string }>(() => import("./AlgebraVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const BinomialSquareVisual = algebraVisual("BinomialSquareVisual");
+const DistributiveVisual = algebraVisual("DistributiveVisual");
+const ExpressionVisual = algebraVisual("ExpressionVisual");
+const BalanceVisual = dynamic<{ id: string; initial: "balance" | "equation" }>(
+  () => import("./AlgebraVisuals").then((module) => module.BalanceVisual),
+  { loading: () => <p role="status">Preparando el modelo…</p> },
+);
 
 function Bar({
   numerator,
@@ -96,7 +119,7 @@ function NumberLineVisual({ id }: { id: string }) {
       <input id={`${id}-move`} type="range" min={-10} max={10} value={move}
         onChange={(e) => setMove(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
       <div role="img" aria-label={`Recta numérica: de ${sg(start)} se avanza ${sg(move)} y se llega a ${sg(end)}`}
-        className="grid grid-cols-[repeat(21,minmax(0,1fr))] gap-px rounded-lg bg-slate-950 p-1 text-center text-[11px] sm:text-xs">
+        className="grid grid-cols-[repeat(21,minmax(0,1fr))] gap-px rounded-lg bg-slate-950 p-1 text-center text-[12px] sm:text-xs">
         {ticks.map((t) => (
           <span key={t} aria-hidden="true"
             className={`rounded py-1 tabular-nums ${t === start ? "bg-slate-400 font-bold text-slate-950" : t === end ? "bg-cyan-300 font-bold text-slate-950" : t > lo && t < hi ? "bg-cyan-900/70 text-cyan-100" : t === 0 ? "text-white" : "text-slate-400"}`}>
@@ -113,6 +136,11 @@ function NumberLineVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Restar un número equivale a sumar su opuesto: {sg(start)} − {term(-move)} = {sg(end)}.
       </p>
+      <Challenge goals={[
+        { text: "Partiendo de 3, llega a −4. ¿Qué número sumaste?", met: start === 3 && end === -4 },
+        { text: "Suma un número negativo y termina a la derecha del cero.", met: move < 0 && end > 0 },
+        { text: "Elige un punto de partida y un salto que terminen exactamente en 0.", met: end === 0 && move !== 0 },
+      ]} />
     </>
   );
 }
@@ -131,24 +159,44 @@ function AreaVisual({ id }: { id: string }) {
       <div role="img" aria-label={`Rectángulo de ${width} por ${height} cuadrados de 1 cm²`}
         className="grid w-fit gap-px rounded bg-cyan-300/40 p-px"
         style={{ gridTemplateColumns: `repeat(${width}, 1.25rem)` }}>
-        {Array.from({ length: width * height }, (_, i) => (
-          <span key={i} aria-hidden="true" className="size-5 bg-slate-800" />
-        ))}
+        {Array.from({ length: width * height }, (_, i) => {
+          const row = Math.floor(i / width),
+            col = i % width;
+          return <span key={`${row}-${col}`} aria-hidden="true" className="anim-pop size-5 bg-slate-800"
+            style={{ animationDelay: `${(row + col) * 25}ms` }} />;
+        })}
       </div>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         Área = {width} × {height} = <strong>{width * height} cm²</strong> (cuadrados que cubren).<br />
         Perímetro = 2 × ({width} + {height}) = <strong>{2 * (width + height)} cm</strong> (borde que rodea).<br />
-        Triángulo con la misma base y altura: {width} × {height} ÷ 2 = {(width * height) / 2} cm².
+        Triángulo con la misma base y altura: <MathText text={`(${width} × ${height})/2 = ${(width * height) / 2}`} /> cm².
       </p>
+      <Challenge goals={[
+        { text: "Haz que el área y el perímetro tengan el mismo número.", met: width * height === 2 * (width + height), hint: "Prueba con rectángulos pequeños, como de 4 o 6 de base." },
+        { text: "Con un área de 36 cm², consigue el menor perímetro posible.", met: width * height === 36 && width === height },
+        { text: "Consigue que el triángulo de la misma base y altura mida 10 cm².", met: width * height === 20 },
+      ]} />
     </>
   );
+}
+
+/** Modas de una lista: los valores que más se repiten (ninguna si ninguno se repite). */
+export function modes(values: number[]): number[] {
+  const counts = new Map<number, number>();
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+  const top = Math.max(...counts.values());
+  return top < 2 ? [] : [...counts].filter(([, c]) => c === top).map(([v]) => v).sort((a, b) => a - b);
 }
 
 function DataVisual({ id }: { id: string }) {
   const [extra, setExtra] = useState(9);
   const values = [3, 4, 4, 5, 6, extra].sort((a, b) => a - b);
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const sum = values.reduce((a, b) => a + b, 0);
+  const mean = sum / values.length;
   const median = (values[2] + values[3]) / 2;
+  const mode = modes(values);
+  const fmt = (n: number) => n.toLocaleString("es", { maximumFractionDigits: 2 });
+  const sx = (v: number) => 16 + (v / 30) * 288;
   return (
     <>
       <label htmlFor={`${id}-x`} className="block text-sm">
@@ -156,15 +204,38 @@ function DataVisual({ id }: { id: string }) {
       </label>
       <input id={`${id}-x`} type="range" min={0} max={30} value={extra}
         onChange={(e) => setExtra(Number(e.target.value))} className="min-h-8 w-full accent-cyan-300" />
-      <p className="font-mono text-lg">Datos ordenados: {values.join(", ")}</p>
+      <p className="text-lg font-semibold tabular-nums">Datos ordenados: {values.join(", ")}</p>
+      <svg role="img" viewBox="0 0 320 118" className="w-full max-w-md rounded-xl bg-slate-950"
+        aria-label={`Diagrama de puntos de ${values.join(", ")}: media ${fmt(mean)} (triángulo cian) y mediana ${fmt(median)} (línea ámbar).`}>
+        <line x1={16} x2={304} y1={70} y2={70} className="stroke-slate-500" />
+        {[0, 5, 10, 15, 20, 25, 30].map((t) => (
+          <g key={t}>
+            <line x1={sx(t)} x2={sx(t)} y1={66} y2={74} className="stroke-slate-500" />
+            <text x={sx(t)} y={110} textAnchor="middle" className="fill-slate-300 text-[13px]">{t}</text>
+          </g>
+        ))}
+        {values.map((v, i) => (
+          <circle key={i} cx={sx(v)} cy={58 - 13 * values.slice(0, i).filter((w) => w === v).length} r={5.5}
+            className={v === extra && i === values.lastIndexOf(extra) ? "fill-rose-300" : "fill-slate-200"} />
+        ))}
+        <line x1={sx(median)} x2={sx(median)} y1={14} y2={70} className="stroke-amber-300" strokeWidth={2.5} strokeDasharray="5 3" />
+        <text x={sx(median)} y={11} textAnchor="middle" className="fill-amber-200 text-[12px] font-bold">mediana</text>
+        <path d={`M${sx(mean)},74 l-7,12 h14 z`} className="fill-cyan-300" />
+        <text x={sx(mean)} y={98} textAnchor="middle" className="fill-cyan-200 text-[12px] font-bold">media</text>
+      </svg>
       <p className="text-sm">
-        Media = suma ÷ cantidad = {values.reduce((a, b) => a + b, 0)} ÷ 6 = <strong>{mean.toLocaleString("es", { maximumFractionDigits: 2 })}</strong>.<br />
-        Mediana = promedio de los dos centrales = <strong>{median.toLocaleString("es")}</strong>.<br />
-        Moda = <strong>4</strong> · Rango = {values[5]} − {values[0]} = <strong>{values[5] - values[0]}</strong>.
+        <MathText text={`Media = (suma)/(cantidad) = ${sum}/6 ≈ ${fmt(mean)}`} />.<br />
+        Mediana = promedio de los dos centrales = <strong>{fmt(median)}</strong>.<br />
+        Moda = <strong>{mode.length ? mode.join(" y ") : "no hay (ningún dato se repite)"}</strong>{mode.length > 1 ? " (dos modas)" : ""} · Rango = {values[5]} − {values[0]} = <strong>{values[5] - values[0]}</strong>.
       </p>
       <p className="text-sm text-slate-300">
-        Lleva el dato a 30: la media cambia mucho y la mediana casi nada. Por eso la mediana resiste los valores extremos.
+        Lleva el dato a 30: el triángulo de la media se desplaza mucho y la línea de la mediana casi nada. Por eso la mediana resiste los valores extremos.
       </p>
+      <Challenge goals={[
+        { text: "Elige el dato para que la media sea exactamente 6.", met: sum === 36 },
+        { text: "Consigue que los datos tengan dos modas.", met: mode.length === 2 },
+        { text: "Haz que la media y la mediana coincidan.", met: Math.abs(mean - median) < 1e-9 },
+      ]} />
     </>
   );
 }
@@ -186,11 +257,16 @@ function ProbabilityVisual({ id }: { id: string }) {
           <span key={i} aria-hidden="true" className={`size-5 rounded-full ${i < red ? "bg-rose-400" : "bg-sky-400"}`} />
         ))}
       </div>
-      <p className="font-mono text-sm">
+      <p className="text-sm font-semibold tabular-nums">
         {total === 0
           ? "La bolsa está vacía: no hay casos posibles."
           : <><MathText text={`P(roja) = casos favorables ÷ casos posibles = ${red}/${total} = ${(red / total).toLocaleString("es", { maximumFractionDigits: 3 })}`} /><br /><MathText text={`P(no roja) = 1 − ${red}/${total} = ${blue}/${total}`} /></>}
       </p>
+      <Challenge goals={[
+        { text: "Haz que sacar roja tenga probabilidad 1/2.", met: red > 0 && red === blue },
+        { text: "Consigue P(roja) = 0,25.", met: red > 0 && 4 * red === total },
+        { text: "Haz que sacar roja sea un suceso seguro.", met: red > 0 && blue === 0 },
+      ]} />
     </>
   );
 }
@@ -230,6 +306,11 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   "integer-product": IntegerProductVisual,
   order: OrderOfOperationsVisual,
   "square-root": SquareRootVisual,
+  "binomial-square": BinomialSquareVisual,
+  distributive: DistributiveVisual,
+  expression: ExpressionVisual,
+  balance: ({ id }) => <BalanceVisual id={id} initial="balance" />,
+  equation: ({ id }) => <BalanceVisual id={id} initial="equation" />,
 };
 
 export function LearningVisual({ kind }: { kind: Visual }) {
@@ -346,7 +427,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
                 onChange={(e) => setTotal(Number(e.target.value))}
                 className="min-h-8 w-full accent-cyan-300"
               />
-              <p className="rounded-xl bg-slate-950 p-3 font-mono text-sm">
+              <p className="rounded-xl bg-slate-950 p-3 text-sm font-semibold">
                 Un cuarto: {total} ÷ 4 = {total / 4}.<br />
                 <MathText text={`${taken}/4 del total: ${total / 4} × ${taken} = ${(total / 4) * taken}.`} />
               </p>
@@ -380,7 +461,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
           />
           {kind === "ratio" ? (
             <div className="space-y-3">
-              <p className="font-mono text-lg">
+              <p className="text-lg font-semibold">
                 Azules:verdes = {2 * factor}:{3 * factor} = 2:3
               </p>
               <p className="text-sm">
@@ -389,7 +470,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
             </div>
           ) : kind === "change" ? (
             <div className="space-y-3">
-              <p className="font-mono text-lg">
+              <p className="text-lg font-semibold">
                 Base: {factor * 100}. Descuento: 25%.
               </p>
               <p>
@@ -406,7 +487,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
               <div
                 role="img"
                 aria-label={`Los dos lados valen ${3 * factor + 6}`}
-                className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl bg-slate-950 p-4 text-center font-mono text-lg"
+                className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl bg-slate-950 p-4 text-center text-lg font-semibold tabular-nums"
               >
                 <span>3 × {factor} + 6</span>
                 <span>=</span>
@@ -452,6 +533,38 @@ function ClassicVisual({ kind }: { kind: Visual }) {
           )}
         </>
       )}
+      {!fractional && (
+        <p className="text-sm text-slate-300">
+          Antes de mover el control, predice qué sucederá. Después explica el cambio con tus palabras.
+        </p>
+      )}
+      <Challenge goals={classicGoals(kind, { parts, taken, total, factor })} />
     </section>
   );
+}
+
+/** Retos de los modelos clásicos, según el tipo de idea. */
+function classicGoals(kind: Visual, { parts, taken, total, factor }: { parts: number; taken: number; total: number; factor: number }) {
+  switch (kind) {
+    case "fraction":
+      return [
+        { text: "Representa 5/4: más de una unidad.", met: parts === 4 && taken === 5 },
+        { text: "Con sextos, representa una fracción igual a 1/2.", met: parts === 6 && taken === 3 },
+      ];
+    case "equivalence":
+      return [{ text: "Muestra que 2/4 = 4/8.", met: taken === 2 }];
+    case "percent":
+      return [{ text: "Representa el 40 %. ¿Qué fracción simplificada es?", met: taken === 40 }];
+    case "quantity":
+      return [{ text: "Haz que un cuarto del total sea 40.", met: total === 160 }];
+    case "ratio":
+      return [{ text: "Consigue 12 azules manteniendo la razón 2:3. ¿Cuántos verdes hay?", met: factor === 6 }];
+    case "change":
+      return [{ text: "Haz que se paguen 450 tras el descuento del 25 %.", met: factor === 6 }];
+    case "balance":
+    case "equation":
+      return [{ text: "Encuentra el x que hace que el lado izquierdo valga 24.", met: factor === 6 }];
+    default:
+      return [{ text: "Consigue un costo total de 35 créditos.", met: factor === 7 }];
+  }
 }

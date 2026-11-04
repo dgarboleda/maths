@@ -152,23 +152,49 @@ export function StatusPill({ status }: { status: WorldStatus }) {
 /** Gráfico semanal: problemas resueltos por día (no minutos — no hay dato
  * real de tiempo de práctica). Sin barra de "objetivo": no hay una meta
  * semanal real que mostrar. */
-export function WeeklyChart({ week, noun = "problemas" }: { week: { day: string; problems: number }[]; noun?: string }) {
+/** Diferencia con la semana anterior, en palabras. */
+export function weekComparison(total: number, previous: number | undefined, noun: string): string | null {
+  if (previous === undefined) return null;
+  if (previous === 0) return total ? `La semana anterior no hubo ${noun}.` : null;
+  const diff = total - previous,
+    pct = Math.round((Math.abs(diff) / previous) * 100);
+  if (diff === 0) return `Igual que la semana anterior (${previous}).`;
+  return `${diff > 0 ? "▲" : "▼"} ${Math.abs(diff)} ${diff > 0 ? "más" : "menos"} que la semana anterior (${previous}; ${diff > 0 ? "+" : "−"}${pct} %).`;
+}
+
+export function WeeklyChart({ week, noun = "problemas", previousTotal }: {
+  week: { day: string; problems: number }[];
+  noun?: string;
+  /** Total de la semana anterior, para comparar (si se conoce). */
+  previousTotal?: number;
+}) {
   const maxProblems = Math.max(5, ...week.map((d) => d.problems));
   const totalProblems = week.reduce((acc, d) => acc + d.problems, 0);
+  const average = totalProblems / Math.max(1, week.length);
+  const comparison = weekComparison(totalProblems, previousTotal, noun);
+  const avgText = average.toLocaleString("es", { maximumFractionDigits: 1 });
   return (
     <div>
       <div
-        className="flex h-28 items-end gap-2"
+        className="relative flex h-32 items-end gap-2"
         role="img"
         aria-label={`${noun} por día esta semana: ${week
           .map((d) => `${d.day} ${d.problems}`)
-          .join(", ")}. Total ${totalProblems} ${noun}.`}
+          .join(", ")}. Total ${totalProblems} ${noun}; media ${avgText} por día.${comparison ? ` ${comparison}` : ""}`}
       >
+        {totalProblems > 0 && (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-5 h-20">
+            <div className="absolute inset-x-0 border-t border-dashed border-amber-300/70" style={{ bottom: `${(average / maxProblems) * 100}%` }}>
+              <span className="absolute -top-4 right-0 text-[10px] font-bold text-amber-200">media {avgText}</span>
+            </div>
+          </div>
+        )}
         {week.map((d, i) => (
           <div key={`${d.day}-${i}`} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+            <span aria-hidden="true" className={`h-4 text-xs font-bold tabular-nums ${d.problems ? "text-slate-200" : "text-slate-600"}`}>{d.problems}</span>
             <div className="flex h-20 w-full items-end">
               <div
-                className={`w-full rounded-t-md transition-[height] duration-500 ${
+                className={`w-full rounded-t-md transition-[height] duration-500 motion-reduce:transition-none ${
                   d.problems === 0 ? "h-1 bg-slate-800" : "bg-violet-500/80"
                 }`}
                 style={d.problems > 0 ? { height: `${(d.problems / maxProblems) * 100}%` } : undefined}
@@ -178,7 +204,8 @@ export function WeeklyChart({ week, noun = "problemas" }: { week: { day: string;
           </div>
         ))}
       </div>
-      <p className="mt-2 text-xs text-slate-400">{totalProblems} {noun} esta semana</p>
+      <p className="mt-2 text-xs text-slate-400">{totalProblems} {noun} esta semana{totalProblems ? ` · media ${avgText} por día` : ""}</p>
+      {comparison && <p className="mt-1 text-xs font-semibold text-slate-300">{comparison}</p>}
     </div>
   );
 }
