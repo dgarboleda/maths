@@ -4,23 +4,32 @@ import dynamic from "next/dynamic";
 import { MathText } from "@/components/MathText";
 import { useId, useState } from "react";
 import type { Visual } from "@/lib/learning/domain";
-import {
-  Challenge,
-  InequalityVisual,
-  LinearVisual,
-  ParabolaVisual,
-  ProportionVisual,
-} from "./GraphVisuals";
-import {
-  AnglesVisual,
-  CircleVisual,
-  DecimalGridVisual,
-  PowersVisual,
-  PythagorasVisual,
-  SimilarityVisual,
-  TreeVisual,
-  VolumeVisual,
-} from "./ShapeVisuals";
+import { Challenge } from "./Challenge";
+// Las gráficas cartesianas y las de geometría también se cargan bajo demanda:
+// cada clase descarga solo su modelo (presupuesto de JS de la clase).
+const graphVisual = (name: "LinearVisual" | "ParabolaVisual" | "InequalityVisual") =>
+  dynamic<{ id: string }>(() => import("./GraphVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const LinearVisual = graphVisual("LinearVisual");
+const ParabolaVisual = graphVisual("ParabolaVisual");
+const InequalityVisual = graphVisual("InequalityVisual");
+const ProportionVisual = dynamic<{ id: string; initial: "direct" | "inverse" }>(
+  () => import("./GraphVisuals").then((module) => module.ProportionVisual),
+  { loading: () => <p role="status">Preparando el modelo…</p> },
+);
+const shapeVisual = (name: "AnglesVisual" | "CircleVisual" | "DecimalGridVisual" | "PowersVisual" | "PythagorasVisual" | "SimilarityVisual" | "TreeVisual" | "VolumeVisual") =>
+  dynamic<{ id: string }>(() => import("./ShapeVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const AnglesVisual = shapeVisual("AnglesVisual");
+const CircleVisual = shapeVisual("CircleVisual");
+const DecimalGridVisual = shapeVisual("DecimalGridVisual");
+const PowersVisual = shapeVisual("PowersVisual");
+const PythagorasVisual = shapeVisual("PythagorasVisual");
+const SimilarityVisual = shapeVisual("SimilarityVisual");
+const TreeVisual = shapeVisual("TreeVisual");
+const VolumeVisual = shapeVisual("VolumeVisual");
 // Las clases básicas no necesitan descargar los modelos avanzados.
 const advancedVisual = (name: keyof typeof import("./AdvancedVisuals")) =>
   dynamic<{ id: string }>(() => import("./AdvancedVisuals").then((module) => module[name]), {
@@ -52,12 +61,16 @@ const OrderOfOperationsVisual = numberVisual("OrderOfOperationsVisual");
 const SquareRootVisual = numberVisual("SquareRootVisual");
 
 // Productos notables y distributiva: modelos de área propios de álgebra.
-const algebraVisual = (name: keyof typeof import("./AlgebraVisuals")) =>
+const algebraVisual = (name: "BinomialSquareVisual" | "DistributiveVisual") =>
   dynamic<{ id: string }>(() => import("./AlgebraVisuals").then((module) => module[name]), {
     loading: () => <p role="status">Preparando el modelo…</p>,
   });
 const BinomialSquareVisual = algebraVisual("BinomialSquareVisual");
 const DistributiveVisual = algebraVisual("DistributiveVisual");
+const BalanceVisual = dynamic<{ id: string; initial: "balance" | "equation" }>(
+  () => import("./AlgebraVisuals").then((module) => module.BalanceVisual),
+  { loading: () => <p role="status">Preparando el modelo…</p> },
+);
 
 function Bar({
   numerator,
@@ -294,6 +307,8 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   "square-root": SquareRootVisual,
   "binomial-square": BinomialSquareVisual,
   distributive: DistributiveVisual,
+  balance: ({ id }) => <BalanceVisual id={id} initial="balance" />,
+  equation: ({ id }) => <BalanceVisual id={id} initial="equation" />,
 };
 
 export function LearningVisual({ kind }: { kind: Visual }) {

@@ -87,23 +87,24 @@ describe("Modelos visuales de las clases", () => {
       expect(LESSONS.find((l) => l.id === id)?.visual, id).toBe(visual);
   });
 
-  test("la función lineal se dibuja en un plano y la etiqueta sigue a la pendiente", () => {
+  test("la función lineal se dibuja en un plano y la etiqueta sigue a la pendiente", async () => {
     render(<LearningVisual kind="linear" />);
-    fireEvent.change(screen.getByLabelText(/pendiente/), { target: { value: -2 } });
+    fireEvent.change(await screen.findByLabelText(/pendiente/), { target: { value: -2 } });
     expect(screen.getByRole("img", { name: /sube −2 por cada unidad/ })).toBeInTheDocument();
   });
 
-  test("directa e inversa conservan cociente y producto", () => {
+  test("directa e inversa conservan cociente y producto", async () => {
     render(<LearningVisual kind="inverse" />);
-    expect(screen.getByRole("img", { name: /Hipérbola x por y = 24/ })).toBeInTheDocument();
+    expect(await screen.findByRole("img", { name: /Hipérbola x por y = 24/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Directa" }));
     expect(screen.getByRole("img", { name: /Recta que pasa por el origen/ })).toBeInTheDocument();
   });
 
-  test("la parábola marca sus raíces y el árbol suma 1", () => {
+  test("la parábola marca sus raíces y el árbol suma 1", async () => {
     render(<LearningVisual kind="parabola" />);
-    expect(screen.getByRole("img", { name: /corta el eje x en −1 y en 3/ })).toBeInTheDocument();
+    expect(await screen.findByRole("img", { name: /corta el eje x en −1 y en 3/ })).toBeInTheDocument();
     render(<LearningVisual kind="tree" />);
+    await screen.findByRole("button", { name: "Sin reemplazo" });
     // 3 rojas y 2 azules con reemplazo: RR 9/25, RB 6/25, BR 6/25, BB 4/25.
     expect(screen.getByRole("img", { name: /RR: 9\/25, RB: 6\/25, BR: 6\/25, BB: 4\/25/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Sin reemplazo" }));

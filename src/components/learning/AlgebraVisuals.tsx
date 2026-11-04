@@ -140,3 +140,101 @@ export function DistributiveVisual({ id }: { id: string }) {
     </>
   );
 }
+
+/** Términos de un lado: «3x + 2», «x», «10», «0». */
+function side(xs: number, units: number) {
+  const parts = [xs ? `${xs === 1 ? "" : xs}x` : "", units ? `${units}` : ""].filter(Boolean);
+  return parts.length ? parts.join(" + ") : "0";
+}
+
+/**
+ * Balanza: ax + b = dx + e con una x oculta. Se resuelve haciendo lo mismo
+ * en los dos platos (quitar una x, quitar una unidad, repartir); quitar solo
+ * de un lado inclina la balanza y rompe la igualdad.
+ */
+export function BalanceVisual({ id, initial }: { id: string; initial: "balance" | "equation" }) {
+  const [a, setA] = useState(3);
+  const [d, setD] = useState(initial === "balance" ? 1 : 0);
+  const [b, setB] = useState(initial === "balance" ? 2 : 6);
+  const [x, setX] = useState(initial === "balance" ? 4 : 3);
+  const e = (a - d) * x + b;
+  const key = `${a}/${d}/${b}/${x}`;
+  const [steps, setSteps] = useState({ key, xs: 0, units: 0, tilt: 0, divided: false, log: [] as string[] });
+  const st = steps.key === key ? steps : { key, xs: 0, units: 0, tilt: 0, divided: false, log: [] as string[] };
+  const lx = a - st.xs,
+    rx = d - st.xs,
+    lu = Math.max(0, b - st.units - st.tilt),
+    ru = e - st.units;
+  const leftValue = lx * x + lu,
+    rightValue = rx * x + ru;
+  const balanced = leftValue === rightValue;
+  const solved = st.divided && balanced;
+  const act = (patch: Partial<typeof st>, note: string) => setSteps({ ...st, ...patch, log: [...st.log, note] });
+  const angle = Math.max(-12, Math.min(12, (rightValue - leftValue) * 2));
+  const equation = solved ? `x = ${x}` : st.divided ? `x = ${ru}/${lx}` : `${side(lx, lu)} = ${side(rx, ru)}`;
+
+  const pan = (cx: number, xsCount: number, unitsCount: number, xsDivided: boolean) => {
+    const items = [...Array.from({ length: xsDivided ? 1 : xsCount }, () => "x"), ...Array.from({ length: unitsCount }, () => "1")];
+    return items.slice(0, 16).map((it, i) => {
+      const col = i % 5,
+        row = Math.floor(i / 5);
+      const px = cx - 50 + col * 21,
+        py = 92 - row * 21;
+      return it === "x"
+        ? <g key={i}><rect x={px} y={py - 18} width={19} height={19} rx={3} className="fill-cyan-300 stroke-slate-950" /><text x={px + 9.5} y={py - 4} textAnchor="middle" className="fill-slate-950 text-[12px] font-bold">x</text></g>
+        : <circle key={i} cx={px + 9.5} cy={py - 8} r={8} className="fill-amber-300 stroke-slate-950" />;
+    });
+  };
+  return (
+    <>
+      <div className="grid gap-x-4 sm:grid-cols-2">
+        <Slider id={`${id}-a`} label="x en el plato izquierdo" value={a} min={1} max={4} onChange={(v) => { setA(v); setD((w) => Math.min(w, v - 1)); }} />
+        <Slider id={`${id}-d`} label="x en el plato derecho" value={d} min={0} max={a - 1} onChange={setD} />
+        <Slider id={`${id}-b`} label="Unidades a la izquierda" value={b} min={0} max={8} onChange={setB} />
+      </div>
+      {/* La solución no se muestra: hay que despejarla. */}
+      <button type="button" onClick={() => setX((v) => (v % 6) + 1)}
+        className="min-h-11 rounded-lg border border-slate-600 px-3 text-sm font-semibold text-slate-100">Otra ecuación (otra x oculta)</button>
+      <p className="text-lg font-semibold"><MathText text={equation} /></p>
+      <svg role="img" viewBox="0 0 320 170" className="w-full max-w-md rounded-xl bg-slate-950"
+        aria-label={`Balanza: a la izquierda ${side(lx, lu)}, a la derecha ${side(rx, ru)}. ${balanced ? "Está equilibrada: los dos lados valen lo mismo." : `Está inclinada hacia la ${leftValue > rightValue ? "izquierda" : "derecha"}: ya no hay igualdad.`}`}>
+        <g className="motion-safe:transition-transform motion-safe:duration-500" style={{ transform: `rotate(${angle}deg)`, transformOrigin: "160px 104px" }}>
+          <line x1={40} x2={280} y1={104} y2={104} className="stroke-slate-300" strokeWidth={4} strokeLinecap="round" />
+          <path d="M20,104 h120 l-10,10 h-100 z" className="fill-slate-600" />
+          <path d="M180,104 h120 l-10,10 h-100 z" className="fill-slate-600" />
+          {pan(80, lx, lu, st.divided)}
+          {pan(240, rx, st.divided ? 0 : ru, false)}
+          {st.divided && <text x={240} y={88} textAnchor="middle" className="fill-amber-200 text-[14px] font-bold">{ru} ÷ {lx} = {ru / lx}</text>}
+        </g>
+        <path d="M160,106 l-14,48 h28 z" className="fill-slate-500" />
+        <text x={160} y={166} textAnchor="middle" className={`text-[12px] font-bold ${balanced ? "fill-emerald-300" : "fill-rose-300"}`}>{balanced ? "equilibrada" : "¡desequilibrada!"}</text>
+      </svg>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled={st.divided || rx === 0} onClick={() => act({ xs: st.xs + 1 }, "Quitar x de los dos lados")}
+          className="min-h-11 rounded-lg border border-cyan-300/60 px-3 text-sm font-semibold text-cyan-100 disabled:opacity-40">Quitar una x de cada lado</button>
+        <button type="button" disabled={st.divided || lu === 0 || ru === 0} onClick={() => act({ units: st.units + 1 }, "Quitar 1 de los dos lados")}
+          className="min-h-11 rounded-lg border border-amber-300/60 px-3 text-sm font-semibold text-amber-100 disabled:opacity-40">Quitar 1 de cada lado</button>
+        <button type="button" disabled={st.divided || lu === 0} onClick={() => act({ tilt: st.tilt + 1 }, "Quitar 1 solo a la izquierda")}
+          className="min-h-11 rounded-lg border border-rose-300/60 px-3 text-sm font-semibold text-rose-100 disabled:opacity-40">Quitar 1 solo a la izquierda</button>
+        <button type="button" disabled={st.divided || rx !== 0 || lu !== 0 || lx < 1 || !balanced} onClick={() => act({ divided: true }, `Repartir entre ${lx}`)}
+          className="min-h-11 rounded-lg border border-emerald-300/60 px-3 text-sm font-semibold text-emerald-100 disabled:opacity-40">Repartir en {lx} grupos iguales</button>
+        <button type="button" disabled={!st.log.length} onClick={() => setSteps({ key, xs: 0, units: 0, tilt: 0, divided: false, log: [] })}
+          className="min-h-11 rounded-lg border border-slate-600 px-3 text-sm font-semibold text-slate-100 disabled:opacity-40">Empezar de nuevo</button>
+      </div>
+      <p aria-live="polite" className="text-sm text-slate-200">
+        {solved
+          ? `Resuelto: x = ${x}. Compruébalo: ${a} · ${x} + ${b} = ${a * x + b} y ${d ? `${d} · ${x} + ${e} = ` : ""}${d * x + e}.`
+          : !balanced
+            ? "Al quitar solo de un lado, la balanza se inclina: la igualdad ya no se cumple. Empieza de nuevo y haz siempre lo mismo en los dos platos."
+            : st.log.length
+              ? `Pasos: ${st.log.join(" → ")}.`
+              : "Las cajas son x (todas pesan lo mismo) y las bolitas pesan 1. Deja las x solas en un plato haciendo lo mismo en los dos."}
+      </p>
+      <Challenge goals={[
+        { text: "Despeja x manteniendo la balanza equilibrada en todo momento.", met: solved && st.tilt === 0 },
+        { text: "Inclina la balanza a propósito. ¿Por qué deja de ser una igualdad?", met: !balanced },
+        { text: "Resuelve una ecuación con x en los dos platos.", met: solved && d > 0 },
+      ]} />
+    </>
+  );
+}

@@ -64,11 +64,24 @@ test("las progresiones muestran los saltos, se leen punto a punto y tienen tabla
   expect(screen.getByText(/Con una progresión aritmética, consigue que a₅ = 18/).parentElement).toHaveTextContent("¡Conseguido!");
 });
 
-test("la recta compara con su estado anterior y nombra los ejes", () => {
+test("la recta compara con su estado anterior y nombra los ejes", async () => {
   const { container } = render(<LearningVisual kind="linear" />);
-  fireEvent.change(screen.getByLabelText(/pendiente/), { target: { value: 1 } });
+  fireEvent.change(await screen.findByLabelText(/pendiente/), { target: { value: 1 } });
   expect(screen.getByText(/En gris, cómo era antes del último cambio/)).toBeInTheDocument();
   expect(container.querySelectorAll("path.stroke-slate-500").length).toBe(1);
   const labels = [...container.querySelectorAll("svg text")].map((t) => t.textContent);
   expect(labels).toEqual(expect.arrayContaining(["x", "y"]));
+});
+
+test("la balanza se resuelve haciendo lo mismo en los dos platos y se inclina si no", async () => {
+  render(<LearningVisual kind="equation" />);
+  const quitar = await screen.findByRole("button", { name: "Quitar 1 de cada lado" });
+  expect(screen.getByRole("img", { name: /izquierda 3x \+ 6, a la derecha 15\. Está equilibrada/ })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Quitar 1 solo a la izquierda" }));
+  expect(screen.getByRole("img", { name: /inclinada hacia la derecha/ })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Empezar de nuevo" }));
+  for (let i = 0; i < 6; i++) fireEvent.click(quitar);
+  fireEvent.click(screen.getByRole("button", { name: "Repartir en 3 grupos iguales" }));
+  expect(screen.getByText(/Resuelto: x = 3/)).toBeInTheDocument();
+  expect(screen.getByText(/Despeja x manteniendo la balanza/).parentElement).toHaveTextContent("¡Conseguido!");
 });
