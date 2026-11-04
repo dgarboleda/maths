@@ -73,6 +73,8 @@ describe("Modelos visuales de las clases", () => {
       "enteros-producto-cociente": "integer-product",
       "jerarquia-operaciones": "order",
       "potencias-raices": "square-root",
+      "productos-notables": "binomial-square",
+      "propiedad-distributiva": "distributive",
       "volumen-conos-esferas": "solids",
       "probabilidad-condicional": "two-way",
       "funciones-exponenciales": "exponential",

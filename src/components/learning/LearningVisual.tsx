@@ -51,6 +51,14 @@ const IntegerProductVisual = numberVisual("IntegerProductVisual");
 const OrderOfOperationsVisual = numberVisual("OrderOfOperationsVisual");
 const SquareRootVisual = numberVisual("SquareRootVisual");
 
+// Productos notables y distributiva: modelos de área propios de álgebra.
+const algebraVisual = (name: keyof typeof import("./AlgebraVisuals")) =>
+  dynamic<{ id: string }>(() => import("./AlgebraVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const BinomialSquareVisual = algebraVisual("BinomialSquareVisual");
+const DistributiveVisual = algebraVisual("DistributiveVisual");
+
 function Bar({
   numerator,
   denominator,
@@ -284,6 +292,8 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   "integer-product": IntegerProductVisual,
   order: OrderOfOperationsVisual,
   "square-root": SquareRootVisual,
+  "binomial-square": BinomialSquareVisual,
+  distributive: DistributiveVisual,
 };
 
 export function LearningVisual({ kind }: { kind: Visual }) {

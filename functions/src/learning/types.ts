@@ -86,7 +86,9 @@ export type Visual =
   | "fraction-product"
   | "integer-product"
   | "order"
-  | "square-root";
+  | "square-root"
+  | "binomial-square"
+  | "distributive";
 export type UnitId =
   | "numeros"
   | "fracciones"
