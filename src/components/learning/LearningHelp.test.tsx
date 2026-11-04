@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { axe } from "jest-axe";
 import { LearningHelpProvider, useLearningHelpOpen } from "./LearningHelp";
-import { ideasForText, type ScreenHelp } from "@/lib/learning/screenHelp";
+import { ideasForText, lessonScreenHelp, type ScreenHelp } from "@/lib/learning/screenHelp";
+import { getLesson, initialProgress } from "@/lib/learning/domain";
 
 const help: ScreenHelp = { id: "enteros:2", title: "Una idea, paso a paso", description: "Mira los símbolos de esta parte.", ideas: ideasForText("|−6| = 6") };
 function PausedGame() { return <p>Juego {useLearningHelpOpen() ? "en pausa" : "activo"}</p>; }
@@ -129,4 +130,87 @@ test("confirma la ayuda de esa consulta y no avisa que se registrará otra al vo
   await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
   expect(screen.queryByText(/Esta consulta cuenta como ayuda/)).not.toBeInTheDocument();
   expect(guard).toHaveBeenCalledOnce();
+});
+
+test("muestra las fórmulas del tema con notación matemática y nombre accesible", async () => {
+  const user = userEvent.setup();
+  render(setup({ help: { ...help, ideas: [], formulas: [{ name: "Suma aritmética", expression: "Sₙ = (n · (a₁ + aₙ))/2", legend: "n: cantidad de términos." }] } }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  const dialog = screen.getByRole("dialog");
+  expect(screen.getByText("Fórmulas de este tema")).toBeInTheDocument();
+  expect(screen.getByText("Suma aritmética")).toBeInTheDocument();
+  expect(dialog.querySelector(".math-frac")).not.toBeNull();
+  expect(screen.getByText("(n · (a₁ + aₙ))/2")).toHaveClass("sr-only");
+  expect(await axe(dialog)).toHaveNoViolations();
+});
+
+test("el buscador de temas enlaza a la clase y a su práctica, salvo la clase en curso", async () => {
+  const user = userEvent.setup();
+  render(setup({ help: { ...help, lessonId: "pitagoras" } }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  const search = await screen.findByRole("searchbox", { name: "¿Qué tema viste en el colegio?" });
+  await user.type(search, "sucesiones");
+  expect(screen.getByRole("link", { name: "Ver la clase: Progresiones aritméticas y geométricas" })).toHaveAttribute("href", "/jugar/ana/aprende/progresiones");
+  expect(screen.getByRole("link", { name: "Practicar: Progresiones aritméticas y geométricas" })).toHaveAttribute("href", "/jugar/ana/aprende/progresiones?modo=practice");
+  await user.clear(search);
+  await user.type(search, "pitagoras");
+  expect(screen.getByText("Estás en esta clase.")).toBeInTheDocument();
+  await user.clear(search);
+  await user.type(search, "zzzz");
+  expect(screen.getByText(/No encontramos ese tema/)).toBeInTheDocument();
+  expect(await axe(screen.getByRole("dialog"))).toHaveNoViolations();
+});
+
+const progressionHelp = (): ScreenHelp => {
+  const lesson = getLesson("progresiones")!;
+  return lessonScreenHelp(lesson, { ...initialProgress(lesson), stage: "class", index: 0 });
+};
+
+test("la calculadora prueba la fórmula con otros números y avisa si no tienen sentido", async () => {
+  const user = userEvent.setup();
+  render(setup({ help: progressionHelp() }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  const [first] = screen.getAllByRole("button", { name: "Probar" });
+  await user.click(first);
+  expect(screen.getByRole("status", { name: "" }).textContent ?? "").toMatch(/aₙ = 39/);
+  const n = screen.getByLabelText("n");
+  await user.clear(n);
+  await user.type(n, "20");
+  expect(screen.getByText("79")).toBeInTheDocument();
+  await user.clear(n);
+  expect(screen.getByText(/Revisa los valores/)).toBeInTheDocument();
+  expect(await axe(screen.getByRole("dialog"))).toHaveNoViolations();
+});
+
+test("guarda fórmulas en Mi formulario y las ofrece desde otras pantallas", async () => {
+  const user = userEvent.setup();
+  const view = render(setup({ help: progressionHelp() }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  const save = screen.getByRole("button", { name: "Guardar en Mi formulario: Razón" });
+  await user.click(save);
+  expect(save).toHaveAttribute("aria-pressed", "true");
+  await user.keyboard("{Escape}");
+  view.rerender(setup({ help }));
+  await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+  await user.click(screen.getByText("Mi formulario (1)"));
+  expect(screen.getByText(/Razón/)).toBeInTheDocument();
+  expect(screen.getByText(/Progresiones aritméticas y geométricas/)).toBeInTheDocument();
+});
+
+test("ofrece repasar los prerrequisitos, escuchar la fórmula e imprimir el formulario de la unidad", async () => {
+  const user = userEvent.setup();
+  const speakSpy = vi.fn();
+  Object.assign(window, { speechSynthesis: { speak: speakSpy, cancel: vi.fn() } });
+  vi.stubGlobal("SpeechSynthesisUtterance", class { text: string; lang = ""; rate = 1; constructor(text: string) { this.text = text; } });
+  try {
+    render(setup({ help: progressionHelp() }));
+    await user.click(screen.getByRole("button", { name: "Entender esta pantalla" }));
+    expect(screen.getByRole("link", { name: "Potencias y raíces" })).toHaveAttribute("href", "/jugar/ana/aprende/potencias-raices");
+    expect(screen.getByRole("link", { name: /Imprimir el formulario de esta unidad/ })).toHaveAttribute("href", "/jugar/ana/formulario?unidad=expresiones");
+    await user.click(screen.getByRole("button", { name: "Escuchar: Término general (aritmética)" }));
+    expect(speakSpy.mock.calls[0][0].text).toContain("a sub n es igual a a sub 1 más");
+  } finally {
+    Reflect.deleteProperty(window, "speechSynthesis");
+    vi.unstubAllGlobals();
+  }
 });

@@ -19,6 +19,7 @@ const CHILD_SUBCOLLECTIONS = [
   "customLessonProgress",
   "learningEvidence",
   "learningMissions",
+  "helpUsage",
 ] as const;
 
 /**

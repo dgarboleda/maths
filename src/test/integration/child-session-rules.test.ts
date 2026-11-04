@@ -122,6 +122,27 @@ describe("firestore.rules — sesión propia del hijo (custom token)", () => {
     } finally { await deleteApp(app); }
   });
 
+  test("guarda el uso del foco solo en su perfil, con forma válida y hora del servidor", async () => {
+    const { app, db, parentId, childId, otherChildId } = await nuevaFamiliaConDosHijos();
+    try {
+      const own = firestoreFns.doc(db, "parents", parentId, "children", childId, "helpUsage", "resumen");
+      const stamp = firestoreFns.serverTimestamp();
+      await firestoreFns.setDoc(own, { favorites: firestoreFns.arrayUnion("progresiones#Razón"), opens: { progresiones: firestoreFns.increment(1) }, updatedAt: stamp }, { merge: true });
+      await firestoreFns.setDoc(own, { topics: { pitagoras: firestoreFns.increment(1) }, updatedAt: stamp }, { merge: true });
+      const data = (await firestoreFns.getDoc(own)).data();
+      expect(data).toMatchObject({ favorites: ["progresiones#Razón"], opens: { progresiones: 1 }, topics: { pitagoras: 1 } });
+      // Otro documento, campos ajenos, fecha a mano o demasiados favoritos: no.
+      await expect(firestoreFns.setDoc(firestoreFns.doc(db, "parents", parentId, "children", childId, "helpUsage", "otro"), { updatedAt: stamp })).rejects.toThrow();
+      await expect(firestoreFns.setDoc(own, { stars: 99, updatedAt: stamp }, { merge: true })).rejects.toThrow();
+      await expect(firestoreFns.setDoc(own, { opens: { a: 1 }, updatedAt: firestoreFns.Timestamp.fromMillis(0) }, { merge: true })).rejects.toThrow();
+      await expect(firestoreFns.setDoc(own, { favorites: Array.from({ length: 61 }, (_, i) => `k${i}`), updatedAt: stamp }, { merge: true })).rejects.toThrow();
+      await expect(firestoreFns.deleteDoc(own)).rejects.toThrow();
+      const other = firestoreFns.doc(db, "parents", parentId, "children", otherChildId, "helpUsage", "resumen");
+      await expect(firestoreFns.setDoc(other, { updatedAt: stamp })).rejects.toThrow();
+      await expect(firestoreFns.getDoc(other)).rejects.toThrow();
+    } finally { await deleteApp(app); }
+  });
+
   test("puede crear intentos, pero no escribir directamente estrellas ni saldo", async () => {
     const { app, db, parentId, childId } = await nuevaFamiliaConDosHijos();
     try {

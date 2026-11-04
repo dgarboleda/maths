@@ -1,4 +1,5 @@
-import type { Lesson, LearningProgress, Question } from "./domain";
+import { getLesson, type Lesson, type LearningProgress, type Question } from "./domain";
+import { formulasFor, relatedFormula, type LessonFormula } from "./formulas";
 
 export interface HelpIdea {
   id: string;
@@ -12,6 +13,34 @@ export interface ScreenHelp {
   title: string;
   description: string;
   ideas: HelpIdea[];
+  /** Formulario del tema; no se ofrece en el punto de partida ni en el repaso mixto. */
+  formulas?: LessonFormula[];
+  /** Clase en curso, para que el buscador de temas no la ofrezca como destino. */
+  lessonId?: string;
+  /** Unidad de la clase, para imprimir su formulario. */
+  unitId?: string;
+  /** Clave de la fórmula más relacionada con el problema actual. */
+  relatedFormula?: string;
+  /** Clases en las que se apoya esta, para repasarlas. */
+  prerequisites?: { id: string; title: string }[];
+}
+
+/** Lo que identifica la clase en la ayuda (se omite en el repaso mixto). */
+function lessonContext(lesson: Lesson) {
+  return {
+    lessonId: lesson.id,
+    unitId: lesson.unitId,
+    prerequisites: lesson.prerequisites.flatMap((id) => {
+      const prerequisite = getLesson(id);
+      return prerequisite ? [{ id, title: prerequisite.title }] : [];
+    }),
+  };
+}
+
+/** ¿Tiene la ayuda contenido matemático? Si lo tiene, consultarla en una
+ *  comprobación cuenta como ayuda. */
+export function hasHelpContent(help: ScreenHelp | undefined): boolean {
+  return Boolean(help && (help.ideas.length > 0 || (help.formulas?.length ?? 0) > 0));
 }
 
 // Ejemplos propios del glosario: nunca se usa la respuesta, las pistas ni
@@ -55,17 +84,26 @@ export function ideasForText(text: string, vocabulary: Lesson["vocabulary"] = []
   ];
 }
 
-export function questionHelp(lesson: Lesson, question: Question): ScreenHelp {
+/**
+ * `formulas`: ofrecer el formulario del tema (no en el punto de partida).
+ * `identify`: decir de qué clase viene el problema (no en el repaso mixto).
+ */
+export function questionHelp(lesson: Lesson, question: Question, { formulas = true, identify = true }: { formulas?: boolean; identify?: boolean } = {}): ScreenHelp {
   return {
     id: `${lesson.id}:${question.id}`,
     title: "Lee el lenguaje del problema",
     description: "Primero identifica qué te preguntan y qué significa cada símbolo. Después decide qué operación o idea necesitas. Puedes responder con calma.",
     ideas: ideasForText([question.prompt, ...(question.choices?.map((choice) => choice.label) ?? [])].join(" "), lesson.vocabulary),
+    formulas: formulas ? formulasFor(lesson.id) : [],
+    relatedFormula: formulas ? relatedFormula(lesson.id, question.prompt)?.key : undefined,
+    // En el repaso mixto no se delata de qué clase viene el problema.
+    ...(identify ? lessonContext(lesson) : {}),
   };
 }
 
 export function lessonScreenHelp(lesson: Lesson, progress: LearningProgress, question?: Question): ScreenHelp {
-  if (question) return questionHelp(lesson, question);
+  // El punto de partida mide lo que el alumno ya sabe: sin formulario.
+  if (question) return questionHelp(lesson, question, { formulas: progress.stage !== "diagnostic" });
   const section = progress.stage === "class" ? lesson.sections[progress.index] : undefined;
   const example = progress.stage === "examples" ? lesson.examples[progress.index] : undefined;
   const text = section ? [section.title, ...section.paragraphs, section.formula].join(" ") :
@@ -77,6 +115,8 @@ export function lessonScreenHelp(lesson: Lesson, progress: LearningProgress, que
       example ? "Cada paso muestra una operación y explica por qué se hace. Intenta anticipar el siguiente antes de continuar." :
         "Primero comprende la idea, después practica y al final comprueba qué puedes resolver por tu cuenta. Puedes volver a la explicación cuando lo necesites.",
     ideas: ideasForText(text, lesson.vocabulary),
+    formulas: progress.stage === "diagnostic" ? [] : formulasFor(lesson.id),
+    ...lessonContext(lesson),
   };
 }
 

@@ -72,6 +72,16 @@ service cloud.firestore {
         && (!('hintsUsed' in data) || (data.hintsUsed is int && data.hintsUsed >= 0 && data.hintsUsed <= 50));
     }
 
+    // Uso de la ayuda del foco (src/lib/learning/helpUsage.ts): favoritos y
+    // contadores por clase, con tope de tamaño y hora del servidor.
+    function validHelpUsage(data) {
+      return data.keys().hasOnly(['favorites', 'opens', 'topics', 'updatedAt'])
+        && data.updatedAt == request.time
+        && (!('favorites' in data) || (data.favorites is list && data.favorites.size() <= 60))
+        && (!('opens' in data) || (data.opens is map && data.opens.size() <= 200))
+        && (!('topics' in data) || (data.topics is map && data.topics.size() <= 200));
+    }
+
     match /parents/{parentId} {
       // El documento del padre no lo lee ningún hijo — nada bajo /jugar/**
       // lo necesita. `legalConsent` (aceptación de privacidad y términos) lo
@@ -190,6 +200,15 @@ service cloud.firestore {
         // juega, sin corrección manual.
         match /records/{recordId} {
           allow read, write: if isParentOrChild(parentId, childId);
+        }
+
+        // Uso del foco: lo escribe el propio perfil mientras estudia y lo lee
+        // la familia en el informe. Un único documento, `resumen`.
+        match /helpUsage/{docId} {
+          allow read: if isParentOrChild(parentId, childId);
+          allow create, update: if isParentOrChild(parentId, childId)
+            && docId == 'resumen' && validHelpUsage(request.resource.data);
+          allow delete: if isParent(parentId);
         }
       }
 
