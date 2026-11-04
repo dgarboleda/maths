@@ -30,6 +30,7 @@ import {
 } from "@/lib/learning/useLearningData";
 import { useLearningClock } from "@/lib/learning/useLearningClock";
 import { hasHelpContent, lessonScreenHelp } from "@/lib/learning/screenHelp";
+import { relatedFormula } from "@/lib/learning/formulas";
 import { useLearningHelpOpen } from "./LearningHelp";
 import { AnswerResult } from "./AnswerResult";
 import {
@@ -401,6 +402,9 @@ export function QuestionActivity({
   const paused = manuallyPaused || errorPaused || helpOpen;
   const assessment = ["diagnostic", "check", "review"].includes(progress.stage);
   const silentCheck = ["check", "review"].includes(progress.stage);
+  // Tras un error en la práctica, la fórmula del tema que más se relaciona
+  // con el enunciado (nunca en el punto de partida ni en comprobaciones).
+  const related = !silentCheck && progress.stage !== "diagnostic" ? relatedFormula(lesson.id, question.prompt) : undefined;
   const locked = Boolean(
     evidence?.correct ||
       evidence?.revealed ||
@@ -622,6 +626,13 @@ export function QuestionActivity({
           ) : (
             <div className="space-y-2 rounded-xl bg-amber-950/40 p-4 text-amber-100">
               <p><MathText text={errorFeedback(question, evidence.response ?? "")} /></p>
+              {related && (
+                <div className="rounded-lg border border-amber-300/30 bg-slate-950/60 p-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-amber-200">Fórmula que puede ayudarte · {related.name}</p>
+                  <p className="mt-1 text-lg text-amber-50"><MathText text={related.expression} /></p>
+                  {related.legend && <p className="mt-1 text-xs text-amber-100/80"><MathText text={related.legend} /></p>}
+                </div>
+              )}
               {evidence.attempts >= 2 && (
                 <p className="text-sm">
                   Puedes volver a la clase o revisar el desarrollo. Después

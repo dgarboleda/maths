@@ -6,7 +6,7 @@ import { searchTopics } from "@/lib/learning/topicSearch";
 import styles from "./help.module.css";
 
 /** Buscador de clases para repasar un tema visto en el colegio. */
-export default function TopicSearch({ childId, currentLessonId }: { childId: string; currentLessonId?: string }) {
+export default function TopicSearch({ childId, currentLessonId, onPick }: { childId: string; currentLessonId?: string; onPick?: (lessonId: string) => void }) {
   const [query, setQuery] = useState("");
   const id = useId();
   const results = searchTopics(query);
@@ -26,8 +26,8 @@ export default function TopicSearch({ childId, currentLessonId }: { childId: str
               <p className={styles.topicMeta}>{unitTitle}{matchedBy && matchedBy !== lesson.title ? ` · ${matchedBy}` : ""}</p>
               {lesson.id === currentLessonId ? <p className={styles.topicMeta}>Estás en esta clase.</p> : (
                 <div className={styles.topicLinks}>
-                  <Link href={`${base}/${lesson.id}`} aria-label={`Ver la clase: ${lesson.title}`}>Ver la clase</Link>
-                  <Link href={`${base}/${lesson.id}?modo=practice`} aria-label={`Practicar: ${lesson.title}`}>Practicar</Link>
+                  <Link href={`${base}/${lesson.id}`} onClick={() => onPick?.(lesson.id)} aria-label={`Ver la clase: ${lesson.title}`}>Ver la clase</Link>
+                  <Link href={`${base}/${lesson.id}?modo=practice`} onClick={() => onPick?.(lesson.id)} aria-label={`Practicar: ${lesson.title}`}>Practicar</Link>
                 </div>
               )}
             </li>)}

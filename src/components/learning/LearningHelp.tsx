@@ -1,9 +1,14 @@
 "use client";
 
-import { createContext, lazy, Suspense, useCallback, useContext, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, lazy, Suspense, useCallback, useEffect, useContext, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { MathText } from "@/components/MathText";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import Link from "next/link";
+import { Printer, X } from "lucide-react";
+import { getLesson } from "@/lib/learning/domain";
+import { formulaByKey, formulasFor } from "@/lib/learning/formulas";
+import { useHelpUsage } from "@/lib/learning/helpUsage";
+import { FormulaCard } from "./FormulaCard";
 import { useDialogFocus } from "@/components/world/useDialogFocus";
 import type { ScreenHelp } from "@/lib/learning/screenHelp";
 import styles from "./help.module.css";
@@ -82,6 +87,7 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
   // Desde el aviso de símbolo nuevo, el formulario cede el primer plano al símbolo.
   const [fromNotice, setFromNotice] = useState(false);
   const [assisted, setAssisted] = useState(false);
+  const helpUsage = useHelpUsage(childId);
   const raw = useSyncExternalStore(subscribeSeen, () => readSeen(childId), () => "[]");
   const seen = new Set([...parseSeen(raw), ...sessionSeen]);
   const novel = help.ideas.find((idea) => idea.symbol && !seen.has(idea.id));
@@ -132,16 +138,32 @@ function FloatingHelp({ childId, help, open, onChange, onOpen, disabled }: {
         </button>
         {onOpen && <span id={`${id}-warning`} className="sr-only">Consultar cuenta como ayuda en esta comprobación.</span>}
       </div>
-      {open && createPortal(<HelpPanel id={id} childId={childId} help={help} preferredIdea={preferredIdea} formulasOpen={!fromNotice} onClose={close} assisted={assisted} onIdeaSeen={markSeen} />, document.body)}
+      {open && createPortal(<HelpPanel id={id} childId={childId} help={help} helpUsage={helpUsage} preferredIdea={preferredIdea} formulasOpen={!fromNotice} onClose={close} assisted={assisted} onIdeaSeen={markSeen} />, document.body)}
     </>
   );
 }
 
-function HelpPanel({ id, childId, help, preferredIdea, formulasOpen, onClose, assisted, onIdeaSeen }: {
-  id: string; childId: string; help: ScreenHelp; preferredIdea?: string; formulasOpen: boolean; onClose: () => void; assisted: boolean; onIdeaSeen: (id: string) => void;
+function HelpPanel({ id, childId, help, helpUsage, preferredIdea, formulasOpen, onClose, assisted, onIdeaSeen }: {
+  id: string; childId: string; help: ScreenHelp; helpUsage: ReturnType<typeof useHelpUsage>; preferredIdea?: string; formulasOpen: boolean; onClose: () => void; assisted: boolean; onIdeaSeen: (id: string) => void;
 }) {
   const { dialogRef, handleKeyDown } = useDialogFocus(onClose);
   const ideas = [...help.ideas.filter((idea) => idea.id === preferredIdea), ...help.ideas.filter((idea) => idea.id !== preferredIdea)];
+  const { usage, toggleFavorite, record } = helpUsage;
+  const formulas = [...(help.formulas ?? []).filter((f) => f.key === help.relatedFormula), ...(help.formulas ?? []).filter((f) => f.key !== help.relatedFormula)];
+  const shown = new Set(formulas.map((formula) => formula.key));
+  const saved = usage.favorites.filter((key) => !shown.has(key)).flatMap((key) => {
+    const found = formulaByKey(key);
+    return found ? [{ ...found, lessonTitle: getLesson(found.lessonId)?.title }] : [];
+  });
+  const unitHasFormulas = help.unitId && help.lessonId && formulasFor(help.lessonId).length > 0;
+  const formulario = `/jugar/${childId}/formulario${unitHasFormulas ? `?unidad=${help.unitId}` : ""}`;
+  // Cuenta una consulta del formulario por apertura (para el informe de la familia).
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || !help.lessonId || !formulas.length) return;
+    opened.current = true;
+    record("opens", help.lessonId);
+  }, [help.lessonId, formulas.length, record]);
   return (
     <div className={styles.backdrop} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <div ref={dialogRef} id={id} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`}
@@ -152,16 +174,29 @@ function HelpPanel({ id, childId, help, preferredIdea, formulasOpen, onClose, as
           <button type="button" aria-label="Cerrar explicación" className={styles.close} onClick={onClose}><X size={20} aria-hidden="true" /></button>
         </header>
         <p id={`${id}-description`} className={styles.description}>{help.description}</p>
-        {help.formulas && help.formulas.length > 0 && <details className={styles.formulas} open={formulasOpen ? true : undefined}>
+        {formulas.length > 0 && <details className={styles.formulas} open={formulasOpen ? true : undefined}>
           <summary>Fórmulas de este tema</summary>
           <ul>
-            {help.formulas.map((formula) => <li key={formula.name} className={styles.formula}>
-              <p className={styles.formulaName}>{formula.name}</p>
-              <p className={styles.expression}><MathText text={formula.expression} /></p>
-              {formula.legend && <p className={styles.legend}><MathText text={formula.legend} /></p>}
-            </li>)}
+            {formulas.map((formula) => <FormulaCard key={formula.key} formula={formula} related={formula.key === help.relatedFormula}
+              saved={usage.favorites.includes(formula.key!)} onToggleSaved={toggleFavorite} />)}
           </ul>
         </details>}
+        {saved.length > 0 && <details className={styles.formulas}>
+          <summary>Mi formulario ({saved.length})</summary>
+          <ul>
+            {saved.map(({ formula, lessonTitle }) => <FormulaCard key={formula.key} formula={formula} lessonTitle={lessonTitle}
+              saved onToggleSaved={toggleFavorite} />)}
+          </ul>
+        </details>}
+        {help.prerequisites && help.prerequisites.length > 0 && <section className={styles.prerequisites} aria-labelledby={`${id}-pre`}>
+          <h3 id={`${id}-pre`}>Esta clase se apoya en</h3>
+          <ul>
+            {help.prerequisites.map((lesson) => <li key={lesson.id}>
+              <Link href={`/jugar/${childId}/aprende/${lesson.id}`}>{lesson.title}</Link>
+            </li>)}
+          </ul>
+          <p>Si alguna idea no te suena, repásala antes de seguir.</p>
+        </section>}
         {ideas.map((idea, index) => <details key={idea.id} className={styles.idea} open={index === 0 ? true : undefined}
           ref={(element) => { if (element?.open) onIdeaSeen(idea.id); }}
           onToggle={(event) => { if (event.currentTarget.open) onIdeaSeen(idea.id); }}>
@@ -169,8 +204,10 @@ function HelpPanel({ id, childId, help, preferredIdea, formulasOpen, onClose, as
           <p><MathText text={idea.meaning} /></p>
           {idea.example && <p className={styles.example}><strong>Por ejemplo:</strong> <MathText text={idea.example} /></p>}
         </details>)}
-        <Suspense fallback={<p>Cargando buscador de temas…</p>}><TopicSearch childId={childId} currentLessonId={help.lessonId} /></Suspense>
+        <Suspense fallback={<p>Cargando buscador de temas…</p>}><TopicSearch childId={childId} currentLessonId={help.lessonId} onPick={(lessonId) => record("topics", lessonId)} /></Suspense>
         <Suspense fallback={<p>Cargando buscador de palabras…</p>}><GlossarySearch /></Suspense>
+        <Link href={formulario} className={styles.printLink}><Printer size={16} aria-hidden="true" />
+          {unitHasFormulas ? "Imprimir el formulario de esta unidad" : "Ver e imprimir los formularios"}</Link>
         {assisted && <p className={styles.assisted}>Esta consulta cuenta como ayuda en la comprobación. Puedes seguir aprendiendo a tu ritmo.</p>}
         <button type="button" className={styles.done} onClick={onClose}>Entendido, seguir</button>
       </div>

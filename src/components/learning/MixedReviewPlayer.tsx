@@ -84,7 +84,7 @@ export function MixedReviewPlayer({
   );
   const session = mixedQuestions(state);
   const current = state.stage === "active" ? session[state.index] : undefined;
-  const help = current ? questionHelp(current.lesson, current.question, { formulas: false }) : undefined;
+  const help = current ? questionHelp(current.lesson, current.question, { formulas: false, identify: false }) : undefined;
   return (
     <LearningShell
       childId={childId}

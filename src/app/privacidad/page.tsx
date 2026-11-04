@@ -28,7 +28,7 @@ export default function PrivacidadPage() {
         <ul>
           <li><strong>De la persona adulta:</strong> correo electrónico y contraseña (gestionada por el proveedor de autenticación; no la vemos).</li>
           <li><strong>De cada menor:</strong> nombre o apodo, fecha de nacimiento, avatar elegido y un PIN de 4 dígitos que se guarda cifrado (HMAC) y nunca en claro.</li>
-          <li><strong>Actividad de aprendizaje:</strong> respuestas, intentos, pistas usadas, clases terminadas, racha de días, estrellas, insignias y canjes de recompensas.</li>
+          <li><strong>Actividad de aprendizaje:</strong> respuestas, intentos, pistas usadas, clases terminadas, racha de días, estrellas, insignias, canjes de recompensas y uso de la ayuda (fórmulas guardadas y qué clases se consultan o se buscan; nunca el texto que se escribe en el buscador).</li>
           <li><strong>Contenido creado por la familia:</strong> clases, niveles, mundos e imágenes que se suban.</li>
           <li><strong>Datos técnicos:</strong> informes de error sin datos personales (sin mensajes, URL, identificadores ni nombres) y la versión de la aplicación.</li>
           <li><strong>En el dispositivo:</strong> preferencias y récords de los minijuegos, guardados solo en el navegador.</li>

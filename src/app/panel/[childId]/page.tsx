@@ -6,6 +6,7 @@ import { useFamily } from "@/components/family/FamilyProvider";
 import { useLearningDashboard } from "@/lib/family/useLearningDashboard";
 import { ActivityRow, EmptyState, SectionCard, WeeklyChart } from "@/components/family/ui";
 import { LearningReport } from "@/components/learning/LearningReport";
+import { HelpUsageReport } from "@/components/learning/HelpUsageReport";
 import { Avatar } from "@/components/world/Avatar";
 import { LESSONS } from "@/lib/learning/domain";
 
@@ -26,6 +27,7 @@ export default function ChildLearningPage() {
       <Link href={`/jugar/${childId}/mapa`} className="inline-flex min-h-11 items-center rounded-xl border border-cyan-300/30 px-4 text-cyan-200">Ver mapa de aprendizaje</Link>
     </header>
     <LearningReport childId={childId} childName={child.name} />
+    <HelpUsageReport childId={childId} childName={child.name} />
     <SectionCard title="Siguiente paso"><p className="font-bold text-white">{dashboard.nextLesson.title}</p><p className="mt-2 text-sm text-slate-300">{dashboard.nextLesson.objective}</p><Link href="/panel/plan" className="mt-3 inline-flex min-h-11 items-center text-cyan-200 underline">Preparar su plan de estudio</Link></SectionCard>
     {dashboard.error && <p role="alert" className="text-amber-200">{dashboard.error}</p>}
     <SectionCard title="Ritmo de la semana"><WeeklyChart noun="respuestas" week={dashboard.weeklyProblems} /></SectionCard>
