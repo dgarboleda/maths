@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MathText } from "@/components/MathText";
-import { num, Slider, Toggle } from "./GraphVisuals";
+import { Challenge, num, Slider, Toggle } from "./GraphVisuals";
 
 const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
 const lcm = (a: number, b: number) => (a * b) / gcd(a, b);
@@ -69,6 +69,11 @@ export function FractionSumVisual({ id }: { id: string }) {
         Se suman o restan los numeradores porque las partes ya son del mismo tamaño; el denominador ({L}) no cambia.
         {R < 0 && " El resultado es negativo: se quitó más de lo que había."}
       </p>
+      <Challenge goals={[
+        { text: "Consigue una suma que dé exactamente 1 entero.", met: op === "suma" && R === L },
+        { text: "Haz una resta cuyo resultado sea negativo.", met: op === "resta" && R < 0 },
+        { text: "Elige denominadores cuyo común denominador sea 12.", met: L === 12, hint: "El común denominador es el menor múltiplo que comparten." },
+      ]} />
     </>
   );
 }
@@ -129,6 +134,11 @@ export function FractionProductVisual({ id }: { id: string }) {
           </p>
         </>
       )}
+      <Challenge goals={[
+        { text: "Consigue un producto igual a 1/4.", met: op === "producto" && 4 * a * c === b * d },
+        { text: "Divide y obtén un resultado mayor que 2.", met: op === "cociente" && a * d > 2 * b * c, hint: "Dividir entre una fracción pequeña da un resultado grande." },
+        { text: "Divide una fracción entre sí misma. ¿Qué obtienes siempre?", met: op === "cociente" && a === c && b === d },
+      ]} />
     </>
   );
 }
@@ -171,6 +181,11 @@ export function IntegerProductVisual({ id }: { id: string }) {
             : `Con el primer factor negativo se toma el opuesto: ${Math.abs(k)} saltos de ${sg(-n)}. Por eso ${result > 0 ? "negativo por negativo da positivo" : "negativo por positivo da negativo"}.`}{" "}
         Dividir deshace la multiplicación: {sg(result)} ÷ {sg(k || 1)} = {k === 0 ? "—" : sg(result / k)}.
       </p>
+      <Challenge goals={[
+        { text: "Consigue un producto de 12 con los dos factores negativos.", met: k < 0 && n < 0 && k * n === 12 },
+        { text: "Haz que el producto sea −10.", met: k * n === -10 },
+        { text: "Consigue un producto 0 sin que el tamaño del grupo sea 0.", met: k === 0 && n !== 0 },
+      ]} />
     </>
   );
 }
@@ -208,6 +223,11 @@ export function OrderOfOperationsVisual({ id }: { id: string }) {
           ? "Con estos valores el orden da lo mismo, pero no siempre: prueba otros números."
           : `Si se hiciera en el otro orden saldría ${sg(wrong)}: ${form === "sin" ? "el paréntesis cambia el resultado" : "sin paréntesis la multiplicación iría primero"}.`}
       </p>
+      <Challenge goals={[
+        { text: "Encuentra valores para los que a − b × c y (a − b) × c den lo mismo.", met: right === wrong, hint: "Prueba a cambiar solo c." },
+        { text: "Consigue que a − b × c valga exactamente 0.", met: a - b * c === 0 },
+        { text: "Con paréntesis, consigue un resultado de 40.", met: form === "con" && (a - b) * c === 40 },
+      ]} />
     </>
   );
 }
@@ -246,6 +266,11 @@ export function SquareRootVisual({ id }: { id: string }) {
           ? `${area} casillas forman un cuadrado exacto de lado ${n}: la raíz cuadrada es el lado.`
           : `${area} no es un cuadrado perfecto: ${n}² = ${n * n} se queda corto (${area - n * n === 1 ? "sobra 1" : `sobran ${area - n * n}`}, en ámbar) y ${n + 1}² = ${(n + 1) ** 2} se pasa. ${num(Math.sqrt(area))} es una aproximación de √${area}.`} />
       </p>
+      <Challenge goals={[
+        { text: "Encuentra un cuadrado perfecto entre 60 y 90.", met: area > 60 && area < 90 && Number.isInteger(Math.sqrt(area)) },
+        { text: "Consigue la raíz más cercana a 8 sin llegar a 8.", met: area === 63 },
+        { text: "Haz que la raíz sea exactamente 10.", met: area === 100 },
+      ]} />
     </>
   );
 }
