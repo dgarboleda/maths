@@ -16,6 +16,7 @@ import {
   MIXED_REVIEW_SIZE,
   mixedQuestions,
   mixedReviewId,
+  STAR_REWARDS,
   unitForReviewId,
   type LearningAction,
   type MixedReviewState,
@@ -103,6 +104,12 @@ export function MixedReviewPlayer({
         Volver a la unidad
       </Link>
       <div className="max-w-3xl space-y-5">
+        <p className="inline-flex items-center gap-1.5 rounded-full bg-amber-300/10 px-3 py-1 text-sm font-semibold text-amber-200">
+          <span aria-hidden="true">⭐</span>
+          {state.completedAt
+            ? `Ya ganaste las ${STAR_REWARDS.mixed} estrellas de este repaso.`
+            : `Al superar este repaso ganas ${STAR_REWARDS.mixed} estrellas (una sola vez).`}
+        </p>
         <SaveNotice
           busy={mutation.busy}
           error={mutation.error}

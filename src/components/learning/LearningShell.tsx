@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import styles from "./learning.module.css";
 import { LearningHelpProvider } from "./LearningHelp";
+import { StarCounter } from "./StarCounter";
 import { navigationHelp, type ScreenHelp } from "@/lib/learning/screenHelp";
 
 export const primaryButton =
@@ -70,10 +71,13 @@ export function LearningShell({
                 Tu próxima idea
               </span>
             </Link>
-            <ProfilesLink className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white">
-              <ArrowLeft size={16} aria-hidden="true" />
-              Perfiles
-            </ProfilesLink>
+            <div className="flex items-center gap-2">
+              <StarCounter childId={childId} />
+              <ProfilesLink className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white">
+                <ArrowLeft size={16} aria-hidden="true" />
+                Perfiles
+              </ProfilesLink>
+            </div>
           </div>
           <nav aria-label="Tu espacio" className={styles.navigation}>
             {items.map(({ href, text, icon: Icon }) => {

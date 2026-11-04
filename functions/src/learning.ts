@@ -40,6 +40,7 @@ import {
   type DailyLessonInfo,
 } from "./learning/daily";
 import { readBalance } from "./stars";
+import { STAR_REWARDS } from "./learning/rewards";
 
 const QUESTION_ID = /^[a-z][a-z0-9-]{0,40}$/;
 function validPlacementAction(action: unknown): action is PlacementAction {
@@ -340,8 +341,10 @@ export const recordLearningAction = onCall(
         const streakDays = (next as DailyReviewState).streak?.current ?? 0;
         const milestone = dailyReward && STREAK_MILESTONES.includes(streakDays);
         const stars = daily
-          ? dailyReward ? 2 + (milestone ? 3 : 0) : 0
-          : !placement && !done(previous) && done(next) ? (adventure ? 10 : 5) : 0;
+          ? dailyReward ? STAR_REWARDS.daily + (milestone ? STAR_REWARDS.streakBonus : 0) : 0
+          : !placement && !done(previous) && done(next)
+            ? adventure ? STAR_REWARDS.adventure : reviewUnit ? STAR_REWARDS.mixed : STAR_REWARDS.lesson
+            : 0;
         const outcome = outcomeOf(lessonId, action, previous, next);
         // Todas las lecturas deben preceder las escrituras en la transacción.
         const balance = stars ? await readBalance(tx, child) : null;

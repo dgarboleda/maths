@@ -2,17 +2,19 @@
 
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
-import { Check, Gift, Medal, Star, X } from "lucide-react";
+import { Check, Gift, Medal, X } from "lucide-react";
 import { useFamily } from "@/components/family/FamilyProvider";
 import { useLearningDashboard } from "@/lib/family/useLearningDashboard";
 import type { RequestDoc } from "@/lib/family/useChildDashboard";
 import { getFirebase } from "@/lib/firebase";
 import { awardStars } from "@/lib/starLedger";
 import { ChildSwitcher, EmptyState, SectionCard, SkeletonRows } from "@/components/family/ui";
+import { ChildStarsCard, FamilyStarsSummary, RewardCatalogEditor, useChildStars } from "@/components/family/FamilyStars";
 
 export default function RecompensasPage() {
-  const { parentId, selectedChild, selectedChildId, loadingChildren } = useFamily();
+  const { parentId, children, selectedChild, selectedChildId, loadingChildren } = useFamily();
   const dashboard = useLearningDashboard(selectedChildId ?? "");
+  const childPlan = useChildStars(parentId, selectedChildId ?? "");
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -58,19 +60,13 @@ export default function RecompensasPage() {
         <ChildSwitcher />
       </header>
 
-      <div className="family-panel flex items-center gap-4 rounded-2xl p-4 sm:p-5">
-        <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-amber-500/15 text-amber-300">
-          <Star className="size-6" aria-hidden="true" />
-        </span>
-        <div>
-          <p className="font-display text-2xl font-bold leading-none text-white">
-            {dashboard.totalStars ?? "…"} <span className="text-base text-amber-300">★</span>
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            Estrellas de {selectedChild.name} · ganadas resolviendo problemas y misiones
-          </p>
-        </div>
-      </div>
+      <FamilyStarsSummary parentId={parentId} kids={children.map((c) => ({ id: c.id, name: c.name }))} />
+
+      <ChildStarsCard parentId={parentId} childId={selectedChildId} childName={selectedChild.name} />
+
+      <SectionCard title="Tabla de canje de la familia" icon={<Gift className="size-4" aria-hidden="true" />}>
+        <RewardCatalogEditor parentId={parentId} available={dashboard.totalStars} possible={childPlan.plan.possible} childName={selectedChild.name} />
+      </SectionCard>
 
       <SectionCard title="Canjes pendientes" icon={<Gift className="size-4" aria-hidden="true" />}>
         {dashboard.loading ? (

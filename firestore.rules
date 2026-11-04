@@ -266,6 +266,20 @@ service cloud.firestore {
         allow read: if isParent(parentId) || isAnyChildOf(parentId);
         allow write: if isParent(parentId);
       }
+
+      // Tabla de canje que acuerda la familia (src/lib/learning/useStars.ts):
+      // qué premio vale cuántas estrellas. La escribe solo la familia; cada
+      // hijo la lee para saber cuánto le falta.
+      match /rewardCatalog/{rewardId} {
+        allow read: if isParent(parentId) || isAnyChildOf(parentId);
+        allow create, update: if isParent(parentId)
+          && request.resource.data.keys().hasOnly(['label', 'stars', 'createdAt'])
+          && request.resource.data.label is string
+          && request.resource.data.label.size() > 0 && request.resource.data.label.size() <= 80
+          && request.resource.data.stars is int
+          && request.resource.data.stars > 0 && request.resource.data.stars <= 100000;
+        allow delete: if isParent(parentId);
+      }
     }
 
     // Contenido curricular: catálogo compartido de hilos/unidades, de solo
