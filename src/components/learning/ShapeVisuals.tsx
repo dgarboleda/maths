@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MathText } from "@/components/MathText";
-import { Handle, num, Slider, snap, Toggle } from "./GraphVisuals";
+import { Challenge, Handle, num, Slider, snap, Toggle } from "./GraphVisuals";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
 /** viewBox ajustado a los puntos con margen, para figuras que cambian de forma. */
@@ -77,6 +77,11 @@ export function AnglesVisual({ id }: { id: string }) {
       <p className="text-sm">
         {ta}° + {tb}° + <strong>{tc}°</strong> = 180°. Por más que deformes el triángulo, el tercer ángulo compensa a los otros dos.
       </p>
+      <Challenge goals={[
+        { text: "Haz que los cuatro ángulos del cruce midan lo mismo. ¿Cuánto miden?", met: a === 90 },
+        { text: "Construye un triángulo rectángulo.", met: ta === 90 || tb === 90 || tc === 90 },
+        { text: "Construye un triángulo isósceles que tenga un ángulo de 40°.", met: [ta, tb, tc].includes(40) && new Set([ta, tb, tc]).size === 2, hint: "Hay dos maneras: el 40° puede ser el ángulo distinto o uno de los iguales." },
+      ]} />
     </>
   );
 }
@@ -119,6 +124,11 @@ export function PythagorasVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Arrastra los extremos de los catetos. El área del cuadrado rosa (sobre la hipotenusa) siempre es la suma de las otras dos. Prueba 3 y 4, o 6 y 8: la hipotenusa sale entera.
       </p>
+      <Challenge goals={[
+        { text: "Consigue una hipotenusa de exactamente 10.", met: c === 10 },
+        { text: "Encuentra otros catetos (no 3 y 4) con hipotenusa entera.", met: Number.isInteger(c) && !(a === 3 && b === 4) && !(a === 4 && b === 3) },
+        { text: "Haz que el cuadrado sobre la hipotenusa mida 50.", met: a * a + b * b === 50 },
+      ]} />
     </>
   );
 }
@@ -149,6 +159,11 @@ export function CircleVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Arrastra el extremo del radio. El borde mide unos 3,14 diámetros. El área cabe en unos 3,14 cuadrados ámbar de lado r: por eso es π · r².
       </p>
+      <Challenge goals={[
+        { text: "Consigue una circunferencia de longitud mayor que 30.", met: 2 * Math.PI * r > 30 },
+        { text: "Consigue un área de unos 50 (entre 48 y 52).", met: Math.PI * r * r > 48 && Math.PI * r * r < 52 },
+        { text: "Haz que la longitud sea 4π (unos 12,57).", met: r === 2 },
+      ]} />
     </>
   );
 }
@@ -180,6 +195,11 @@ export function SimilarityVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Arrastra el vértice de la copia. Los ángulos no cambian. Las longitudes se multiplican por k, pero el área por k²: con k = 2 caben 4 triángulos ámbar en la copia.
       </p>
+      <Challenge goals={[
+        { text: "Haz que la copia tenga 9 veces el área del original.", met: k === 3, hint: "El área se multiplica por k²." },
+        { text: "Consigue que el área se multiplique por 2,25.", met: k === 1.5 },
+        { text: "Haz una copia del mismo tamaño (congruente).", met: k === 1 },
+      ]} />
     </>
   );
 }
@@ -221,6 +241,11 @@ export function VolumeVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         La cara ámbar es la base. El volumen cuenta cuántas capas iguales a la base se apilan: área de la base × altura. Con un cilindro la idea es la misma: π · r² × altura.
       </p>
+      <Challenge goals={[
+        { text: "Construye un prisma de exactamente 30 cubos.", met: l * w * h === 30 },
+        { text: "Haz un cubo de 27 cubitos.", met: l === 3 && w === 3 && h === 3 },
+        { text: "Con solo 2 capas, consigue la base más grande posible.", met: h === 2 && l === 6 && w === 4 },
+      ]} />
     </>
   );
 }
@@ -294,6 +319,11 @@ export function TreeVisual({ id }: { id: string }) {
           ? "Con reemplazo la segunda extracción no depende de la primera: las fracciones se repiten."
           : "Sin reemplazo la bolsa tiene una ficha menos y la segunda probabilidad depende de lo que salió primero."}
       </p>
+      <Challenge goals={[
+        { text: "Sin reemplazo, haz que sacar dos rojas sea imposible.", met: !back && r === 1 },
+        { text: "Con reemplazo, consigue que P(RB) = 1/4.", met: back && r === b, hint: "P(RB) = (r/n) · (b/n): ¿cuándo vale 1/4?" },
+        { text: "Consigue que sacar dos azules sea el resultado más probable.", met: leaves.every((l) => l.path === "BB" || l.p / l.q < leaves[3].p / leaves[3].q) },
+      ]} />
     </>
   );
 }
@@ -356,6 +386,11 @@ export function PowersVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Arrastra el punto por la escala. Cada paso de la escala multiplica por 10. Sube n en 1 y la coma se desplaza un lugar a la derecha; bájalo y se desplaza a la izquierda. Con n negativo el número es menor que 1.
       </p>
+      <Challenge goals={[
+        { text: "Escribe 4 500 000 en notación científica.", met: Math.abs(a - 4.5) < 1e-9 && n === 6 },
+        { text: "Representa 0,00072.", met: Math.abs(a - 7.2) < 1e-9 && n === -4 },
+        { text: "Consigue el número más grande posible con exponente 3.", met: Math.abs(a - 9.9) < 1e-9 && n === 3 },
+      ]} />
     </>
   );
 }
@@ -392,6 +427,11 @@ export function DecimalGridVisual({ id }: { id: string }) {
       <p className="text-sm text-slate-300">
         Arrastra sobre la cuadrícula para elegir columnas y filas. Todo el cuadrado es 1. Tomar 0,{a} de 0,{b} deja {a * b} de las 100 casillas: cada décima por décima es una centésima, por eso el producto tiene dos decimales y es menor que ambos factores.
       </p>
+      <Challenge goals={[
+        { text: "Consigue un producto de 0,24 con factores distintos de 0,3 y 0,4.", met: a * b === 24 && !(a === 3 && b === 4) && !(a === 4 && b === 3) },
+        { text: "Haz que el producto sea 0,81.", met: a === 9 && b === 9 },
+        { text: "Consigue un producto menor que 0,1. ¿Por qué es menor que los dos factores?", met: a * b < 10 },
+      ]} />
     </>
   );
 }
