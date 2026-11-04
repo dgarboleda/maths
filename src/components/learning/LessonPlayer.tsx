@@ -18,6 +18,7 @@ import {
   ADVENTURES,
   questionsFor,
   STAGE_LABELS,
+  STAR_REWARDS,
   type LearningAction,
   type LearningProgress,
   type Lesson,
@@ -128,6 +129,12 @@ export function LessonPlayer({
       </p>
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-cyan-100">
         {lesson.purpose}
+      </p>
+      <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-300/10 px-3 py-1 text-sm font-semibold text-amber-200">
+        <span aria-hidden="true">⭐</span>
+        {progress.completedAt
+          ? `Ya ganaste las ${STAR_REWARDS.lesson} estrellas de esta clase.`
+          : `Al terminar esta clase ganas ${STAR_REWARDS.lesson} estrellas (una sola vez).`}
       </p>
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
         <div className="min-w-0">

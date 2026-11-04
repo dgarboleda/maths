@@ -122,6 +122,31 @@ describe("firestore.rules — sesión propia del hijo (custom token)", () => {
     } finally { await deleteApp(app); }
   });
 
+  test("la tabla de canje la escribe la familia con forma válida y la leen sus hijos", async () => {
+    const app = initializeApp({ apiKey: "demo-api-key", projectId: "demo-numerario" }, `catalogo-${crypto.randomUUID()}`);
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    const db = firestoreFns.getFirestore(app);
+    firestoreFns.connectFirestoreEmulator(db, "127.0.0.1", 8080);
+    try {
+      const { user } = await createUserWithEmailAndPassword(auth, `padre-${crypto.randomUUID()}@ejemplo.test`, "secreto123");
+      const parentId = user.uid,
+        childId = crypto.randomUUID();
+      await firestoreFns.setDoc(firestoreFns.doc(db, "parents", parentId, "children", childId), { name: "Hijo", birthDate: "2015-01-01", createdAt: Date.now() });
+      const catalog = firestoreFns.collection(db, "parents", parentId, "rewardCatalog");
+      const item = await firestoreFns.addDoc(catalog, { label: "Elegir la película", stars: 40, createdAt: firestoreFns.serverTimestamp() });
+      await expect(firestoreFns.addDoc(catalog, { label: "Gratis", stars: 0, createdAt: firestoreFns.serverTimestamp() })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(catalog, { label: "", stars: 5, createdAt: firestoreFns.serverTimestamp() })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(catalog, { label: "Extra", stars: 5, approved: true, createdAt: firestoreFns.serverTimestamp() })).rejects.toThrow();
+      await signOut(auth);
+      await signInWithCustomToken(auth, fakeChildCustomToken(`child:${parentId}:${childId}`, { role: "child", parentId, childId, sessionVersion: 0 }));
+      expect((await firestoreFns.getDocs(catalog)).docs.map((d) => d.data().label)).toEqual(["Elegir la película"]);
+      await expect(firestoreFns.updateDoc(item, { stars: 1 })).rejects.toThrow();
+      await expect(firestoreFns.addDoc(catalog, { label: "Mío", stars: 1, createdAt: firestoreFns.serverTimestamp() })).rejects.toThrow();
+      await expect(firestoreFns.deleteDoc(item)).rejects.toThrow();
+    } finally { await deleteApp(app); }
+  });
+
   test("guarda el uso del foco solo en su perfil, con forma válida y hora del servidor", async () => {
     const { app, db, parentId, childId, otherChildId } = await nuevaFamiliaConDosHijos();
     try {

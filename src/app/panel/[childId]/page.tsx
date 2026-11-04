@@ -7,12 +7,13 @@ import { useLearningDashboard } from "@/lib/family/useLearningDashboard";
 import { ActivityRow, EmptyState, SectionCard, WeeklyChart } from "@/components/family/ui";
 import { LearningReport } from "@/components/learning/LearningReport";
 import { HelpUsageReport } from "@/components/learning/HelpUsageReport";
+import { ChildStarsCard } from "@/components/family/FamilyStars";
 import { Avatar } from "@/components/world/Avatar";
 import { LESSONS } from "@/lib/learning/domain";
 
 export default function ChildLearningPage() {
   const { childId } = useParams<{ childId: string }>();
-  const { children, loadingChildren } = useFamily();
+  const { parentId, children, loadingChildren } = useFamily();
   const dashboard = useLearningDashboard(childId);
   const child = children.find((item) => item.id === childId);
   if (loadingChildren) return <p role="status">Cargando perfil…</p>;
@@ -28,6 +29,7 @@ export default function ChildLearningPage() {
     </header>
     <LearningReport childId={childId} childName={child.name} />
     <HelpUsageReport childId={childId} childName={child.name} />
+    <ChildStarsCard parentId={parentId} childId={childId} childName={child.name} />
     <SectionCard title="Siguiente paso"><p className="font-bold text-white">{dashboard.nextLesson.title}</p><p className="mt-2 text-sm text-slate-300">{dashboard.nextLesson.objective}</p><Link href="/panel/plan" className="mt-3 inline-flex min-h-11 items-center text-cyan-200 underline">Preparar su plan de estudio</Link></SectionCard>
     {dashboard.error && <p role="alert" className="text-amber-200">{dashboard.error}</p>}
     <SectionCard title="Ritmo de la semana"><WeeklyChart noun="respuestas" week={dashboard.weeklyProblems} previousTotal={dashboard.loading ? undefined : dashboard.previousWeekProblems} /></SectionCard>

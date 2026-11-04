@@ -30,6 +30,7 @@ import {
   type LearningProgress,
   type MixedReviewState,
   type UnitId,
+  STAR_REWARDS,
 } from "@/lib/learning/domain";
 import { useLearningData } from "@/lib/learning/useLearningData";
 import { useLearningClock } from "@/lib/learning/useLearningClock";
@@ -579,6 +580,7 @@ function LessonCard({
       <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-400">
         {lesson.objective}
       </p>
+      <StarBadge earned={Boolean(progress?.completedAt)} stars={STAR_REWARDS.lesson} />
       <span
         className={`mt-5 flex items-center justify-between gap-2 border-t border-white/10 pt-4 text-sm font-semibold ${theme.accent}`}
       >
@@ -590,6 +592,16 @@ function LessonCard({
         <ArrowRight size={17} aria-hidden="true" />
       </span>
     </Link>
+  );
+}
+
+/** Cuántas estrellas da la actividad y si ya se ganaron. */
+function StarBadge({ earned, stars, what = "al terminarla" }: { earned: boolean; stars: number; what?: string }) {
+  return (
+    <p className={`mt-3 inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${earned ? "bg-amber-300/15 text-amber-200" : "bg-white/5 text-slate-300"}`}>
+      <span aria-hidden="true">⭐</span>
+      {earned ? `${stars} estrellas ganadas` : `${stars} estrellas ${what}`}
+    </p>
   );
 }
 
@@ -618,6 +630,7 @@ function MixedReviewCard({
             ? "Problemas de tus clases terminadas, mezclados: primero decide qué idea usar."
             : `Se habilita al terminar ${MIXED_REVIEW_MIN_LESSONS} clases de esta unidad (llevas ${completed}).`}
         </p>
+        <StarBadge earned={Boolean(review?.completedAt)} stars={STAR_REWARDS.mixed} what="al superarlo" />
         {review?.bestResult && (
           <p className="mt-2 text-xs text-slate-300">
             Mejor sesión: {review.bestResult.correct} de {review.bestResult.total} de forma autónoma
