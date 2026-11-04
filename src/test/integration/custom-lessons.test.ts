@@ -23,8 +23,16 @@ test("las clases personalizadas solo admiten respuestas de la familia y el servi
     expect((await fs.getDoc(progress)).data()?.completed).toBe(false);
     expect(await call(childApp, "answerCustomLesson", { ...request, answer: 1 })).toMatchObject({ correct: true });
     expect((await fs.getDoc(progress)).data()).toMatchObject({ completed: true, answers: ["q1"] });
+    // Corregir textos conserva el progreso; cambiar la versión de contenido lo invalida.
+    await fs.updateDoc(ref, { title: "Sumas sencillas", updatedAt: 2, contentVersion: 1 });
+    expect(await call(childApp, "answerCustomLesson", { ...request, answer: 1 })).toMatchObject({ correct: true });
+    expect((await fs.getDoc(progress)).data()).toMatchObject({ lessonVersion: 1, completed: true, answers: ["q1"] });
+    await fs.updateDoc(ref, { updatedAt: 3, contentVersion: 3 });
+    await expect(call(childApp, "answerCustomLesson", { ...request, answer: 1 })).rejects.toMatchObject({ code: "functions/failed-precondition" });
+    expect(await call(childApp, "answerCustomLesson", { ...request, answer: 1, lessonVersion: 3 })).toMatchObject({ correct: true });
+    expect((await fs.getDoc(progress)).data()).toMatchObject({ lessonVersion: 3, answers: ["q1"] });
     await fs.updateDoc(ref, { published: false });
     await expect(fs.getDoc(fs.doc(childDb, "parents", family.parentId, "customLessons", "clase1"))).rejects.toMatchObject({ code: "permission-denied" });
-    await expect(call(family.app, "answerCustomLesson", { ...request, answer: 1 })).rejects.toMatchObject({ code: "functions/not-found" });
+    await expect(call(family.app, "answerCustomLesson", { ...request, answer: 1, lessonVersion: 3 })).rejects.toMatchObject({ code: "functions/not-found" });
   } finally { await Promise.all([deleteApp(family.app), deleteApp(other.app), deleteApp(childApp)]); }
 });

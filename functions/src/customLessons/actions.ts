@@ -1,6 +1,6 @@
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { validateCustomLesson } from "./schema";
+import { lessonVersion as versionOf, validateCustomLesson } from "./schema";
 import { assertChildSessionCurrent } from "../childSession";
 
 /** La respuesta y el progreso se comprueban usando la versión publicada del servidor. */
@@ -20,14 +20,15 @@ export const answerCustomLesson = onCall(async (request) => {
     assertChildSessionCurrent(request, profile);
     const lesson: unknown = snapshot.data();
     if (!profile.exists || profile.data()?.deleting || !validateCustomLesson(lesson) || !lesson.published) throw new HttpsError("not-found", "Clase no disponible.");
-    if (lesson.updatedAt !== lessonVersion) throw new HttpsError("failed-precondition", "La clase cambió. Vuelve a cargarla.");
+    const version = versionOf(lesson);
+    if (version !== lessonVersion) throw new HttpsError("failed-precondition", "La clase cambió. Vuelve a cargarla.");
     const question = lesson.questions.find((q) => q.id === questionId);
     if (!question || (answer < 0 || answer >= question.options.length)) throw new HttpsError("invalid-argument", "Opción no válida.");
     const correct = answer === question.answer;
     const old = previous.data();
-    const answers = new Set<string>(old?.lessonVersion === lesson.updatedAt && Array.isArray(old.answers) ? old.answers.filter((id: unknown): id is string => typeof id === "string") : []);
+    const answers = new Set<string>(old?.lessonVersion === version && Array.isArray(old.answers) ? old.answers.filter((id: unknown): id is string => typeof id === "string") : []);
     if (correct) answers.add(question.id);
-    tx.set(progress, { lessonVersion: lesson.updatedAt, answers: [...answers], completed: lesson.questions.every((q) => answers.has(q.id)), updatedAt: FieldValue.serverTimestamp() });
+    tx.set(progress, { lessonVersion: version, answers: [...answers], completed: lesson.questions.every((q) => answers.has(q.id)), updatedAt: FieldValue.serverTimestamp() });
     return { correct, explanation: question.explanation };
   });
 });
