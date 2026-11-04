@@ -362,19 +362,13 @@ export const FRACTION_LESSONS: Lesson[] = [
     ],
     examples: [
       ex(
-        "¿2/3 y 8/12 indican la misma reserva?",
+        "Un sensor marca 18/24 de carga y otro, 3/4. ¿Indican la misma reserva?",
         [
-          ["3 × 4 = 12", "Buscamos el factor que transforma el denominador."],
-          [
-            "2 × 4 = 8",
-            "Multiplicamos también el numerador para conservar la cantidad.",
-          ],
-          [
-            "2/3 = 8/12",
-            "Cambió el tamaño de cada parte y cuántas contamos, pero no el valor.",
-          ],
+          ["18 = 6 × 3; 24 = 6 × 4", "Buscamos un número que divida a la vez al numerador y al denominador: el 6."],
+          ["18 ÷ 6 = 3; 24 ÷ 6 = 4", "Dividimos los dos términos entre 6: juntamos cada 6 partes pequeñas en una parte grande."],
+          ["18/24 = 3/4", "Las partes son 6 veces más grandes y contamos 6 veces menos: la cantidad no cambia."],
         ],
-        "Los dos sensores indican la misma proporción de carga.",
+        "Los dos sensores indican la misma carga. Restar 15 arriba y abajo daría 3/9 = 1/3, que es otra cantidad: simplificar es dividir, no restar.",
       ),
       ex(
         "¿Qué es mayor: 3/4 o 2/3?",
@@ -917,16 +911,13 @@ export const FRACTION_LESSONS: Lesson[] = [
     ],
     examples: [
       ex(
-        "¿Cuánto es 3/4 de 120 unidades de energía?",
+        "El taller necesita 5/8 de un tanque de 200 litros de refrigerante. ¿Cuántos litros usa?",
         [
-          [
-            "120 ÷ 4 = 30",
-            "Calculamos el valor de un cuarto repartiendo el total entre cuatro.",
-          ],
-          ["30 × 3 = 90", "Tomamos tres grupos del tamaño calculado."],
-          ["120 − 90 = 30", "Comprobamos que queda el cuarto restante."],
+          ["200 ÷ 8 = 25", "El denominador 8 indica ocho partes iguales: cada octavo contiene 25 litros."],
+          ["25 × 5 = 125", "El numerador 5 indica cuántos octavos toma el taller."],
+          ["200 − 125 = 75 = 3 × 25", "Comprobación: lo que sobra son los 3 octavos restantes."],
         ],
-        "El hospital necesita 90 unidades y quedan 30 para distribuir.",
+        "El taller usa 125 litros y quedan 75 en el tanque.",
       ),
       ex(
         "Un equipo revisa 2/5 de 80 sensores. ¿Cuántos revisa?",
@@ -941,11 +932,11 @@ export const FRACTION_LESSONS: Lesson[] = [
         "Se revisan 32 sensores; quedan 48.",
       ),
       ex(
-        "Los 3/4 de una reserva son 90 unidades. ¿Cuánto es la reserva completa?",
+        "Los 2/3 de una reserva son 84 unidades. ¿Cuánto es la reserva completa?",
         [
-          ["90 ÷ 3 = 30", "Las 90 unidades ocupan tres cuartos: cada cuarto contiene 30."],
-          ["4 × 30 = 120", "La reserva completa tiene cuatro cuartos."],
-          ["3/4 de 120 = 90", "Comprobamos aplicando la fracción al total encontrado."],
+          ["84 ÷ 2 = 42", "Las 84 unidades ocupan dos tercios: cada tercio contiene 42."],
+          ["3 × 42 = 126", "La reserva completa tiene tres tercios."],
+          ["2/3 de 126 = 126 ÷ 3 × 2 = 84", "Comprobamos aplicando la fracción al total encontrado."],
         ],
         "Conocer la parte y la fracción permite reconstruir el total: se reparte entre el numerador y se multiplica por el denominador.",
       ),

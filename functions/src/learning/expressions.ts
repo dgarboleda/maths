@@ -76,8 +76,8 @@ export const EXPRESSION_LESSONS: Lesson[] = [
         [fixed, rate, km] = [[4, 3, 12], [5, 2, 15], [3, 4, 9], [6, 3, 14], [8, 2, 25], [2, 5, 11]][v],
         [m, q, r, val] = [[2, 3, 5, 10], [3, 4, 2, 6], [2, 5, 1, 8], [4, 1, 3, 7], [3, 6, 4, 9], [2, 7, 6, 12]][v];
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               `¿Por qué ${c1}x + ${c2} no se puede escribir como ${c1 + c2}x?`,
               [
@@ -87,8 +87,8 @@ export const EXPRESSION_LESSONS: Lesson[] = [
               ],
               1,
               "Solo se reúnen términos con la misma parte literal.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "¿Cuáles son términos semejantes?",
               [
@@ -99,6 +99,18 @@ export const EXPRESSION_LESSONS: Lesson[] = [
               2,
               "Son semejantes los términos con la misma letra y el mismo exponente.",
             ),
+          c(
+            "q0",
+            "¿Por qué 2x + 3x se puede reducir a 5x, pero 2x + 3 no?",
+            [
+              "Porque 2x y 3x cuentan la misma cantidad x, y 3 es un número sin x",
+              ["Porque solo se reúnen términos positivos", "El signo no decide: 2x − 3x = −x también se reduce."],
+              ["En realidad, 2x + 3 también es 5x", "Con x = 10, 2x + 3 = 23, pero 5x = 50."],
+            ],
+            0,
+            "Solo se reúnen términos semejantes: la misma letra con el mismo exponente.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Evalúa ${a}x${t(b)} para x = ${sg(x)}.`,
@@ -403,15 +415,15 @@ export const EXPRESSION_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Resuelve 7x − 4 = 3x + 12.", [
-        ["7x − 3x − 4 = 12", "Restamos 3x a ambos lados."],
-        ["4x = 16", "Sumamos 4 a ambos lados."],
-        ["x = 4", "Comprobación: 24 = 24."],
-      ], "x = 4."),
+        ["7x − 3x − 4 = 12", "Restamos 3x a ambos lados: la x queda solo a la izquierda y la igualdad se conserva."],
+        ["4x = 16", "Sumamos 4 a ambos lados para deshacer la resta: ya es una ecuación de un paso."],
+        ["x = 4", "Dividimos entre 4. Comprobación: 7 × 4 − 4 = 24 y 3 × 4 + 12 = 24."],
+      ], "x = 4: con ese valor los dos lados valen 24."),
       ex("El plan A cuesta 20 + 3h y el plan B, 8 + 5h. ¿Con cuántas horas cuestan lo mismo?", [
-        ["20 + 3h = 8 + 5h", "Igualamos los costos."],
-        ["12 = 2h", "Restamos 3h y 8 a ambos lados."],
-        ["h = 6", "Comprobación: 20 + 18 = 38 = 8 + 30."],
-      ], "Con 6 horas cuestan lo mismo; con más horas conviene A."),
+        ["20 + 3h = 8 + 5h", "«Cuestan lo mismo» se traduce como una igualdad entre las dos expresiones."],
+        ["12 = 2h", "Restamos 3h a ambos lados (la h queda a la derecha) y restamos 8 a ambos lados."],
+        ["h = 6", "Dividimos entre 2. Comprobación: A = 20 + 18 = 38 y B = 8 + 30 = 38."],
+      ], "Con 6 horas cuestan lo mismo. Con más horas conviene A: cada hora extra suma 3 en A y 5 en B (con 7 horas, A = 41 y B = 43)."),
     ],
     diagnostic: [
       n("d-1", "Resuelve 3x + 4 = 19.", 5, ["3x = 15; x = 5."], ["Resta 4.", "Divide entre 3.", "5."]),
@@ -822,17 +834,41 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           ["La pendiente es el cambio de y dividido entre el cambio de x.", `Cambio de y: ${sg(m * x2 + b)} − ${p(m * x1 + b)}.`, `Divide entre ${x2 - x1}.`],
           { errors: [{ value: m * (x2 - x1), feedback: `Falta dividir entre el cambio de x, ${x2 - x1}.` }] },
         ),
-        c(
-          "q4",
-          "¿Cuál de estas tablas corresponde a una función lineal?",
-          [
-            ["x: 0, 1, 2, 3 → y: 1, 2, 4, 8", "Las diferencias cambian (1, 2, 4): no es lineal."],
-            [`x: 0, 1, 2, 3 → y: ${b}, ${b + 1}, ${b + 3}, ${b + 6}`, "Las diferencias crecen (1, 2, 3): no es lineal."],
-            `x: 0, 1, 2, 3 → y: ${b}, ${b + m}, ${b + 2 * m}, ${b + 3 * m}`,
-          ],
-          2,
-          "En una función lineal, la diferencia entre valores de y es constante.",
-        ),
+        [
+          c(
+            "q4",
+            "¿Cuál de estas tablas corresponde a una función lineal?",
+            [
+              ["x: 0, 1, 2, 3 → y: 1, 2, 4, 8", "Las diferencias cambian (1, 2, 4): no es lineal."],
+              [`x: 0, 1, 2, 3 → y: ${b}, ${b + 1}, ${b + 3}, ${b + 6}`, "Las diferencias crecen (1, 2, 3): no es lineal."],
+              `x: 0, 1, 2, 3 → y: ${b}, ${b + m}, ${b + 2 * m}, ${b + 3 * m}`,
+            ],
+            2,
+            "En una función lineal, la diferencia entre valores de y es constante.",
+          ),
+          c(
+            "q4",
+            "Una tabla tiene x = 0, 2, 4, 6 e y = 5, 11, 17, 23. Alguien dice que la pendiente es 6. ¿Qué falla?",
+            [
+              ["Nada: y aumenta 6 cada vez", "Aumenta 6, pero x aumenta 2 en cada fila."],
+              "x aumenta de 2 en 2: la pendiente es 6 ÷ 2 = 3",
+              ["La pendiente es 5, el primer valor de y", "5 es el valor inicial b, no la pendiente."],
+            ],
+            1,
+            "m = cambio de y ÷ cambio de x = 6 ÷ 2 = 3.",
+          ),
+          c(
+            "q4",
+            "En y = 4x + 30, que da los litros de un depósito tras x minutos, ¿qué significa el 30?",
+            [
+              "Los litros que hay al inicio, cuando x = 0",
+              ["Los litros que entran cada minuto", "Eso lo indica la pendiente, 4."],
+              ["Los minutos que tarda en llenarse", "30 está en litros: es el valor de y cuando x = 0."],
+            ],
+            0,
+            "b es el valor inicial: con x = 0, y = 4 · 0 + 30 = 30 litros.",
+          ),
+        ][v % 3],
         n(
           "q5",
           `Un depósito tiene ${fill} L y recibe ${rate} L por minuto. ¿Cuántos litros tendrá a los ${mins} minutos?`,

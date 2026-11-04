@@ -58,11 +58,11 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
         ["2/3 = 8/12; 1/4 = 3/12", "Expresamos cada fracción en doceavos."],
         ["8/12 + 3/12 = 11/12", "Sumamos partes del mismo tamaño."],
       ], "2/3 + 1/4 = 11/12."),
-      ex("Un depósito tenía 5/6 y se usaron 1/4. ¿Cuánto queda?", [
-        ["mcm(6, 4) = 12", "El denominador común más pequeño."],
-        ["5/6 = 10/12; 1/4 = 3/12", "Convertimos ambas fracciones."],
-        ["10/12 − 3/12 = 7/12", "Restamos doceavos."],
-      ], "Quedan 7/12 del depósito."),
+      ex("Un depósito estaba a 5/6 de su capacidad y se usaron 3/8 del depósito. ¿Qué fracción queda?", [
+        ["mcm(6, 8) = 24", "Múltiplos de 6 → 6, 12, 18, 24; de 8 → 8, 16, 24: el primero común es 24."],
+        ["5/6 = 20/24; 3/8 = 9/24", "Multiplicamos 5/6 por 4/4 y 3/8 por 3/3: cambia la escritura, no la cantidad."],
+        ["20/24 − 9/24 = 11/24", "Restamos veinticuatroavos: el denominador indica el tamaño de la parte y se conserva."],
+      ], "Quedan 11/24 del depósito: algo menos de la mitad, como anticipa 5/6 − 3/8 ≈ 0,83 − 0,38 = 0,45."),
     ],
     diagnostic: [
       n("d-1", "Completa: 1/3 = __/12.", 4, ["3 × 4 = 12; 1 × 4 = 4."], ["Busca el factor del denominador.", "12 ÷ 3 = 4.", "Multiplica 1 por 4."], { step: true }),
@@ -221,9 +221,9 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("¿Cuánto es 3/5 de 2/3 de un depósito?", [
-        ["3/5 × 2/3", "«De» indica multiplicación."],
-        ["(3 × 2)/(5 × 3) = 6/15", "Multiplicamos numeradores y denominadores."],
-        ["6/15 = 2/5", "Simplificamos dividiendo entre 3."],
+        ["3/5 × 2/3", "Tomar «3/5 de» una cantidad es multiplicarla por 3/5."],
+        ["(3 × 2)/(5 × 3) = 6/15", "Numerador por numerador y denominador por denominador: 15 partes de las que tomamos 6."],
+        ["6/15 = 2/5", "Simplificamos dividiendo numerador y denominador entre 3."],
       ], "3/5 de 2/3 es 2/5 del depósito."),
       ex("¿Cuántos envases de 3/4 L se llenan con 6 L?", [
         ["6 ÷ 3/4", "Preguntamos cuántas veces cabe 3/4 en 6."],

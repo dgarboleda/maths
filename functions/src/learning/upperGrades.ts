@@ -242,7 +242,7 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
           "Lineal: 100, 120, 140, 160… suma 20 cada paso. Exponencial: 100, 120, 144, 172,8… multiplica por 1,2 cada paso.",
           "En una tabla, el crecimiento lineal tiene diferencias constantes; el exponencial, cocientes constantes.",
         ],
-        formula: "lineal: y = a + d · n · exponencial: y = a · bⁿ",
+        formula: "lineal: y = a + d · n;  exponencial: y = a · bⁿ",
       },
       {
         title: "El factor de cambio",
@@ -250,7 +250,7 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
           "Aumentar un 20% es multiplicar por 1,2 (el 100% más el 20%). Disminuir un 10% es multiplicar por 0,9.",
           "Duplicar es multiplicar por 2; reducir a la mitad, por 0,5. Varios pasos seguidos multiplican el factor: bⁿ.",
         ],
-        formula: "aumento del p% → b = 1 + p/100 · disminución del p% → b = 1 − p/100",
+        formula: "aumento del p% → b = 1 + p/100;  disminución del p% → b = 1 − p/100",
       },
       {
         title: "Al principio parecido, después enorme",
@@ -289,8 +289,8 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
         afterDep = r6(V * (1 - dep / 100) ** 2),
         compound = r6(C * (1 + i / 100) ** 2);
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Qué distingue al crecimiento exponencial del lineal?",
               [
@@ -300,8 +300,8 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
               ],
               0,
               "Exponencial: cociente constante entre pasos; lineal: diferencia constante.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               `Una tabla muestra ${a}, ${a * b}, ${a * b * b}, ${a * b ** 3}. ¿Qué tipo de crecimiento tiene?`,
               [
@@ -312,6 +312,18 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
               1,
               "Si el cociente entre valores consecutivos es constante, el crecimiento es exponencial.",
             ),
+          c(
+            "q0",
+            "Un precio sube un 10% cada año. ¿Por qué no sube la misma cantidad de soles cada año?",
+            [
+              "Porque cada 10% se calcula sobre el precio ya aumentado",
+              ["Porque el porcentaje cambia cada año", "El porcentaje es siempre 10%; lo que cambia es la base sobre la que se aplica."],
+              ["Sí sube lo mismo cada año", "De 100 pasa a 110 (+10) y luego a 121 (+11)."],
+            ],
+            0,
+            "Multiplicar por 1,1 cada año aplica el 10% a una base cada vez mayor: es crecimiento exponencial.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Una población empieza con ${a} individuos y se multiplica por ${b} cada año. ¿Cuántos hay a los ${k} años?`,
@@ -442,7 +454,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
           "Todos los triángulos rectángulos con el mismo ángulo agudo α son semejantes: sus lados son proporcionales.",
           "Por eso el cociente opuesto ÷ hipotenusa es el mismo en todos ellos. Ese número es el seno de α.",
         ],
-        formula: "sen α = opuesto/hipotenusa · cos α = adyacente/hipotenusa · tan α = opuesto/adyacente",
+        formula: "sen α = opuesto/hipotenusa;  cos α = adyacente/hipotenusa;  tan α = opuesto/adyacente",
       },
       {
         title: "Opuesto y adyacente dependen del ángulo",
@@ -450,7 +462,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
           "En el triángulo 3-4-5, para el ángulo opuesto al lado 3: sen = 3/5 = 0,6, cos = 4/5 = 0,8 y tan = 3/4 = 0,75.",
           "Para el otro ángulo agudo, los catetos cambian de papel: su seno es 4/5. La hipotenusa siempre es el lado mayor, así que seno y coseno nunca superan 1.",
         ],
-        formula: "triángulo 3-4-5: sen α = 0,6 · cos α = 0,8 · tan α = 0,75",
+        formula: "triángulo 3-4-5: sen α = 0,6;  cos α = 0,8;  tan α = 0,75",
       },
       {
         title: "Calcular lados",
@@ -463,8 +475,8 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Un triángulo rectángulo tiene catetos de 6 y 8. Calcula el seno del ángulo opuesto al cateto 6.", [
-        ["Hipotenusa = √(6² + 8²) = √100 = 10", "Teorema de Pitágoras."],
-        ["sen α = 6/10", "Cateto opuesto entre hipotenusa."],
+        ["Hipotenusa = √(6² + 8²) = √100 = 10", "Necesitamos la hipotenusa: la obtenemos con el teorema de Pitágoras."],
+        ["sen α = 6/10", "El seno es cateto opuesto entre hipotenusa; el lado 6 está frente al ángulo α."],
         ["sen α = 0,6", "Simplificamos: es el mismo seno que en el triángulo 3-4-5, que es semejante."],
       ], "sen α = 0,6."),
       ex("Desde 20 m de un edificio, su parte más alta se ve con un ángulo α tal que tan α = 0,84. ¿Qué altura tiene?", [
@@ -485,8 +497,8 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
         [s, h] = [[0.8, 4], [0.6, 3], [0.96, 4.8], [0.75, 6], [0.5, 2.5], [0.9, 4.5]][v],
         ladder = r6(h / s);
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "Dos triángulos rectángulos tienen el mismo ángulo agudo α, pero uno es el doble de grande. ¿Qué pasa con sen α?",
               [
@@ -496,8 +508,8 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
               ],
               0,
               "Los triángulos son semejantes: sus lados son proporcionales.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               `Un triángulo rectángulo tiene catetos ${opp} y ${adj}. Para el ángulo opuesto al cateto ${opp}, ¿qué representa ${opp}/${adj}?`,
               [
@@ -508,6 +520,18 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
               2,
               "tan α = opuesto ÷ adyacente.",
             ),
+          c(
+            "q0",
+            "¿Por qué el seno de un ángulo agudo nunca es mayor que 1?",
+            [
+              "Porque es opuesto ÷ hipotenusa, y la hipotenusa es el lado mayor",
+              ["Porque los ángulos agudos miden menos de 90°", "La medida del ángulo en grados no es el valor de su seno."],
+              ["Sí puede superar 1 en triángulos grandes", "El tamaño no cambia las razones: los triángulos con el mismo ángulo son semejantes."],
+            ],
+            0,
+            "En sen α = opuesto ÷ hipotenusa, el numerador es un cateto, siempre menor que la hipotenusa.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `En un triángulo rectángulo, el cateto opuesto al ángulo α mide ${opp} y la hipotenusa ${hyp}. ¿Cuánto vale sen α? Puedes escribirlo como fracción o decimal.`,
@@ -684,8 +708,8 @@ export const SPREAD_LESSONS: Lesson[] = [
         [b1, b3] = [[10, 18], [20, 30], [6, 14], [40, 52], [12, 16], [30, 46]][v],
         fence = b3 + 1.5 * (b3 - b1);
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "Dos grupos tienen la misma mediana, pero el RIC de uno es el doble que el del otro. ¿Qué significa?",
               [
@@ -695,8 +719,8 @@ export const SPREAD_LESSONS: Lesson[] = [
               ],
               0,
               "El RIC es la amplitud del 50% central: mayor RIC, más dispersión.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "¿Por qué el RIC resiste mejor un valor atípico que el rango?",
               [
@@ -707,6 +731,18 @@ export const SPREAD_LESSONS: Lesson[] = [
               2,
               "Un valor extremo cambia el máximo o el mínimo, pero apenas mueve Q1 y Q3.",
             ),
+          c(
+            "q0",
+            "En un grupo de notas, Q1 = 10 y Q3 = 18. ¿Qué significa?",
+            [
+              "La mitad central de las notas está entre 10 y 18",
+              ["Todas las notas están entre 10 y 18", "Un cuarto de los datos queda por debajo de Q1 y otro cuarto por encima de Q3."],
+              ["La media es 14", "Los cuartiles no determinan la media."],
+            ],
+            0,
+            "Entre Q1 y Q3 está el 50% central de los datos; el RIC es 18 − 10 = 8.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Datos ordenados: ${list(data)}. ¿Cuál es el rango intercuartílico (Q3 − Q1)?`,
@@ -859,6 +895,11 @@ export const COUNTING_LESSONS: Lesson[] = [
         ["5 opciones para secretario", "La misma persona no puede tener los dos cargos."],
         ["6 · 5 = 30", "El orden importa: Ana presidenta y Luis secretario no es lo mismo que al revés."],
       ], "Hay 30 formas."),
+      ex("En un torneo, 6 equipos juegan una vez contra cada uno de los demás. ¿Cuántos partidos hay?", [
+        ["6 · 5 = 30", "Si contamos con orden, cada equipo puede enfrentarse a los otros 5."],
+        ["A-B y B-A son el mismo partido", "Aquí el orden no importa: cada partido quedó contado dos veces."],
+        ["30 ÷ 2 = 15", "Dividimos entre 2 para contar cada pareja una sola vez."],
+      ], "Hay 15 partidos. Compara con el ejemplo anterior: mismo 6 · 5, pero aquí hay que dividir porque el orden no importa."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 4 × 3 × 2?", 24, ["4 × 3 = 12; 12 × 2 = 24."], ["Multiplica de izquierda a derecha.", "4 × 3 = 12.", "12 × 2."]),
@@ -1021,7 +1062,7 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
           "Respecto al eje x, cada punto queda a la misma distancia del eje pero del otro lado: cambia de signo la y.",
           "Respecto al eje y, cambia de signo la x. La figura reflejada queda «al revés», como en un espejo.",
         ],
-        formula: "eje x: (x, y) → (x, −y) · eje y: (x, y) → (−x, y)",
+        formula: "eje x: (x, y) → (x, −y);  eje y: (x, y) → (−x, y)",
       },
       {
         title: "Rotación",
@@ -1029,7 +1070,7 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
           "Rotar 90° en sentido antihorario alrededor del origen: (x, y) → (−y, x). Rotar 180°: (x, y) → (−x, −y).",
           "Traslaciones, reflexiones y rotaciones son isometrías: conservan longitudes y ángulos.",
         ],
-        formula: "90°: (x, y) → (−y, x) · 180°: (x, y) → (−x, −y)",
+        formula: "90°: (x, y) → (−y, x);  180°: (x, y) → (−x, −y)",
       },
     ],
     examples: [
@@ -1055,8 +1096,8 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
         moveX = (n: number) => `${Math.abs(n)} ${Math.abs(n) === 1 ? "casilla" : "casillas"} a la ${n > 0 ? "derecha" : "izquierda"}`,
         moveY = (n: number) => `${Math.abs(n)} ${n > 0 ? "hacia arriba" : "hacia abajo"}`;
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Qué conserva una rotación?",
               [
@@ -1066,8 +1107,8 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
               ],
               1,
               "Las rotaciones son isometrías.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "Al reflejar una figura respecto al eje y, ¿qué coordenada cambia de signo?",
               [
@@ -1078,6 +1119,18 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
               0,
               "Respecto al eje y: (x, y) → (−x, y).",
             ),
+          c(
+            "q0",
+            "Al trasladar un triángulo con el vector (5, −2), ¿qué cambia?",
+            [
+              "Solo su posición: forma, tamaño y orientación se conservan",
+              ["Su tamaño, que crece 5 unidades", "Una traslación mueve todos los puntos lo mismo: no deforma la figura."],
+              ["Su orientación, porque la figura gira", "Girar es una rotación; la traslación no gira la figura."],
+            ],
+            0,
+            "(x, y) → (x + 5, y − 2): todos los puntos se desplazan igual.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Traslada A${pt(x, y)} con el vector ${pt(a, b)}. ¿Cuál es la coordenada y de A′?`,

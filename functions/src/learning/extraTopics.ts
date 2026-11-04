@@ -58,12 +58,17 @@ export const NUMBER_EXTRA_LESSONS: Lesson[] = [
     examples: [
       ex("Escribe 6 300 000 en notación científica.", [
         ["6,3", "Colocamos la coma después de la primera cifra no nula."],
-        ["La coma se movió 6 posiciones", "Desde el final del número hasta después del 6."],
+        ["La coma se movió 6 posiciones", "La coma de 6 300 000 está al final; para quedar detrás del 6 salta seis cifras hacia la izquierda."],
         ["6,3 × 10⁶", "Comprobación: 6,3 × 1 000 000 = 6 300 000."],
       ], "6 300 000 = 6,3 × 10⁶."),
+      ex("Escribe 0,00047 en notación científica.", [
+        ["4,7", "La primera cifra distinta de cero es el 4: la coma debe quedar justo después de ella."],
+        ["La coma se movió 4 posiciones a la derecha", "De 0,00047 a 4,7 la coma salta cuatro cifras: 0, 0, 0 y 4."],
+        ["4,7 × 10⁻⁴", "Movimiento a la derecha → exponente negativo. Comprobación: 4,7 ÷ 10 000 = 0,00047."],
+      ], "0,00047 = 4,7 × 10⁻⁴: un número positivo y pequeño, no negativo."),
       ex("Multiplica (4 × 10³) × (5 × 10⁴).", [
-        ["4 × 5 = 20", "Multiplicamos los factores."],
-        ["10³ × 10⁴ = 10⁷", "Sumamos los exponentes."],
+        ["4 × 5 = 20", "Por la propiedad conmutativa, multiplicamos por un lado los números y por otro las potencias de 10."],
+        ["10³ × 10⁴ = 10⁷", "Potencias de igual base: se suman los exponentes, 3 + 4 = 7."],
         ["20 × 10⁷ = 2 × 10⁸", "Ajustamos: 20 = 2 × 10."],
       ], "El resultado es 2 × 10⁸."),
     ],
@@ -236,15 +241,20 @@ export const DECIMAL_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Calcula 1,25 × 0,4.", [
-        ["125 × 4 = 500", "Multiplicamos sin coma."],
-        ["2 + 1 = 3 decimales", "Contamos los decimales de los factores."],
-        ["0,500 = 0,5", "Estimación: 0,4 de algo más que 1 es algo menos que 0,5."],
+        ["125 × 4 = 500", "Multiplicamos como si fueran enteros, sin mirar la coma."],
+        ["2 + 1 = 3 decimales", "1,25 tiene dos cifras decimales y 0,4 tiene una: el producto lleva tres."],
+        ["0,500 = 0,5", "Estimación: 1,25 está entre 1 y 1,5, así que el producto está entre 0,4 y 0,6."],
       ], "1,25 × 0,4 = 0,5."),
-      ex("¿Cuántas botellas de 0,75 L se llenan con 6 L?", [
-        ["6 ÷ 0,75 = 600 ÷ 75", "Multiplicamos ambos por 100."],
-        ["600 ÷ 75 = 8", "Dividimos enteros."],
-        ["8 × 0,75 = 6", "Comprobamos."],
-      ], "Se llenan 8 botellas."),
+      ex("Un rollo de 4,8 m de cinta se corta en trozos de 0,15 m. ¿Cuántos trozos salen?", [
+        ["4,8 ÷ 0,15 = 480 ÷ 15", "Multiplicamos dividendo y divisor por 100: el divisor queda entero y el cociente no cambia."],
+        ["480 ÷ 15 = 32", "Dividimos enteros: 15 × 30 = 450 y faltan 30, que son 2 trozos más."],
+        ["32 × 0,15 = 4,8", "Comprobación: 32 trozos de 0,15 m vuelven a formar el rollo."],
+      ], "Salen 32 trozos. Es lógico que el resultado sea mayor que 4,8: dividimos entre un número menor que 1."),
+      ex("Ordena de menor a mayor: 0,8; 0,75; 0,805.", [
+        ["0,800; 0,750; 0,805", "Igualamos las cifras decimales añadiendo ceros a la derecha: el valor no cambia."],
+        ["750 < 800 < 805 milésimas", "Con la misma cantidad de decimales, se comparan como números enteros de milésimas."],
+        ["0,75 < 0,8 < 0,805", "Volvemos a la escritura original."],
+      ], "0,75 tiene más cifras que 0,8 y, sin embargo, es menor: contar cifras no sirve para comparar."),
     ],
     diagnostic: [
       c("d-1", "¿Cuál es mayor?", ["0,7", "0,65", "Son iguales"], 0, "0,70 > 0,65."),
@@ -416,15 +426,20 @@ export const ANGLE_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Un triángulo tiene ángulos de 48° y 75°. ¿Cuánto mide el tercero?", [
-        ["48° + 75° = 123°", "Sumamos los conocidos."],
-        ["180° − 123° = 57°", "Lo que falta para 180°."],
-        ["48 + 75 + 57 = 180", "Comprobamos."],
+        ["48° + 75° = 123°", "Sumamos los dos ángulos que conocemos."],
+        ["180° − 123° = 57°", "Los tres ángulos suman 180°: el tercero es lo que falta."],
+        ["48° + 75° + 57° = 180°", "Comprobación: los tres ángulos juntos forman un ángulo llano."],
       ], "El tercer ángulo mide 57°."),
       ex("¿Cuánto mide cada ángulo de un hexágono regular?", [
-        ["(6 − 2) × 180° = 720°", "Suma de los ángulos interiores."],
-        ["720° ÷ 6 = 120°", "Son seis ángulos iguales."],
-        ["120° × 6 = 720°", "Comprobamos."],
+        ["(6 − 2) × 180° = 720°", "Desde un vértice, las diagonales dividen el hexágono en 4 triángulos de 180° cada uno."],
+        ["720° ÷ 6 = 120°", "En un polígono regular los seis ángulos son iguales: repartimos la suma."],
+        ["120° × 6 = 720°", "Comprobación: seis ángulos de 120° recuperan la suma total."],
       ], "Cada ángulo mide 120°."),
+      ex("Dos rectas se cortan y uno de los ángulos mide 35°. ¿Cuánto miden los otros tres?", [
+        ["180° − 35° = 145°", "El ángulo vecino forma con el de 35° una línea recta: son suplementarios."],
+        ["Opuesto al de 35°: 35°", "Los ángulos opuestos por el vértice son iguales."],
+        ["Opuesto al de 145°: 145°", "Comprobación: 35° + 145° + 35° + 145° = 360°, una vuelta completa."],
+      ], "Los ángulos miden 35°, 145°, 35° y 145°. Si el ángulo fuera parte de una esquina recta, su complementario sería 90° − 35° = 55°."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 180 − 65?", 115, ["180 − 65 = 115."], ["Resta por partes.", "180 − 60 = 120.", "120 − 5 = 115."]),
@@ -438,8 +453,8 @@ export const ANGLE_LESSONS: Lesson[] = [
         reg = [6, 8, 5, 10, 12, 9][v],
         ramp = [25, 32, 18, 40, 15, 28][v];
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Por qué los ángulos de un triángulo suman 180°?",
               [
@@ -449,8 +464,8 @@ export const ANGLE_LESSONS: Lesson[] = [
               ],
               0,
               "Al colocar los tres ángulos uno junto a otro se forma una línea recta: 180°.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "Al cruzarse dos rectas, ¿por qué los ángulos opuestos por el vértice son iguales?",
               [
@@ -461,6 +476,18 @@ export const ANGLE_LESSONS: Lesson[] = [
               1,
               "Si α + β = 180° y γ + β = 180°, entonces α = γ.",
             ),
+          c(
+            "q0",
+            "¿Por qué los ángulos interiores de cualquier cuadrilátero suman 360°?",
+            [
+              "Porque una diagonal lo divide en dos triángulos de 180° cada uno",
+              ["Porque tiene cuatro ángulos rectos", "Solo algunos cuadriláteros tienen cuatro ángulos rectos, y la suma es 360° en todos."],
+              ["Porque cada lado aporta 90°", "Los ángulos no se reparten por lados: se cuentan los triángulos, (4 − 2) × 180°."],
+            ],
+            0,
+            "(4 − 2) × 180° = 360°: el cuadrilátero se divide en dos triángulos.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Un triángulo tiene ángulos de ${t1}° y ${t2}°. ¿Cuánto mide el tercero?`,
@@ -583,14 +610,14 @@ export const SIMILARITY_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Un poste de 2 m da una sombra de 1,5 m. A la misma hora, un edificio da 18 m de sombra. ¿Qué altura tiene?", [
-        ["2 ÷ 1,5 = altura ÷ 18", "Los triángulos son semejantes."],
+        ["2 ÷ 1,5 = altura ÷ 18", "Objeto y sombra forman triángulos semejantes: altura ÷ sombra es igual en los dos."],
         ["k = 18 ÷ 1,5 = 12", "La sombra del edificio es 12 veces la del poste."],
         ["2 × 12 = 24 m", "La altura escala con el mismo factor."],
       ], "El edificio mide 24 m."),
       ex("En un plano 1:200, una sala mide 4 cm × 3 cm. ¿Qué área real tiene?", [
-        ["4 × 200 = 800 cm = 8 m", "Largo real."],
-        ["3 × 200 = 600 cm = 6 m", "Ancho real."],
-        ["8 × 6 = 48 m²", "Área real (el área del plano, 12 cm², se multiplica por 200²)."],
+        ["4 × 200 = 800 cm = 8 m", "En escala 1:200, cada centímetro del plano son 200 cm reales: así obtenemos el largo."],
+        ["3 × 200 = 600 cm = 6 m", "El ancho se convierte con la misma escala."],
+        ["8 × 6 = 48 m²", "Calculamos el área con las medidas reales. El área del plano, 12 cm², se multiplica por 200², no por 200."],
       ], "La sala ocupa 48 m²."),
     ],
     diagnostic: [
@@ -605,8 +632,8 @@ export const SIMILARITY_LESSONS: Lesson[] = [
         [area, k] = [[30, 3], [12, 5], [20, 4], [45, 2], [8, 6], [15, 3]][v];
       const ratio = a2 / a;
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Qué significa que dos triángulos sean semejantes?",
               [
@@ -616,8 +643,8 @@ export const SIMILARITY_LESSONS: Lesson[] = [
               ],
               1,
               "Semejanza: misma forma, longitudes multiplicadas por un mismo factor.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               `Si todas las longitudes de una figura se multiplican por ${k}, ¿qué ocurre con su área?`,
               [
@@ -628,6 +655,18 @@ export const SIMILARITY_LESSONS: Lesson[] = [
               2,
               `Área′ = k² × área = ${k}² × área.`,
             ),
+          c(
+            "q0",
+            "Un rectángulo de 2 cm × 3 cm se transforma en otro de 4 cm × 5 cm. ¿Son semejantes?",
+            [
+              ["Sí: a cada lado se le sumó 2", "Sumar lo mismo cambia la forma; para ampliar hay que multiplicar."],
+              "No: 4 ÷ 2 = 2, pero 5 ÷ 3 ≈ 1,67; los lados no son proporcionales",
+              ["Sí: los dos son rectángulos", "Sus ángulos coinciden, pero también hace falta que los lados sean proporcionales."],
+            ],
+            1,
+            "Para ser semejantes, todas las longitudes deben multiplicarse por el mismo factor k.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Un triángulo tiene lados de ${a} cm y ${b} cm. En otro semejante, el lado que corresponde a ${a} cm mide ${a2} cm. ¿Cuánto mide el que corresponde a ${b} cm?`,

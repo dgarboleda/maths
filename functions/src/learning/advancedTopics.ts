@@ -37,7 +37,7 @@ export const INTEREST_LESSONS: Lesson[] = [
           "Con interés simple, cada año se gana el mismo porcentaje del capital inicial: S/ 1000 al 5% anual dan S/ 50 cada año.",
           "En 3 años son 3 · 50 = 150 soles de interés, y el monto es 1000 + 150 = 1150.",
         ],
-        formula: "I = C · r · t ÷ 100 · M = C + I",
+        formula: "I = C · r · t ÷ 100;  M = C + I",
       },
       {
         title: "Interés compuesto",
@@ -53,7 +53,7 @@ export const INTEREST_LESSONS: Lesson[] = [
           "El simple suma siempre lo mismo (crece en línea recta); el compuesto multiplica por el mismo factor (crece como una exponencial).",
           "Al principio casi coinciden; con más años o tasas más altas, la diferencia crece rápido. Lo mismo vale para una deuda que no se paga.",
         ],
-        formula: "simple: +C·r/100 por año · compuesto: ×(1 + r/100) por año",
+        formula: "simple: + C · r/100 cada año;  compuesto: × (1 + r/100) cada año",
       },
     ],
     examples: [
@@ -767,7 +767,7 @@ export const SOLID_LESSONS: Lesson[] = [
           "Una pirámide cabe exactamente tres veces en el prisma de la misma base y altura: si se llena de arena, tres pirámides llenan el prisma.",
           "Por eso V = base × altura ÷ 3. Lo mismo vale para el cono respecto del cilindro.",
         ],
-        formula: "V_pirámide = B · h ÷ 3 · V_cono = π · r² · h ÷ 3",
+        formula: "V_pirámide = B · h ÷ 3;  V_cono = π · r² · h ÷ 3",
       },
       {
         title: "La esfera",

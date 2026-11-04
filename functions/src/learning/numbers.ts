@@ -42,7 +42,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       {
         title: "Más a la derecha, mayor",
         paragraphs: [
-          "De dos números, es mayor el que está más a la derecha. Por eso −2 > −7 → −2 está más cerca del cero por la izquierda.",
+          "De dos números, es mayor el que está más a la derecha. Por eso −2 > −7: los dos están a la izquierda del cero, pero −2 está más a la derecha.",
           "Con negativos, la cifra mayor no indica el número mayor: −7 tiene más unidades que −2, pero está más a la izquierda.",
         ],
         formula: "−7 < −2 < 0 < 3",
@@ -259,7 +259,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       ex("Calcula 2 − (−5).", [
         ["2 − (−5) = 2 + 5", "Restar un número es sumar su opuesto."],
         ["2 + 5 = 7", "Ahora es una suma de positivos."],
-        ["7 − 2 = 5 = −(−5)", "Comprobación: la distancia de 2 a 7 es 5."],
+        ["7 + (−5) = 2", "Comprobación: sumar −5 deshace la resta de −5 y volvemos al 2 inicial."],
       ], "2 − (−5) = 7: quitar una deuda de 5 aumenta el saldo en 5."),
     ],
     diagnostic: [
@@ -411,7 +411,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       {
         title: "Multiplicar es sumar grupos iguales",
         paragraphs: [
-          "3 × (−4) son tres grupos de −4 → −4 − 4 − 4 = −12. Un positivo por un negativo da negativo.",
+          "3 × (−4) son tres grupos de −4, es decir, (−4) + (−4) + (−4) = −12. Un positivo por un negativo da negativo.",
           "Multiplicar por −1 da el opuesto: −1 × 5 = −5. Por eso (−3) × 4 = −(3 × 4) = −12.",
         ],
         formula: "3 × (−4) = −12",
@@ -436,12 +436,12 @@ export const NUMBER_LESSONS: Lesson[] = [
     examples: [
       ex("Un dron desciende 3 m por segundo. ¿Cuánto cambia su altura en 5 s?", [
         ["Cambio por segundo: −3 m", "Descender es un cambio negativo de altura."],
-        ["5 × (−3) = −15", "Cinco grupos de −3."],
+        ["5 × (−3) = −15", "En 5 segundos se repite cinco veces el cambio de −3 m: (−3) + (−3) + (−3) + (−3) + (−3)."],
         ["La altura baja 15 m", "El signo negativo indica descenso."],
       ], "El cambio es −15 m."),
       ex("Calcula (−24) ÷ (−6).", [
-        ["Signos iguales → positivo", "Ambos son negativos."],
-        ["24 ÷ 6 = 4", "Dividimos los valores absolutos."],
+        ["Signos iguales → positivo", "Dividendo y divisor son negativos: el cociente será positivo."],
+        ["24 ÷ 6 = 4", "El signo ya está decidido; ahora dividimos los números sin signo."],
         ["(−6) × 4 = −24", "Comprobamos con la multiplicación inversa."],
       ], "(−24) ÷ (−6) = 4."),
     ],
@@ -456,8 +456,8 @@ export const NUMBER_LESSONS: Lesson[] = [
         [rate, time] = [[2, 6], [4, 5], [3, 9], [5, 7], [6, 4], [8, 3]][v],
         [x, y] = [[3, 8], [6, 7], [4, 9], [7, 5], [2, 11], [9, 4]][v];
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               `¿Por qué (−${a}) × (−${b}) es positivo?`,
               [
@@ -467,8 +467,8 @@ export const NUMBER_LESSONS: Lesson[] = [
               ],
               1,
               "Multiplicar por −1 da el opuesto; hacerlo dos veces vuelve al sentido positivo.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "¿Qué signo tiene el producto de tres números negativos?",
               [
@@ -479,6 +479,18 @@ export const NUMBER_LESSONS: Lesson[] = [
               0,
               "Un número impar de factores negativos da negativo.",
             ),
+          c(
+            "q0",
+            "Si (−3) × 4 = −12, ¿por qué −12 ÷ (−3) = 4?",
+            [
+              "Porque la división deshace la multiplicación: (−3) × 4 = −12",
+              ["Porque al dividir se ignoran los signos", "Los signos cuentan: −12 ÷ 3 daría −4."],
+              ["Porque dividir entre un negativo siempre da positivo", "−12 ÷ 3 y 12 ÷ (−3) dan negativo: depende de los dos signos."],
+            ],
+            0,
+            "Toda división se comprueba con una multiplicación: (−3) × 4 = −12, así que −12 ÷ (−3) = 4.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Calcula (−${a}) × ${b}.`,
@@ -589,7 +601,7 @@ export const NUMBER_LESSONS: Lesson[] = [
         title: "Mismo nivel: de izquierda a derecha",
         paragraphs: [
           "Multiplicar y dividir tienen la misma prioridad; se calculan de izquierda a derecha: 24 ÷ 4 × 2 = 6 × 2 = 12.",
-          "Lo mismo con sumas y restas: 10 − 3 + 2 = 7 + 2 = 9, no 10 − 5.",
+          "Lo mismo con sumas y restas: 10 − 3 + 2 = 7 + 2 = 9. Si sumaras primero 3 + 2, calcularías 10 − 5 = 5, que es otra operación.",
         ],
         formula: "10 − 3 + 2 = 9;  24 ÷ 4 × 2 = 12",
       },
@@ -604,15 +616,20 @@ export const NUMBER_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Calcula 18 − 2 × (3 + 4).", [
-        ["3 + 4 = 7", "Primero el paréntesis."],
-        ["2 × 7 = 14", "Después la multiplicación."],
-        ["18 − 14 = 4", "Por último la resta."],
-      ], "18 − 2 × (3 + 4) = 4."),
+        ["3 + 4 = 7", "Primero el paréntesis: indica que 3 + 4 es un solo valor."],
+        ["2 × 7 = 14", "Después la multiplicación, que va antes que la resta."],
+        ["18 − 14 = 4", "Por último la resta, la operación de menor prioridad."],
+      ], "18 − 2 × (3 + 4) = 4. Restar primero (18 − 2 = 16) daría 16 × 7 = 112: un resultado muy distinto."),
       ex("Calcula 20 ÷ 5 × 2 − 3.", [
         ["20 ÷ 5 = 4", "División y multiplicación, de izquierda a derecha."],
         ["4 × 2 = 8", "Seguimos en el mismo nivel."],
-        ["8 − 3 = 5", "La resta al final."],
+        ["8 − 3 = 5", "La resta al final, porque tiene menor prioridad."],
       ], "Si se multiplicara primero, se obtendría 20 ÷ 10 − 3 = −1: el orden importa."),
+      ex("Calcula 20 − (8 − 3).", [
+        ["8 − 3 = 5", "El paréntesis va primero: se resta todo el grupo, no solo el 8."],
+        ["20 − 5 = 15", "Restamos el valor del paréntesis."],
+        ["20 − 8 + 3 = 15", "Comprobación quitando el paréntesis: el signo menos de delante cambia −3 por +3."],
+      ], "20 − (8 − 3) = 15. Escribir 20 − 8 − 3 = 9 es el error de no cambiar el signo del segundo término."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 6 × 4?", 24, ["6 × 4 = 24."], ["Seis grupos de 4.", "4 + 4 + 4 + 4 + 4 + 4.", "24."]),
@@ -776,15 +793,20 @@ export const NUMBER_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Calcula 2⁵.", [
-        ["2 × 2 = 4", "Multiplicamos la base por sí misma."],
-        ["4 × 2 × 2 × 2 = 32", "Completamos los cinco factores."],
-        ["2⁵ = 32 ≠ 2 × 5", "Una potencia no es un producto base × exponente."],
+        ["2⁵ = 2 × 2 × 2 × 2 × 2", "El exponente 5 indica cuántas veces se repite la base 2 como factor."],
+        ["2 → 4 → 8 → 16 → 32", "Multiplicamos por 2 una vez por cada factor: 2 × 2 = 4, 4 × 2 = 8, 8 × 2 = 16, 16 × 2 = 32."],
+        ["2⁵ = 32 ≠ 2 × 5 = 10", "Una potencia no es un producto base × exponente."],
       ], "2⁵ = 32."),
       ex("Una placa cuadrada tiene 81 dm². ¿Cuánto mide su lado?", [
         ["lado² = 81", "El área de un cuadrado es lado × lado."],
         ["√81 = 9", "Buscamos el número que al cuadrado da 81."],
-        ["9 × 9 = 81", "Comprobamos."],
+        ["9 × 9 = 81", "Comprobamos: un cuadrado de 9 dm de lado ocupa 81 dm²."],
       ], "El lado mide 9 dm."),
+      ex("Escribe 3² × 3³ como una sola potencia y calcula su valor.", [
+        ["(3 × 3) × (3 × 3 × 3)", "Escribimos cada potencia como producto de factores iguales."],
+        ["3 × 3 × 3 × 3 × 3 = 3⁵", "Hay 2 + 3 = 5 factores iguales: por eso se suman los exponentes."],
+        ["3⁵ = 243", "Calculamos: 9 × 27 = 243, igual que 3 → 9 → 27 → 81 → 243."],
+      ], "3² × 3³ = 3⁵ = 243. La base se conserva: no es 9⁵ ni 3⁶."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 6 × 6?", 36, ["6 × 6 = 36."], ["Seis grupos de 6.", "30 + 6.", "36."]),

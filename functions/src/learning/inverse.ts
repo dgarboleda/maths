@@ -68,8 +68,8 @@ export const INVERSE_LESSONS: Lesson[] = [
         [g1, m1, m2] = [[3, 40, 24], [4, 30, 20], [2, 45, 18], [6, 20, 15], [5, 36, 30], [4, 50, 40]][v];
       const k = w1 * t1;
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Qué caracteriza una proporcionalidad inversa?",
               [
@@ -79,8 +79,8 @@ export const INVERSE_LESSONS: Lesson[] = [
               ],
               1,
               "Si x se multiplica por k, y se divide entre k: su producto no cambia.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               `Si ${w1} bombas llenan un depósito en ${t1} horas, ¿cuánto tardan ${w1 * 2} bombas iguales?`,
               [
@@ -91,6 +91,18 @@ export const INVERSE_LESSONS: Lesson[] = [
               2,
               "El doble de bombas hace el mismo trabajo en la mitad de tiempo.",
             ),
+          c(
+            "q0",
+            "¿Cuál de estas tablas muestra una proporcionalidad inversa?",
+            [
+              ["x = 1, 2, 3 → y = 12, 10, 8", "y baja, pero 1 × 12, 2 × 10 y 3 × 8 no dan lo mismo."],
+              "x = 1, 2, 3 → y = 12, 6, 4",
+              ["x = 1, 2, 3 → y = 12, 24, 36", "Ahí y ÷ x es constante: es proporcionalidad directa."],
+            ],
+            1,
+            "En 12, 6, 4 el producto x · y siempre vale 12: al duplicar x, y se reduce a la mitad.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `${w1} técnicos terminan una reparación en ${t1} días. Al mismo ritmo, ¿cuántos días tardan ${w2} técnicos?`,

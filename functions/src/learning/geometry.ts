@@ -57,10 +57,15 @@ export const GEOMETRY_LESSONS: Lesson[] = [
         ["38 m de cerca; 84 placas", "Cada magnitud responde una pregunta distinta y tiene su unidad."],
       ], "Perímetro y área de la misma figura son números distintos con unidades distintas."),
       ex("Un panel triangular tiene base 10 dm y altura 6 dm. ¿Qué área tiene?", [
-        ["10 × 6 = 60", "El rectángulo que lo contiene."],
-        ["60 ÷ 2 = 30", "El triángulo ocupa la mitad."],
-        ["30 dm²", "Unidad cuadrada."],
+        ["10 × 6 = 60", "El rectángulo de la misma base y altura que contiene al triángulo ocupa 60 dm²."],
+        ["60 ÷ 2 = 30", "El triángulo ocupa exactamente la mitad de ese rectángulo."],
+        ["30 dm²", "Es un área: se mide en unidades cuadradas (cuadrados de 1 dm de lado)."],
       ], "El panel ocupa 30 dm²."),
+      ex("Una terraza en forma de L ocupa un rectángulo de 10 m × 8 m al que le falta una esquina de 4 m × 3 m. ¿Cuál es su área y cuánto mide su borde?", [
+        ["10 × 8 − 4 × 3 = 80 − 12 = 68 m²", "Completamos el rectángulo grande y restamos el hueco de la esquina."],
+        ["P = 2 × (10 + 8) = 36 m", "Al recortar una esquina, los dos tramos nuevos (4 m y 3 m) reemplazan a dos tramos de la misma longitud: el contorno no cambia."],
+        ["10 + 5 + 4 + 3 + 6 + 8 = 36 m", "Comprobación recorriendo el borde lado a lado: 8 − 3 = 5 y 10 − 4 = 6."],
+      ], "La terraza ocupa 68 m² y su borde mide 36 m: quitar superficie no siempre reduce el perímetro."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 8 × 5?", 40, ["8 × 5 = 40."], ["Ocho grupos de cinco.", "5 + 5 + … ocho veces.", "40."]),
@@ -74,8 +79,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
         [W, H, w, hh] = [[10, 8, 4, 3], [12, 9, 5, 4], [14, 10, 6, 5], [9, 7, 3, 2], [11, 8, 4, 5], [13, 10, 5, 6]][v],
         [side, fence] = [[15, 9], [20, 12], [18, 11], [25, 14], [16, 13], [22, 17]][v];
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "Para saber cuántas placas de 1 m² cubren un techo, ¿qué se calcula?",
               [
@@ -85,8 +90,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               ],
               1,
               "Cubrir una superficie es una pregunta de área.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               `Un rectángulo de ${b} m por ${h} m tiene ${b * h} m² de área. ¿Por qué no tiene ${b * h} m de perímetro?`,
               [
@@ -97,6 +102,18 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               0,
               "Área y perímetro miden magnitudes distintas.",
             ),
+          c(
+            "q0",
+            "Para colocar una cinta de luces por todo el borde de una terraza, ¿qué se calcula?",
+            [
+              ["El área", "El área mide la superficie que hay que cubrir, no el borde."],
+              "El perímetro",
+              ["El volumen", "La cinta es una longitud, no un espacio."],
+            ],
+            1,
+            "Recorrer un borde es una pregunta de perímetro: se mide en metros.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Calcula el área de un rectángulo de ${b} cm por ${h} cm.`,
@@ -242,15 +259,15 @@ export const GEOMETRY_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Un depósito circular tiene 6 m de diámetro. ¿Cuánto mide su borde?", [
-        ["L = π × d", "Nos dan el diámetro."],
-        ["3,14 × 6 = 18,84", "Multiplicamos."],
-        ["≈ 18,84 m", "Es algo más de tres diámetros."],
+        ["L = π × d", "Nos dan el diámetro, así que usamos la forma de la fórmula que lo emplea directamente."],
+        ["3,14 × 6 = 18,84", "Sustituimos π ≈ 3,14 y d = 6 m."],
+        ["≈ 18,84 m", "Estimación: algo más de tres diámetros, 3 × 6 = 18 m. El resultado es razonable."],
       ], "El borde mide unos 18,84 m."),
-      ex("¿Qué superficie ocupa ese depósito?", [
-        ["r = 6 ÷ 2 = 3 m", "El área usa el radio."],
-        ["r² = 9", "Elevamos el radio al cuadrado."],
-        ["3,14 × 9 = 28,26 m²", "Multiplicamos por π."],
-      ], "Ocupa unos 28,26 m²."),
+      ex("¿Qué superficie del suelo ocupa el mismo depósito de 6 m de diámetro?", [
+        ["r = 6 ÷ 2 = 3 m", "La fórmula del área usa el radio, que es la mitad del diámetro."],
+        ["r² = 3 × 3 = 9", "Elevamos el radio al cuadrado: r² = r × r, no 2 × r."],
+        ["3,14 × 9 = 28,26 m²", "Multiplicamos por π; el resultado está en m² porque es una superficie."],
+      ], "Ocupa unos 28,26 m². Usar el diámetro daría 3,14 × 36 = 113,04 m², cuatro veces más."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 3,14 × 10?", 31.4, ["Multiplicar por 10 desplaza la coma: 31,4."], ["Multiplicar por 10.", "Desplaza la coma una posición.", "31,4."]),
@@ -264,8 +281,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
         [wheel, laps] = [[0.5, 100], [0.3, 200], [0.4, 50], [0.25, 400], [0.6, 30], [0.35, 80]][v],
         [outer, inner] = [[5, 3], [6, 4], [10, 7], [8, 5], [9, 6], [7, 2]][v];
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Qué representa π?",
               [
@@ -275,8 +292,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               ],
               0,
               "En cualquier círculo, L ÷ d = π ≈ 3,14.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "Si el radio de un círculo se duplica, ¿qué ocurre con su área?",
               [
@@ -287,6 +304,18 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               1,
               "A = πr²: con 2r, π(2r)² = 4πr².",
             ),
+          c(
+            "q0",
+            "Una rueda de 50 cm de diámetro da una vuelta completa sin resbalar. ¿Cuánto avanza?",
+            [
+              ["50 cm", "Eso es el diámetro; al girar, la rueda desenrolla todo su borde."],
+              "Unos 157 cm: la longitud de su circunferencia, π × 50",
+              ["Unos 1962,5 cm: su área", "El área es una superficie (cm²), no una distancia recorrida."],
+            ],
+            1,
+            "En una vuelta la rueda avanza la longitud de su borde: L = π × d ≈ 3,14 × 50 = 157 cm.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Calcula la longitud de una circunferencia de radio ${r} cm (usa π ≈ 3,14).`,
@@ -419,15 +448,15 @@ export const GEOMETRY_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Un depósito mide 2 m × 1,5 m × 1 m. ¿Cuántos litros caben?", [
-        ["A(base) = 2 × 1,5 = 3 m²", "Área de la base."],
-        ["V = 3 × 1 = 3 m³", "Por la altura."],
-        ["3 × 1000 = 3000 L", "1 m³ = 1000 L."],
+        ["A(base) = 2 × 1,5 = 3 m²", "La base es un rectángulo de 2 m × 1,5 m: en el fondo caben 3 cubos de 1 m³."],
+        ["V = 3 × 1 = 3 m³", "Con 1 m de altura hay una sola capa de esos cubos: base × altura."],
+        ["3 × 1000 = 3000 L", "Cada metro cúbico contiene 1000 litros."],
       ], "Caben 3000 L."),
       ex("Un tanque cilíndrico tiene radio 2 m y altura 5 m. ¿Qué volumen tiene? (π ≈ 3,14)", [
-        ["A(base) = 3,14 × 4 = 12,56 m²", "La base es un círculo."],
-        ["V = 12,56 × 5 = 62,8 m³", "Por la altura."],
-        ["62,8 m³ = 62 800 L", "Convertimos a litros."],
-      ], "El tanque tiene 62,8 m³."),
+        ["A(base) = 3,14 × 2² = 3,14 × 4 = 12,56 m²", "La base es un círculo de radio 2 m: π × r²."],
+        ["V = 12,56 × 5 = 62,8 m³", "Apilamos 5 m de altura de esa base: área de la base × altura."],
+        ["62,8 × 1000 = 62 800 L", "Cada metro cúbico son 1000 litros."],
+      ], "El tanque tiene 62,8 m³, es decir, unos 62 800 litros."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 5 × 4 × 3?", 60, ["5 × 4 = 20; 20 × 3 = 60."], ["Multiplica de dos en dos.", "5 × 4 = 20.", "60."]),
@@ -440,8 +469,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
         [m3] = [[2], [3.5], [0.8], [4.2], [1.5], [6]][v],
         [tl, tw, target] = [[2, 1.5, 6], [4, 2, 12], [3, 2.5, 15], [5, 2, 25], [2.5, 2, 8], [4, 3, 18]][v];
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Por qué el volumen de un prisma es área de la base × altura?",
               [
@@ -451,8 +480,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               ],
               0,
               "Cada capa tiene el área de la base; la altura cuenta cuántas capas hay.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "Si se duplica la altura de un cilindro y el radio no cambia, ¿qué pasa con su volumen?",
               [
@@ -463,6 +492,18 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               1,
               "V = πr²h es proporcional a la altura.",
             ),
+          c(
+            "q0",
+            "¿Por qué 1 m³ equivale a 1000 litros y no a 100?",
+            [
+              "Porque 1 m = 10 dm y el cubo tiene tres dimensiones: 10 × 10 × 10 = 1000 dm³",
+              ["Porque 1 m = 100 cm", "Eso convierte longitudes; un volumen se mide en tres dimensiones."],
+              ["Es una equivalencia convenida, sin relación con las medidas", "Sale de las medidas: 1 litro ocupa un cubo de 1 dm de lado."],
+            ],
+            0,
+            "1 L = 1 dm³ y en un cubo de 1 m de lado caben 10 × 10 × 10 = 1000 cubos de 1 dm.",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Calcula el volumen de un prisma de ${l} cm × ${w} cm × ${h} cm.`,
@@ -585,14 +626,14 @@ export const GEOMETRY_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Una rampa sube 1,2 m y avanza 1,6 m en horizontal. ¿Cuánto mide la rampa?", [
-        ["1,2² + 1,6² = 1,44 + 2,56", "Los catetos son la altura y el avance."],
-        ["= 4", "Suma de los cuadrados."],
-        ["√4 = 2 m", "La rampa es la hipotenusa."],
+        ["1,2² + 1,6² = 1,44 + 2,56", "La altura y el avance horizontal forman el ángulo recto: son los catetos."],
+        ["1,44 + 2,56 = 4", "Sumamos los cuadrados de los catetos: eso es c²."],
+        ["√4 = 2 m", "La rampa es la hipotenusa: su longitud es la raíz de c²."],
       ], "La rampa mide 2 m."),
       ex("Una escalera de 10 m apoyada en una pared tiene el pie a 6 m. ¿A qué altura llega?", [
         ["h² = 10² − 6²", "La escalera es la hipotenusa."],
-        ["h² = 100 − 36 = 64", "Restamos los cuadrados."],
-        ["h = 8 m", "Comprobación: 36 + 64 = 100."],
+        ["h² = 100 − 36 = 64", "Buscamos un cateto: al cuadrado de la hipotenusa le restamos el del cateto conocido."],
+        ["h = √64 = 8 m", "Comprobación: 6² + 8² = 36 + 64 = 100 = 10²."],
       ], "Llega a 8 m de altura."),
     ],
     diagnostic: [
@@ -606,8 +647,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
         [px, py] = [[6, 8], [9, 12], [5, 12], [8, 15], [12, 16], [7, 24]][v],
         [s1, s2, s3, isRight] = ([[5, 12, 13, true], [6, 7, 9, false], [9, 40, 41, true], [4, 6, 8, false], [10, 24, 26, true], [5, 9, 11, false]] as [number, number, number, boolean][])[v];
       return [
-        v % 2 === 0
-          ? c(
+        [
+          c(
               "q0",
               "¿Qué afirma el teorema de Pitágoras?",
               [
@@ -617,8 +658,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               ],
               0,
               "c² = a² + b², solo en triángulos rectángulos.",
-            )
-          : c(
+            ),
+          c(
               "q0",
               "¿Cuál es la hipotenusa de un triángulo rectángulo?",
               [
@@ -629,6 +670,18 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               2,
               "La hipotenusa no forma parte del ángulo recto.",
             ),
+          c(
+            "q0",
+            "¿Se puede aplicar el teorema de Pitágoras a un triángulo de lados 4, 5 y 7?",
+            [
+              ["Sí: vale para cualquier triángulo", "Solo vale en triángulos rectángulos."],
+              "No: 4² + 5² = 41 y 7² = 49, así que no es rectángulo",
+              ["Sí, si se toma el lado mayor como hipotenusa", "Aun así 41 ≠ 49: la igualdad no se cumple."],
+            ],
+            1,
+            "El teorema solo se aplica a triángulos rectángulos; con estos lados, a² + b² ≠ c².",
+          ),
+        ][v % 3],
         n(
           "q1",
           `Los catetos de un triángulo rectángulo miden ${a} cm y ${b} cm. ¿Cuánto mide la hipotenusa?`,
