@@ -1,9 +1,8 @@
 import { CHECK_CONCEPTS } from "./checkConcepts";
 import type { Lesson, Question } from "./types";
+import { CONTENT_VERSION } from "./version";
 
-/** Versión del contenido: al cambiar los bancos se incrementa y el motor
- *  migra el avance guardado (`migrateProgress`) sin perder logros. */
-export const CONTENT_VERSION = 2;
+export { CONTENT_VERSION };
 
 type Draft = Omit<
   Lesson,

@@ -1,4 +1,4 @@
-import { CONTENT_VERSION } from "./defineLesson";
+import { CONTENT_VERSION } from "./version";
 import { getLesson, LEARNING_UNITS, LESSONS } from "./catalog";
 import { LearningError } from "./engine";
 import { isAnswerCorrect } from "./questions";
