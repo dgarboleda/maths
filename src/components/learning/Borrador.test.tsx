@@ -3,7 +3,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { axe } from "jest-axe";
 import { Borrador } from "./Borrador";
 
-const open = () => fireEvent.click(screen.getByRole("button", { name: /Borrador de cálculo/ }));
+const open = async () => {
+  fireEvent.click(screen.getByRole("button", { name: /Borrador de cálculo/ }));
+  await screen.findByRole("button", { name: "Escribir la cuenta" });
+};
 const numbers = (a: string, b: string) => {
   fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: a } });
   fireEvent.change(screen.getAllByRole("textbox")[1], { target: { value: b } });
@@ -14,7 +17,7 @@ describe("Borrador de cálculo", () => {
   test("una suma en columnas: sin corrección y con el resultado copiable", async () => {
     const onUse = vi.fn();
     const { container } = render(<Borrador targets={["tu respuesta"]} onUse={onUse} />);
-    open();
+    await open();
     numbers("958", "76");
     // Se puede escribir un resultado equivocado: el borrador no corrige.
     for (const [place, d] of [["unidades", "4"], ["decenas", "3"], ["centenas", "0"], ["unidades de millar", "2"]] as const)
@@ -25,10 +28,10 @@ describe("Borrador de cálculo", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  test("una división en la galera abierta copia el cociente al valor elegido", () => {
+  test("una división en la galera abierta copia el cociente al valor elegido", async () => {
     const onUse = vi.fn();
     render(<Borrador targets={["Agua", "Luz"]} onUse={onUse} />);
-    open();
+    await open();
     fireEvent.click(screen.getByRole("radio", { name: "Dividir" }));
     numbers("612", "6");
     ["1", "0", "2"].forEach((d, i) => fireEvent.change(screen.getByLabelText(`Cociente: cifra ${i + 1}`), { target: { value: d } }));
@@ -38,9 +41,9 @@ describe("Borrador de cálculo", () => {
     expect(onUse).toHaveBeenCalledWith("102", 1);
   });
 
-  test("avisa de cuentas que no se pueden escribir", () => {
+  test("avisa de cuentas que no se pueden escribir", async () => {
     render(<Borrador />);
-    open();
+    await open();
     fireEvent.click(screen.getByRole("radio", { name: "Restar" }));
     numbers("12", "40");
     expect(screen.getByRole("alert")).toHaveTextContent(/no puede ser menor/);
