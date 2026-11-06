@@ -222,6 +222,15 @@ describe("Migración de contenido", () => {
     expect(next.responses["practice:p-1"]).toMatchObject({ hintsUsed: 1, attempts: 0 });
     expect(migrateProgress(lesson, migrated)).toBe(migrated);
   });
+  test("un avance guardado con una versión más nueva no se reinicia", () => {
+    let state = update(undefined, { kind: "answer", questionId: lesson.diagnostic[0].id, response: "1" });
+    state = { ...state, contentVersion: lesson.version + 1 };
+    // La vista no debe ocultar la respuesta registrada (y volver a pedirla).
+    expect(migrateProgress(lesson, state)).toBe(state);
+    expect(() =>
+      update(state, { kind: "answer", questionId: lesson.diagnostic[0].id, response: "2" }),
+    ).toThrow(/ya se registró/);
+  });
 });
 
 describe("El apagón", () => {

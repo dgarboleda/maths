@@ -55,7 +55,11 @@ export function migrateProgress(
   lesson: Pick<Lesson, "version">,
   progress: LearningProgress,
 ): LearningProgress {
-  if (progress.contentVersion === lesson.version) return progress;
+  // Solo se migra hacia adelante. Un avance guardado con una versión más
+  // nueva (navegador con un bundle viejo en caché, o funciones aún sin
+  // desplegar) no se reinicia: hacerlo ocultaría respuestas que el servidor
+  // sí tiene registradas y la interfaz volvería a pedirlas.
+  if ((progress.contentVersion ?? 0) >= lesson.version) return progress;
   const questionStage = !["class", "examples", "summary"].includes(progress.stage);
   return {
     ...progress,

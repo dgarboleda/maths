@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
 import { getFirebase, getFirebaseFunctions } from "@/lib/firebase";
 import type { ChildProfile } from "@/lib/types";
+import { isRetryable } from "./saveErrors";
 import {
   CONTENT_VERSION,
   getLessonSummary,
@@ -172,6 +173,10 @@ export function useLearningAction(
     lessonId: string;
     progress: LearningProgress | AdventureState | MixedReviewState | PlacementState | DailyReviewState;
   } | null>(null);
+  // Un rechazo por regla de negocio (respuesta ya registrada, avance cambiado
+  // en otra pestaña…) significa que la vista local está desfasada: repetir la
+  // misma operación volvería a fallar, así que solo se ofrece recargar.
+  const [retryable, setRetryable] = useState(true);
   const pending = useRef<Request | null>(null);
   const inFlight = useRef(false);
   async function send(request: Request): Promise<boolean> {
@@ -200,8 +205,13 @@ export function useLearningAction(
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "No se pudo guardar el avance.";
+      const canRetry = isRetryable(err);
+      if (!canRetry) pending.current = null;
+      setRetryable(canRetry);
       setError(
-        `${message} Tu actividad seguirá disponible al volver a entrar.`,
+        canRetry
+          ? `${message} Tu actividad seguirá disponible al volver a entrar.`
+          : `${message} Carga el último avance para continuar.`,
       );
       return false;
     } finally {
@@ -230,7 +240,8 @@ export function useLearningAction(
     error,
     confirmed: confirmed?.parentId === parentId && confirmed?.childId === childId ? confirmed : null,
     blocked: busy || error !== null,
-    retry: () =>
-      pending.current ? send(pending.current) : Promise.resolve(false),
+    retry: retryable
+      ? () => (pending.current ? send(pending.current) : Promise.resolve(false))
+      : null,
   };
 }

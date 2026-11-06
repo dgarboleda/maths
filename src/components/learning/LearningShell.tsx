@@ -158,7 +158,8 @@ export function SaveNotice({
 }: {
   busy: boolean;
   error: string | null;
-  retry: () => Promise<boolean>;
+  /** `null` cuando reintentar no sirve: la vista local está desfasada. */
+  retry: (() => Promise<boolean>) | null;
 }) {
   return (
     <div className="mb-4" aria-live="polite" aria-atomic="true">
@@ -174,14 +175,16 @@ export function SaveNotice({
         >
           <p className="text-sm text-amber-100">{error}</p>
           <div className="flex flex-wrap gap-2">
-            <button
-              disabled={busy}
-              type="button"
-              onClick={() => void retry()}
-              className={secondaryButton}
-            >
-              Reintentar guardado
-            </button>
+            {retry && (
+              <button
+                disabled={busy}
+                type="button"
+                onClick={() => void retry()}
+                className={secondaryButton}
+              >
+                Reintentar guardado
+              </button>
+            )}
             <button
               disabled={busy}
               type="button"
