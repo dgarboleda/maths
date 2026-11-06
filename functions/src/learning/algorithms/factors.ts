@@ -5,8 +5,9 @@
  * MCD, el de los que dividen a todos los números a la vez.
  *
  * El alumno escribe toda la tabla. Se acepta cualquier orden de primos (no
- * solo de menor a mayor) siempre que cada fila esté bien dividida y la tabla
- * termine con todos en 1.
+ * solo de menor a mayor) siempre que cada fila esté bien dividida. La tabla
+ * del MCM termina con todos en 1; la del MCD, cuando no queda ningún primo
+ * común (o también en 1, si se usaron primos que no dividen a todos).
  *
  * Puro: sin React ni Firebase, compartido por Functions y el navegador.
  */
@@ -48,7 +49,10 @@ export function validFactorSpec(spec: FactorSpec): boolean {
     (spec.op === "mcd" || spec.op === "mcm") &&
     spec.values.length >= 2 &&
     spec.values.length <= 3 &&
-    spec.values.every((v) => Number.isInteger(v) && v >= 2 && v < 10_000)
+    spec.values.every((v) => Number.isInteger(v) && v >= 2 && v < 10_000) &&
+    // La tabla del MCD necesita al menos un primo común: con números primos
+    // entre sí no hay ninguna fila que escribir (el MCD es 1 sin tabla).
+    (spec.op === "mcm" || gcdOf(spec.values) > 1)
   );
 }
 

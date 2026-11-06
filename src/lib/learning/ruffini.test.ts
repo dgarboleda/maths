@@ -58,4 +58,20 @@ describe("Regla de Ruffini", () => {
     const sign = ruffiniBugs(ruf([2, -3, 1, 5], 2)).find((b) => b.id === "signo-esquina")!;
     expect(sign.value).toBe(evaluate([2, -3, 1, 5], -2));
   });
+
+  test("coherencia de la clase: el error del compañero da otro resto y los errores previstos salen de la tabla", () => {
+    const lesson = getLesson("ruffini")!;
+    const all = [...lesson.guided, ...lesson.practice, ...lesson.checks.flat(), ...lesson.review, ...lesson.mixed];
+    for (const q of all.filter((item) => item.task === 4)) {
+      // «Le sale resto X» con la esquina mal; la explicación da el correcto.
+      const bad = /resto (−?\d+)\./.exec(q.prompt)![1];
+      const good = /= (−?\d+)\.$/.exec(q.explanation)![1];
+      expect(bad).not.toBe(good);
+    }
+    // Aplicación: V(x) ÷ (x + 1) con la esquina 1 da x² + 7x + 18, que en x = 2 vale 36.
+    const wrong = ruffiniTrace(ruf([1, 6, 11, 6], 1));
+    expect(lesson.application.errors?.some((e) => e.value === evaluate(wrong.quotient, 2))).toBe(true);
+    // k en el término lineal se escribe sin «+ −»: «1 − k − 5».
+    for (const q of all.filter((item) => item.task === 6)) expect(q.solution.join(" ")).not.toMatch(/\+ −/);
+  });
 });

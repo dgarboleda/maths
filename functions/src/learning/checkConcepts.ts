@@ -18,7 +18,7 @@ export const CHECK_CONCEPTS: Record<string, Question> = {
       ["3, porque el grado es 3", "Del grado 3 al 0 hay cuatro potencias: x³, x², x y el término independiente."],
     ],
     1,
-    "Un polinomio de grado 3 tiene 4 coeficientes: los que faltan se escriben 0. Así, x³ − 1 ÷ (x − 1) da x² + x + 1, resto 0.",
+    "Un polinomio de grado 3 tiene 4 coeficientes: los que faltan se escriben 0. Así, (x³ − 1) ÷ (x − 1) da x² + x + 1, resto 0.",
   ),
   "mcd-mcm": c(
     "q0",

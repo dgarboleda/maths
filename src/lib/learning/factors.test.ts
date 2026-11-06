@@ -7,6 +7,7 @@ import {
   factorWorkResponse,
   getLesson,
   isAnswerCorrect,
+  validFactorSpec,
 } from "./domain";
 
 const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
@@ -73,5 +74,12 @@ describe("Tabla de factores primos (MCD y MCM)", () => {
     expect(errorFeedback(q, "T18;2:9.27|3:3.9|3:1.3")).toMatch(/basta con dividir entre los primos que dividen a todos/);
     // Tabla completa con el MCM como respuesta: se dice qué filas multiplicar.
     expect(errorFeedback(q, "T54;2:9.27|3:3.9|3:1.3|3:1.1")).toMatch(/solo los primos de las filas que dividieron a todos/);
+  });
+
+  test("el MCD con tabla necesita un primo común: con números primos entre sí no hay tabla", () => {
+    expect(validFactorSpec({ op: "mcd", values: [8, 15] })).toBe(false);
+    expect(validFactorSpec({ op: "mcm", values: [8, 15] })).toBe(true);
+    expect(validFactorSpec({ op: "mcd", values: [12, 18] })).toBe(true);
+    for (const q of getLesson("mcd-mcm")!.practice) if (q.column) expect(validFactorSpec(q.column as never)).toBe(true);
   });
 });
