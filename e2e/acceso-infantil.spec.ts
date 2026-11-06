@@ -27,9 +27,9 @@ test("un navegador sin la sesión del padre entra con el callable real y su PIN"
     await expect(child.getByRole("link", { name: "Perfiles" })).toHaveCount(0);
     await child.getByRole("link", { name: "Comenzar mi primera clase" }).click();
     await child.getByRole("button", { name: "Ir a la clase", exact: true }).click();
-    await expect(child.getByRole("heading", { name: "El cero separa dos sentidos" })).toBeVisible();
+    await expect(child.getByRole("heading", { name: "Cada cifra en su columna" })).toBeVisible();
     await child.reload();
-    await expect(child.getByRole("heading", { name: "El cero separa dos sentidos" })).toBeVisible();
+    await expect(child.getByRole("heading", { name: "Cada cifra en su columna" })).toBeVisible();
     // La PWA abre en start_url "/": con sesión infantil va directo a su juego.
     await child.goto("/");
     await expect(child).toHaveURL(/\/jugar\/[^/]+$/);
