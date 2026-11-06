@@ -7,6 +7,7 @@ import {
   checkFactorWork,
   encodeFactorWork,
   factorTrace,
+  gcdOf,
   isPrime,
   type FactorSpec,
   type FactorTrace,
@@ -84,8 +85,11 @@ export function FactorDemo({ spec, initialStep }: { spec: FactorSpec; initialSte
         {current ? current.why : trace.rows[0].ask}
         {shown >= total && (
           <strong className="mt-1 block text-cyan-100">
-            MCM = {trace.rows.map((r) => r.prime).join(" × ")} = {trace.mcm} · MCD ={" "}
-            {trace.rows.filter((r) => r.common).map((r) => r.prime).join(" × ") || "1"} = {trace.mcd}
+            {spec.op === "mcd"
+              ? `MCD = ${trace.rows.map((r) => r.prime).join(" × ")} = ${trace.mcd}`
+              : `MCM = ${trace.rows.map((r) => r.prime).join(" × ")} = ${trace.mcm} · MCD = ${
+                  trace.rows.filter((r) => r.common).map((r) => r.prime).join(" × ") || "1"
+                } = ${trace.mcd}`}
           </strong>
         )}
       </p>
@@ -145,7 +149,14 @@ export function FactorSheet({
     const p = Number(prev.prime);
     return prev.values.map((v) => (Number(v) % p === 0 ? String(Number(v) / p) : v));
   };
-  const lineDone = (lines: Line[], line: number) => lines[line].values.every((v) => v !== "" && Number(v) === 1);
+  // MCD: la tabla termina cuando no queda ningún divisor común; MCM: en 1.
+  const mcd = spec.op === "mcd";
+  const lineDone = (lines: Line[], line: number) =>
+    lines[line].values.every((v) => v !== "") &&
+    (mcd ? gcdOf(lines[line].values.map(Number)) === 1 : lines[line].values.every((v) => Number(v) === 1));
+  /** El primo sirve: en el MCD divide a todos; en el MCM, a alguno. */
+  const primeFits = (values: string[], p: number) =>
+    isPrime(p) && (mcd ? values.every((v) => Number(v) % p === 0) : values.some((v) => Number(v) % p === 0));
   const rowsOf = (lines: Line[]) => {
     const rows: { prime: string; next: string[] }[] = [];
     for (let i = 0; i + 1 < lines.length && lines[i].prime; i++) rows.push({ prime: lines[i].prime, next: lines[i + 1].values });
@@ -175,7 +186,7 @@ export function FactorSheet({
       }
       if (lineDone(lines, i)) return { line: i, column: "answer" as const };
       const p = Number(lines[i].prime);
-      if (!lines[i].prime || !isPrime(p) || !lines[i].values.some((v) => Number(v) % p === 0)) return { line: i, column: "p" as const };
+      if (!lines[i].prime || !primeFits(lines[i].values, p)) return { line: i, column: "p" as const };
     }
     return null;
   })();
@@ -189,7 +200,7 @@ export function FactorSheet({
     if (mode === "guided") {
       if (column === "p") {
         const p = Number(value);
-        const ok = isPrime(p) && state.lines[line].values.some((v) => Number(v) % p === 0);
+        const ok = primeFits(state.lines[line].values, p);
         setMiss(value && !ok && value.length >= 1 && (p > 1 || value.length > 1) ? `p${line}` : null);
         if (ok && !lines[line + 1]) lines.push({ values: spec.values.map(() => ""), prime: "" });
       } else {
@@ -277,7 +288,9 @@ export function FactorSheet({
           miss ? (
             <span className="block rounded-xl bg-amber-950/40 p-3 text-amber-100">
               {miss.startsWith("p")
-                ? "Revisa el primo: tiene que ser primo y dividir a alguno de los números de la fila."
+                ? mcd
+                  ? "Revisa el primo: para el MCD tiene que ser primo y dividir a todos los números de la fila."
+                  : "Revisa el primo: tiene que ser primo y dividir a alguno de los números de la fila."
                 : miss === "answer"
                   ? spec.op === "mcd"
                     ? "Multiplica solo los primos de las filas que dividieron a todos."
@@ -288,7 +301,9 @@ export function FactorSheet({
             <span className="block rounded-xl bg-emerald-950/40 p-3 text-emerald-100">{label} = {answerValue}.</span>
           ) : active?.column === "answer" ? (
             <span className="block rounded-xl bg-cyan-950/40 p-3 text-cyan-100">
-              Todos quedaron en 1. {spec.op === "mcd" ? "¿Qué primos dividieron a todos?" : "Multiplica todos los primos."}
+              {mcd
+                ? "Ya no queda ningún divisor común: la tabla termina. Multiplica los primos de la derecha."
+                : "Todos quedaron en 1. Multiplica todos los primos."}
             </span>
           ) : active?.column === "p" ? (
             <span className="block rounded-xl bg-cyan-950/40 p-3 text-cyan-100">¿Qué primo divide a alguno de los números de la fila {active.line + 1}? Empieza por el menor.</span>
@@ -299,7 +314,9 @@ export function FactorSheet({
           <span className="block rounded-xl bg-amber-950/40 p-3 text-amber-100">Revisa la fila {failedRow}: es la primera que no coincide.</span>
         ) : (
           <span className="text-xs text-slate-400">
-            A la derecha de la raya, un primo por fila; debajo, lo que queda de cada número. Sigue hasta que todos sean 1.
+            {mcd
+              ? "A la derecha de la raya, un primo que divida a todos los números; debajo, lo que queda. Termina cuando ya no tengan ningún divisor común."
+              : "A la derecha de la raya, un primo por fila; debajo, lo que queda de cada número. Sigue hasta que todos sean 1."}
           </span>
         )}
       </p>

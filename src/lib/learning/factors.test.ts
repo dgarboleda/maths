@@ -58,4 +58,20 @@ describe("Tabla de factores primos (MCD y MCM)", () => {
     const product = (q.column as { values: number[] }).values.reduce((p, v) => p * v, 1);
     expect(errorFeedback(q, String(product))).toMatch(/Multiplicaste los números/);
   });
+
+  test("MCD: vale la tabla de divisores comunes y la completa; nunca se exige llegar a 1 con primos comunes", () => {
+    const spec = { op: "mcd" as const, values: [18, 27] };
+    expect(factorTrace(spec).rows.map((r) => r.prime)).toEqual([3, 3]);
+    expect(factorWorkResponse(spec)).toBe("T9;3:6.9|3:2.3");
+    expect(checkFactorWork(spec, "T9;3:6.9|3:2.3")?.correct).toBe(true);
+    // La tabla completa hasta 1 también sirve, multiplicando solo las filas comunes.
+    expect(checkFactorWork(spec, "T9;2:9.27|3:3.9|3:1.3|3:1.1")?.correct).toBe(true);
+    // Con solo primos comunes, si aún queda uno común se dice que siga.
+    expect(checkFactorWork(spec, "T3;3:6.9")?.problem?.kind).toBe("queda-comun");
+    // El caso del móvil: tabla con un primo no común (2) sin terminar.
+    const q = { ...getLesson("mcd-mcm")!.practice.find((item) => item.task === 3)!, column: spec, answer: 9, errors: [] };
+    expect(errorFeedback(q, "T18;2:9.27|3:3.9|3:1.3")).toMatch(/basta con dividir entre los primos que dividen a todos/);
+    // Tabla completa con el MCM como respuesta: se dice qué filas multiplicar.
+    expect(errorFeedback(q, "T54;2:9.27|3:3.9|3:1.3|3:1.1")).toMatch(/solo los primos de las filas que dividieron a todos/);
+  });
 });

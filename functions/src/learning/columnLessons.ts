@@ -504,10 +504,11 @@ export const FACTOR_LESSONS: Lesson[] = [
       {
         title: "MCD: los primos que dividen a todos",
         paragraphs: [
-          "El MCD es el producto de los primos marcados, los que dividieron a todos los números a la vez: en la tabla de 12 y 18 son la primera fila (2) y la tercera (3), así que el MCD es 6.",
+          "Para el MCD basta con dividir entre primos que dividan a todos los números a la vez y parar cuando ya no quede ninguno común: 12, 18 | 2 → 6, 9 | 3 → 2, 3. El MCD es el producto de esos primos, 2 × 3 = 6.",
+          "Si ya hiciste la tabla completa hasta 1, también sirve: el MCD es el producto de los primos marcados, los que dividieron a todos.",
           "Para decidir cuál usar: si se busca cuándo vuelven a coincidir cosas que se repiten, es un múltiplo (MCM); si se busca partir en trozos iguales lo más grandes posible, es un divisor (MCD).",
         ],
-        formula: "MCD(12; 18) = 2 × 3 = 6",
+        formula: "12, 18 | 2 → 6, 9 | 3 → 2, 3 (sin divisor común): MCD = 2 × 3 = 6",
       },
     ],
     examples: [
