@@ -1,7 +1,7 @@
 import { CONTENT_VERSION } from "./version";
 import { getLesson, LEARNING_UNITS, LESSONS } from "./catalog";
 import { LearningError } from "./engine";
-import { isAnswerCorrect } from "./questions";
+import { isAnswerCorrect, MAX_RESPONSE_LENGTH } from "./questions";
 import { PERU_MAP } from "./peru";
 import type {
   Lesson,
@@ -107,7 +107,7 @@ export function applyPlacementAction(
     throw new LearningError("La pregunta cambió. Actualiza la página para continuar.");
   let correct = false;
   if (action.kind === "answer") {
-    if (!action.response.trim() || action.response.length > 64)
+    if (!action.response.trim() || action.response.length > MAX_RESPONSE_LENGTH)
       throw new LearningError("Escribe o selecciona una respuesta.");
     correct = isAnswerCorrect(current.question, action.response);
   }

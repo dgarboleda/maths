@@ -438,7 +438,7 @@ export function QuestionActivity({
       onSubmit={(event) => {
         event.preventDefault();
         if (disabled || locked || (arcade && paused)) return;
-        if (question.format !== "choice" && parseNumber(response) === null) {
+        if (question.format !== "choice" && !question.column && parseNumber(response) === null) {
           setFormatError(
             "Escribe un número o una fracción válida, como 3/4. El denominador debe ser distinto de cero.",
           );

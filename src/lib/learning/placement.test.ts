@@ -16,6 +16,7 @@ import {
   placementQuestion,
   recommendedLesson,
   type PlacementState,
+  correctResponse,
 } from "./domain";
 
 const NOW = 1_700_000_000_000;
@@ -35,7 +36,7 @@ function run(knows: (lessonId: string) => boolean | "skip") {
             {
               kind: "answer",
               questionId: current.question.id,
-              response: decision ? String(real.answer) : "123456",
+              response: decision ? correctResponse(real) : "123456",
             },
             NOW,
           );
@@ -77,7 +78,7 @@ describe("Evaluación de ubicación", () => {
       const item = state.items.at(-1)!;
       const real = current.lesson.checks[1].find((q) => q.id === item.questionId)!;
       const fail = current.lesson.id === "fracciones-unidad" && real.task === 0;
-      state = applyPlacementAction(state, { kind: "answer", questionId: current.question.id, response: fail ? "respuesta incorrecta" : String(real.answer) }, NOW);
+      state = applyPlacementAction(state, { kind: "answer", questionId: current.question.id, response: fail ? "respuesta incorrecta" : correctResponse(real) }, NOW);
     }
     expect(state.result!.start.fracciones).toBe("fracciones-unidad");
     expect(state.result!.mastered).not.toContain("fracciones-unidad");
@@ -90,7 +91,7 @@ describe("Evaluación de ubicación", () => {
     const last = old.items.at(-1)!;
     last.correct = null;
     const current = placementCurrent(old)!;
-    const finished = applyPlacementAction(old, { kind: "answer", questionId: current.question.id, response: String(placementQuestion(current.lesson).answer) }, NOW);
+    const finished = applyPlacementAction(old, { kind: "answer", questionId: current.question.id, response: correctResponse(placementQuestion(current.lesson)) }, NOW);
     expect(finished.result!.mastered).toContain("fracciones-unidad");
   });
 

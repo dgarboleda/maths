@@ -6,6 +6,7 @@ import {
   LEARNING_UNITS,
   LESSONS,
   parseNumber,
+  correctResponse,
 } from "./domain";
 
 describe("Contrato editorial del programa inicial", () => {
@@ -54,7 +55,7 @@ describe("Contrato editorial del programa inicial", () => {
           expect(q.prompt.length).toBeGreaterThan(10);
           expect(q.solution.length).toBeGreaterThan(0);
           expect(q.hints).toHaveLength(3);
-          expect(isAnswerCorrect(q, String(q.answer)), `${l.id} ${q.id}`).toBe(true);
+          expect(isAnswerCorrect(q, correctResponse(q)), `${l.id} ${q.id}`).toBe(true);
           if (q.choices) {
             expect(new Set(q.choices.map((o) => o.label)).size).toBe(
               q.choices.length,

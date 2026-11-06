@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import { MathText } from "@/components/MathText";
 import {
+  checkDivisionWork,
+  divisionWorkFeedback,
   fmt,
   isAnswerCorrect,
   operationHints,
@@ -126,6 +128,10 @@ export function OperationWorkspace({
 
 /** Dónde se separó una respuesta numérica del resultado, en palabras. */
 export function operationMistake(spec: ColumnSpec, response: string): string | null {
+  if (spec.op === "divide") {
+    const work = checkDivisionWork(spec, response);
+    if (work) return work.firstError ? divisionWorkFeedback(spec, work.firstError, work.layout) : null;
+  }
   if (!/^\s*\d+\s*$/.test(response)) return null;
   const answer = operationResult(spec);
   if (spec.op === "divide") {

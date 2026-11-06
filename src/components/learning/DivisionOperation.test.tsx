@@ -1,49 +1,84 @@
 import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { axe } from "jest-axe";
-import { DivisionDemo, DivisionSheet, firstWrongQuotientDigit } from "./DivisionOperation";
+import { divisionWorkResponse } from "@/lib/learning/domain";
+import { DivisionDemo, DivisionSheet } from "./DivisionOperation";
 
-const digit = (n: number) => screen.getByLabelText(`Cociente: cifra ${n}`);
+const quotient = (n: number) => screen.getByLabelText(`Cociente: cifra ${n}`);
+/** Escribe una fila alineada a la derecha en sus casillas. */
+function row(kind: "Producto" | "Resta", step: number, text: string) {
+  const cells = screen.getAllByLabelText(new RegExp(`^${kind} del paso ${step}: casilla`));
+  const start = cells.length - text.length;
+  text.split("").forEach((d, i) => fireEvent.change(cells[start + i], { target: { value: d } }));
+}
 
 describe("Galera de la división larga", () => {
-  test("guiada: corrige cada cifra, exige el 0 y entrega el cociente", () => {
+  test("guiada: corrige cada casilla, exige el 0 y entrega el procedimiento completo", () => {
     const onComplete = vi.fn();
-    render(
+    const { container } = render(
       <DivisionSheet spec={{ op: "divide", a: 612, b: 6 }} layout="completa" mode="guided"
         response="" onChange={() => {}} onComplete={onComplete} />,
     );
-    fireEvent.change(digit(1), { target: { value: "1" } });
+    fireEvent.change(quotient(1), { target: { value: "1" } });
+    expect(screen.getByText(/Multiplica la cifra del cociente por el divisor: 1 × 6/)).toBeInTheDocument();
+    row("Producto", 1, "6");
+    row("Resta", 1, "01");
     expect(screen.getByText(/Bajas el 1: queda 1\./)).toBeInTheDocument();
     // Saltarse el 0 escribiendo el 2 se corrige en el momento.
-    fireEvent.change(digit(2), { target: { value: "2" } });
+    fireEvent.change(quotient(2), { target: { value: "2" } });
     expect(screen.getByText(/Revisa esa cifra/)).toBeInTheDocument();
-    fireEvent.change(digit(2), { target: { value: "0" } });
-    fireEvent.change(digit(3), { target: { value: "2" } });
-    expect(onComplete).toHaveBeenCalledWith("102");
+    fireEvent.change(quotient(2), { target: { value: "0" } });
+    row("Producto", 2, "0");
+    // Un producto mal escrito se señala.
+    row("Resta", 2, "13");
+    expect(screen.getByText(/Revisa la resta del paso 2/)).toBeInTheDocument();
+    row("Resta", 2, "12");
+    fireEvent.change(quotient(3), { target: { value: "2" } });
+    row("Producto", 3, "12");
+    row("Resta", 3, "0");
+    expect(onComplete).toHaveBeenCalledWith("C102;6,01,0,12,12,0");
+    expect(container).toHaveTextContent(/Cociente 102 · resto 0/);
   });
 
-  test("libre: no revela cuántas cifras tiene el cociente y señala la primera que no coincide", async () => {
+  test("libre: se escribe todo el procedimiento y se envía al completarlo", async () => {
     const onChange = vi.fn();
-    const { container } = render(
-      <DivisionSheet spec={{ op: "divide", a: 756, b: 3 }} layout="completa" mode="free" response="" onChange={onChange} />,
-    );
-    expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(3);
-    fireEvent.change(digit(1), { target: { value: "2" } });
-    fireEvent.change(digit(2), { target: { value: "5" } });
-    fireEvent.change(digit(3), { target: { value: "2" } });
-    expect(onChange).toHaveBeenLastCalledWith("252");
+    const spec = { op: "divide" as const, a: 757, b: 3 };
+    const { container } = render(<DivisionSheet spec={spec} layout="completa" mode="free" response="" onChange={onChange} />);
+    fireEvent.change(quotient(1), { target: { value: "2" } });
+    expect(onChange).toHaveBeenLastCalledWith("");
+    row("Producto", 1, "6");
+    row("Resta", 1, "15");
+    fireEvent.change(quotient(2), { target: { value: "5" } });
+    row("Producto", 2, "15");
+    row("Resta", 2, "07");
+    fireEvent.change(quotient(3), { target: { value: "2" } });
+    row("Producto", 3, "6");
+    row("Resta", 3, "1");
+    expect(onChange).toHaveBeenLastCalledWith(divisionWorkResponse(spec));
     expect(await axe(container)).toHaveNoViolations();
-    expect(firstWrongQuotientDigit("12", 102)).toBe(1);
-    expect(firstWrongQuotientDigit("102", 102)).toBeNull();
+  });
+
+  test("libre: tras un intento fallido señala la primera casilla que no coincide", () => {
+    const failed = "C252;6,15,14,07,6,1";
+    render(
+      <DivisionSheet spec={{ op: "divide", a: 757, b: 3 }} layout="completa" mode="free"
+        response={failed} failedResponse={failed} onChange={() => {}} />,
+    );
+    expect(screen.getByText(/Revisa el producto del paso 2/)).toBeInTheDocument();
+    // Lo escrito se conserva.
+    expect(quotient(1)).toHaveValue("2");
   });
 
   test("demostración: la disposición completa escribe los productos; la abreviada solo los restos", () => {
-    const { container, unmount } = render(<DivisionDemo spec={{ op: "divide", a: 756, b: 3 }} layout="completa" initialStep={3} />);
-    const products = (root: HTMLElement) => [...root.querySelectorAll(".sr-only")].filter((el) => el.textContent === "restas ").length;
-    expect(products(container)).toBe(3);
-    expect(container).toHaveTextContent(/Cociente 252 · resto 0/);
-    unmount();
+    const rows = (root: HTMLElement, label: string) =>
+      [...root.querySelectorAll(".sr-only")].filter((el) => el.textContent?.startsWith(label)).length;
+    const full = render(<DivisionDemo spec={{ op: "divide", a: 756, b: 3 }} layout="completa" initialStep={3} />);
+    expect(rows(full.container, "producto del paso")).toBe(3);
+    expect(rows(full.container, "resta del paso")).toBe(3);
+    expect(full.container).toHaveTextContent(/Cociente 252 · resto 0/);
+    full.unmount();
     const short = render(<DivisionDemo spec={{ op: "divide", a: 756, b: 3 }} layout="abreviada" initialStep={3} />);
-    expect(products(short.container)).toBe(0);
+    expect(rows(short.container, "producto del paso")).toBe(0);
+    expect(rows(short.container, "resta del paso")).toBe(3);
   });
 });

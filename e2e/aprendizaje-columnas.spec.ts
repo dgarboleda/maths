@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { getLesson } from "../src/lib/learning/domain";
+import { divisionTrace, getLesson, type DivisionSpec } from "../src/lib/learning/domain";
+import { escribirGalera } from "./operaciones";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 
 async function sinDesbordeNiViolaciones(page: Page) {
@@ -102,12 +103,15 @@ test("división larga: galera paso a paso, cero del cociente y hoja guiada", asy
   await page.getByRole("button", { name: "Comprobar mi respuesta" }).click();
   await page.getByRole("button", { name: "Siguiente actividad" }).click();
 
+  // La galera guiada pide todo el procedimiento: cociente, productos, restas y resto.
+  // Como el ejemplo se vio con «Restar de memoria», esa disposición se conserva.
   const division = lesson.guided[1];
   expect(division.column?.op).toBe("divide");
-  const digits = String(division.answer).split("");
-  await page.getByLabel("Cociente: cifra 1").fill(String((Number(digits[0]) + 1) % 10));
+  await page.getByRole("radio", { name: "Escribir cada resta" }).click();
+  const firstDigit = divisionTrace(division.column as DivisionSpec).steps[0].digit;
+  await page.getByLabel("Cociente: cifra 1", { exact: true }).fill(String((firstDigit + 1) % 10));
   await expect(page.getByText(/Revisa esa cifra/)).toBeVisible();
-  for (const [i, d] of digits.entries()) await page.getByLabel(`Cociente: cifra ${i + 1}`).fill(d);
+  await escribirGalera(page, division);
   await expect(page.getByText("Tu respuesta es correcta. Revisa por qué funciona.")).toBeVisible();
   await sinDesbordeNiViolaciones(page);
   await page.screenshot({ path: testInfo.outputPath("guiada-division.png"), fullPage: true });

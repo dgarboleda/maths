@@ -4,6 +4,7 @@ import Link from "next/link";
 import { MathText } from "@/components/MathText";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Compass, SkipForward } from "lucide-react";
+import { OperationWorkspace } from "./Operation";
 import {
   getLesson,
   initialPlacement,
@@ -152,6 +153,18 @@ function PlacementQuestion({
             </label>
           ))}
         </fieldset>
+      ) : question.column ? (
+        <OperationWorkspace
+          questionId={question.id}
+          spec={question.column}
+          mode="free"
+          response={response}
+          onChange={setResponse}
+          onComplete={() => {}}
+          hintLevel={0}
+          failedResponse={null}
+          disabled={disabled}
+        />
       ) : (
         <label className="block text-sm font-semibold text-slate-200">
           Tu respuesta{question.unit ? ` (${question.unit})` : ""}

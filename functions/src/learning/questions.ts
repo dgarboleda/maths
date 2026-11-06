@@ -1,6 +1,13 @@
 import type { Example, Intent, Question } from "./types";
 import { columnTrace } from "./algorithms/columns";
-import { divisionTrace } from "./algorithms/division";
+import {
+  checkDivisionWork,
+  divisionAnswerText,
+  divisionResponseCorrect,
+  divisionResponseValue,
+  divisionTrace,
+  divisionWorkFeedback,
+} from "./algorithms/division";
 import {
   operationBugs,
   operationExpression,
@@ -62,7 +69,7 @@ export function columnar(
       id,
       options.prompt ??
         (spec.op === "divide"
-          ? `Calcula el cociente de ${operationExpression(spec)} con la división larga.`
+          ? `Divide ${operationExpression(spec)} con la división larga: escribe el cociente, cada resta y el resto.`
           : `Calcula en columnas: ${operationExpression(spec)}.`),
       result,
       operationSolution(spec),
@@ -160,14 +167,27 @@ export function parseNumber(value: string): number | null {
     ? result
     : null;
 }
+/** Longitud máxima de una respuesta: la galera envía el procedimiento completo. */
+export const MAX_RESPONSE_LENGTH = 160;
+
 export function isAnswerCorrect(question: Question, response: string): boolean {
   if (question.format === "choice") return response === question.answer;
+  if (question.column?.op === "divide") return divisionResponseCorrect(question.column, response);
   const value = parseNumber(response);
   return (
     value !== null &&
     typeof question.answer === "number" &&
     Math.abs(value - question.answer) < 1e-8
   );
+}
+/** La respuesta correcta tal como se escribe (en una división con resto,
+ *  «cociente r resto»). */
+export function correctResponse(question: Question): string {
+  return question.column?.op === "divide" ? divisionAnswerText(question.column) : String(question.answer);
+}
+/** Valor numérico con el que se buscan los errores previstos. */
+export function responseValue(question: Question, response: string): number | null {
+  return question.column?.op === "divide" ? divisionResponseValue(question.column, response) : parseNumber(response);
 }
 export function errorFeedback(question: Question, response: string): string {
   if (question.format === "choice") {
@@ -176,14 +196,25 @@ export function errorFeedback(question: Question, response: string): string {
     )?.feedback;
     if (feedback) return feedback;
   }
-  const value = question.format === "choice" ? response : parseNumber(response);
+  const value = question.format === "choice" ? response : responseValue(question, response);
   const error = question.errors?.find((item) =>
     typeof item.value === "number" && typeof value === "number"
       ? Math.abs(item.value - value) < 1e-8
       : item.value === value,
   );
   if (error) return error.feedback;
+  if (question.column?.op === "divide") {
+    const work = checkDivisionWork(question.column, response);
+    if (work?.firstError) return divisionWorkFeedback(question.column, work.firstError, work.layout);
+    if (value !== null) {
+      const { quotient, remainder } = divisionTrace(question.column);
+      if (value === quotient)
+        return `El cociente es correcto; falta el resto o no es ${remainder === 0 ? "0" : "ese"}. Escríbelo así: ${quotient} r ${remainder}.`;
+    }
+  }
   if (question.format !== "choice" && value === null)
-    return "Escribe un número, un decimal con coma o punto, o una fracción como 3/4. Revisa que el denominador sea distinto de cero.";
+    return question.column?.op === "divide"
+      ? "Completa la galera, o escribe el cociente y el resto así: 52 r 3."
+      : "Escribe un número, un decimal con coma o punto, o una fracción como 3/4. Revisa que el denominador sea distinto de cero.";
   return "Revisa qué cantidad buscas y qué representa cada dato. Puedes consultar la clase o pedir una pista antes de intentarlo otra vez.";
 }

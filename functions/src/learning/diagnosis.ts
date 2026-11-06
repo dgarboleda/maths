@@ -1,4 +1,4 @@
-import { isAnswerCorrect, parseNumber } from "./questions";
+import { isAnswerCorrect, responseValue } from "./questions";
 import type { Lesson, Question, ResponseEvidence } from "./types";
 
 /** Lo que se guarda junto a cada respuesta (`learningEvidence/{op}.outcome`):
@@ -62,7 +62,7 @@ export function matchError(question: Question, response: string): string | null 
   if (isAnswerCorrect(question, response)) return null;
   if (question.format === "choice")
     return question.choices?.some((c) => c.id === response) ? `c:${response}` : null;
-  const value = parseNumber(response);
+  const value = responseValue(question, response);
   if (value === null) return null;
   const error = question.errors?.find(
     (item) => typeof item.value === "number" && Math.abs(item.value - value) < 1e-8,

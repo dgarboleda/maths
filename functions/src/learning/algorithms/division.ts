@@ -76,7 +76,9 @@ export function divisionTrace(spec: DivisionSpec, layout: DivisionLayout = "comp
       parts.push(
         index === 0
           ? `${part} es menor que ${b}: el cociente es 0.`
-          : `${part} es menor que ${b}: cabe 0 veces. Escribes 0 en el cociente; sin ese 0, las demás cifras cambiarían de lugar.`,
+          : `${part} es menor que ${b}: cabe 0 veces. Escribes 0 en el cociente; sin ese 0, las demás cifras cambiarían de lugar. ${
+              layout === "completa" ? `0 × ${b} = 0 debajo y sigue quedando ${part}.` : `Sigue quedando ${part}.`
+            }`,
       );
     else
       parts.push(
@@ -148,7 +150,7 @@ export function divisionBugs(spec: DivisionSpec): DivisionBug[] {
     bugs.push({
       id: "cero-omitido",
       value,
-      feedback: `Al llegar a ${zero.part}, que es menor que ${spec.b}, hay que escribir 0 en el cociente antes de bajar la cifra siguiente. Sin ese 0 el cociente pierde una posición: comprueba que ${fmt(value)} × ${spec.b} queda lejos de ${fmt(spec.a)}.`,
+      feedback: `Al llegar a ${zero.part}, que es menor que ${spec.b}, la cifra del cociente es 0: se escribe y se baja la cifra siguiente. Si se omite o se pone otra cifra, el cociente cambia; compruébalo multiplicando por ${spec.b}.`,
     });
   }
   // Dividir cada cifra por separado, sin arrastrar lo que sobra.
@@ -162,4 +164,145 @@ export function divisionBugs(spec: DivisionSpec): DivisionBug[] {
   }
   const seen = new Set([t.quotient]);
   return bugs.filter((bug) => (seen.has(bug.value) ? false : (seen.add(bug.value), true)));
+}
+
+// ── Procedimiento completo ──────────────────────────────────────────────
+
+/**
+ * Cada casilla que escribe el alumno en la galera: una cifra del cociente
+ * por paso y, debajo del dividendo, el producto (solo en la disposición
+ * completa) y lo que queda tras restar, con la cifra que se baja al lado.
+ * La última fila es el resto.
+ */
+export interface DivisionField {
+  key: string;
+  step: number;
+  kind: "q" | "p" | "r";
+  expected: number;
+  /** Cómo se escribe (con el 0 delante si se restó todo: «01»). */
+  text: string;
+  /** Columna del dividendo donde termina la fila (q: sin uso). */
+  end: number;
+  /** Casillas disponibles: tantas como cifras puede tener la fila, sin
+   *  revelar cuántas tiene la respuesta. */
+  width: number;
+}
+
+export function divisionFields(trace: DivisionTrace): DivisionField[] {
+  const width = String(trace.spec.b).length + 1;
+  const fields: DivisionField[] = [];
+  for (const s of trace.steps) {
+    fields.push({ key: `q${s.index}`, step: s.index, kind: "q", expected: s.digit, text: String(s.digit), end: 0, width: 1 });
+    if (trace.layout === "completa")
+      fields.push({ key: `p${s.index}`, step: s.index, kind: "p", expected: s.product, text: String(s.product), end: s.end, width: Math.min(width, s.end + 1) });
+    const text = String(s.rest) + (s.down !== null ? String(s.down) : "");
+    const end = s.end + (s.down !== null ? 1 : 0);
+    fields.push({ key: `r${s.index}`, step: s.index, kind: "r", expected: Number(text), text, end, width: Math.min(width, end + 1) });
+  }
+  return fields;
+}
+
+/** Respuesta de la galera: «C» o «A» (disposición), las cifras del cociente
+ *  y, separadas por comas, las filas en el orden en que se escriben. */
+export function encodeDivisionWork(layout: DivisionLayout, quotient: string, rows: string[]): string {
+  return `${layout === "completa" ? "C" : "A"}${quotient};${rows.join(",")}`;
+}
+
+export interface DivisionWorkCheck {
+  layout: DivisionLayout;
+  quotient: number;
+  /** Última fila: lo que sobra. */
+  remainder: number | null;
+  /** Primera casilla incorrecta, en el orden en que se escribe. */
+  firstError: DivisionField | null;
+  correct: boolean;
+}
+
+/** Revisa todo el procedimiento; null si la respuesta no es de la galera. */
+export function checkDivisionWork(spec: DivisionSpec, response: string): DivisionWorkCheck | null {
+  const match = /^([CA])(\d+);(\d*(?:,\d*)*)$/.exec(response.trim());
+  if (!match) return null;
+  const layout: DivisionLayout = match[1] === "C" ? "completa" : "abreviada";
+  const fields = divisionFields(divisionTrace(spec, layout));
+  const quotientDigits = match[2];
+  const rows = match[3].split(",");
+  const rowFields = fields.filter((f) => f.kind !== "q");
+  if (quotientDigits.length !== fields.length - rowFields.length || rows.length !== rowFields.length) return null;
+  const value = (f: DivisionField) => {
+    if (f.kind === "q") return Number(quotientDigits[f.step]);
+    const row = rows[rowFields.indexOf(f)];
+    return row === "" ? Number.NaN : Number(row);
+  };
+  const firstError = fields.find((f) => value(f) !== f.expected) ?? null;
+  const last = rows.at(-1) ?? "";
+  return {
+    layout,
+    quotient: Number(quotientDigits),
+    remainder: last === "" ? null : Number(last),
+    firstError,
+    correct: firstError === null,
+  };
+}
+
+/** Qué revisar en la primera casilla incorrecta (sin dar el resultado). */
+export function divisionWorkFeedback(spec: DivisionSpec, field: DivisionField, layout: DivisionLayout): string {
+  const step = divisionTrace(spec, layout).steps[field.step];
+  const n = field.step + 1;
+  if (field.kind === "q")
+    return step.digit === 0
+      ? `En el paso ${n} queda ${step.part}, que es menor que ${spec.b}: esa cifra del cociente es 0.`
+      : `Revisa la cifra ${n} del cociente: ¿cuántas veces cabe ${spec.b} en ${step.part} sin pasarse?`;
+  if (field.kind === "p") return `Revisa el producto del paso ${n}: ${step.digit} × ${spec.b}.`;
+  return step.down === null
+    ? `Revisa el resto: ${step.part} − ${step.product}. Siempre es menor que ${spec.b}.`
+    : `Revisa el paso ${n}: resta ${step.part} − ${step.product} y escribe al lado la cifra que bajas.`;
+}
+
+/** Respuesta escrita sin la galera: «cociente» si la división es exacta o
+ *  «cociente r resto» (también «resto 5»). */
+export function parseDivisionText(response: string): { quotient: number; remainder: number | null } | null {
+  const m = /^\s*(\d+)\s*(?:(?:r|resto)\s*(\d+))?\s*$/i.exec(response);
+  return m ? { quotient: Number(m[1]), remainder: m[2] === undefined ? null : Number(m[2]) } : null;
+}
+
+/** ¿Es correcta una respuesta a una división (galera o texto)? */
+export function divisionResponseCorrect(spec: DivisionSpec, response: string): boolean {
+  const work = checkDivisionWork(spec, response);
+  if (work) return work.correct;
+  const text = parseDivisionText(response);
+  if (!text) return false;
+  const { quotient, remainder } = divisionTrace(spec);
+  return text.quotient === quotient && (text.remainder ?? 0) === remainder;
+}
+
+/**
+ * Valor con el que se busca un error previsto: el cociente que escribió el
+ * alumno, o el del error «cero omitido» si puso otra cifra donde iba el 0
+ * (con casillas por paso, ese error no cambia la longitud del cociente).
+ */
+export function divisionResponseValue(spec: DivisionSpec, response: string): number | null {
+  const work = checkDivisionWork(spec, response);
+  if (work) {
+    const f = work.firstError;
+    if (f?.kind === "q" && divisionTrace(spec).steps[f.step].digit === 0)
+      return divisionBugs(spec).find((b) => b.id === "cero-omitido")?.value ?? work.quotient;
+    return work.quotient;
+  }
+  return parseDivisionText(response)?.quotient ?? null;
+}
+
+/** La respuesta correcta como se escribiría sin la galera. */
+export function divisionAnswerText(spec: DivisionSpec): string {
+  const t = divisionTrace(spec);
+  return t.remainder ? `${t.quotient} r ${t.remainder}` : String(t.quotient);
+}
+
+/** El procedimiento completo y correcto, como lo envía la galera. */
+export function divisionWorkResponse(spec: DivisionSpec, layout: DivisionLayout = "completa"): string {
+  const fields = divisionFields(divisionTrace(spec, layout));
+  return encodeDivisionWork(
+    layout,
+    fields.filter((f) => f.kind === "q").map((f) => f.text).join(""),
+    fields.filter((f) => f.kind !== "q").map((f) => f.text),
+  );
 }

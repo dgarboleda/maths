@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { getLesson, placementQuestion, type Question } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre } from "./utilidades";
+import { escribirColumnas } from "./operaciones";
 
 const familyEmail = new WeakMap<Page, string>();
 async function learner(page: Page) {
@@ -319,9 +320,9 @@ test("la evaluación de ubicación recomienda por dónde empezar y la familia ve
   const first = getLesson("suma-resta-columnas")!;
   const question = placementQuestion(first);
   await expect(page.getByText(question.prompt, { exact: true })).toBeVisible();
-  if (question.choices)
-    await page.getByRole("radio", { name: question.choices.find((c) => c.id === question.answer)!.label, exact: true }).check();
-  else await page.getByRole("textbox", { name: /Tu respuesta/ }).fill(String(question.answer));
+  // La pregunta de ubicación de la clase de columnas se responde en su hoja.
+  expect(question.column?.op).toBe("add");
+  await escribirColumnas(page, String(question.answer));
   await page.getByRole("button", { name: "Responder" }).click();
   // Acertar avanza a la segunda clase de números; "Todavía no lo sé" cierra
   // esa unidad y pasa a la primera clase de cada una de las 6 restantes.

@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest";
 import {
+  checkDivisionWork,
+  correctResponse,
   divisionBugs,
+  divisionResponseValue,
+  divisionWorkResponse,
   divisionHints,
   divisionSolution,
   divisionTrace,
@@ -59,6 +63,42 @@ describe("División larga", () => {
     expect(q.answer).toBe(operationResult(q.column!));
     const bug = divisionBugs(q.column as { op: "divide"; a: number; b: number }).find((b) => b.id === "cero-omitido")!;
     expect(isAnswerCorrect(q, String(bug.value))).toBe(false);
-    expect(errorFeedback(q, String(bug.value))).toMatch(/hay que escribir 0 en el cociente/);
+    expect(errorFeedback(q, String(bug.value))).toMatch(/la cifra del cociente es 0/);
+  });
+
+  test("el procedimiento completo se valida casilla a casilla, con el resto", () => {
+    const spec = { op: "divide" as const, a: 757, b: 3 };
+    expect(divisionWorkResponse(spec)).toBe("C252;6,15,15,07,6,1");
+    expect(divisionWorkResponse(spec, "abreviada")).toBe("A252;15,07,1");
+    expect(checkDivisionWork(spec, "C252;6,15,15,07,6,1")).toMatchObject({ correct: true, quotient: 252, remainder: 1 });
+    // «07» y «7» valen lo mismo: no se exige escribir el 0 de delante.
+    expect(checkDivisionWork(spec, "C252;6,15,15,7,6,1")?.correct).toBe(true);
+    // Cociente bien pero un producto mal: no es correcto y se señala ese paso.
+    expect(checkDivisionWork(spec, "C252;6,15,14,17,6,1")?.firstError).toMatchObject({ kind: "p", step: 1 });
+    // Falta el resto o es otro.
+    expect(checkDivisionWork(spec, "C252;6,15,15,07,6,4")?.firstError).toMatchObject({ kind: "r", step: 2 });
+    expect(checkDivisionWork(spec, "C252;6,15,15,07,6,")?.correct).toBe(false);
+    // Formato incompleto o de otra estructura: no se reconoce como galera.
+    expect(checkDivisionWork(spec, "C25;6,15")).toBeNull();
+  });
+
+  test("la pregunta exige cociente y resto, en la galera o por escrito", () => {
+    const q = getLesson("division-larga")!.practice.find((item) => item.task === 1)!;
+    const spec = q.column as { op: "divide"; a: number; b: number };
+    const t = divisionTrace(spec);
+    expect(t.remainder).toBeGreaterThan(0);
+    expect(correctResponse(q)).toBe(`${t.quotient} r ${t.remainder}`);
+    expect(isAnswerCorrect(q, `${t.quotient} resto ${t.remainder}`)).toBe(true);
+    expect(isAnswerCorrect(q, String(t.quotient))).toBe(false);
+    expect(errorFeedback(q, String(t.quotient))).toMatch(/falta el resto/);
+    expect(isAnswerCorrect(q, divisionWorkResponse(spec))).toBe(true);
+    expect(isAnswerCorrect(q, divisionWorkResponse(spec, "abreviada"))).toBe(true);
+  });
+
+  test("poner otra cifra donde iba el 0 del cociente se diagnostica como el error típico", () => {
+    const spec = { op: "divide" as const, a: 612, b: 6 };
+    // Paso 2: queda 1 y el alumno escribe 2 en lugar de 0.
+    expect(divisionResponseValue(spec, "C122;6,01,12,0,0,0")).toBe(12);
+    expect(checkDivisionWork(spec, "C122;6,01,12,0,0,0")?.firstError).toMatchObject({ kind: "q", step: 1 });
   });
 });

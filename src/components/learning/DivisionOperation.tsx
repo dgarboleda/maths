@@ -1,10 +1,14 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
+  checkDivisionWork,
   DIVISION_LAYOUTS,
+  divisionFields,
   divisionTrace,
+  encodeDivisionWork,
+  type DivisionField,
   type DivisionLayout,
   type DivisionSpec,
   type DivisionTrace,
@@ -15,9 +19,11 @@ import { Slider } from "./GraphVisuals";
 import { makePreference, OptionPicker } from "./ColumnOperation";
 
 /* División larga en la «galera»: el dividendo a la izquierda, el divisor a
- * la derecha y el cociente debajo de él. Modos como la hoja de columnas:
- * guiado (cada cifra del cociente se corrige al escribirla), libre y
- * demostración. */
+ * la derecha y el cociente debajo de él. El alumno escribe todo el
+ * procedimiento: cada cifra del cociente, cada producto (en la disposición
+ * completa) y lo que queda tras restar con la cifra que baja; la última fila
+ * es el resto. Modos: guiado (cada casilla se corrige al escribirla), libre
+ * (se revisa al enviar, en el servidor) y demostración. */
 
 const PLACE_COLORS = ["text-emerald-300", "text-sky-300", "text-rose-300"];
 
@@ -41,87 +47,116 @@ export function LayoutPicker({
   );
 }
 
-interface Row {
-  /** Texto alineado a la derecha en la columna `end` del dividendo. */
-  text: string;
-  end: number;
-  product?: boolean;
-  remainder?: boolean;
-}
+type CellState = "ok" | "wrong" | "active" | undefined;
+/** Contenido de cada casilla de una fila o del cociente. */
+type Cell =
+  | { kind: "digit"; value: string; state?: CellState; ghost?: boolean }
+  | { kind: "input"; value: string; state?: CellState; placeholder?: string };
 
-/** Filas de trabajo bajo el dividendo tras mostrar `shown` pasos. Un 0 en el
- *  cociente no añade filas: la cifra que se baja se escribe junto a la anterior. */
-function workRows(trace: DivisionTrace, shown: number): Row[] {
-  const rows: Row[] = [];
-  for (const step of trace.steps.slice(0, shown)) {
-    const tail = step.down !== null ? String(step.down) : "";
-    if (step.digit === 0 && step.index > 0 && rows.length) {
-      const last = rows[rows.length - 1];
-      if (tail) {
-        last.text += tail;
-        last.end += 1;
-      } else last.remainder = true;
-      continue;
-    }
-    if (step.digit === 0) continue;
-    if (trace.layout === "completa") rows.push({ text: String(step.product), end: step.end, product: true });
-    rows.push({ text: String(step.rest) + tail, end: step.end + (tail ? 1 : 0), remainder: !tail });
-  }
-  return rows;
-}
+/** Lo escrito en cada campo: una cadena por casilla. */
+type Work = Record<string, string[]>;
 
-type QCell =
-  | { kind: "digit"; value: number | null; state?: "ok" | "active" | "ghost" }
-  | { kind: "input"; value: string; state?: "wrong" | "active"; placeholder?: string };
+const rowLabel = (f: DivisionField) =>
+  f.kind === "p" ? `producto del paso ${f.step + 1}` : `resta del paso ${f.step + 1}`;
+/** «el producto…» / «la resta…» */
+const theRow = (f: DivisionField) => `${f.kind === "p" ? "el" : "la"} ${rowLabel(f)}`;
+const cellLabel = (f: DivisionField, i: number) =>
+  f.kind === "q" ? `Cociente: cifra ${f.step + 1}` : `${f.kind === "p" ? "Producto" : "Resta"} del paso ${f.step + 1}: casilla ${i + 1} de ${f.width}`;
+
+/** Texto alineado a la derecha en las casillas de una fila. */
+function rightAligned(text: string, width: number): string[] {
+  const chars = text.split("").slice(-width);
+  return [...Array(width - chars.length).fill(""), ...chars];
+}
 
 function Galera({
   trace,
-  shown,
-  quotient,
+  fields,
+  cells,
   onInput,
   onKey,
   refs,
   disabled,
+  complete,
 }: {
   trace: DivisionTrace;
-  shown: number;
-  quotient: QCell[];
-  onInput?: (i: number, value: string) => void;
-  onKey?: (i: number, event: React.KeyboardEvent<HTMLInputElement>) => void;
-  refs?: React.MutableRefObject<(HTMLInputElement | null)[]>;
+  /** Campos visibles, en orden (cociente y filas). */
+  fields: DivisionField[];
+  cells: (f: DivisionField) => Cell[];
+  onInput?: (f: DivisionField, i: number, value: string) => void;
+  onKey?: (f: DivisionField, i: number, event: React.KeyboardEvent<HTMLInputElement>) => void;
+  refs?: React.MutableRefObject<Map<string, HTMLInputElement | null>>;
   disabled?: boolean;
+  complete?: boolean;
 }) {
   const digits = trace.dividendDigits;
   const n = digits.length;
-  const rows = workRows(trace, shown);
   const cell = "flex h-10 w-7 items-center justify-center text-xl font-bold tabular-nums sm:h-11 sm:w-10 sm:text-2xl";
   const color = (column: number) => PLACE_COLORS[(n - 1 - column) % 3];
+  const ring = (state: CellState) =>
+    state === "wrong"
+      ? "border-amber-400 bg-amber-950/50"
+      : state === "ok"
+        ? "border-emerald-400/70 bg-emerald-950/30"
+        : state === "active"
+          ? "border-cyan-300 bg-cyan-950/40"
+          : "border-slate-600 bg-slate-950";
+  const render = (f: DivisionField, c: Cell, i: number, extra = "") => {
+    if (c.kind === "digit")
+      return (
+        <span key={`${f.key}-${i}`} className={`${cell} ${c.state ? `rounded-lg border ${ring(c.state)}` : ""} ${extra} ${c.ghost ? "opacity-50" : ""}`}>
+          {c.value}
+        </span>
+      );
+    return (
+      <input
+        key={`${f.key}-${i}`}
+        ref={(el) => {
+          refs?.current.set(`${f.key}:${i}`, el);
+        }}
+        aria-label={cellLabel(f, i)}
+        aria-invalid={c.state === "wrong"}
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={1}
+        value={c.value}
+        placeholder={c.placeholder}
+        disabled={disabled}
+        onChange={(e) => onInput?.(f, i, e.target.value.replace(/\D/g, "").slice(-1))}
+        onKeyDown={(e) => onKey?.(f, i, e)}
+        onFocus={(e) => e.target.select()}
+        className={`${cell} rounded-md border ${ring(c.state)} ${extra} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
+      />
+    );
+  };
+  const rows = fields.filter((f) => f.kind !== "q");
+  const quotient = fields.filter((f) => f.kind === "q");
   return (
     // Enfocable: si no cabe (pantallas muy estrechas), se recorre con el teclado.
     <div className="overflow-x-auto" tabIndex={0} role="group" aria-label={`División ${trace.spec.a} entre ${trace.spec.b}`}>
       <div className="mx-auto flex w-max items-start">
-        <div className="grid" style={{ gridTemplateColumns: `repeat(${n}, auto)` }}>
+        <div className="grid gap-y-0.5" style={{ gridTemplateColumns: `repeat(${n}, auto)` }}>
           {digits.map((d, j) => (
             <span key={`d${j}`} className={`${cell} ${color(j)}`}>{d}</span>
           ))}
-          {rows.map((row, r) =>
-            Array.from({ length: n }, (_, j) => {
-              const k = j - (row.end - row.text.length + 1);
-              const ch = k >= 0 && k < row.text.length ? row.text[k] : "";
+          {rows.map((f) => {
+            const start = f.end - f.width + 1;
+            const own = cells(f);
+            return Array.from({ length: n }, (_, j) => {
+              const k = j - start;
+              if (k < 0 || k >= f.width) return <span key={`${f.key}-x${j}`} className={cell} />;
+              const underline = f.kind === "p" ? "border-b-2 border-b-slate-300" : "";
               return (
-                <span
-                  key={`r${r}-${j}`}
-                  className={`${cell} relative text-slate-100 ${row.product && ch ? "border-b-2 border-slate-300" : ""}`}
-                >
-                  {row.product && k === 0 && (
-                    <span aria-hidden="true" className="absolute -left-1 text-base text-slate-400">−</span>
+                <span key={`${f.key}-w${j}`} className="relative">
+                  {f.kind === "p" && k === 0 && (
+                    <span aria-hidden="true" className="absolute -left-2 top-2 text-base text-slate-400">−</span>
                   )}
-                  {k === 0 && <span className="sr-only">{row.product ? "restas " : row.remainder ? "resto " : "queda "}</span>}
-                  {ch}
+                  {k === 0 && own[0]?.kind === "digit" && <span className="sr-only">{`${rowLabel(f)}: `}</span>}
+                  {render(f, own[k], k, `${underline} text-slate-100`)}
                 </span>
               );
-            }),
-          )}
+            });
+          })}
         </div>
         <div className="ml-1 border-l-2 border-slate-200 pl-2">
           <div className="border-b-2 border-slate-200 pb-0.5">
@@ -131,46 +166,11 @@ function Galera({
             </span>
           </div>
           <div className="mt-1 flex gap-0.5" aria-label="Cociente" role="group">
-            {quotient.map((q, i) => {
-              const ring =
-                q.state === "wrong"
-                  ? "border-amber-400 bg-amber-950/50"
-                  : q.state === "ok"
-                    ? "border-emerald-400/70 bg-emerald-950/30"
-                    : q.state === "active"
-                      ? "border-cyan-300 bg-cyan-950/40"
-                      : "border-slate-600 bg-slate-950";
-              if (q.kind === "digit")
-                return (
-                  <span key={i} className={`${cell} rounded-lg border ${ring} text-cyan-100 ${q.state === "ghost" ? "opacity-50" : ""}`}>
-                    {q.value ?? ""}
-                  </span>
-                );
-              return (
-                <input
-                  key={i}
-                  ref={(el) => {
-                    if (refs) refs.current[i] = el;
-                  }}
-                  aria-label={`Cociente: cifra ${i + 1}`}
-                  aria-invalid={q.state === "wrong"}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  maxLength={1}
-                  value={q.value}
-                  placeholder={q.placeholder}
-                  disabled={disabled}
-                  onChange={(e) => onInput?.(i, e.target.value.replace(/\D/g, "").slice(-1))}
-                  onKeyDown={(e) => onKey?.(i, e)}
-                  onFocus={(e) => e.target.select()}
-                  className={`${cell} rounded-lg border ${ring} text-center text-cyan-100 placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
-                />
-              );
-            })}
+            {quotient.map((f) => render(f, cells(f)[0], 0, "text-cyan-100"))}
           </div>
         </div>
       </div>
-      {shown >= trace.steps.length && (
+      {complete && (
         <p className="mt-2 text-center text-sm text-slate-300">
           Cociente <strong className="text-cyan-100">{trace.quotient}</strong> · resto{" "}
           <strong className="text-amber-200">{trace.remainder}</strong>
@@ -190,17 +190,23 @@ export function DivisionDemo({
   initialStep?: number;
 }) {
   const trace = useMemo(() => divisionTrace(spec, layout), [spec, layout]);
+  const fields = useMemo(() => divisionFields(trace), [trace]);
   const total = trace.steps.length;
   const [shown, setShown] = useState(Math.min(initialStep ?? 0, total));
-  const quotient: QCell[] = trace.steps.map((s, i) => ({
-    kind: "digit",
-    value: i < shown ? s.digit : null,
-    state: i === shown ? "active" : undefined,
-  }));
+  const visible = fields.filter((f) => f.kind === "q" || f.step < shown);
   const current = shown > 0 ? trace.steps[shown - 1] : null;
   return (
     <div className="space-y-3">
-      <Galera trace={trace} shown={shown} quotient={quotient} />
+      <Galera
+        trace={trace}
+        fields={visible}
+        complete={shown >= total}
+        cells={(f) =>
+          f.kind === "q"
+            ? [{ kind: "digit", value: f.step < shown ? f.text : "", state: f.step < shown ? "ok" : f.step === shown ? "active" : undefined }]
+            : rightAligned(f.text, f.width).map((value) => ({ kind: "digit", value }))
+        }
+      />
       <p aria-live="polite" className="min-h-12 rounded-xl bg-slate-950 p-3 text-sm leading-relaxed text-slate-200">
         {current ? current.why : `Empieza por la izquierda: ${trace.steps[0].ask}`}
       </p>
@@ -222,6 +228,24 @@ export function firstWrongQuotientDigit(response: string, answer: number): numbe
   const expected = String(answer);
   for (let i = 0; i < Math.max(given.length, expected.length); i++) if (given[i] !== expected[i]) return i;
   return null;
+}
+
+/** Cifras escritas en una fila, sin los ceros de delante («01» → «1»). */
+const typed = (cells: string[]) => cells.join("");
+const norm = (text: string) => text.replace(/^0+(?=\d)/, "");
+
+/** Recupera lo escrito desde una respuesta ya enviada (misma disposición). */
+function restore(response: string, fields: DivisionField[], layout: DivisionLayout): Work {
+  const work: Work = Object.fromEntries(fields.map((f) => [f.key, Array(f.width).fill("")]));
+  const m = /^([CA])(\d+);(.*)$/.exec(response);
+  if (!m || (m[1] === "C") !== (layout === "completa")) return work;
+  const rows = m[3].split(",");
+  const rowFields = fields.filter((f) => f.kind !== "q");
+  for (const f of fields) {
+    const text = f.kind === "q" ? (m[2][f.step] ?? "") : (rows[rowFields.indexOf(f)] ?? "");
+    work[f.key] = rightAligned(text, f.width);
+  }
+  return work;
 }
 
 export function DivisionSheet({
@@ -247,115 +271,139 @@ export function DivisionSheet({
   disabled?: boolean;
 }) {
   const trace = useMemo(() => divisionTrace(spec, layout), [spec, layout]);
-  const refs = useRef<(HTMLInputElement | null)[]>([]);
-  const steps = trace.steps.length;
-  // En modo libre no se revela cuántas cifras tiene el cociente.
-  const cells = mode === "guided" ? steps : Math.max(steps, String(spec.a).length - String(spec.b).length + 1);
-  const offset = cells - steps;
-  const [digits, setDigits] = useState<string[]>(() => {
-    const given = response.replace(/\D/g, "").split("");
-    const pad = mode === "guided" ? 0 : Math.max(0, cells - given.length);
-    return Array.from({ length: cells }, (_, i) => given[i - pad] ?? "");
-  });
-  const [miss, setMiss] = useState<{ index: number; value: string } | null>(null);
+  const fields = useMemo(() => divisionFields(trace), [trace]);
+  const refs = useRef(new Map<string, HTMLInputElement | null>());
+  const [work, setWork] = useState<Work>(() => restore(response, fields, layout));
+  const [miss, setMiss] = useState<string | null>(null);
   const [lastWhy, setLastWhy] = useState("");
-  const id = useId();
 
-  const active = mode === "guided" ? digits.findIndex((d, i) => d === "" || Number(d) !== trace.steps[i].digit) : -1;
-  const done = mode === "guided" && active === -1;
-  const emit = (next: string[]) => {
-    const text = next.join("").replace(/^0+(?=\d)/, "");
-    onChange(text);
-    return text;
+  const value = (f: DivisionField, w: Work = work) => norm(typed(w[f.key]));
+  const accepted = (f: DivisionField, w: Work = work) => value(f, w) !== "" && Number(value(f, w)) === f.expected;
+  // En el modo guiado, el primer campo todavía sin resolver.
+  const activeIndex = mode === "guided" ? fields.findIndex((f) => !accepted(f)) : -1;
+  const done = mode === "guided" && activeIndex === -1;
+  const active = activeIndex >= 0 ? fields[activeIndex] : null;
+
+  const encode = (w: Work) => {
+    const filled = fields.every((f) => typed(w[f.key]) !== "");
+    if (!filled) return "";
+    return encodeDivisionWork(
+      layout,
+      fields.filter((f) => f.kind === "q").map((f) => typed(w[f.key])).join(""),
+      fields.filter((f) => f.kind !== "q").map((f) => typed(w[f.key])),
+    );
   };
-  const focus = (i: number) => refs.current[i]?.focus();
+  const focusField = (f: DivisionField, i = f.kind === "q" ? 0 : Math.max(0, f.width - f.text.length)) =>
+    requestAnimationFrame(() => refs.current.get(`${f.key}:${i}`)?.focus());
 
-  const setDigit = (i: number, value: string) => {
+  const onInput = (f: DivisionField, i: number, digit: string) => {
+    const next: Work = { ...work, [f.key]: work[f.key].map((c, k) => (k === i ? digit : c)) };
+    setWork(next);
+    const text = encode(next);
+    onChange(text);
     if (mode === "guided") {
-      if (value === "") {
-        setMiss((m) => (m ? { ...m, value: "" } : m));
-        return;
+      const v = value(f, next);
+      if (accepted(f, next)) {
+        setMiss(null);
+        const step = trace.steps[f.step];
+        const lastOfStep = fields.filter((o) => o.step === f.step).at(-1)!.key === f.key;
+        if (lastOfStep) setLastWhy(step.why);
+        const following = fields.slice(fields.indexOf(f) + 1).find((o) => !accepted(o, next));
+        if (following) focusField(following);
+        else onComplete?.(text);
+      } else if (v.length >= String(f.expected).length) setMiss(f.key);
+      else {
+        setMiss(null);
+        if (digit && i + 1 < f.width) focusField(f, i + 1);
       }
-      if (Number(value) !== trace.steps[i].digit) {
-        setMiss({ index: i, value });
-        return;
-      }
-      const next = digits.map((d, k) => (k === i ? value : d));
-      setDigits(next);
-      setMiss(null);
-      setLastWhy(trace.steps[i].why);
-      const text = emit(next);
-      if (i + 1 < cells) requestAnimationFrame(() => focus(i + 1));
-      else onComplete?.(text);
       return;
     }
-    const next = digits.map((d, k) => (k === i ? value : d));
-    setDigits(next);
-    emit(next);
-    if (value && i + 1 < cells) focus(i + 1);
+    if (digit) {
+      if (i + 1 < f.width) focusField(f, i + 1);
+      else {
+        const following = fields[fields.indexOf(f) + 1];
+        if (following) focusField(following, following.kind === "q" ? 0 : 0);
+      }
+    }
   };
-  const onKey = (i: number, event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "ArrowRight" && i + 1 < cells) {
+  const onKey = (f: DivisionField, i: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowRight" && i + 1 < f.width) {
       event.preventDefault();
-      focus(i + 1);
+      focusField(f, i + 1);
     } else if (event.key === "ArrowLeft" && i > 0) {
       event.preventDefault();
-      focus(i - 1);
-    } else if (event.key === "Backspace" && mode === "free" && !digits[i] && i > 0) {
+      focusField(f, i - 1);
+    } else if (event.key === "Backspace" && !work[f.key][i] && i > 0) {
       event.preventDefault();
-      focus(i - 1);
+      focusField(f, i - 1);
     }
   };
 
-  const hinted = hintLevel >= 3 ? Math.max(1, steps - 1) : hintLevel >= 2 ? 1 : 0;
-  const wrong =
-    mode === "free" && failedResponse !== null && failedResponse === response
-      ? firstWrongQuotientDigit(failedResponse, trace.quotient)
-      : null;
-  const shown = mode === "guided" ? (done ? steps : active) : hinted;
-  const quotient: QCell[] = Array.from({ length: cells }, (_, i) => {
+  // Pistas: pasos ya resueltos como referencia tenue.
+  const hinted = hintLevel >= 3 ? Math.max(1, trace.steps.length - 1) : hintLevel >= 2 ? 1 : 0;
+  const failed = mode === "free" && failedResponse !== null && failedResponse === response ? checkDivisionWork(spec, failedResponse) : null;
+  const wrongKey = failed?.firstError?.key ?? null;
+
+  const visible =
+    mode === "guided" ? fields.filter((f) => done || f.kind === "q" || f.step <= (active?.step ?? 0)) : fields;
+  const cells = (f: DivisionField): Cell[] => {
     if (mode === "guided") {
-      if (done || i < active) return { kind: "digit", value: trace.steps[i].digit, state: "ok" };
-      if (i === active)
-        return miss?.index === i ? { kind: "input", value: miss.value, state: "wrong" } : { kind: "input", value: "", state: "active" };
-      return { kind: "digit", value: null };
+      const index = fields.indexOf(f);
+      if (done || index < activeIndex) return rightAligned(f.text, f.width).map((value) => ({ kind: "digit", value, state: f.kind === "q" ? "ok" : undefined }));
+      if (index === activeIndex)
+        return work[f.key].map((value) => ({ kind: "input", value, state: miss === f.key ? "wrong" : "active" }));
+      return work[f.key].map(() => ({ kind: "digit", value: "" }));
     }
-    const step = i - offset;
-    return {
+    const ghost = f.step < hinted ? rightAligned(f.text, f.width) : null;
+    return work[f.key].map((value, i) => ({
       kind: "input",
-      value: digits[i],
-      state: wrong !== null && wrong + offset === i ? "wrong" : undefined,
-      placeholder: step >= 0 && step < hinted ? String(trace.steps[step].digit) : undefined,
-    };
-  });
+      value,
+      state: wrongKey === f.key ? "wrong" : undefined,
+      placeholder: ghost?.[i] || undefined,
+    }));
+  };
 
   return (
-    <div className="space-y-3" id={id}>
-      <Galera trace={trace} shown={shown} quotient={quotient} onInput={setDigit} onKey={onKey} refs={refs} disabled={disabled} />
+    <div className="space-y-3">
+      <Galera trace={trace} fields={visible} cells={cells} onInput={onInput} onKey={onKey} refs={refs} disabled={disabled} complete={done} />
       <div aria-live="polite" className="text-sm leading-relaxed">
         {mode === "guided" ? (
-          miss !== null ? (
-            <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">Revisa esa cifra. {trace.steps[miss.index].ask}</p>
-          ) : !done ? (
+          miss && active ? (
+            <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">
+              Revisa {active.kind === "q" ? "esa cifra" : theRow(active)}. {guidedAsk(trace, active)}
+            </p>
+          ) : !done && active ? (
             <p className="rounded-xl bg-cyan-950/40 p-3 text-cyan-100">
               {lastWhy && <span className="block text-slate-300">{lastWhy}</span>}
-              {trace.steps[active]?.ask}
+              {guidedAsk(trace, active)}
             </p>
           ) : (
             <p className="rounded-xl bg-emerald-950/40 p-3 text-emerald-100">{lastWhy}</p>
           )
-        ) : wrong !== null ? (
+        ) : failed?.firstError ? (
           <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">
-            Revisa la cifra {wrong + 1} del cociente: es la primera que no coincide.
+            Revisa {failed.firstError.kind === "q" ? `la cifra ${failed.firstError.step + 1} del cociente` : theRow(failed.firstError)}: es la primera casilla que no coincide.
           </p>
         ) : (
           <p className="text-xs text-slate-400">
-            Escribe el cociente de izquierda a derecha, una cifra por cada paso. Haz las restas en tu cuaderno.
+            Escribe todo el procedimiento: en cada paso, la cifra del cociente,
+            {layout === "completa" ? " el producto debajo," : ""} lo que queda al restar con la cifra que bajas al lado. La última fila es el resto.
           </p>
         )}
       </div>
     </div>
   );
+}
+
+/** Lo que se pregunta en cada casilla del modo guiado. */
+function guidedAsk(trace: DivisionTrace, f: DivisionField): string {
+  const s = trace.steps[f.step];
+  const b = trace.spec.b;
+  if (f.kind === "q") return s.ask;
+  if (f.kind === "p") return `Multiplica la cifra del cociente por el divisor: ${s.digit} × ${b}. Escríbelo debajo de ${s.part}, alineado a la derecha.`;
+  return s.down === null
+    ? `Resta ${s.part} − ${s.product}: lo que queda es el resto.`
+    : `Resta ${s.part} − ${s.product} y escribe al lado la cifra que bajas (${s.down}).`;
 }
 
 /** Exploración de la clase: el alumno elige dividendo y divisor. */

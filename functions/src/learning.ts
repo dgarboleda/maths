@@ -1,3 +1,4 @@
+import { MAX_RESPONSE_LENGTH } from "./learning/questions";
 import { createHash } from "node:crypto";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
@@ -54,7 +55,7 @@ function validPlacementAction(action: unknown): action is PlacementAction {
       QUESTION_ID.test(a.questionId) &&
       typeof a.response === "string" &&
       a.response.trim().length > 0 &&
-      a.response.length <= 64)
+      a.response.length <= MAX_RESPONSE_LENGTH)
   );
 }
 
@@ -137,7 +138,7 @@ function validAction(
       (a.kind !== "answer" ||
         (typeof a.response === "string" &&
           a.response.trim().length > 0 &&
-          a.response.length <= 64)))
+          a.response.length <= MAX_RESPONSE_LENGTH)))
   );
 }
 

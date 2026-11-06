@@ -11,6 +11,7 @@ import {
   pickCalibrated,
   planDaily,
   type ProfileEvent,
+  correctResponse,
 } from "./domain";
 
 const NOW = Date.UTC(2026, 9, 20, 15);
@@ -45,7 +46,7 @@ describe("Calibración de dificultad", () => {
     const events: ProfileEvent[] = Array.from({ length: 40 }, (_, i) => ({
       profile: `parents/p/children/c${i}`,
       lessonId: lesson.id,
-      action: { kind: "answer", questionId: q.id, response: i < 30 ? String(q.answer) : "zzz" },
+      action: { kind: "answer", questionId: q.id, response: i < 30 ? correctResponse(q) : "zzz" },
       at: NOW + i,
     }));
     const items = analyzeItems(events, getLesson);
