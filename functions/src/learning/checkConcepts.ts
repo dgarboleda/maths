@@ -9,6 +9,17 @@ import type { Question } from "./types";
  * Se reúnen aquí para revisarlas juntas.
  */
 export const CHECK_CONCEPTS: Record<string, Question> = {
+  ruffini: c(
+    "q0",
+    "Para dividir x³ − 1 entre (x − 1) con Ruffini, ¿cuántas casillas tiene la fila de coeficientes?",
+    [
+      ["2, una por cada término escrito", "Faltan los términos de x² y de x: también ocupan su casilla, con 0."],
+      "Cuatro (1, 0, 0 y −1), porque cada grado de 3 a 0 tiene su casilla",
+      ["3, porque el grado es 3", "Del grado 3 al 0 hay cuatro potencias: x³, x², x y el término independiente."],
+    ],
+    1,
+    "Un polinomio de grado 3 tiene 4 coeficientes: los que faltan se escriben 0. Así, x³ − 1 ÷ (x − 1) da x² + x + 1, resto 0.",
+  ),
   "mcd-mcm": c(
     "q0",
     "Para repartir 30 manzanas y 45 naranjas en bolsas iguales, con el mayor número de bolsas y sin que sobre fruta, ¿qué se calcula?",

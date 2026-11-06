@@ -403,6 +403,16 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "legacyModuleIds": []
   },
   {
+    "id": "ruffini",
+    "unitId": "expresiones",
+    "title": "División de polinomios: regla de Ruffini",
+    "objective": "Dividir un polinomio entre (x − r) con la regla de Ruffini, interpretar el cociente y el resto, y usar el teorema del resto para saber si (x − r) es un factor.",
+    "prerequisites": [
+      "expresiones-algebraicas"
+    ],
+    "legacyModuleIds": []
+  },
+  {
     "id": "progresiones",
     "unitId": "expresiones",
     "title": "Progresiones aritméticas y geométricas",

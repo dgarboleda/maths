@@ -8,6 +8,7 @@ import { Challenge } from "./Challenge";
 import { ColumnExplorer } from "./ColumnOperation";
 import { DivisionExplorer } from "./DivisionOperation";
 import { FactorExplorer } from "./FactorOperation";
+import { RuffiniExplorer } from "./RuffiniOperation";
 // Las gráficas cartesianas y las de geometría también se cargan bajo demanda:
 // cada clase descarga solo su modelo (presupuesto de JS de la clase).
 const graphVisual = (name: "LinearVisual" | "ParabolaVisual" | "InequalityVisual") =>
@@ -315,6 +316,7 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   columns: ColumnExplorer,
   "long-division": DivisionExplorer,
   "factor-table": FactorExplorer,
+  ruffini: RuffiniExplorer,
   balance: ({ id }) => <BalanceVisual id={id} initial="balance" />,
   equation: ({ id }) => <BalanceVisual id={id} initial="equation" />,
 };

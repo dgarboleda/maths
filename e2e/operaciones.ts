@@ -1,5 +1,15 @@
 import type { Page } from "@playwright/test";
-import { divisionFields, divisionTrace, factorTrace, type DivisionLayout, type FactorSpec, type Question } from "../src/lib/learning/domain";
+import {
+  divisionFields,
+  divisionTrace,
+  factorTrace,
+  ruffiniTrace,
+  termName,
+  type DivisionLayout,
+  type FactorSpec,
+  type Question,
+  type RuffiniSpec,
+} from "../src/lib/learning/domain";
 
 const PLACES = ["unidades", "decenas", "centenas", "unidades de millar", "decenas de millar"];
 
@@ -66,4 +76,18 @@ export async function escribirTabla(page: Page, question: Question) {
     for (const [k, v] of row.next.entries()) await page.getByLabel(`Fila ${i + 2}: número ${k + 1}`, { exact: true }).fill(String(v));
   }
   await page.getByLabel(`${spec.op === "mcd" ? "MCD" : "MCM"} de ${spec.values.join(", ")}`, { exact: true }).fill(String(question.answer));
+}
+
+/** Escribe la tabla de Ruffini completa: esquina, coeficientes, productos y sumas. */
+export async function escribirRuffini(page: Page, question: Question) {
+  const spec = question.column as RuffiniSpec;
+  const degree = spec.coefficients.length - 1;
+  const steps = ruffiniTrace(spec).steps;
+  await page.getByLabel("Esquina de la tabla", { exact: true }).fill(String(spec.root));
+  for (const [i, c] of spec.coefficients.entries())
+    await page.getByLabel(`Coeficiente de ${termName(degree, i)}`, { exact: true }).fill(String(c));
+  for (const [i, s] of steps.entries()) {
+    if (i > 0) await page.getByLabel(`Producto de la columna ${i + 1}`, { exact: true }).fill(String(s.product));
+    await page.getByLabel(i === degree ? "Resto" : `Suma de la columna ${i + 1}`, { exact: true }).fill(String(s.result));
+  }
 }

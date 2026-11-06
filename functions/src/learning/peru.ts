@@ -27,6 +27,7 @@ export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruG
   "suma-resta-columnas": { competency: "cantidad", grade: 1, base: true },
   "division-larga": { competency: "cantidad", grade: 1, base: true },
   "mcd-mcm": { competency: "cantidad", grade: 1 },
+  ruffini: { competency: "regularidad", grade: 3 },
   "enteros-recta": { competency: "cantidad", grade: 1 },
   "enteros-suma-resta": { competency: "cantidad", grade: 1 },
   "enteros-producto-cociente": { competency: "cantidad", grade: 1 },

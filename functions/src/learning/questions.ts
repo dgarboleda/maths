@@ -1,6 +1,7 @@
 import type { Example, Intent, Question } from "./types";
 import { columnTrace } from "./algorithms/columns";
 import { checkFactorWork, factorTrace, factorWorkFeedback } from "./algorithms/factors";
+import { checkRuffiniWork, ruffiniTrace, ruffiniWorkFeedback } from "./algorithms/ruffini";
 import {
   checkDivisionWork,
   checkOpenDivision,
@@ -17,6 +18,7 @@ import {
   operationResult,
   operationSolution,
   isFactorSpec,
+  isRuffiniSpec,
   type ColumnSpec,
 } from "./algorithms/operations";
 
@@ -71,7 +73,9 @@ export function columnar(
     ...numeric(
       id,
       options.prompt ??
-        (isFactorSpec(spec)
+        (isRuffiniSpec(spec)
+          ? `Divide ${operationExpression(spec)} con la regla de Ruffini: completa la tabla y escribe el resto.`
+          : isFactorSpec(spec)
           ? `Calcula el ${operationExpression(spec)} con la tabla de factores primos.`
           : spec.op === "divide"
             ? `Divide ${operationExpression(spec)} con la división larga: escribe el cociente, cada resta y el resto.`
@@ -89,7 +93,12 @@ export function columnar(
   };
 }
 export function columnExample(spec: ColumnSpec, prompt?: string): Example {
-  const steps = isFactorSpec(spec)
+  const steps = isRuffiniSpec(spec)
+    ? ruffiniTrace(spec).steps.map((step) => ({
+        math: step.product === null ? `Bajas ${step.result}` : `${step.coefficient} + (${step.product}) = ${step.result}`,
+        why: step.why,
+      }))
+    : isFactorSpec(spec)
     ? factorTrace(spec).rows.map((row) => ({ math: `${row.values.join("  ")} | ${row.prime}`, why: row.why }))
     : spec.op === "divide"
       ? divisionTrace(spec).steps.map((step) => ({
@@ -183,6 +192,10 @@ export function isAnswerCorrect(question: Question, response: string): boolean {
     const work = checkFactorWork(question.column, response);
     if (work) return work.correct;
   }
+  if (question.column && isRuffiniSpec(question.column)) {
+    const work = checkRuffiniWork(question.column, response);
+    if (work) return work.correct;
+  }
   const value = parseNumber(response);
   return (
     value !== null &&
@@ -201,6 +214,10 @@ export function responseValue(question: Question, response: string): number | nu
   if (question.column && isFactorSpec(question.column)) {
     const work = checkFactorWork(question.column, response);
     if (work) return work.answer;
+  }
+  if (question.column && isRuffiniSpec(question.column)) {
+    const work = checkRuffiniWork(question.column, response);
+    if (work) return Number.isFinite(work.remainder) ? work.remainder : null;
   }
   return parseNumber(response);
 }
@@ -221,6 +238,11 @@ export function errorFeedback(question: Question, response: string): string {
   if (question.column && isFactorSpec(question.column)) {
     const work = checkFactorWork(question.column, response);
     const text = work && factorWorkFeedback(question.column, work);
+    if (text) return text;
+  }
+  if (question.column && isRuffiniSpec(question.column)) {
+    const work = checkRuffiniWork(question.column, response);
+    const text = work && ruffiniWorkFeedback(question.column, work);
     if (text) return text;
   }
   if (question.column?.op === "divide") {

@@ -99,7 +99,8 @@ export type Visual =
   | "expression"
   | "columns"
   | "long-division"
-  | "factor-table";
+  | "factor-table"
+  | "ruffini";
 export type UnitId =
   | "numeros"
   | "fracciones"

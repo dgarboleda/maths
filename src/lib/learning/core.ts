@@ -17,3 +17,4 @@ export * from "../../../functions/src/learning/algorithms/columns";
 export * from "../../../functions/src/learning/algorithms/division";
 export * from "../../../functions/src/learning/algorithms/operations";
 export * from "../../../functions/src/learning/algorithms/factors";
+export * from "../../../functions/src/learning/algorithms/ruffini";

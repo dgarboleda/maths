@@ -214,7 +214,7 @@ function Grid({
   const comma = (i: number) => (scale > 0 && i === scale ? <Comma /> : null);
   const say = (n: number) => String(n).replace(".", ",");
   const symbol = trace.spec.op === "add" ? "+" : "−";
-  const cell = "flex h-12 w-10 items-center justify-center text-3xl font-bold tabular-nums sm:w-12";
+  const cell = "flex h-11 w-8 items-center justify-center text-2xl font-bold tabular-nums sm:h-12 sm:w-12 sm:text-3xl";
   return (
     // Enfocable: si no cabe (pantallas muy estrechas), se recorre con el teclado.
     <div
@@ -225,7 +225,7 @@ function Grid({
     >
       <div
         className="mx-auto grid w-max gap-x-1"
-        style={{ gridTemplateColumns: `2.5rem repeat(${columns}, auto)` }}
+        style={{ gridTemplateColumns: `1.75rem repeat(${columns}, auto)` }}
       >
         {/* Fila de marcas o notas */}
         <span aria-hidden="true" />
@@ -239,7 +239,7 @@ function Grid({
                 value={notes[i] ?? ""}
                 disabled={disabled}
                 onChange={(e) => onNote(i, e.target.value.replace(/\D/g, ""))}
-                className="h-7 w-8 rounded border border-dashed border-slate-600 bg-transparent text-center text-sm text-amber-200 focus:border-amber-300 focus:outline-none"
+                className="h-7 w-7 rounded border border-dashed border-slate-600 bg-transparent text-center text-sm text-amber-200 focus:border-amber-300 focus:outline-none"
               />
             ) : (
               marks[i]?.above && (

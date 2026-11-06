@@ -8,7 +8,11 @@ import {
   checkOpenDivision,
   factorWorkFeedback,
   isFactorSpec,
+  isRuffiniSpec,
+  checkRuffiniWork,
+  ruffiniWorkFeedback,
   type FactorSpec,
+  type RuffiniSpec,
   divisionWorkFeedback,
   fmt,
   isAnswerCorrect,
@@ -28,6 +32,7 @@ import {
   useSubtractStrategy,
 } from "./ColumnOperation";
 import { FactorDemo, FactorSheet } from "./FactorOperation";
+import { RuffiniDemo, RuffiniSheet } from "./RuffiniOperation";
 import { DivisionDemo, DivisionSheet, firstWrongQuotientDigit, LayoutPicker, useDivisionLayout } from "./DivisionOperation";
 
 /* Punto de entrada único para las operaciones escritas (suma, resta y
@@ -58,10 +63,11 @@ function StylePicker({ spec, disabled }: { spec: ColumnSpec; disabled?: boolean 
 
 export function OperationDemo({ spec, initialStep }: { spec: ColumnSpec; initialStep?: number }) {
   if (isFactorSpec(spec)) return <FactorDemo spec={spec} initialStep={initialStep} />;
+  if (isRuffiniSpec(spec)) return <RuffiniDemo spec={spec} initialStep={initialStep} />;
   return <WrittenDemo spec={spec} initialStep={initialStep} />;
 }
 
-function WrittenDemo({ spec, initialStep }: { spec: Exclude<ColumnSpec, FactorSpec>; initialStep?: number }) {
+function WrittenDemo({ spec, initialStep }: { spec: Exclude<ColumnSpec, FactorSpec | RuffiniSpec>; initialStep?: number }) {
   const [strategy] = useSubtractStrategy();
   const [layout] = useDivisionLayout();
   return spec.op === "divide" ? (
@@ -107,7 +113,18 @@ export function OperationWorkspace({
   return (
     <div className="space-y-3">
       {!(spec.op === "divide" && mode === "open") && <StylePicker spec={spec} disabled={disabled} />}
-      {isFactorSpec(spec) ? (
+      {isRuffiniSpec(spec) ? (
+        <RuffiniSheet
+          key={`${questionId}-${mode === "guided" ? "g" : "f"}`}
+          spec={spec}
+          mode={mode === "guided" ? "guided" : "free"}
+          response={response}
+          onChange={onChange}
+          onComplete={onComplete}
+          failedResponse={failedResponse}
+          disabled={disabled}
+        />
+      ) : isFactorSpec(spec) ? (
         <FactorSheet
           key={`${questionId}-${mode === "guided" ? "g" : "f"}`}
           spec={spec}
@@ -155,6 +172,10 @@ export function OperationWorkspace({
 
 /** Dónde se separó una respuesta numérica del resultado, en palabras. */
 export function operationMistake(spec: ColumnSpec, response: string): string | null {
+  if (isRuffiniSpec(spec)) {
+    const work = checkRuffiniWork(spec, response);
+    return work ? ruffiniWorkFeedback(spec, work) : null;
+  }
   if (isFactorSpec(spec)) {
     const work = checkFactorWork(spec, response);
     if (work) return factorWorkFeedback(spec, work);

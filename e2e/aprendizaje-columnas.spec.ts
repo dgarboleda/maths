@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { divisionTrace, getLesson, type DivisionSpec } from "../src/lib/learning/domain";
-import { escribirGalera, escribirTabla } from "./operaciones";
+import { escribirGalera, escribirRuffini, escribirTabla } from "./operaciones";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 
 async function sinDesbordeNiViolaciones(page: Page) {
@@ -37,6 +37,7 @@ test("sumar y restar en columnas: ejemplo animado con dos estrategias y hoja gui
   await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
 
   // Ejemplo 2: 302 − 158, con préstamo y con compensación.
+  await expect(page.getByText(/hay un cero arriba/)).toBeVisible();
   await page.getByRole("button", { name: /Empezar/ }).click();
   await page.getByRole("button", { name: /Siguiente columna/ }).click();
   await expect(page.getByText(/el 0 no puede prestar/)).toBeVisible();
@@ -46,6 +47,16 @@ test("sumar y restar en columnas: ejemplo animado con dos estrategias y hoja gui
   await expect(page.getByText(/compensas la columna anterior: abajo 5 \+ 1 = 6/)).toBeVisible();
   await sinDesbordeNiViolaciones(page);
   await page.screenshot({ path: testInfo.outputPath("ejemplo-compensacion.png"), fullPage: true });
+
+  // Ejemplo 3: decimales con la coma alineada (125,5 − 48,75).
+  await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
+  await expect(page.getByText(/alinea la coma y completa con ceros/)).toBeVisible();
+  await page.getByRole("radio", { name: "Pedir prestado" }).click();
+  await page.getByRole("button", { name: /Empezar/ }).click();
+  await expect(page.getByText(/En las centésimas: 0 es menor que 5/)).toBeVisible();
+  await expect(page.getByText("cero añadido", { exact: false }).first()).toBeAttached();
+  await sinDesbordeNiViolaciones(page);
+  await page.screenshot({ path: testInfo.outputPath("ejemplo-decimales.png"), fullPage: true });
   await page.getByRole("button", { name: "Ahora, hazlo con ayuda" }).click();
 
   // Guiada 1: conceptual.
@@ -87,6 +98,7 @@ test("división larga: galera paso a paso, cero del cociente y hoja guiada", asy
   await page.getByRole("button", { name: /Empezar/ }).click();
   await expect(page.getByText(/3 cabe 2 veces en 7/)).toBeVisible();
   await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
+  await expect(page.getByText(/atención al cero del cociente/)).toBeVisible();
   await page.getByRole("radio", { name: "Restar de memoria" }).click();
   await page.getByRole("button", { name: /Empezar/ }).click();
   await page.getByRole("button", { name: /Siguiente paso/ }).click();
@@ -142,4 +154,33 @@ test("MCD y MCM: tabla de factores primos en la clase y guiada", async ({ page }
   await expect(page.getByText("Tu respuesta es correcta. Revisa por qué funciona.")).toBeVisible();
   await sinDesbordeNiViolaciones(page);
   await page.screenshot({ path: testInfo.outputPath("guiada-tabla.png"), fullPage: true });
+});
+
+test("Ruffini: tabla en la clase y guiada con la esquina y los coeficientes", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
+  if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
+  await registrarPadre(page);
+  const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2010-03-02" });
+  const childId = await entrarAlEspacio(page, nombre, pin);
+  const lesson = getLesson("ruffini")!;
+  await page.goto(`/jugar/${childId}/aprende/${lesson.id}`);
+  await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+  await expect(page.getByLabel("Valor de la esquina (r)")).toBeVisible();
+  await page.getByRole("button", { name: "Continuar la explicación" }).click();
+  await page.getByRole("button", { name: "Continuar la explicación" }).click();
+  await page.getByRole("button", { name: "Ver cómo se resuelve" }).click();
+  await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
+  await expect(page.getByText(/falta un término y la esquina es negativa/)).toBeVisible();
+  await page.getByRole("button", { name: /Empezar/ }).click();
+  await page.getByRole("button", { name: /Siguiente columna/ }).click();
+  await expect(page.getByText("−3 × 1 = −3; 0 + (−3) = −3.")).toBeVisible();
+  await page.getByRole("button", { name: "Ahora, hazlo con ayuda" }).click();
+  const concept = lesson.guided[0];
+  await page.getByRole("radio", { name: concept.choices!.find((c) => c.id === concept.answer)!.label, exact: true }).check();
+  await page.getByRole("button", { name: "Comprobar mi respuesta" }).click();
+  await page.getByRole("button", { name: "Siguiente actividad" }).click();
+  await escribirRuffini(page, lesson.guided[1]);
+  await expect(page.getByText("Tu respuesta es correcta. Revisa por qué funciona.")).toBeVisible();
+  await sinDesbordeNiViolaciones(page);
+  await page.screenshot({ path: testInfo.outputPath("guiada-ruffini.png"), fullPage: true });
 });

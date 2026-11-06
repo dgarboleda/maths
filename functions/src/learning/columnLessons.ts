@@ -2,6 +2,7 @@ import { defineLesson } from "./defineLesson";
 import { columnBugs, columnTrace, fmt, placeName } from "./algorithms/columns";
 import { divisionBugs, divisionTrace } from "./algorithms/division";
 import { factorTrace } from "./algorithms/factors";
+import { divisorText, polynomialText, ruffiniTrace, sg } from "./algorithms/ruffini";
 import { choice as c, columnExample, columnar, numeric as n } from "./questions";
 import type { Lesson } from "./types";
 
@@ -670,6 +671,204 @@ export const FACTOR_LESSONS: Lesson[] = [
       "Incluir en el MCD primos que no dividen a todos.",
       "Usar el MCM cuando se busca partir en trozos iguales (o el MCD cuando se busca cuándo coinciden).",
       "Dividir entre un número que no es primo en la tabla.",
+    ],
+  }),
+];
+
+const ruf = (coefficients: number[], root: number) => ({ op: "ruffini" as const, coefficients, root });
+
+/** División de polinomios entre (x − r) con la regla de Ruffini. */
+export const RUFFINI_LESSONS: Lesson[] = [
+  defineLesson({
+    id: "ruffini",
+    unitId: "expresiones",
+    title: "División de polinomios: regla de Ruffini",
+    objective:
+      "Dividir un polinomio entre (x − r) con la regla de Ruffini, interpretar el cociente y el resto, y usar el teorema del resto para saber si (x − r) es un factor.",
+    purpose:
+      "Los ingenieros de la ciudad modelan volúmenes y costos con polinomios. Para simplificarlos o saber si un factor encaja, hay que dividirlos con un procedimiento rápido y seguro.",
+    prerequisites: ["expresiones-algebraicas"],
+    legacyModuleIds: [],
+    visual: "ruffini",
+    vocabulary: [
+      { term: "Coeficiente", meaning: "El número que multiplica a cada potencia de x: en 2x³ − 3x² + 5, son 2, −3, 0 y 5." },
+      { term: "Esquina", meaning: "En la tabla de Ruffini, el valor de x que anula el divisor: para (x − 2) es 2; para (x + 3) es −3." },
+      { term: "Resto", meaning: "La última casilla de la fila de abajo. Si es 0, (x − r) es un factor del polinomio." },
+      { term: "Teorema del resto", meaning: "El resto de dividir P(x) entre (x − r) es P(r)." },
+    ],
+    sections: [
+      {
+        title: "Preparar la tabla",
+        paragraphs: [
+          "Arriba se escriben los coeficientes en orden de grado, de mayor a menor. Si falta un término, se escribe 0 en su lugar: en x³ − 7x + 6 falta x², así que los coeficientes son 1, 0, −7 y 6.",
+          "En la esquina va el valor que anula el divisor: para dividir entre (x − 2) se escribe 2; para (x + 3), que es x − (−3), se escribe −3.",
+        ],
+        formula: "x − r = 0  →  x = r (va en la esquina)",
+      },
+      {
+        title: "Bajar, multiplicar y sumar",
+        paragraphs: [
+          "Se baja el primer coeficiente. Después, en cada columna, se multiplica la esquina por el número de abajo de la columna anterior, se escribe en la fila del medio y se suma con el coeficiente.",
+          "La fila de abajo da los coeficientes del cociente, que tiene un grado menos que el dividendo; la última casilla es el resto.",
+        ],
+        formula: "(2x³ − 3x² + x + 5) ÷ (x − 2)  →  cociente 2x² + x + 3, resto 11",
+      },
+      {
+        title: "El teorema del resto",
+        paragraphs: [
+          "El resto de dividir P(x) entre (x − r) es P(r): para (2x³ − 3x² + x + 5) ÷ (x − 2), P(2) = 16 − 12 + 2 + 5 = 11.",
+          "Si el resto es 0, (x − r) es un factor: P(x) = (x − r) × cociente. Así se comprueba una división o se busca un factor sin dividir.",
+        ],
+        formula: "resto de P(x) ÷ (x − r) = P(r)",
+      },
+    ],
+    examples: [
+      columnExample(ruf([2, -3, 1, 5], 2), "Divide (2x³ − 3x² + x + 5) ÷ (x − 2) con Ruffini."),
+      columnExample(ruf([1, 0, -7, 6], -3), "Divide (x³ − 7x + 6) ÷ (x + 3): falta un término y la esquina es negativa."),
+    ],
+    diagnostic: [
+      n(
+        "d-1",
+        "¿Cuánto vale 2x² − 3x + 1 cuando x = 2?",
+        3,
+        ["2 × 2² = 8 y 3 × 2 = 6.", "8 − 6 + 1 = 3."],
+        ["Reemplaza x por 2.", "2 × 4 − 3 × 2 + 1.", "8 − 6 + 1."],
+      ),
+      c("d-2", "¿Cuál es el grado de 3x⁴ − x + 2?", ["1", "3", "4"], 2, "El grado es el mayor exponente de x: 4."),
+      n(
+        "d-3",
+        "¿Cuánto es (−2) × 5 + 3?",
+        -7,
+        ["Primero se multiplica: un negativo por un positivo da negativo, (−2) × 5 = −10.", "Después se suma: −10 + 3 = −7, porque 3 no alcanza para compensar el −10."],
+        ["Primero el producto.", "(−2) × 5 = −10.", "−10 + 3."],
+      ),
+    ],
+    questions(v) {
+      const concept = v % 3;
+      const [p1, r1] = ([[[2, -3, 1, 5], 2], [[1, 4, -2, 3], 1], [[3, -5, 2, -4], 2], [[1, -2, 4, 1], 3], [[2, 1, -3, 7], -1], [[1, 3, -4, 2], 2]] as [number[], number][])[v];
+      const [a0, a1, r2] = [[2, -3, 2], [3, 1, -2], [1, 5, 3], [4, -1, -1], [2, 0, -3], [5, 2, 2]][v];
+      const [p3, r3] = ([[[1, 0, -7, 6], -3], [[2, 0, -5, 3], -1], [[1, 0, 0, -8], 2], [[3, 0, -4, 1], -2], [[1, -2, 0, 5], -2], [[2, 0, 1, -3], -1]] as [number[], number][])[v];
+      const [p4, k4] = ([[[1, 2, -3, 4], 2], [[2, -1, 0, 3], 1], [[1, -3, 2, -1], 3], [[3, 1, -2, 2], 1], [[1, 0, -4, 5], 2], [[2, 3, -1, 1], 3]] as [number[], number][])[v];
+      const [p5, r5] = ([[[1, -6, 11, -6], 1], [[1, 2, -5, -6], 2], [[1, -1, -4, 4], 2], [[2, -3, -2, 1], 1], [[1, 0, -7, 6], 2], [[1, 4, 1, -6], 1]] as [number[], number][])[v];
+      const [q6r, q6c] = [[2, -6], [3, -12], [2, -10], [-1, -5], [4, -8], [-2, -6]][v];
+      const k6 = -(q6r * q6r + q6c) / q6r;
+      const good = ruffiniTrace(ruf(p4, -k4)).remainder;
+      const bad = ruffiniTrace(ruf(p4, k4)).remainder;
+      const p2 = [a0, a1, 1, -2];
+      return [
+        concept === 0
+          ? c(
+              "q0",
+              `Para dividir ${polynomialText(p1)} entre (${divisorText(-Math.abs(r1) - 1)}) con Ruffini, ¿qué número va en la esquina?`,
+              [
+                `${sg(-Math.abs(r1) - 1)}, porque ${divisorText(-Math.abs(r1) - 1)} = 0 cuando x = ${sg(-Math.abs(r1) - 1)}`,
+                [`${Math.abs(r1) + 1}, el número que aparece en el divisor`, `Con ${Math.abs(r1) + 1} en la esquina se dividiría entre (x − ${Math.abs(r1) + 1}).`],
+                ["El primer coeficiente del polinomio", "El primer coeficiente se baja; en la esquina va el valor que anula el divisor."],
+              ],
+              0,
+              `x + ${Math.abs(r1) + 1} = x − (${sg(-Math.abs(r1) - 1)}): en la esquina va ${sg(-Math.abs(r1) - 1)}.`,
+            )
+          : concept === 1
+            ? c(
+                "q0",
+                `¿Por qué en la tabla de ${polynomialText(p3)} ÷ (${divisorText(r3)}) hay que escribir un 0 arriba?`,
+                [
+                  ["Porque la esquina es negativa", "El 0 no depende de la esquina, sino de los términos del polinomio."],
+                  "Porque falta un término del polinomio y cada coeficiente tiene que quedar en la columna de su grado",
+                  ["Porque el resto siempre es 0", "El resto se calcula; el 0 de arriba es un coeficiente que falta."],
+                ],
+                1,
+                `Los coeficientes de ${polynomialText(p3)} son ${p3.map(sg).join(", ")}: el 0 ocupa el lugar del término que falta.`,
+              )
+            : c(
+                "q0",
+                `Sin hacer la tabla, ¿qué indica el teorema del resto sobre ${polynomialText(p1)} ÷ (${divisorText(r1)})?`,
+                [
+                  ["Que el resto es el término independiente", "Eso solo pasa al dividir entre x (esquina 0)."],
+                  ["Que el resto siempre es 0", "Solo es 0 si (x − r) es un factor."],
+                  `Que el resto es P(${sg(r1)}): el valor del polinomio cuando x = ${sg(r1)}`,
+                ],
+                2,
+                `Resto de P(x) ÷ (${divisorText(r1)}) = P(${sg(r1)}) = ${sg(ruffiniTrace(ruf(p1, r1)).remainder)}.`,
+              ),
+        columnar("q1", ruf(p1, r1)),
+        n(
+          "q2",
+          `En la tabla de (${polynomialText(p2)}) ÷ (${divisorText(r2)}), ya bajaste el ${sg(a0)}. ¿Qué número escribes en la fila del medio, debajo del ${sg(a1)}?`,
+          r2 * a0,
+          [
+            `Se multiplica la esquina por el número que acabas de bajar: ${sg(r2)} × ${a0 < 0 ? `(${sg(a0)})` : a0} = ${sg(r2 * a0)}.`,
+            `Después se suma con el coeficiente: ${sg(a1)} + ${r2 * a0 < 0 ? `(${sg(r2 * a0)})` : r2 * a0} = ${sg(a1 + r2 * a0)}.`,
+          ],
+          [`En la esquina va ${sg(r2)}.`, "Multiplica la esquina por el número de abajo.", `${sg(r2)} × ${sg(a0)}.`],
+          {
+            step: true,
+            errors: [
+              { value: -r2 * a0, feedback: `Revisa la esquina: para ${divisorText(r2)} es ${sg(r2)}.` },
+              { value: a1 + r2 * a0, feedback: "Esa es la suma de la columna; en la fila del medio va el producto." },
+            ].filter((e) => e.value !== r2 * a0),
+          },
+        ),
+        columnar("q3", ruf(p3, r3)),
+        c(
+          "q4",
+          `Un compañero divide ${polynomialText(p4)} entre (${divisorText(-k4)}) y escribe ${k4} en la esquina. Le sale resto ${sg(bad)}. ¿Qué falla?`,
+          [
+            ["Nada: el resto es correcto", `Con ${k4} en la esquina se divide entre (x − ${k4}); el resto correcto es ${sg(good)}.`],
+            `En la esquina va ${sg(-k4)}, el valor que anula ${divisorText(-k4)}; el resto correcto es ${sg(good)}`,
+            ["Debía restar en lugar de sumar", "En Ruffini se suma; el problema está en la esquina."],
+          ],
+          1,
+          `${divisorText(-k4)} = 0 cuando x = ${sg(-k4)}; por el teorema del resto, el resto es P(${sg(-k4)}) = ${sg(good)}.`,
+          "concept",
+        ),
+        columnar("q5", ruf(p5, r5), {
+          prompt: `¿Es (${divisorText(r5)}) un factor de ${polynomialText(p5)}? Divide con Ruffini y escribe el resto (si es 0, sí lo es).`,
+          intent: "transfer",
+        }),
+        n(
+          "q6",
+          `¿Qué valor de k hace que x² + kx ${q6c < 0 ? `− ${-q6c}` : `+ ${q6c}`} sea divisible entre (${divisorText(q6r)})?`,
+          k6,
+          [
+            `Divisible significa resto 0, y por el teorema del resto el resto es P(${sg(q6r)}).`,
+            `P(${sg(q6r)}) = ${q6r * q6r} + ${sg(q6r)}k ${q6c < 0 ? `− ${-q6c}` : `+ ${q6c}`} = 0, así que k = ${sg(k6)}.`,
+            `Comprobación: con k = ${sg(k6)}, P(${sg(q6r)}) = ${q6r * q6r} ${k6 * q6r < 0 ? `− ${-k6 * q6r}` : `+ ${k6 * q6r}`} ${q6c < 0 ? `− ${-q6c}` : `+ ${q6c}`} = 0.`,
+          ],
+          ["Divisible: el resto tiene que ser 0.", `El resto es P(${sg(q6r)}).`, `Iguala P(${sg(q6r)}) a 0 y despeja k.`],
+          {
+            intent: "transfer",
+            errors: [{ value: -k6, feedback: `Revisa el signo: el resto es P(${sg(q6r)}), con x = ${sg(q6r)}.` }].filter((e) => e.value !== k6),
+          },
+        ),
+      ];
+    },
+    application: n(
+      "app",
+      "El volumen de una caja es V(x) = x³ + 6x² + 11x + 6 cm³ y una de sus aristas mide (x + 1) cm. El área de la base es el cociente de dividir V(x) entre (x + 1). ¿Cuánto mide esa área cuando x = 2?",
+      20,
+      [
+        "Ruffini con −1 en la esquina: 1, 6, 11, 6 → 1, 5, 6 y resto 0. Cociente x² + 5x + 6.",
+        "Para x = 2 se reemplaza en el cociente → 2² + 5 × 2 + 6 = 4 + 10 + 6 = 20 cm².",
+        "Comprobación: V(2) = 60 = (2 + 1) × 20.",
+      ],
+      ["Divide V(x) entre (x + 1): en la esquina va −1.", "El cociente es x² + 5x + 6.", "Reemplaza x por 2 en el cociente."],
+      {
+        intent: "transfer",
+        unit: "cm²",
+        errors: [
+          { value: 60, feedback: "Ese es el volumen V(2). El área de la base es el cociente evaluado en x = 2." },
+          { value: 12, feedback: "Revisa la esquina: para (x + 1) es −1, no 1." },
+          { value: 0, feedback: "Ese es el resto de la división. Se pide el cociente evaluado en x = 2." },
+        ],
+      },
+    ),
+    outcome: "Los modelos de la ciudad se simplifican: divides polinomios con Ruffini y reconoces sus factores con el teorema del resto.",
+    commonErrors: [
+      "Escribir en la esquina el número del divisor con su signo (2 para x + 2).",
+      "Olvidar el 0 de un término que falta.",
+      "Restar en lugar de sumar en cada columna.",
+      "Confundir el cociente con el resto.",
     ],
   }),
 ];
