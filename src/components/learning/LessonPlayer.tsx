@@ -45,6 +45,7 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import { LearningVisual } from "./LearningVisual";
+import { hasVisualTutor, VisualTutor } from "./VisualTutor";
 import { OperationDemo, OperationExample, OperationWorkspace, useOperationHelp } from "./Operation";
 import { Borrador } from "./Borrador";
 import {
@@ -219,6 +220,9 @@ export function LessonPlayer({
                     <MathText text={lesson.sections[progress.index].formula} />
                   </p>
                   <LearningVisual key={lesson.visual} kind={lesson.visual} />
+                  {progress.index === 0 && hasVisualTutor(lesson.id) && (
+                    <VisualTutor key={lesson.id} lessonId={lesson.id} />
+                  )}
                   <button
                     disabled={mutation.blocked}
                     onClick={() => void run({ kind: "next" })}
