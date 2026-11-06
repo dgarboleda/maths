@@ -44,6 +44,7 @@ import {
 } from "./LearningShell";
 import { LearningVisual } from "./LearningVisual";
 import { OperationDemo, OperationExample, OperationWorkspace, useOperationHelp } from "./Operation";
+import { Borrador } from "./Borrador";
 import {
   lessonProblem,
   pickPracticeGame,
@@ -645,7 +646,22 @@ export function QuestionActivity({
             Prefiero escribir la respuesta
           </button>
         </div>
-      ) : answerForm}
+      ) : (
+        <>
+          {answerForm}
+          {/* Borrador para hacer cuentas: no se corrige ni cuenta como ayuda. */}
+          {question.format !== "choice" && !column && !locked && (
+            <Borrador
+              targets={["tu respuesta"]}
+              disabled={disabled}
+              onUse={(value) => {
+                setResponse(value);
+                setFormatError(null);
+              }}
+            />
+          )}
+        </>
+      )}
       <div aria-live="polite" aria-atomic="true">
         {evidence &&
           evidence.attempts > 0 &&

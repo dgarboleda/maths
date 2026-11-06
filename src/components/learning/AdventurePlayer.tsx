@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Borrador } from "./Borrador";
 import { useState } from "react";
 import { CheckCircle2, Circle, Minus, Plus, Search, Zap } from "lucide-react";
 import {
@@ -229,6 +230,11 @@ function AdventureGame({
                   </div>
                 ))}
               </fieldset>
+              <Borrador
+                targets={adventure.inputs.map((input) => input.label)}
+                disabled={mutation.blocked}
+                onUse={(value, i) => change(i, value)}
+              />
               {invalid && (
                 <p role="alert" className="text-sm text-amber-200">
                   {invalid}

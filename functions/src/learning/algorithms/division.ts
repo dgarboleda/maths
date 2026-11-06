@@ -369,7 +369,7 @@ export function encodeOpenDivision(quotient: string, rows: string[]): string {
 export function checkOpenDivision(spec: DivisionSpec, response: string): OpenDivisionCheck | null {
   const m = /^L(\d+);(\d+(?:,\d+)*)$/.exec(response.trim());
   if (!m) return null;
-  const { quotient, remainder } = divisionTrace(spec);
+  const { quotient } = divisionTrace(spec);
   const given = Number(m[1]);
   const rows = m[2].split(",").map(Number);
   const variants = divisionRowVariants(spec);
