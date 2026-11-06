@@ -1,3 +1,4 @@
+import { COLUMN_LESSONS } from "./columnLessons";
 import { NUMBER_LESSONS } from "./numbers";
 import { FRACTION_LESSONS } from "./fractions";
 import { FRACTION_OPERATION_LESSONS } from "./fractionOps";
@@ -35,6 +36,7 @@ import type { Lesson } from "./types";
 
 export { LEARNING_UNITS } from "./units";
 export const LESSONS: Lesson[] = [
+  ...COLUMN_LESSONS,
   ...NUMBER_LESSONS,
   ...NUMBER_EXTRA_LESSONS,
   ...FRACTION_LESSONS,

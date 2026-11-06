@@ -2,6 +2,7 @@ import { CONTENT_VERSION } from "./version";
 import { getLesson, LEARNING_UNITS, LESSONS } from "./catalog";
 import { LearningError } from "./engine";
 import { isAnswerCorrect } from "./questions";
+import { PERU_MAP } from "./peru";
 import type {
   Lesson,
   PlacementAction,
@@ -136,5 +137,10 @@ export function recommendedLesson(
   placement: PlacementResult | null | undefined,
 ): Lesson | undefined {
   const mastered = new Set(placement?.mastered ?? []);
-  return LESSONS.find((l) => !completed.has(l.id) && !mastered.has(l.id));
+  // Una base de primaria se recomienda para empezar (o si la ubicación no la
+  // dio por sabida), no a quien ya terminó clases del programa: añadirla al
+  // catálogo no debe hacer retroceder a quien ya avanza.
+  return LESSONS.find(
+    (l) => !completed.has(l.id) && !mastered.has(l.id) && !(PERU_MAP[l.id]?.base && completed.size > 0),
+  );
 }

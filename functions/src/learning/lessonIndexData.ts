@@ -3,6 +3,16 @@ import type { LessonSummary } from "./types";
 
 export const LESSON_INDEX: readonly LessonSummary[] = [
   {
+    "id": "suma-resta-columnas",
+    "unitId": "numeros",
+    "title": "Sumar y restar en columnas",
+    "objective": "Sumar y restar números de varias cifras en columnas, llevando y reagrupando con sentido del valor posicional.",
+    "prerequisites": [],
+    "legacyModuleIds": [
+      "aritmetica-d3"
+    ]
+  },
+  {
     "id": "enteros-recta",
     "unitId": "numeros",
     "title": "Números enteros en la recta",

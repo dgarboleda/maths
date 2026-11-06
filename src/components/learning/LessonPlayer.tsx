@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ArrowRight, BookOpen, Lightbulb } from "lucide-react";
 import {
+  columnHints,
+  columnSolution,
   currentEvidence,
   currentQuestion,
   errorFeedback,
@@ -43,6 +45,14 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import { LearningVisual } from "./LearningVisual";
+import {
+  ColumnDemo,
+  ColumnExample,
+  ColumnSheet,
+  firstWrongColumn,
+  StrategyPicker,
+  useSubtractStrategy,
+} from "./ColumnOperation";
 import {
   lessonProblem,
   pickPracticeGame,
@@ -237,6 +247,9 @@ export function LessonPlayer({
                   <h3 className="text-xl font-bold">
                     <MathText text={lesson.examples[progress.index].prompt} />
                   </h3>
+                  {lesson.examples[progress.index].column ? (
+                    <ColumnExample key={progress.index} spec={lesson.examples[progress.index].column!} />
+                  ) : (
                   <ol className="space-y-3">
                     {lesson.examples[progress.index].steps.map(
                       (step, index) => (
@@ -257,6 +270,7 @@ export function LessonPlayer({
                       ),
                     )}
                   </ol>
+                  )}
                   <p className="rounded-xl bg-emerald-950/40 p-4 text-emerald-100">
                     <MathText text={lesson.examples[progress.index].conclusion} />
                   </p>
@@ -405,6 +419,14 @@ export function QuestionActivity({
   // Vía accesible: quien no pueda o no quiera jugar responde por escrito.
   const [writing, setWriting] = useState(false);
   const helpOpen = useLearningHelpOpen();
+  const [strategy, setStrategy] = useSubtractStrategy();
+  const column = question.column;
+  const columnHelp = useMemo(
+    () => (column ? { hints: columnHints(column, strategy), solution: columnSolution(column, strategy) } : null),
+    [column, strategy],
+  );
+  const hints = columnHelp?.hints ?? question.hints;
+  const solution = columnHelp?.solution ?? question.solution;
   const problem = useMemo(() => lessonProblem(question), [question]);
   const arcade = progress.stage === "practice" && !writing && problem !== null;
   const errorPaused = Boolean(evidence && !evidence.correct && evidence.attempts > acknowledgedAttempts);
@@ -465,6 +487,31 @@ export function QuestionActivity({
               </label>
             ))}
           </div>
+        ) : column ? (
+          <div className="space-y-3">
+            {column.op === "subtract" && (
+              <StrategyPicker strategy={strategy} onChange={setStrategy} disabled={disabled} />
+            )}
+            <ColumnSheet
+              key={`${question.id}-${strategy}`}
+              spec={column}
+              strategy={strategy}
+              mode={progress.stage === "guided" ? "guided" : "free"}
+              response={response}
+              onChange={(value) => {
+                setResponse(value);
+                setFormatError(null);
+              }}
+              onComplete={(value) => void run({ kind: "answer", questionId: question.id, response: value })}
+              hintLevel={evidence?.hintsUsed ?? 0}
+              wrongColumn={
+                !assessment && evidence && !evidence.correct && evidence.attempts > 0 && evidence.response === response
+                  ? firstWrongColumn(response, Number(question.answer))
+                  : null
+              }
+              disabled={disabled || locked}
+            />
+          </div>
         ) : (
           <div>
             <label
@@ -501,7 +548,7 @@ export function QuestionActivity({
           {formatError}
         </p>
       )}
-      {!locked && (
+      {!locked && !(column && progress.stage === "guided") && (
         <button
           className={primaryButton}
           disabled={disabled || (arcade && paused) || !response.trim()}
@@ -583,7 +630,7 @@ export function QuestionActivity({
       )}
       {progress.stage === "guided" && (
         <p className="rounded-xl bg-cyan-950/40 p-4 text-sm text-cyan-100">
-          <strong>Vamos paso a paso.</strong> <MathText text={question.hints[0]} />
+          <strong>Vamos paso a paso.</strong> <MathText text={hints[0]} />
         </p>
       )}
       {arcade && exercise ? (
@@ -653,15 +700,20 @@ export function QuestionActivity({
         {Boolean(evidence?.hintsUsed) && (
           <p className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-950/40 p-4 text-sm text-cyan-100">
             <Lightbulb className="mb-2" size={18} aria-hidden="true" />
-            <MathText text={question.hints[(evidence?.hintsUsed ?? 1) - 1]} />
+            <MathText text={hints[(evidence?.hintsUsed ?? 1) - 1]} />
           </p>
         )}
       </div>
       {showSolution && (
         <div className="rounded-xl border border-slate-600 bg-slate-950 p-4">
           <h3 className="font-bold text-cyan-200">El razonamiento</h3>
+          {column && (
+            <div className="mt-3">
+              <ColumnDemo key={strategy} spec={column} strategy={strategy} initialStep={Infinity} />
+            </div>
+          )}
           <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-slate-200">
-            {question.solution.map((step) => (
+            {solution.map((step) => (
               <li key={step}><MathText text={step} /></li>
             ))}
           </ol>

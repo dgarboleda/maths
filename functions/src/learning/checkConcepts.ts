@@ -9,6 +9,17 @@ import type { Question } from "./types";
  * Se reúnen aquí para revisarlas juntas.
  */
 export const CHECK_CONCEPTS: Record<string, Question> = {
+  "suma-resta-columnas": c(
+    "q0",
+    "Para quitarle 8 unidades a 305 pidiendo prestado, ¿cómo se reescribe 305?",
+    [
+      "2 centenas, 9 decenas y 15 unidades",
+      ["3 centenas, 0 decenas y 15 unidades", "Esas 10 unidades extra no salen de ninguna parte: el número aumentaría en 10."],
+      ["2 centenas, 10 decenas y 5 unidades", "Es el mismo número, pero las unidades siguen siendo 5 y aún no alcanzan para quitar 8."],
+    ],
+    0,
+    "Como no hay decenas, se cambia 1 centena por 10 decenas y luego 1 decena por 10 unidades: 200 + 90 + 15 = 305.",
+  ),
   "enteros-recta": c(
     "q0",
     "¿Cuál es el opuesto de −8 y por qué?",

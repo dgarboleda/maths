@@ -13,3 +13,4 @@ export * from "../../../functions/src/learning/peru";
 export * from "../../../functions/src/learning/diagnosis";
 export * from "../../../functions/src/learning/calibration";
 export * from "../../../functions/src/learning/rewards";
+export * from "../../../functions/src/learning/algorithms/columns";

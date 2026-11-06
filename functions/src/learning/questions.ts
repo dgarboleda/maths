@@ -1,4 +1,12 @@
 import type { Example, Intent, Question } from "./types";
+import {
+  columnBugs,
+  columnExpression,
+  columnHints,
+  columnSolution,
+  columnTrace,
+  type ColumnSpec,
+} from "./algorithms/columns";
 
 export function numeric(
   id: string,
@@ -24,6 +32,55 @@ export function numeric(
     hints,
     ...(options.unit ? { unit: options.unit } : {}),
     ...(options.errors ? { errors: options.errors } : {}),
+  };
+}
+/**
+ * Pregunta que se resuelve en columnas. El desarrollo, las pistas y los
+ * errores previstos salen del mismo trazado (con «pedir prestado»; la hoja
+ * los muestra también con «compensar»). `errors` extra se suman a los
+ * errores sistemáticos del algoritmo.
+ */
+export function columnar(
+  id: string,
+  spec: ColumnSpec,
+  options: {
+    prompt?: string;
+    intent?: Intent;
+    unit?: string;
+    errors?: Question["errors"];
+  } = {},
+): Question {
+  const trace = columnTrace(spec);
+  const errors = [
+    ...columnBugs(spec).map(({ value, feedback }) => ({ value, feedback })),
+    ...(options.errors ?? []),
+  ].filter((e, i, all) => e.value !== trace.result && all.findIndex((o) => o.value === e.value) === i);
+  return {
+    ...numeric(
+      id,
+      options.prompt ?? `Calcula en columnas: ${columnExpression(spec)}.`,
+      trace.result,
+      columnSolution(spec),
+      columnHints(spec),
+      {
+        intent: options.intent ?? "procedure",
+        ...(options.unit ? { unit: options.unit } : {}),
+        ...(errors.length ? { errors } : {}),
+      },
+    ),
+    column: spec,
+  };
+}
+export function columnExample(spec: ColumnSpec, prompt?: string): Example {
+  const trace = columnTrace(spec);
+  return {
+    prompt: prompt ?? `Calcula ${columnExpression(spec)} en columnas.`,
+    steps: trace.steps.map((step) => ({
+      math: `${step.workTop} ${spec.op === "add" ? "+" : "−"} ${step.workBottom} → escribes ${step.digit}`,
+      why: step.why,
+    })),
+    conclusion: columnSolution(spec).at(-1)!,
+    column: spec,
   };
 }
 /** Una opción es su texto o `[texto, feedback]`: el feedback propio explica

@@ -5,6 +5,7 @@ import { MathText } from "@/components/MathText";
 import { useId, useState } from "react";
 import type { Visual } from "@/lib/learning/domain";
 import { Challenge } from "./Challenge";
+import { ColumnExplorer } from "./ColumnOperation";
 // Las gráficas cartesianas y las de geometría también se cargan bajo demanda:
 // cada clase descarga solo su modelo (presupuesto de JS de la clase).
 const graphVisual = (name: "LinearVisual" | "ParabolaVisual" | "InequalityVisual") =>
@@ -309,6 +310,7 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   "binomial-square": BinomialSquareVisual,
   distributive: DistributiveVisual,
   expression: ExpressionVisual,
+  columns: ColumnExplorer,
   balance: ({ id }) => <BalanceVisual id={id} initial="balance" />,
   equation: ({ id }) => <BalanceVisual id={id} initial="equation" />,
 };

@@ -20,7 +20,10 @@ export const PERU_COMPETENCIES: Record<PeruCompetency, string> = {
 /** Grado de secundaria (1.° a 5.°). Ciclo VI: 1.° y 2.°; ciclo VII: 3.° a 5.°. */
 export type PeruGrade = 1 | 2 | 3 | 4 | 5;
 
-export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruGrade }> = {
+export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruGrade; base?: true }> = {
+  // Cálculo escrito de primaria que el programa repasa como base: se ubica
+  // en 1.° como referencia, pero no cuenta para el grado alcanzado.
+  "suma-resta-columnas": { competency: "cantidad", grade: 1, base: true },
   "enteros-recta": { competency: "cantidad", grade: 1 },
   "enteros-suma-resta": { competency: "cantidad", grade: 1 },
   "enteros-producto-cociente": { competency: "cantidad", grade: 1 },
@@ -97,7 +100,7 @@ export function peruLevel(competency: PeruCompetency, mastered: Set<string>): nu
   let level = 0;
   for (let grade = 1; grade <= 5; grade++) {
     const lessons = Object.entries(PERU_MAP).filter(
-      ([, m]) => m.competency === competency && m.grade === grade,
+      ([, m]) => m.competency === competency && m.grade === grade && !m.base,
     );
     if (lessons.length === 0) continue;
     if (lessons.every(([id]) => mastered.has(id))) level = grade;
