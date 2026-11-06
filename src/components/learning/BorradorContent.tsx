@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Calculator, ChevronDown, ChevronUp } from "lucide-react";
-import type { ArithmeticSpec, DivisionSpec } from "@/lib/learning/core";
+import { validColumnSpec, validDivisionSpec, type ArithmeticSpec, type DivisionSpec } from "@/lib/learning/core";
 import { secondaryButton } from "./LearningShell";
 import { ColumnSheet, OptionPicker, useSubtractStrategy } from "./ColumnOperation";
 import { DivisionSheet } from "./DivisionOperation";
@@ -66,9 +66,13 @@ export function Borrador({
     if (op === "subtract" && x < y) return setProblem("En la resta, el primer número no puede ser menor que el segundo.");
     if (op === "divide" && y === 0) return setProblem("No se puede dividir entre 0.");
     if (op === "divide" && y > 999) return setProblem("El divisor puede tener hasta 3 cifras.");
+    const next = { op, a: x, b: y } as ArithmeticSpec | DivisionSpec;
+    // Los mismos límites que la hoja: así nunca se dibuja una cuenta que no puede trazar.
+    if (!(next.op === "divide" ? validDivisionSpec(next) : validColumnSpec(next)))
+      return setProblem("Usa números menores que 10 000 000.");
     setProblem(null);
     setWork("");
-    setSpec({ op, a: x, b: y });
+    setSpec(next);
   };
   const result = spec ? resultOf(spec.op, work) : "";
   const field = "mt-1 block min-h-11 w-32 rounded-xl border border-slate-500 bg-slate-950 px-3 font-mono text-lg text-white";

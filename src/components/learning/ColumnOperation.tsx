@@ -494,8 +494,14 @@ export function ColumnSheet({
   const done = mode === "guided" && active === -1;
 
   const emit = (next: string[]) => {
+    // Solo se ignoran las casillas vacías de la izquierda: una casilla vacía
+    // entre cifras (o en las unidades) deja la respuesta incompleta, para no
+    // correr cifras de columna (9, 6 y 4 sin unidades no son 964).
+    const highest = next.reduce((h, d, i) => (d ? i : h), -1);
+    const gap = next.slice(0, highest + 1).some((d) => !d);
     let text: string;
-    if (!scale) text = [...next].reverse().join("").replace(/^0+(?=\d)/, "");
+    if (gap) text = "";
+    else if (!scale) text = [...next].reverse().join("").replace(/^0+(?=\d)/, "");
     else {
       const int = next.slice(scale).reverse().join("").replace(/^0+(?=\d)/, "");
       const frac = next.slice(0, scale).reverse().join("");
@@ -506,6 +512,8 @@ export function ColumnSheet({
   };
 
   const focus = (i: number) => refs.current[i]?.focus();
+  const highestFilled = digits.reduce((h, d, i) => (d ? i : h), -1);
+  const hasGap = mode === "free" && digits.slice(0, highestFilled + 1).some((d) => !d);
 
   const setDigit = (i: number, value: string) => {
     const next = [...digits];
@@ -593,6 +601,8 @@ export function ColumnSheet({
           ) : (
             <p className="rounded-xl bg-emerald-950/40 p-3 text-emerald-100">{lastWhy}</p>
           )
+        ) : hasGap ? (
+          <p className="text-xs text-amber-200">Completa las casillas vacías entre las cifras: cada cifra va en su columna.</p>
         ) : wrongColumn !== null ? (
           <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">
             Revisa la columna de las {placeName(wrongColumn - scale)}: es la primera cifra que no coincide.
