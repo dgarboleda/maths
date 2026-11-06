@@ -31,6 +31,8 @@ import {
   type MixedReviewState,
   type UnitId,
   STAR_REWARDS,
+  LESSON_STARS_MAX,
+  lessonStarsEarned,
 } from "@/lib/learning/domain";
 import { useLearningData } from "@/lib/learning/useLearningData";
 import { useLearningClock } from "@/lib/learning/useLearningClock";
@@ -580,7 +582,7 @@ function LessonCard({
       <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-400">
         {lesson.objective}
       </p>
-      <StarBadge earned={Boolean(progress?.completedAt)} stars={STAR_REWARDS.lesson} />
+      <LessonStarBadge earned={lessonStarsEarned(progress)} />
       <span
         className={`mt-5 flex items-center justify-between gap-2 border-t border-white/10 pt-4 text-sm font-semibold ${theme.accent}`}
       >
@@ -596,6 +598,17 @@ function LessonCard({
 }
 
 /** Cuántas estrellas da la actividad y si ya se ganaron. */
+/** Estrellas de una clase: ganadas de las posibles (terminar, demostrar y recordar). */
+function LessonStarBadge({ earned }: { earned: number }) {
+  return (
+    <p className={`mt-3 inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${earned >= LESSON_STARS_MAX ? "bg-emerald-300/10 text-emerald-200" : "bg-amber-300/15 text-amber-200"}`}>
+      <span aria-hidden="true">⭐</span>
+      {earned} de {LESSON_STARS_MAX} estrellas
+      <span className="sr-only">: 1 al terminar, 4 al superar la comprobación sin ayuda y 2 al superar el repaso</span>
+    </p>
+  );
+}
+
 function StarBadge({ earned, stars, what = "al terminarla" }: { earned: boolean; stars: number; what?: string }) {
   return (
     <p className={`mt-3 inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${earned ? "bg-amber-300/15 text-amber-200" : "bg-white/5 text-slate-300"}`}>

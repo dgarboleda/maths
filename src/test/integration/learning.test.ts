@@ -19,6 +19,7 @@ import {
   type MixedReviewState,
   type PlacementState,
   correctResponse,
+  STAR_REWARDS,
 } from "@/lib/learning/domain";
 
 describe("Servicio educativo y reglas reales", () => {
@@ -275,7 +276,10 @@ describe("Servicio educativo y reglas reales", () => {
       await send({ kind: "begin", stage: "application" });
       await send({ kind: "reveal", questionId: "m-1" });
       const completed = await send({ kind: "next" });
-      expect(completed.result.stars).toBe(5);
+      // Terminar con el desarrollo a la vista solo da la estrella de terminar:
+      // las de la comprobación se ganan demostrándolo sin ayuda.
+      expect(completed.result.stars).toBe(STAR_REWARDS.lesson);
+      expect(completed.result.progress.rewarded).toEqual({ lesson: true });
       expect(completed.result.progress.checkPassedAt).toBeNull();
       await call(family.app, "recordLearningAction", completed.request);
       await send({ kind: "begin", stage: "application" });
@@ -285,7 +289,7 @@ describe("Servicio educativo y reglas reales", () => {
         (
           await fs.getDoc(fs.doc(family.db, ...path, "starBalance", "total"))
         ).data()?.total,
-      ).toBe(105);
+      ).toBe(100 + STAR_REWARDS.lesson);
       expect(
         (await fs.getDocs(fs.collection(family.db, ...path, "starLedger")))
           .size,
@@ -678,8 +682,11 @@ describe("Servicio educativo y reglas reales", () => {
         : String(question.errors![0].value);
       // El mismo error previsto dos veces en la práctica.
       await send(lesson.id, { kind: "begin", stage: "practice" });
-      for (let i = 0; i < 2; i++)
+      for (let i = 0; i < 2; i++) {
+        // En opción múltiple, reintentar exige pedir antes una pista.
+        if (i > 0) await send(lesson.id, { kind: "hint", questionId: question.id });
         await send(lesson.id, { kind: "answer", questionId: question.id, response: wrong });
+      }
       for (const id of [lesson.id, "enteros-recta", "razones", "media-mediana-moda"]) {
         await send(id, { kind: "begin", stage: "application" });
         await send(id, { kind: "reveal", questionId: "m-1" });

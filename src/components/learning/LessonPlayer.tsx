@@ -19,6 +19,8 @@ import {
   questionsFor,
   STAGE_LABELS,
   STAR_REWARDS,
+  LESSON_STARS_MAX,
+  lessonStarsEarned,
   type LearningAction,
   type LearningProgress,
   type Lesson,
@@ -136,9 +138,7 @@ export function LessonPlayer({
       </p>
       <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-300/10 px-3 py-1 text-sm font-semibold text-amber-200">
         <span aria-hidden="true">⭐</span>
-        {progress.completedAt
-          ? `Ya ganaste las ${STAR_REWARDS.lesson} estrellas de esta clase.`
-          : `Al terminar esta clase ganas ${STAR_REWARDS.lesson} estrellas (una sola vez).`}
+        {`Estrellas de esta clase: ${lessonStarsEarned(progress)} de ${LESSON_STARS_MAX}. ${STAR_REWARDS.lesson} al terminarla, ${STAR_REWARDS.lessonCheck} al superar la comprobación sin ayuda y ${STAR_REWARDS.lessonRetained} al superar el repaso.`}
       </p>
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
         <div className="min-w-0">
@@ -431,6 +431,16 @@ export function QuestionActivity({
   );
   const showSolution =
     evidence?.revealed || (!silentCheck && evidence?.correct);
+  // Opción múltiple fuera de las comprobaciones: tras un fallo, una pista;
+  // tras dos, el desarrollo (el servidor aplica la misma regla).
+  const choiceRetry: "hint" | "reveal" | null =
+    !assessment && question.format === "choice" && evidence && evidence.attempts > 0 && !evidence.correct && !evidence.revealed
+      ? evidence.attempts >= 2
+        ? "reveal"
+        : evidence.hintsUsed < evidence.attempts
+          ? "hint"
+          : null
+      : null;
   const canNext = assessment
     ? Boolean(evidence && evidence.attempts > 0)
     : Boolean(evidence?.correct || evidence?.revealed);
@@ -528,14 +538,26 @@ export function QuestionActivity({
           {formatError}
         </p>
       )}
-      {!locked && !(column && progress.stage === "guided") && (
+      {!locked && !(column && progress.stage === "guided") && choiceRetry !== "reveal" && (
         <button
           className={primaryButton}
-          disabled={disabled || (arcade && paused) || !response.trim()}
+          disabled={disabled || (arcade && paused) || !response.trim() || choiceRetry === "hint"}
           type="submit"
         >
           {assessment ? "Registrar mi respuesta" : "Comprobar mi respuesta"}
         </button>
+      )}
+      {!locked && choiceRetry && (
+        <p role="status" className="text-sm text-amber-200">
+          {choiceRetry === "hint"
+            ? "Pide una pista antes de volver a intentarlo."
+            : "Ya lo intentaste dos veces: revisa el desarrollo para continuar."}
+        </p>
+      )}
+      {evidence?.rushed && (
+        <p role="status" className="rounded-xl bg-violet-950/40 p-3 text-sm text-violet-100">
+          ¿Lo pensaste? Respondiste muy rápido. Léelo con calma: una respuesta apresurada no cuenta como hecha sin ayuda.
+        </p>
       )}
     </form>
   );

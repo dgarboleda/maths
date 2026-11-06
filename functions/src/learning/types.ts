@@ -154,6 +154,15 @@ export interface ResponseEvidence {
   revealed: boolean;
   response: string | null;
   updatedAt: number;
+  /** Alguna respuesta llegó antes de poder leer y pensar (ver
+   *  `MIN_THINK_MS`): no cuenta como hecha sin ayuda. */
+  rushed?: boolean;
+}
+/** Partes de una clase ya premiadas con estrellas. */
+export interface LessonRewards {
+  lesson?: boolean;
+  check?: boolean;
+  retained?: boolean;
 }
 export interface CheckResult {
   correct: number;
@@ -182,6 +191,10 @@ export interface LearningProgress {
   retainedAt: number | null;
   needsSupport: boolean;
   updatedAt: number;
+  /** Cuándo se mostró la actividad actual (para detectar respuestas apresuradas). */
+  shownAt?: number;
+  /** Estrellas ya pagadas por esta clase (ver `lessonStars`). */
+  rewarded?: LessonRewards;
 }
 export type LearningAction =
   | {

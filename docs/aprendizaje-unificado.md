@@ -57,3 +57,13 @@ No hay migración ni cambios de IAM, Secret Manager, servicios o planes de factu
 ## Validación
 
 Las pruebas cubren la selección y persistencia del plan, las bases recomendadas, la diferencia entre clase completada y autonomía, la caducidad de la racha, el mapa y los informes sin lecturas del sistema anterior, la carga de dicho sistema al abrir el archivo, accesibilidad y compatibilidad con mundos y avatares personalizados. La suite de integración comprueba que el hijo no puede cambiar el plan y que el enlace infantil no lo divulga.
+
+## Estrellas por aprender, no por avanzar
+
+Las estrellas de una clase se ganan por partes (`lessonStars` en `functions/src/learning/rewards.ts`): 1 al terminarla, 4 al superar la comprobación sin ayuda y 2 al superar el repaso diferido. Cada parte se paga una sola vez y queda registrada en el avance (`rewarded`). Las clases terminadas antes de este reparto cobraron 5 al terminar y se dan por pagadas.
+
+Para que adivinar o pulsar sin leer no compense:
+
+- Una respuesta enviada antes de `MIN_THINK_MS` (4 s) desde que se mostró la actividad, o desde la acción anterior sobre ella, se marca como apresurada (`rushed`) y no cuenta como hecha sin ayuda. El servidor usa su propia hora. Solo el emulador puede cambiar el umbral (`functions/.env.demo-numerario`), porque las pruebas automáticas responden en milisegundos.
+- En opción múltiple fuera de las comprobaciones, tras un fallo hay que pedir una pista antes de reintentar, y tras dos fallos hay que ver el desarrollo.
+- La familia ve en el informe «Cómo responde»: las respuestas apresuradas de la semana y las clases terminadas sin superar la comprobación.
