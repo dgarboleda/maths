@@ -82,4 +82,23 @@ describe("Operaciones en columnas", () => {
     expect(isOptionalLesson("enteros-recta")).toBe(false);
     expect(placementCurrent(applyPlacementAction(undefined, { kind: "begin" }, 0))?.lesson.id).toBe("enteros-recta");
   });
+
+  test("decimales: se alinea la coma, se completa con ceros y se nombran décimas y centésimas", () => {
+    const t = columnTrace({ op: "subtract", a: 125.5, b: 48.75 });
+    expect([t.scale, t.result]).toEqual([2, 76.75]);
+    expect(t.steps[0].why).toMatch(/^En las centésimas: 0 es menor que 5: pides 1 décima/);
+    expect(columnSolution({ op: "add", a: 3.5, b: 1.25 })[0]).toMatch(/coma alineada \(3,50 y 1,25\)/);
+    expect(columnTrace({ op: "add", a: 0.5, b: 0.25 }).result).toBe(0.75);
+    for (let k = 0; k < 2000; k++) {
+      const a = Math.round(Math.random() * 1e5) / 100, b = Math.round(Math.random() * 1e4) / 1000;
+      expect(columnTrace({ op: "add", a, b }).result).toBeCloseTo(a + b, 9);
+      for (const s of ["prestamo", "compensacion"] as const)
+        expect(columnTrace({ op: "subtract", a: Math.max(a, b), b: Math.min(a, b) }, s).result).toBeCloseTo(Math.abs(a - b), 9);
+    }
+    // Alinear por la derecha en lugar de por la coma.
+    expect(columnBugs({ op: "add", a: 3.5, b: 1.25 })).toEqual([expect.objectContaining({ id: "coma-desalineada", value: 1.6 })]);
+    const q = getLesson("suma-resta-columnas")!.practice.find((item) => item.task === 5)!;
+    expect(isAnswerCorrect(q, "1566,75")).toBe(true);
+    expect(isAnswerCorrect(q, "1566.75")).toBe(true);
+  });
 });

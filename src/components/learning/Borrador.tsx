@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { Calculator, ChevronDown, ChevronUp } from "lucide-react";
-import type { ColumnSpec } from "@/lib/learning/core";
+import type { ArithmeticSpec, DivisionSpec } from "@/lib/learning/core";
 import { secondaryButton } from "./LearningShell";
 import { ColumnSheet, OptionPicker, useSubtractStrategy } from "./ColumnOperation";
 import { DivisionSheet } from "./DivisionOperation";
@@ -18,6 +18,13 @@ const OPS = [
   { id: "divide", label: "Dividir" },
 ] as const;
 type Op = (typeof OPS)[number]["id"];
+
+/** Cifras y, como mucho, una coma decimal. */
+const decimalInput = (text: string) => {
+  const clean = text.replace(/\./g, ",").replace(/[^\d,]/g, "");
+  const [int, ...rest] = clean.split(",");
+  return rest.length ? `${int},${rest.join("")}` : int;
+};
 
 /** Resultado escrito en la hoja (en la galera, el cociente). */
 function resultOf(op: Op, response: string): string {
@@ -40,15 +47,18 @@ export function Borrador({
   const [op, setOp] = useState<Op>("add");
   const [a, setA] = useState("");
   const [b, setB] = useState("");
-  const [spec, setSpec] = useState<ColumnSpec | null>(null);
+  const [spec, setSpec] = useState<ArithmeticSpec | DivisionSpec | null>(null);
   const [work, setWork] = useState("");
   const [target, setTarget] = useState(0);
   const [strategy] = useSubtractStrategy();
   const [problem, setProblem] = useState<string | null>(null);
 
   const write = () => {
-    const [x, y] = [Number(a), Number(b)];
-    if (!a || !b) return setProblem("Escribe los dos números.");
+    const [x, y] = [Number(a.replace(",", ".")), Number(b.replace(",", "."))];
+    if (!a || !b || !Number.isFinite(x) || !Number.isFinite(y)) return setProblem("Escribe los dos números.");
+    if (op === "divide" && (!Number.isInteger(x) || !Number.isInteger(y)))
+      return setProblem("En el borrador, la división es con números enteros.");
+    if (/,\d{4,}/.test(`${a} ${b}`)) return setProblem("Usa como mucho tres decimales.");
     if (op === "subtract" && x < y) return setProblem("En la resta, el primer número no puede ser menor que el segundo.");
     if (op === "divide" && y === 0) return setProblem("No se puede dividir entre 0.");
     if (op === "divide" && y > 999) return setProblem("El divisor puede tener hasta 3 cifras.");
@@ -84,13 +94,13 @@ export function Borrador({
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-sm text-slate-300">
               {op === "divide" ? "Dividendo" : "Primer número"}
-              <input className={field} inputMode="numeric" maxLength={7} value={a} disabled={disabled}
-                onChange={(e) => setA(e.target.value.replace(/\D/g, ""))} />
+              <input className={field} inputMode="decimal" maxLength={11} value={a} disabled={disabled}
+                onChange={(e) => setA(decimalInput(e.target.value))} />
             </label>
             <label className="text-sm text-slate-300">
               {op === "divide" ? "Divisor" : "Segundo número"}
-              <input className={field} inputMode="numeric" maxLength={7} value={b} disabled={disabled}
-                onChange={(e) => setB(e.target.value.replace(/\D/g, ""))} />
+              <input className={field} inputMode="decimal" maxLength={11} value={b} disabled={disabled}
+                onChange={(e) => setB(decimalInput(e.target.value))} />
             </label>
             <button type="button" className={secondaryButton} disabled={disabled} onClick={write}>
               Escribir la cuenta

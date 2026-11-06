@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { columnBugs, columnTrace, fmt, placeName } from "./algorithms/columns";
 import { divisionBugs, divisionTrace } from "./algorithms/division";
+import { factorTrace } from "./algorithms/factors";
 import { choice as c, columnExample, columnar, numeric as n } from "./questions";
 import type { Lesson } from "./types";
 
@@ -15,7 +16,7 @@ export const COLUMN_LESSONS: Lesson[] = [
     unitId: "numeros",
     title: "Sumar y restar en columnas",
     objective:
-      "Sumar y restar números de varias cifras en columnas, llevando y reagrupando con sentido del valor posicional.",
+      "Sumar y restar números de varias cifras, también con decimales, en columnas, llevando y reagrupando con sentido del valor posicional.",
     purpose:
       "El almacén de la ciudad recibe y despacha miles de piezas. Para llevar la cuenta sin calculadora hay que operar en columnas y saber por qué funciona cada paso.",
     prerequisites: [],
@@ -23,6 +24,7 @@ export const COLUMN_LESSONS: Lesson[] = [
     visual: "columns",
     vocabulary: [
       { term: "Valor posicional", meaning: "Una cifra vale distinto según su columna: el 3 de 4 372 vale 300." },
+      { term: "Alinear la coma", meaning: "Con decimales, la coma de un número va debajo de la del otro; los decimales que faltan se completan con ceros." },
       { term: "Llevada", meaning: "Cuando una columna suma 10 o más, 10 de esa posición forman 1 de la siguiente y se pasa a la izquierda." },
       { term: "Pedir prestado", meaning: "Cambiar 1 de la columna de la izquierda por 10 de la tuya: el número no cambia, solo se reagrupa." },
       { term: "Compensar", meaning: "Sumar 10 arriba en una columna y 1 abajo en la siguiente: los dos números aumentan lo mismo y la diferencia se conserva." },
@@ -33,6 +35,7 @@ export const COLUMN_LESSONS: Lesson[] = [
         paragraphs: [
           "Para operar en columnas se escriben unidades bajo unidades, decenas bajo decenas y centenas bajo centenas. Si un número tiene menos cifras, se alinea por la derecha.",
           "Se empieza por las unidades, a la derecha, porque lo que sobra en una columna pasa a la siguiente de la izquierda.",
+          "Con decimales se alinea la coma: décimas bajo décimas, centésimas bajo centésimas. Si a un número le faltan decimales, se completa con ceros: 3,5 + 1,25 es 3,50 + 1,25.",
         ],
         formula: "4 372 = 4 000 + 300 + 70 + 2",
       },
@@ -56,6 +59,7 @@ export const COLUMN_LESSONS: Lesson[] = [
     examples: [
       columnExample({ op: "add", a: 347, b: 285 }, "Calcula 347 + 285 en columnas."),
       columnExample({ op: "subtract", a: 302, b: 158 }, "Calcula 302 − 158 en columnas: hay un cero arriba."),
+      columnExample({ op: "subtract", a: 125.5, b: 48.75 }, "Calcula 125,5 − 48,75: alinea la coma y completa con ceros."),
     ],
     diagnostic: [
       c("d-1", "En el número 4 372, ¿cuánto vale la cifra 3?", ["3", "300", "30"], 1, "El 3 está en la columna de las centenas: vale 3 × 100 = 300."),
@@ -81,7 +85,8 @@ export const COLUMN_LESSONS: Lesson[] = [
       const [ta, tb] = [[268, 157], [459, 283], [376, 248], [594, 238], [643, 279], [825, 186]][v];
       const [ra, rb] = [[325, 148], [503, 267], [4012, 1586], [3241, 1765], [700, 254], [6105, 2348]][v];
       const [ea, eb] = [[432, 175], [614, 238], [852, 367], [721, 346], [943, 568], [530, 174]][v];
-      const [ba, bb] = [[1204, 386], [2315, 748], [3050, 1275], [1432, 965], [4006, 2518], [2140, 876]][v];
+      // Litros y soles con decimales: se alinea la coma.
+      const [ba, bb] = [[1204, 386], [2315.5, 748.75], [3050, 1275.4], [1432, 965], [4006.25, 2518.5], [2140.8, 876.95]][v];
       const [ma, mb] = [[1000, 457], [812, 375], [2000, 1268], [1503, 726], [900, 384], [1250, 687]][v];
 
       // q2: la cifra de las decenas tras llevar desde las unidades.
@@ -178,7 +183,7 @@ export const COLUMN_LESSONS: Lesson[] = [
             prompt: `${contexts.what} ${fmt(ba)} ${contexts.things} ${contexts.verb} ${fmt(bb)}. ${contexts.left}`,
             intent: "transfer",
             unit: contexts.unit,
-            errors: [{ value: ba + bb, feedback: "Sumaste las cantidades. Lo que se usa o se gasta se quita: es una resta." }],
+            errors: [{ value: Number((ba + bb).toFixed(2)), feedback: "Sumaste las cantidades. Lo que se usa o se gasta se quita: es una resta." }],
           },
         ),
         n(
@@ -455,6 +460,216 @@ export const COLUMN_LESSONS: Lesson[] = [
       "Dejar un resto mayor o igual que el divisor.",
       "Dividir cada cifra por separado sin juntar lo que sobra con la cifra siguiente.",
       "Confundir el resto con el cociente en los problemas.",
+    ],
+  }),
+];
+
+/** MCD y MCM con la tabla de descomposición simultánea en factores primos. */
+export const FACTOR_LESSONS: Lesson[] = [
+  defineLesson({
+    id: "mcd-mcm",
+    unitId: "numeros",
+    title: "Divisores y múltiplos comunes: MCD y MCM",
+    objective:
+      "Calcular el MCD y el MCM de dos o tres números con la tabla de factores primos y decidir cuál de los dos resuelve un problema.",
+    purpose:
+      "Los buses de la ciudad coinciden en el paradero cada cierto tiempo y las telas se cortan en trozos iguales sin desperdicio. Para saber cuándo y cuánto hay que encontrar múltiplos y divisores comunes.",
+    prerequisites: [],
+    legacyModuleIds: ["aritmetica-mcd-mcm"],
+    visual: "factor-table",
+    vocabulary: [
+      { term: "Número primo", meaning: "Solo se divide exactamente entre 1 y sí mismo: 2, 3, 5, 7, 11…" },
+      { term: "MCD", meaning: "Máximo común divisor: el mayor número que divide a todos a la vez." },
+      { term: "MCM", meaning: "Mínimo común múltiplo: el menor número (distinto de 0) que es múltiplo de todos." },
+      { term: "Tabla de factores", meaning: "Los números a la izquierda de una raya; a la derecha, en cada fila, un primo que divide a alguno." },
+    ],
+    sections: [
+      {
+        title: "La tabla de factores primos",
+        paragraphs: [
+          "Se escriben los números a la izquierda de una raya. En cada fila se elige un primo que divida a alguno (empezando por el menor), se divide a los que se pueda y se bajan sin cambiar los demás.",
+          "Se sigue hasta que todos los números queden en 1. Si un primo divide a todos los de su fila, se marca: es un factor común.",
+        ],
+        formula: "12, 18 | 2 → 6, 9 | 2 → 3, 9 | 3 → 1, 3 | 3 → 1, 1",
+      },
+      {
+        title: "MCM: todos los primos",
+        paragraphs: [
+          "El MCM es el producto de todos los primos de la derecha: en la tabla de 12 y 18, 2 × 2 × 3 × 3 = 36.",
+          "Multiplicar los números (12 × 18 = 216) da un múltiplo común, pero no el menor: los factores que comparten se contarían dos veces.",
+        ],
+        formula: "MCM(12; 18) = 2 × 2 × 3 × 3 = 36",
+      },
+      {
+        title: "MCD: los primos que dividen a todos",
+        paragraphs: [
+          "El MCD es el producto de los primos marcados, los que dividieron a todos los números a la vez: en la tabla de 12 y 18 son la primera fila (2) y la tercera (3), así que el MCD es 6.",
+          "Para decidir cuál usar: si se busca cuándo vuelven a coincidir cosas que se repiten, es un múltiplo (MCM); si se busca partir en trozos iguales lo más grandes posible, es un divisor (MCD).",
+        ],
+        formula: "MCD(12; 18) = 2 × 3 = 6",
+      },
+    ],
+    examples: [
+      columnExample({ op: "mcm", values: [12, 18] }, "Calcula el MCM y el MCD de 12 y 18 con la tabla."),
+      columnExample({ op: "mcd", values: [24, 36, 60] }, "Calcula el MCD de 24, 36 y 60 con la tabla."),
+    ],
+    diagnostic: [
+      c("d-1", "¿Cuál de estos números es divisor de 18?", ["4", "6", "8"], 1, "18 ÷ 6 = 3 exacto; 18 ÷ 4 y 18 ÷ 8 no son exactos."),
+      n(
+        "d-2",
+        "Completa la descomposición: 12 = 2 × 2 × __",
+        3,
+        ["2 × 2 = 4 y 12 ÷ 4 = 3.", "3 es primo, así que 12 = 2 × 2 × 3."],
+        ["Divide 12 entre 2 dos veces.", "12 ÷ 2 = 6 y 6 ÷ 2 = 3.", "Lo que queda es 3."],
+      ),
+      n(
+        "d-3",
+        "¿Cuál es el menor número distinto de 0 que es múltiplo de 4 y de 6?",
+        12,
+        ["Múltiplos de 4 → 4, 8, 12… Múltiplos de 6 → 6, 12…", "El primero que aparece en las dos listas es 12."],
+        ["Escribe los primeros múltiplos de 4.", "Escribe los de 6.", "Busca el primero que se repite."],
+      ),
+    ],
+    questions(v) {
+      const concept = v % 3;
+      const [ca, cb] = [[12, 18], [8, 20], [15, 25], [16, 24], [9, 21], [10, 14]][v];
+      const ct = factorTrace({ op: "mcm", values: [ca, cb] });
+      const [la, lb] = [[12, 18], [8, 12], [15, 20], [14, 21], [9, 12], [10, 25]][v];
+      const [sa, sb] = [[12, 18], [20, 30], [16, 24], [28, 42], [24, 36], [18, 30]][v];
+      const dv = [[24, 36], [18, 27], [30, 45, 60], [16, 40], [42, 56], [20, 30, 50]][v];
+      const [ea, eb] = [[6, 8], [4, 6], [6, 9], [10, 15], [8, 12], [6, 10]][v];
+      const [ba, bb] = [[12, 20], [15, 10], [8, 6], [20, 30], [9, 15], [14, 10]][v];
+      const [ra, rb] = [[24, 36], [20, 32], [18, 30], [40, 60], [28, 42], [45, 60]][v];
+      const g = factorTrace({ op: "mcd", values: [ra, rb] }).mcd;
+      const lcmE = factorTrace({ op: "mcm", values: [ea, eb] }).mcm;
+      const things = [
+        { what: "Dos buses salen juntos del paradero", a: "uno pasa cada", b: "y el otro cada", unit: "minutos", ask: "¿Cada cuántos minutos vuelven a coincidir?" },
+        { what: "Dos faros se encienden a la vez", a: "uno destella cada", b: "y el otro cada", unit: "segundos", ask: "¿Cada cuántos segundos vuelven a destellar juntos?" },
+        { what: "Dos alarmas suenan juntas", a: "una suena cada", b: "y la otra cada", unit: "minutos", ask: "¿Cada cuántos minutos vuelven a sonar juntas?" },
+      ][v % 3];
+      return [
+        concept === 0
+          ? c(
+              "q0",
+              `En la tabla de ${ca} y ${cb}, ¿por qué para el MCD solo se multiplican los primos de las filas que dividen a los dos?`,
+              [
+                ["Porque esos primos son los más pequeños", "No depende del tamaño: depende de que dividan a todos."],
+                "Porque el MCD tiene que dividir a los dos números, y solo esos factores los comparten",
+                ["Porque los demás primos no son primos", "Todos los de la derecha son primos; lo que cambia es a quién dividen."],
+              ],
+              1,
+              `Un divisor común solo puede tener factores que estén en los dos números: MCD(${ca}; ${cb}) = ${ct.mcd}.`,
+            )
+          : concept === 1
+            ? c(
+                "q0",
+                `Alguien dice que el MCM de ${ca} y ${cb} es ${ca * cb}, porque ${ca} × ${cb} = ${ca * cb}. ¿Qué opinas?`,
+                [
+                  ["Tiene razón: el MCM siempre es el producto", `El producto es múltiplo común, pero puede no ser el menor: MCM(${ca}; ${cb}) = ${ct.mcm}.`],
+                  ["El MCM es el número mayor de los dos", `${Math.max(ca, cb)} no siempre es múltiplo del otro número.`],
+                  `${ca * cb} es múltiplo común, pero no el menor: los factores que comparten se cuentan una vez`,
+                ].map((x, i) => (i === 2 && ca * cb === ct.mcm ? `${ca * cb} es el menor: no comparten factores` : x)) as [string, string, string],
+                2,
+                `MCM(${ca}; ${cb}) = ${ct.mcm}${ca * cb === ct.mcm ? ", igual a su producto porque no comparten factores" : `, menor que ${ca * cb}`}.`,
+              )
+            : c(
+                "q0",
+                `Si el MCD de ${ca} y ${cb} fuera 1, ¿qué significaría?`,
+                [
+                  "Que no comparten ningún factor primo: son primos entre sí",
+                  ["Que uno de los dos es 1", "Dos números mayores que 1 pueden tener MCD 1, como 8 y 15."],
+                  ["Que su MCM también es 1", "Si el MCD es 1, el MCM es el producto de los dos números, no 1."],
+                ],
+                0,
+                `El MCD es 1 cuando ningún primo divide a los dos a la vez. Aquí MCD(${ca}; ${cb}) = ${ct.mcd}.`,
+              ),
+        columnar("q1", { op: "mcm", values: [la, lb] }),
+        n(
+          "q2",
+          `En la tabla de ${sa} y ${sb}, la primera fila divide entre 2. ¿Qué número escribes debajo del ${sb}?`,
+          sb / 2,
+          [
+            `2 divide a ${sb}: debajo se escribe el cociente, ${sb} ÷ 2 = ${sb / 2}.`,
+            `En la misma fila, debajo de ${sa} va ${sa} ÷ 2 = ${sa / 2}; como 2 divide a los dos, cuenta para el MCD.`,
+          ],
+          ["Divide el número entre el primo de la fila.", `${sb} ÷ 2.`, `${sb / 2}.`],
+          {
+            step: true,
+            errors: [
+              { value: sb, feedback: "El 2 sí divide a ese número: se escribe el cociente, no el mismo número." },
+              { value: sb * 2, feedback: "Multiplicaste. En la tabla se divide entre el primo." },
+            ],
+          },
+        ),
+        columnar("q3", { op: "mcd", values: dv }),
+        c(
+          "q4",
+          `Un compañero calcula MCM(${ea}; ${eb}) = ${ea * eb}. ¿Qué falla?`,
+          [
+            ["Nada, el MCM es el producto", `${lcmE} también es múltiplo de los dos y es menor que ${ea * eb}.`],
+            ["Debía sumar los números", "El MCM no se calcula sumando."],
+            `Multiplicó los números: contó dos veces los factores que comparten; el MCM es ${lcmE}`,
+          ],
+          2,
+          `Con la tabla: MCM(${ea}; ${eb}) = ${lcmE}.`,
+          "concept",
+        ),
+        columnar(
+          "q5",
+          { op: "mcm", values: [ba, bb] },
+          {
+            prompt: `${things.what}: ${things.a} ${ba} ${things.unit} ${things.b} ${bb}. ${things.ask}`,
+            intent: "transfer",
+            unit: things.unit,
+            errors: [{ value: factorTrace({ op: "mcd", values: [ba, bb] }).mcd, feedback: "Ese es el MCD. Para saber cuándo vuelven a coincidir se busca un múltiplo común: el MCM." }],
+          },
+        ),
+        n(
+          "q6",
+          `Se cortan dos cintas de ${ra} cm y ${rb} cm en trozos iguales, lo más largos posible, sin que sobre nada. ¿Cuántos trozos salen en total?`,
+          ra / g + rb / g,
+          [
+            `El largo de cada trozo es un divisor común lo más grande posible: MCD(${ra}; ${rb}) = ${g} cm.`,
+            `Trozos: ${ra} ÷ ${g} = ${ra / g} y ${rb} ÷ ${g} = ${rb / g}; en total ${ra / g + rb / g}.`,
+          ],
+          ["Trozos iguales y lo más largos posible: MCD.", `Calcula MCD(${ra}; ${rb}).`, "Divide cada cinta entre ese largo y suma."],
+          {
+            intent: "transfer",
+            unit: "trozos",
+            errors: [
+              { value: g, feedback: "Ese es el largo de cada trozo; la pregunta es cuántos trozos salen." },
+              { value: factorTrace({ op: "mcm", values: [ra, rb] }).mcm, feedback: "Ese es el MCM. Para partir en trozos iguales se busca un divisor común." },
+            ].filter((e) => e.value !== ra / g + rb / g),
+          },
+        ),
+      ];
+    },
+    application: n(
+      "app",
+      "Tres semáforos de una avenida cambian a verde a la vez. Uno repite cada 6 minutos, otro cada 8 y otro cada 12. ¿Cada cuántos minutos vuelven a ponerse en verde los tres juntos?",
+      24,
+      [
+        "Se repiten y se busca cuándo coinciden: es el MCM de 6, 8 y 12.",
+        "Tabla: 6, 8, 12 | 2 → 3, 4, 6 | 2 → 3, 2, 3 | 2 → 3, 1, 3 | 3 → 1, 1, 1. MCM = 2 × 2 × 2 × 3 = 24.",
+        "Comprobación: 24 es múltiplo de 6, de 8 y de 12.",
+      ],
+      ["¿Se busca un múltiplo o un divisor común?", "Haz la tabla de 6, 8 y 12.", "Multiplica todos los primos de la derecha."],
+      {
+        intent: "transfer",
+        unit: "minutos",
+        errors: [
+          { value: 576, feedback: "Multiplicaste los tres números: es múltiplo común, pero no el menor." },
+          { value: 2, feedback: "Ese es el MCD. Para saber cuándo coinciden se busca el MCM." },
+          { value: 48, feedback: "48 es múltiplo de los tres, pero no el menor: revisa la tabla." },
+        ],
+      },
+    ),
+    outcome: "Los horarios y los cortes de la ciudad cuadran: calculas MCD y MCM con la tabla y sabes cuál usar en cada problema.",
+    commonErrors: [
+      "Calcular el MCM multiplicando los números.",
+      "Incluir en el MCD primos que no dividen a todos.",
+      "Usar el MCM cuando se busca partir en trozos iguales (o el MCD cuando se busca cuándo coinciden).",
+      "Dividir entre un número que no es primo en la tabla.",
     ],
   }),
 ];

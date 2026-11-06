@@ -4,12 +4,17 @@ import { useMemo } from "react";
 import { MathText } from "@/components/MathText";
 import {
   checkDivisionWork,
+  checkFactorWork,
   checkOpenDivision,
+  factorWorkFeedback,
+  isFactorSpec,
+  type FactorSpec,
   divisionWorkFeedback,
   fmt,
   isAnswerCorrect,
   operationHints,
   placeName,
+  scaled,
   type Question,
   operationResult,
   operationSolution,
@@ -22,6 +27,7 @@ import {
   StrategyPicker,
   useSubtractStrategy,
 } from "./ColumnOperation";
+import { FactorDemo, FactorSheet } from "./FactorOperation";
 import { DivisionDemo, DivisionSheet, firstWrongQuotientDigit, LayoutPicker, useDivisionLayout } from "./DivisionOperation";
 
 /* Punto de entrada único para las operaciones escritas (suma, resta y
@@ -51,6 +57,11 @@ function StylePicker({ spec, disabled }: { spec: ColumnSpec; disabled?: boolean 
 }
 
 export function OperationDemo({ spec, initialStep }: { spec: ColumnSpec; initialStep?: number }) {
+  if (isFactorSpec(spec)) return <FactorDemo spec={spec} initialStep={initialStep} />;
+  return <WrittenDemo spec={spec} initialStep={initialStep} />;
+}
+
+function WrittenDemo({ spec, initialStep }: { spec: Exclude<ColumnSpec, FactorSpec>; initialStep?: number }) {
   const [strategy] = useSubtractStrategy();
   const [layout] = useDivisionLayout();
   return spec.op === "divide" ? (
@@ -96,7 +107,18 @@ export function OperationWorkspace({
   return (
     <div className="space-y-3">
       {!(spec.op === "divide" && mode === "open") && <StylePicker spec={spec} disabled={disabled} />}
-      {spec.op === "divide" ? (
+      {isFactorSpec(spec) ? (
+        <FactorSheet
+          key={`${questionId}-${mode === "guided" ? "g" : "f"}`}
+          spec={spec}
+          mode={mode === "guided" ? "guided" : "free"}
+          response={response}
+          onChange={onChange}
+          onComplete={onComplete}
+          failedResponse={failedResponse}
+          disabled={disabled}
+        />
+      ) : spec.op === "divide" ? (
         <DivisionSheet
           key={`${questionId}-${mode === "open" ? "open" : layout}`}
           spec={spec}
@@ -119,7 +141,11 @@ export function OperationWorkspace({
           onChange={onChange}
           onComplete={onComplete}
           hintLevel={hintLevel}
-          wrongColumn={failedResponse !== null && failedResponse === response ? firstWrongColumn(response, operationResult(spec)) : null}
+          wrongColumn={
+            failedResponse !== null && failedResponse === response
+              ? firstWrongColumn(response, operationResult(spec), scaled(spec).scale)
+              : null
+          }
           disabled={disabled}
         />
       )}
@@ -129,6 +155,11 @@ export function OperationWorkspace({
 
 /** Dónde se separó una respuesta numérica del resultado, en palabras. */
 export function operationMistake(spec: ColumnSpec, response: string): string | null {
+  if (isFactorSpec(spec)) {
+    const work = checkFactorWork(spec, response);
+    if (work) return factorWorkFeedback(spec, work);
+    return null;
+  }
   if (spec.op === "divide") {
     const work = checkDivisionWork(spec, response);
     if (work) return work.firstError ? divisionWorkFeedback(spec, work.firstError, work.layout) : null;
@@ -140,14 +171,15 @@ export function operationMistake(spec: ColumnSpec, response: string): string | n
           ? divisionWorkFeedback(spec, open.mismatch, open.mismatch.kind === "p" ? "completa" : "abreviada")
           : null;
   }
-  if (!/^\s*\d+\s*$/.test(response)) return null;
+  if (!/^\s*\d+(?:[,.]\d+)?\s*$/.test(response)) return null;
   const answer = operationResult(spec);
   if (spec.op === "divide") {
     const i = firstWrongQuotientDigit(response, answer);
     return i === null ? null : `Tu cociente fue ${fmt(Number(response))}: la primera cifra distinta es la ${i + 1}.ª del cociente.`;
   }
-  const column = firstWrongColumn(response, answer);
-  return column === null ? null : `Tu resultado fue ${fmt(Number(response))}: la primera cifra distinta está en las ${placeName(column)}.`;
+  const { scale } = scaled(spec);
+  const column = firstWrongColumn(response, answer, scale);
+  return column === null ? null : `Tu resultado fue ${fmt(Number(response.replace(",", ".")))}: la primera cifra distinta está en las ${placeName(column - scale)}.`;
 }
 
 /**

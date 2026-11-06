@@ -26,6 +26,7 @@ export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruG
   // no entra en la ubicación ni se recomienda sola (ver `isOptionalLesson`).
   "suma-resta-columnas": { competency: "cantidad", grade: 1, base: true },
   "division-larga": { competency: "cantidad", grade: 1, base: true },
+  "mcd-mcm": { competency: "cantidad", grade: 1 },
   "enteros-recta": { competency: "cantidad", grade: 1 },
   "enteros-suma-resta": { competency: "cantidad", grade: 1 },
   "enteros-producto-cociente": { competency: "cantidad", grade: 1 },

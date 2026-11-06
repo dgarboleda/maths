@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { divisionFields, divisionTrace, type DivisionLayout, type Question } from "../src/lib/learning/domain";
+import { divisionFields, divisionTrace, factorTrace, type DivisionLayout, type FactorSpec, type Question } from "../src/lib/learning/domain";
 
 const PLACES = ["unidades", "decenas", "centenas", "unidades de millar", "decenas de millar"];
 
@@ -55,4 +55,15 @@ export async function escribirGaleraAbierta(page: Page, question: Question, camb
     for (const [i, d] of text.split("").entries())
       await page.getByLabel(`Fila ${r + 1}: columna ${f.end - text.length + i + 2} de ${n}`, { exact: true }).fill(d);
   }
+}
+
+/** Escribe la tabla de factores primos completa (de menor a mayor primo) y el resultado. */
+export async function escribirTabla(page: Page, question: Question) {
+  const spec = question.column as FactorSpec;
+  const trace = factorTrace(spec);
+  for (const [i, row] of trace.rows.entries()) {
+    await page.getByLabel(`Primo de la fila ${i + 1}`, { exact: true }).fill(String(row.prime));
+    for (const [k, v] of row.next.entries()) await page.getByLabel(`Fila ${i + 2}: número ${k + 1}`, { exact: true }).fill(String(v));
+  }
+  await page.getByLabel(`${spec.op === "mcd" ? "MCD" : "MCM"} de ${spec.values.join(", ")}`, { exact: true }).fill(String(question.answer));
 }

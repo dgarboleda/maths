@@ -9,6 +9,17 @@ import type { Question } from "./types";
  * Se reúnen aquí para revisarlas juntas.
  */
 export const CHECK_CONCEPTS: Record<string, Question> = {
+  "mcd-mcm": c(
+    "q0",
+    "Para repartir 30 manzanas y 45 naranjas en bolsas iguales, con el mayor número de bolsas y sin que sobre fruta, ¿qué se calcula?",
+    [
+      ["El MCM de 30 y 45", "El MCM es un múltiplo: sirve para saber cuándo coinciden cosas que se repiten, no para repartir."],
+      "El MCD de 30 y 45, porque el número de bolsas tiene que dividir a los dos",
+      ["30 + 45", "Sumar da el total de frutas, no cuántas bolsas iguales se pueden armar."],
+    ],
+    1,
+    "El número de bolsas divide a 30 y a 45 y es el mayor posible: MCD(30; 45) = 15 bolsas, cada una con 2 manzanas y 3 naranjas.",
+  ),
   "division-larga": c(
     "q0",
     "Sin hacer la división, ¿cuántas cifras tiene el cociente de 4 235 ÷ 7?",

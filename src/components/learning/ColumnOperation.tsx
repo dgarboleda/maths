@@ -4,7 +4,9 @@ import { useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   columnTrace,
+  decimalsOf,
   digitsOf,
+  scaled,
   placeName,
   SUBTRACT_STRATEGIES,
   type ArithmeticSpec,
@@ -24,7 +26,11 @@ import { Slider } from "./GraphVisuals";
 /** Colores por posición (convención Montessori: unidades verdes, decenas
  *  azules, centenas rojas; se repite en cada periodo de miles). */
 const PLACE_COLORS = ["text-emerald-300", "text-sky-300", "text-rose-300"];
-const placeColor = (column: number) => PLACE_COLORS[column % 3];
+const placeColor = (column: number) => PLACE_COLORS[((column % 3) + 3) % 3];
+/** La coma decimal, a la derecha de la columna de las unidades. */
+const Comma = () => (
+  <span aria-hidden="true" className="pointer-events-none absolute -right-2 bottom-0 text-3xl font-bold text-slate-100">,</span>
+);
 
 // ── Estrategia de resta (preferencia del alumno en este navegador) ──────
 
@@ -196,7 +202,17 @@ function Grid({
   const columns = Math.max(trace.steps.length, result.length);
   // De izquierda a derecha en pantalla: la columna más alta primero.
   const order = Array.from({ length: columns }, (_, k) => columns - 1 - k);
-  const top = digitsOf(trace.spec.a), bottom = digitsOf(trace.spec.b);
+  // Con decimales, las columnas 0…scale−1 están a la derecha de la coma; los
+  // ceros que completan los decimales se ven tenues.
+  const { scale } = trace;
+  const sc = scaled(trace.spec);
+  const top = trace.topDigits, bottom = trace.bottomDigits;
+  const topLen = Math.max(digitsOf(sc.a).length, scale + 1), bottomLen = Math.max(digitsOf(sc.b).length, scale + 1);
+  const padTop = scale - decimalsOf(trace.spec.a), padBottom = scale - decimalsOf(trace.spec.b);
+  const name = (i: number) => placeName(i - scale);
+  const color = (i: number) => placeColor(i - scale);
+  const comma = (i: number) => (scale > 0 && i === scale ? <Comma /> : null);
+  const say = (n: number) => String(n).replace(".", ",");
   const symbol = trace.spec.op === "add" ? "+" : "−";
   const cell = "flex h-12 w-10 items-center justify-center text-3xl font-bold tabular-nums sm:w-12";
   return (
@@ -205,7 +221,7 @@ function Grid({
       className="overflow-x-auto"
       tabIndex={0}
       role="group"
-      aria-label={`${trace.spec.a} ${trace.spec.op === "add" ? "más" : "menos"} ${trace.spec.b} en columnas`}
+      aria-label={`${say(trace.spec.a)} ${trace.spec.op === "add" ? "más" : "menos"} ${say(trace.spec.b)} en columnas`}
     >
       <div
         className="mx-auto grid w-max gap-x-1"
@@ -217,7 +233,7 @@ function Grid({
           <span key={`m${i}`} className="flex h-8 items-end justify-center text-base font-bold text-amber-200">
             {notes && onNote ? (
               <input
-                aria-label={`Nota para ${placeName(i)} (llevada o préstamo, opcional)`}
+                aria-label={`Nota para ${name(i)} (llevada o préstamo, opcional)`}
                 inputMode="numeric"
                 maxLength={2}
                 value={notes[i] ?? ""}
@@ -228,7 +244,7 @@ function Grid({
             ) : (
               marks[i]?.above && (
                 <span>
-                  <span className="sr-only">{`Marca en ${placeName(i)}: `}</span>
+                  <span className="sr-only">{`Marca en ${name(i)}: `}</span>
                   {marks[i].above}
                 </span>
               )
@@ -238,8 +254,10 @@ function Grid({
         {/* Primer número */}
         <span aria-hidden="true" />
         {order.map((i) => (
-          <span key={`t${i}`} className={`${cell} ${placeColor(i)}`}>
-            {i < top.length && (
+          <span key={`t${i}`} className={`${cell} relative ${color(i)} ${i < padTop ? "opacity-40" : ""}`}>
+            {comma(i)}
+            {i < padTop && <span className="sr-only">cero añadido </span>}
+            {i < topLen && (
               <>
                 {marks[i]?.plusTen && (
                   <span className="mr-0.5 self-start text-base text-amber-200">
@@ -260,8 +278,10 @@ function Grid({
           <span className="sr-only">{trace.spec.op === "add" ? "más" : "menos"}</span>
         </span>
         {order.map((i) => (
-          <span key={`b${i}`} className={`${cell} ${placeColor(i)}`}>
-            {i < bottom.length && bottom[i]}
+          <span key={`b${i}`} className={`${cell} relative ${color(i)} ${i < padBottom ? "opacity-40" : ""}`}>
+            {comma(i)}
+            {i < padBottom && <span className="sr-only">cero añadido </span>}
+            {i < bottomLen && bottom[i]}
             {marks[i]?.plusOneBottom && (
               <span className="ml-0.5 self-start text-base text-amber-200">
                 <span className="sr-only">compensado, </span>+1
@@ -285,18 +305,20 @@ function Grid({
                   : "border-slate-600 bg-slate-950";
           if (c.kind === "digit")
             return (
-              <span key={`r${i}`} className={`${cell} rounded-lg border ${ring} ${placeColor(i)} ${c.ghost ? "opacity-50" : ""}`}>
+              <span key={`r${i}`} className={`${cell} relative rounded-lg border ${ring} ${color(i)} ${c.ghost ? "opacity-50" : ""}`}>
                 {c.value ?? ""}
+                {comma(i)}
               </span>
             );
           return (
+            <span key={`r${i}`} className="relative">
+            {comma(i)}
             <input
-              key={`r${i}`}
               id={`${idPrefix}-r${i}`}
               ref={(el) => {
                 if (inputRefs) inputRefs.current[i] = el;
               }}
-              aria-label={`Resultado: ${placeName(i)}`}
+              aria-label={`Resultado: ${name(i)}`}
               aria-invalid={c.state === "wrong"}
               inputMode="numeric"
               autoComplete="off"
@@ -307,8 +329,9 @@ function Grid({
               onChange={(e) => onInput?.(i, e.target.value.replace(/\D/g, "").slice(-1))}
               onKeyDown={(e) => onKey?.(i, e)}
               onFocus={(e) => e.target.select()}
-              className={`${cell} rounded-lg border ${ring} ${placeColor(i)} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
+              className={`${cell} rounded-lg border ${ring} ${color(i)} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
             />
+            </span>
           );
         })}
       </div>
@@ -413,10 +436,16 @@ export function ColumnExplorer({ id }: { id: string }) {
 
 // ── Hoja para responder ─────────────────────────────────────────────────
 
-/** Primera columna (desde las unidades) cuya cifra no coincide con el resultado. */
-export function firstWrongColumn(response: string, answer: number): number | null {
-  const given = response.replace(/\D/g, "").split("").reverse();
-  const expected = digitsOf(answer);
+/** Una respuesta escrita como cifras por columna (0 = la última decimal). */
+export function columnDigits(response: string, scale = 0): string[] {
+  const [int = "", frac = ""] = response.replace(/[^\d,.]/g, "").split(/[,.]/);
+  return (int + frac.padEnd(scale, "0").slice(0, scale)).split("").reverse();
+}
+
+/** Primera columna (desde la derecha) cuya cifra no coincide con el resultado. */
+export function firstWrongColumn(response: string, answer: number, scale = 0): number | null {
+  const given = columnDigits(response, scale);
+  const expected = digitsOf(Math.round(answer * 10 ** scale));
   for (let i = 0; i < Math.max(given.length, expected.length); i++)
     if (Number(given[i] ?? 0) !== (expected[i] ?? 0)) return i;
   return null;
@@ -450,10 +479,11 @@ export function ColumnSheet({
   const id = useId();
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   // Celdas libres: no se revela cuántas cifras tiene el resultado.
-  const operandWidth = Math.max(digitsOf(spec.a).length, digitsOf(spec.b).length);
+  const { scale } = trace;
+  const operandWidth = trace.topDigits.length;
   const cells = mode === "guided" ? trace.width : operandWidth + (spec.op === "add" ? 1 : 0);
   const [digits, setDigits] = useState<string[]>(() => {
-    const given = response.replace(/\D/g, "").split("").reverse();
+    const given = response ? columnDigits(response, scale) : [];
     return Array.from({ length: cells }, (_, i) => given[i] ?? "");
   });
   const [notes, setNotes] = useState<string[]>(() => Array(cells).fill(""));
@@ -464,7 +494,13 @@ export function ColumnSheet({
   const done = mode === "guided" && active === -1;
 
   const emit = (next: string[]) => {
-    const text = [...next].reverse().join("").replace(/^0+(?=\d)/, "");
+    let text: string;
+    if (!scale) text = [...next].reverse().join("").replace(/^0+(?=\d)/, "");
+    else {
+      const int = next.slice(scale).reverse().join("").replace(/^0+(?=\d)/, "");
+      const frac = next.slice(0, scale).reverse().join("");
+      text = int || frac ? `${int || "0"},${frac}` : "";
+    }
     onChange(text);
     return text;
   };
@@ -559,7 +595,7 @@ export function ColumnSheet({
           )
         ) : wrongColumn !== null ? (
           <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">
-            Revisa la columna de las {placeName(wrongColumn)}: es la primera cifra que no coincide.
+            Revisa la columna de las {placeName(wrongColumn - scale)}: es la primera cifra que no coincide.
           </p>
         ) : (
           <p className="text-xs text-slate-400">

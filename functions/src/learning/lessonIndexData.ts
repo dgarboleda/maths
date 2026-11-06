@@ -6,7 +6,7 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "id": "suma-resta-columnas",
     "unitId": "numeros",
     "title": "Sumar y restar en columnas",
-    "objective": "Sumar y restar números de varias cifras en columnas, llevando y reagrupando con sentido del valor posicional.",
+    "objective": "Sumar y restar números de varias cifras, también con decimales, en columnas, llevando y reagrupando con sentido del valor posicional.",
     "prerequisites": [],
     "legacyModuleIds": [
       "aritmetica-d3"
@@ -96,6 +96,16 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "legacyModuleIds": [
       "aritmetica-notacion-cientifica",
       "aritmetica-potencias"
+    ]
+  },
+  {
+    "id": "mcd-mcm",
+    "unitId": "numeros",
+    "title": "Divisores y múltiplos comunes: MCD y MCM",
+    "objective": "Calcular el MCD y el MCM de dos o tres números con la tabla de factores primos y decidir cuál de los dos resuelve un problema.",
+    "prerequisites": [],
+    "legacyModuleIds": [
+      "aritmetica-mcd-mcm"
     ]
   },
   {

@@ -1,5 +1,6 @@
 import type { Example, Intent, Question } from "./types";
 import { columnTrace } from "./algorithms/columns";
+import { checkFactorWork, factorTrace, factorWorkFeedback } from "./algorithms/factors";
 import {
   checkDivisionWork,
   checkOpenDivision,
@@ -15,6 +16,7 @@ import {
   operationHints,
   operationResult,
   operationSolution,
+  isFactorSpec,
   type ColumnSpec,
 } from "./algorithms/operations";
 
@@ -69,9 +71,11 @@ export function columnar(
     ...numeric(
       id,
       options.prompt ??
-        (spec.op === "divide"
-          ? `Divide ${operationExpression(spec)} con la división larga: escribe el cociente, cada resta y el resto.`
-          : `Calcula en columnas: ${operationExpression(spec)}.`),
+        (isFactorSpec(spec)
+          ? `Calcula el ${operationExpression(spec)} con la tabla de factores primos.`
+          : spec.op === "divide"
+            ? `Divide ${operationExpression(spec)} con la división larga: escribe el cociente, cada resta y el resto.`
+            : `Calcula en columnas: ${operationExpression(spec)}.`),
       result,
       operationSolution(spec),
       operationHints(spec),
@@ -85,8 +89,9 @@ export function columnar(
   };
 }
 export function columnExample(spec: ColumnSpec, prompt?: string): Example {
-  const steps =
-    spec.op === "divide"
+  const steps = isFactorSpec(spec)
+    ? factorTrace(spec).rows.map((row) => ({ math: `${row.values.join("  ")} | ${row.prime}`, why: row.why }))
+    : spec.op === "divide"
       ? divisionTrace(spec).steps.map((step) => ({
           math: `${step.part} ÷ ${spec.b} → ${step.digit}${step.down !== null ? `, bajas el ${step.down}` : ""}`,
           why: step.why,
@@ -174,6 +179,10 @@ export const MAX_RESPONSE_LENGTH = 160;
 export function isAnswerCorrect(question: Question, response: string): boolean {
   if (question.format === "choice") return response === question.answer;
   if (question.column?.op === "divide") return divisionResponseCorrect(question.column, response);
+  if (question.column && isFactorSpec(question.column)) {
+    const work = checkFactorWork(question.column, response);
+    if (work) return work.correct;
+  }
   const value = parseNumber(response);
   return (
     value !== null &&
@@ -188,7 +197,12 @@ export function correctResponse(question: Question): string {
 }
 /** Valor numérico con el que se buscan los errores previstos. */
 export function responseValue(question: Question, response: string): number | null {
-  return question.column?.op === "divide" ? divisionResponseValue(question.column, response) : parseNumber(response);
+  if (question.column?.op === "divide") return divisionResponseValue(question.column, response);
+  if (question.column && isFactorSpec(question.column)) {
+    const work = checkFactorWork(question.column, response);
+    if (work) return work.answer;
+  }
+  return parseNumber(response);
 }
 export function errorFeedback(question: Question, response: string): string {
   if (question.format === "choice") {
@@ -204,6 +218,11 @@ export function errorFeedback(question: Question, response: string): string {
       : item.value === value,
   );
   if (error) return error.feedback;
+  if (question.column && isFactorSpec(question.column)) {
+    const work = checkFactorWork(question.column, response);
+    const text = work && factorWorkFeedback(question.column, work);
+    if (text) return text;
+  }
   if (question.column?.op === "divide") {
     const work = checkDivisionWork(question.column, response);
     if (work?.firstError) return divisionWorkFeedback(question.column, work.firstError, work.layout);

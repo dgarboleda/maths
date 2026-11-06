@@ -98,7 +98,8 @@ export type Visual =
   | "distributive"
   | "expression"
   | "columns"
-  | "long-division";
+  | "long-division"
+  | "factor-table";
 export type UnitId =
   | "numeros"
   | "fracciones"

@@ -47,6 +47,8 @@ export interface ColumnStep {
 export interface ColumnTrace {
   spec: ArithmeticSpec;
   strategy: SubtractStrategy;
+  /** Cifras decimales de la operación: las columnas 0…scale−1 son decimales. */
+  scale: number;
   /** Número de columnas del resultado (incluye la llevada final). */
   width: number;
   topDigits: number[];
@@ -65,13 +67,27 @@ const PLACES = [
   "centenas de millar",
   "unidades de millón",
 ];
+const DECIMAL_PLACES = ["décimas", "centésimas", "milésimas"];
+/** Nombre de una posición: 0 = unidades, 1 = decenas…, −1 = décimas. */
 export function placeName(column: number): string {
+  return placeNameOf(column);
+}
+function placeNameOf(column: number): string {
+  if (column < 0) return DECIMAL_PLACES[-column - 1] ?? `posición ${column}`;
   return PLACES[column] ?? `columna ${column + 1}`;
 }
 const SINGULAR = ["unidad", "decena", "centena", "unidad de millar", "decena de millar", "centena de millar", "unidad de millón"];
-const one = (column: number) => SINGULAR[column] ?? `unidad de la columna ${column + 1}`;
-/** «la columna de las decenas». */
-const the = (column: number) => `las ${placeName(column)}`;
+const SINGULAR_DECIMAL = ["décima", "centésima", "milésima"];
+const oneOf = (column: number) =>
+  column < 0 ? (SINGULAR_DECIMAL[-column - 1] ?? "parte decimal") : (SINGULAR[column] ?? `unidad de la columna ${column + 1}`);
+
+/** Cifras decimales de un número (hasta 6). */
+export function decimalsOf(n: number): number {
+  const text = String(n);
+  if (/e/i.test(text)) return 6;
+  return text.split(".")[1]?.length ?? 0;
+}
+
 
 /** Cifras de menor a mayor posición: 325 → [5, 2, 3]. */
 export function digitsOf(value: number, width = 0): number[] {
@@ -86,10 +102,20 @@ export function digitsOf(value: number, width = 0): number[] {
 }
 const fromDigits = (digits: number[]) => digits.reduceRight((acc, d) => acc * 10 + d, 0);
 
+/** Escala común (decimales) y operandos como enteros: 3,5 y 1,25 → 350 y 125. */
+export function scaled(spec: ArithmeticSpec): { scale: number; a: number; b: number } {
+  const scale = Math.max(decimalsOf(spec.a), decimalsOf(spec.b));
+  const k = 10 ** scale;
+  return { scale, a: Math.round(spec.a * k), b: Math.round(spec.b * k) };
+}
+
 export function validColumnSpec(spec: ArithmeticSpec): boolean {
+  if (!Number.isFinite(spec.a) || !Number.isFinite(spec.b)) return false;
+  const { scale, a, b } = scaled(spec);
   return (
-    Number.isSafeInteger(spec.a) &&
-    Number.isSafeInteger(spec.b) &&
+    scale <= 3 &&
+    Number.isSafeInteger(a) &&
+    Number.isSafeInteger(b) &&
     spec.a >= 0 &&
     spec.b >= 0 &&
     spec.a < 1e7 &&
@@ -100,9 +126,14 @@ export function validColumnSpec(spec: ArithmeticSpec): boolean {
 
 export function columnTrace(spec: ArithmeticSpec, strategy: SubtractStrategy = "prestamo"): ColumnTrace {
   if (!validColumnSpec(spec)) throw new Error(`Operación en columnas no válida: ${JSON.stringify(spec)}`);
-  const operandWidth = Math.max(digitsOf(spec.a).length, digitsOf(spec.b).length);
-  const topDigits = digitsOf(spec.a, operandWidth);
-  const bottomDigits = digitsOf(spec.b, operandWidth);
+  // Con decimales se opera con la coma alineada: 3,5 + 1,25 es 3,50 + 1,25.
+  const { scale, a: A, b: B } = scaled(spec);
+  const placeName = (column: number) => placeNameOf(column - scale);
+  const one = (column: number) => oneOf(column - scale);
+  const the = (column: number) => `las ${placeName(column)}`;
+  const operandWidth = Math.max(digitsOf(A).length, digitsOf(B).length, scale + 1);
+  const topDigits = digitsOf(A, operandWidth);
+  const bottomDigits = digitsOf(B, operandWidth);
   const steps: ColumnStep[] = [];
   if (spec.op === "add") {
     let carry = 0;
@@ -181,19 +212,30 @@ export function columnTrace(spec: ArithmeticSpec, strategy: SubtractStrategy = "
       pending = needs;
     }
   }
-  // Los ceros a la izquierda del resultado no se escriben (1 000 − 999 = 1).
+  // Los ceros a la izquierda del resultado no se escriben (1 000 − 999 = 1),
+  // pero sí el de las unidades en un decimal (0,75).
   let width = steps.length;
-  while (width > 1 && steps[width - 1].digit === 0) width--;
+  while (width > scale + 1 && steps[width - 1].digit === 0) width--;
   const resultDigits = steps.slice(0, width).map((s) => s.digit);
-  const result = fromDigits(resultDigits);
-  const expected = spec.op === "add" ? spec.a + spec.b : spec.a - spec.b;
-  if (result !== expected) throw new Error(`Trazado inconsistente: ${result} ≠ ${expected}`);
-  return { spec, strategy, width, topDigits, bottomDigits, result, resultDigits, steps };
+  const resultInt = fromDigits(resultDigits);
+  const expected = spec.op === "add" ? A + B : A - B;
+  if (resultInt !== expected) throw new Error(`Trazado inconsistente: ${resultInt} ≠ ${expected}`);
+  const result = Number((resultInt / 10 ** scale).toFixed(scale));
+  return { spec, strategy, scale, width, topDigits, bottomDigits, result, resultDigits, steps };
 }
 
 const symbol = (op: ColumnOp) => (op === "add" ? "+" : "−");
 /** Miles separados con espacio fijo, como en el resto del catálogo. */
-export const fmt = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
+export const fmt = (n: number) => {
+  const [int, frac] = String(n).split(".");
+  return int.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0") + (frac ? `,${frac}` : "");
+};
+/** Con un número fijo de decimales (4,5 con 2 → «4,50»). */
+export const fmtFixed = (n: number, decimals: number) => fmt(Number(n.toFixed(decimals))).replace(/(,\d*)?$/, (m) => {
+  if (!decimals) return m;
+  const frac = (m.slice(1) || "").padEnd(decimals, "0");
+  return `,${frac}`;
+});
 export function columnExpression(spec: ArithmeticSpec): string {
   return `${fmt(spec.a)} ${symbol(spec.op)} ${fmt(spec.b)}`;
 }
@@ -202,27 +244,35 @@ export function columnExpression(spec: ArithmeticSpec): string {
 export function columnSolution(spec: ArithmeticSpec, strategy: SubtractStrategy = "prestamo"): string[] {
   const trace = columnTrace(spec, strategy);
   return [
-    `Escribe ${columnExpression(spec)} en columnas: unidades bajo unidades, decenas bajo decenas, y empieza por la derecha.`,
+    trace.scale
+      ? `Escribe ${columnExpression(spec)} en columnas con la coma alineada (${fmtFixed(spec.a, trace.scale)} y ${fmtFixed(spec.b, trace.scale)}) y empieza por la derecha.`
+      : `Escribe ${columnExpression(spec)} en columnas: unidades bajo unidades, decenas bajo decenas, y empieza por la derecha.`,
     ...trace.steps.map((s) => s.why),
     spec.op === "add"
-      ? `Resultado: ${fmt(trace.result)}. Comprobación: ${fmt(trace.result)} − ${fmt(spec.b)} = ${fmt(spec.a)}.`
-      : `Resultado: ${fmt(trace.result)}. Comprobación: ${fmt(trace.result)} + ${fmt(spec.b)} = ${fmt(spec.a)}.`,
+      ? `Resultado: ${fmtFixed(trace.result, trace.scale)}. Comprobación: ${fmtFixed(trace.result, trace.scale)} − ${fmt(spec.b)} = ${fmt(spec.a)}.`
+      : `Resultado: ${fmtFixed(trace.result, trace.scale)}. Comprobación: ${fmtFixed(trace.result, trace.scale)} + ${fmt(spec.b)} = ${fmt(spec.a)}.`,
   ];
 }
 
 /** Pistas de tres niveles: idea → primera columna → todo menos la última. */
 export function columnHints(spec: ArithmeticSpec, strategy: SubtractStrategy = "prestamo"): [string, string, string] {
   const trace = columnTrace(spec, strategy);
+  const { scale } = trace;
+  const placeName = (column: number) => placeNameOf(column - scale);
+  const the = (column: number) => `las ${placeName(column)}`;
   const first = trace.steps[0];
   const lastShown = trace.steps.slice(0, Math.max(1, trace.width - 1));
-  const partial = lastShown.map((s) => s.digit).reverse().join("");
+  const shown = lastShown.map((s) => s.digit).reverse().join("");
+  const cut = shown.length - trace.scale;
+  const partial = trace.scale && cut >= 0 ? `${shown.slice(0, cut)},${shown.slice(cut)}` : shown;
   const regroups = trace.steps.filter((s) => s.regroup).map((s) => placeName(s.column));
   return [
-    spec.op === "add"
+    (trace.scale ? "Alinea la coma y completa con ceros. " : "") +
+    (spec.op === "add"
       ? "Alinea las cifras por su posición y suma columna por columna desde las unidades. Si una columna pasa de 9, llevas 1 a la siguiente."
       : strategy === "prestamo"
         ? "Alinea las cifras por su posición y resta desde las unidades. Si la cifra de arriba es menor, pide 1 a la columna de la izquierda: vale 10 en la tuya."
-        : "Alinea las cifras por su posición y resta desde las unidades. Si la cifra de arriba es menor, suma 10 arriba y 1 abajo en la columna siguiente.",
+        : "Alinea las cifras por su posición y resta desde las unidades. Si la cifra de arriba es menor, suma 10 arriba y 1 abajo en la columna siguiente."),
     first.why,
     trace.width > 1
       ? `${regroups.length ? `Reagrupas en ${regroups.join(", ")}. ` : ""}Las últimas cifras del resultado son …${partial}: solo falta la columna de ${the(trace.width - 1)}.`
@@ -231,7 +281,7 @@ export function columnHints(spec: ArithmeticSpec, strategy: SubtractStrategy = "
 }
 
 export interface ColumnBug {
-  id: "sin-llevar" | "sin-reagrupar" | "menor-del-mayor" | "sin-devolver" | "cero-sin-restar";
+  id: "sin-llevar" | "sin-reagrupar" | "menor-del-mayor" | "sin-devolver" | "cero-sin-restar" | "coma-desalineada";
   value: number;
   feedback: string;
 }
@@ -243,19 +293,24 @@ export interface ColumnBug {
  */
 export function columnBugs(spec: ArithmeticSpec): ColumnBug[] {
   const trace = columnTrace(spec);
+  const { scale } = trace;
+  const placeName = (column: number) => placeNameOf(column - scale);
+  const one = (column: number) => oneOf(column - scale);
+  const the = (column: number) => `las ${placeName(column)}`;
+  const value = (digits: number[]) => Number((fromDigits(digits) / 10 ** scale).toFixed(scale));
   const n = trace.topDigits.length;
   const top = trace.topDigits, bottom = trace.bottomDigits;
   const bugs: ColumnBug[] = [];
   const firstRegroup = trace.steps.find((s) => s.regroup)?.column;
   if (spec.op === "add") {
     if (firstRegroup !== undefined) {
-      const noCarry = fromDigits(top.map((t, i) => (t + bottom[i]) % 10));
+      const noCarry = value(top.map((t, i) => (t + bottom[i]) % 10));
       bugs.push({
         id: "sin-llevar",
         value: noCarry,
         feedback: `En ${the(firstRegroup)} la suma pasa de 9: escribiste la cifra de las unidades pero no llevaste 1 a ${the(firstRegroup + 1)}. Diez ${placeName(firstRegroup)} forman 1 ${one(firstRegroup + 1)}.`,
       });
-      const glued = Number(top.map((t, i) => String(t + bottom[i])).reverse().join(""));
+      const glued = scale ? Number.NaN : Number(top.map((t, i) => String(t + bottom[i])).reverse().join(""));
       bugs.push({
         id: "sin-reagrupar",
         value: glued,
@@ -265,12 +320,12 @@ export function columnBugs(spec: ArithmeticSpec): ColumnBug[] {
   } else if (firstRegroup !== undefined) {
     bugs.push({
       id: "menor-del-mayor",
-      value: fromDigits(top.map((t, i) => Math.abs(t - bottom[i]))),
+      value: value(top.map((t, i) => Math.abs(t - bottom[i]))),
       feedback: `En ${the(firstRegroup)} restaste la cifra menor de la mayor (${bottom[firstRegroup]} − ${top[firstRegroup]}). Siempre se resta la de abajo a la de arriba: como ${top[firstRegroup]} es menor, hay que reagrupar.`,
     });
     bugs.push({
       id: "sin-devolver",
-      value: fromDigits(top.map((t, i) => (t < bottom[i] ? t + 10 : t) - bottom[i])),
+      value: value(top.map((t, i) => (t < bottom[i] ? t + 10 : t) - bottom[i])),
       feedback: `Sumaste 10 en ${the(firstRegroup)} pero no lo compensaste en ${the(firstRegroup + 1)}: hay que quitar 1 arriba (pedir prestado) o sumar 1 abajo (compensar).`,
     });
     // Préstamo a través de un cero: el 0 pasa a 10 en lugar de a 9.
@@ -293,10 +348,22 @@ export function columnBugs(spec: ArithmeticSpec): ColumnBug[] {
     if (crossedZero !== undefined && readable)
       bugs.push({
         id: "cero-sin-restar",
-        value: fromDigits(digits),
+        value: value(digits),
         feedback: `En ${the(crossedZero)} el 0 recibe 10 de ${the(crossedZero + 1)}, pero también presta 1 a ${the(crossedZero - 1)}: queda 9, no 10.`,
       });
   }
+  // Alinear por la derecha en lugar de por la coma (3,5 + 1,25 como 35 + 125).
+  const [da, db] = [decimalsOf(spec.a), decimalsOf(spec.b)];
+  if (da !== db) {
+    const raw = (x: number) => Number(String(x).replace(".", ""));
+    const misaligned = spec.op === "add" ? raw(spec.a) + raw(spec.b) : raw(spec.a) - raw(spec.b);
+    if (misaligned >= 0)
+      bugs.push({
+        id: "coma-desalineada",
+        value: Number((misaligned / 10 ** Math.max(da, db)).toFixed(Math.max(da, db))),
+        feedback: "Alineaste las cifras por la derecha. Con decimales se alinea la coma: unidades bajo unidades, décimas bajo décimas; completa con ceros (3,5 = 3,50).",
+      });
+  }
   const seen = new Set([trace.result]);
-  return bugs.filter((bug) => (seen.has(bug.value) ? false : (seen.add(bug.value), true)));
+  return bugs.filter((bug) => (!Number.isFinite(bug.value) || seen.has(bug.value) ? false : (seen.add(bug.value), true)));
 }
