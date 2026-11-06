@@ -1,6 +1,12 @@
 {
   "voz": "es-PE-CamilaNeural",
   "velocidad": "-8%",
+  "elevenlabs": {
+    "voice_id": "PrwKJdvtTbJVdosRhS1O",
+    "nombre": "Mia García – Cálida instructora e-learning (español latino neutro)",
+    "modelo": "eleven_v4",
+    "nota": "Audios publicados: una toma por clip, recomprimidos a MP3 mono de 48 kbps."
+  },
   "criterio": "La pantalla da la consigna corta; la voz aporta lo que no está escrito: contexto, una pregunta para predecir, el porqué, errores comunes y la conexión con la clase. Todo lo que dice la voz se puede leer en «Lo que dice la voz».",
   "tutoriales": {
     "suma-resta-columnas": {
