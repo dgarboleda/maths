@@ -1,8 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
+import { MathText } from "@/components/MathText";
 import {
+  fmt,
+  isAnswerCorrect,
   operationHints,
+  placeName,
+  type Question,
   operationResult,
   operationSolution,
   type ColumnSpec,
@@ -14,7 +19,7 @@ import {
   StrategyPicker,
   useSubtractStrategy,
 } from "./ColumnOperation";
-import { DivisionDemo, DivisionSheet, LayoutPicker, useDivisionLayout } from "./DivisionOperation";
+import { DivisionDemo, DivisionSheet, firstWrongQuotientDigit, LayoutPicker, useDivisionLayout } from "./DivisionOperation";
 
 /* Punto de entrada único para las operaciones escritas (suma, resta y
  * división larga): elige la hoja, la demostración y las ayudas según la
@@ -116,5 +121,45 @@ export function OperationWorkspace({
         />
       )}
     </div>
+  );
+}
+
+/** Dónde se separó una respuesta numérica del resultado, en palabras. */
+export function operationMistake(spec: ColumnSpec, response: string): string | null {
+  if (!/^\s*\d+\s*$/.test(response)) return null;
+  const answer = operationResult(spec);
+  if (spec.op === "divide") {
+    const i = firstWrongQuotientDigit(response, answer);
+    return i === null ? null : `Tu cociente fue ${fmt(Number(response))}: la primera cifra distinta es la ${i + 1}.ª del cociente.`;
+  }
+  const column = firstWrongColumn(response, answer);
+  return column === null ? null : `Tu resultado fue ${fmt(Number(response))}: la primera cifra distinta está en las ${placeName(column)}.`;
+}
+
+/**
+ * «Ver el razonamiento» de los resúmenes de repaso: el desarrollo con la
+ * manera de escribir que eligió el alumno y, si la pregunta se resuelve en
+ * columnas, la operación completa y dónde se separó su respuesta.
+ */
+export function OperationReasoning({ question, response }: { question: Question; response?: string | null }) {
+  const help = useOperationHelp(question.column);
+  const spec = question.column;
+  const mistake = spec && response && !isAnswerCorrect(question, response) ? operationMistake(spec, response) : null;
+  return (
+    <details className="mt-2 text-sm text-slate-300">
+      <summary className="cursor-pointer font-semibold text-cyan-200">Ver el razonamiento</summary>
+      {spec && (
+        <div className="mt-3 space-y-3">
+          <StylePicker spec={spec} />
+          <OperationDemo spec={spec} initialStep={Infinity} />
+        </div>
+      )}
+      {mistake && <p className="mt-2 rounded-lg bg-amber-950/40 p-2 text-amber-100">{mistake}</p>}
+      <ol className="mt-2 list-decimal space-y-1 pl-5">
+        {(help?.solution ?? question.solution).map((step) => (
+          <li key={step}><MathText text={step} /></li>
+        ))}
+      </ol>
+    </details>
   );
 }
