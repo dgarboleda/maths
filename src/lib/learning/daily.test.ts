@@ -16,6 +16,7 @@ import {
   planDaily,
   type DailyReviewState,
   type LearningAction,
+  correctResponse,
 } from "./domain";
 
 const NOW = Date.UTC(2026, 9, 20, 15, 0, 0);
@@ -32,7 +33,7 @@ function answerAll(state: DailyReviewState, eligible: string[], right: (i: numbe
     if (mode === "hint") s = applyDailyAction(s, { kind: "hint", questionId: question.id }, eligible, new Set(), at);
     s = applyDailyAction(
       s,
-      { kind: "answer", questionId: question.id, response: mode === false ? "987654" : String(question.answer) },
+      { kind: "answer", questionId: question.id, response: mode === false ? "987654" : correctResponse(question) },
       eligible,
       new Set(),
       at,
@@ -157,7 +158,7 @@ describe("Repaso espaciado diario", () => {
     // Una clase no terminada no entra aunque tenga errores.
     expect(dailyFocus([wrong(1), wrong(2)], ["razones"]).size).toBe(0);
     // Resuelto después (primer intento correcto, misma tarea): deja de priorizarse.
-    const right = { lessonId: lesson.id, action: { kind: "answer", questionId: q.id, response: String(q.answer) }, at: 3 };
+    const right = { lessonId: lesson.id, action: { kind: "answer", questionId: q.id, response: correctResponse(q) }, at: 3 };
     expect(dailyFocus([wrong(1), wrong(2), right], eligible).size).toBe(0);
     // La clase aunque no esté vencida va primero, con una forma de la misma tarea.
     const state = { ...initialDaily(), schedule: { [lesson.id]: { box: 4, dueAt: NOW + 20 * DAY, lastAt: NOW - DAY, seen: 3 } } };

@@ -18,7 +18,8 @@ test("plan, mapa e informe usan las clases actuales sin cargar el sistema anteri
   const profile = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
   const childId = await entrarAlEspacio(page, profile.nombre, profile.pin);
   const base = `/jugar/${childId}`;
-  await sembrarClasesTerminadas(email, childId, LESSONS.filter((lesson) => lesson.unitId === "numeros").map((lesson) => lesson.id));
+  const numeros = LESSONS.filter((lesson) => lesson.unitId === "numeros").map((lesson) => lesson.id);
+  await sembrarClasesTerminadas(email, childId, numeros);
   await entrarComoFamilia(page, email);
   await page.goto("/panel/plan");
   await page.getByRole("checkbox", { name: /^Ángulos y polígonos/ }).check();
@@ -32,7 +33,7 @@ test("plan, mapa e informe usan las clases actuales sin cargar el sistema anteri
   await expect(page.getByRole("link", { name: "Comenzar mi siguiente clase", exact: true })).toHaveAttribute("href", `${base}/aprende/angulos`);
   await page.getByRole("link", { name: "Mapa de mi aprendizaje", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Mapa de mi aprendizaje", exact: true })).toBeVisible();
-  await expect(page.getByText("6 de 6 clases terminadas", { exact: true })).toBeVisible();
+  await expect(page.getByText(`${numeros.length} de ${numeros.length} clases terminadas`, { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Geometría y medida", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: /^Ángulos y polígonos/ })).toHaveAttribute("href", `${base}/aprende/angulos`);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
@@ -45,7 +46,7 @@ test("plan, mapa e informe usan las clases actuales sin cargar el sistema anteri
   await page.screenshot({ path: testInfo.outputPath("mapa-educativo.png"), fullPage: true });
   await page.goto("/panel");
   const card = page.getByRole("region", { name: "Progreso de Alex", exact: true });
-  await expect(card.getByText(`6 de ${LESSONS.length} clases terminadas`, { exact: true })).toBeVisible();
+  await expect(card.getByText(`${numeros.length} de ${LESSONS.length} clases terminadas`, { exact: true })).toBeVisible();
   await expect(card.getByText("0 comprobaciones autónomas", { exact: true })).toBeVisible();
   for (const label of ["Editor", "Mundo", "Currícula"])
     await expect(page.getByRole("link", { name: label, exact: true })).toHaveCount(0);

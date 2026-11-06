@@ -9,6 +9,7 @@ import {
   migrateProgress,
   type LearningAction,
   type LearningProgress,
+  correctResponse,
 } from "./domain";
 
 const lesson = getLesson("fraccion-cantidad")!;
@@ -23,7 +24,7 @@ const wrongChoice = (q: { answer: number | string; choices?: { id: string }[] })
   q.choices!.find((o) => o.id !== q.answer)!.id;
 function completeCheck(helpOnTransfer = false) {
   let state = update(undefined, { kind: "begin", stage: "check" });
-  const answers = lesson.checks[0].map((q) => String(q.answer));
+  const answers = lesson.checks[0].map((q) => correctResponse(q));
   for (let i = 0; i < answers.length; i++) {
     const q = currentQuestion(lesson, state)!;
     if (helpOnTransfer && i === 4)
@@ -118,7 +119,7 @@ describe("Evidencia educativa", () => {
       { kind: "begin", stage: "review" },
       NOW + 3 * DAY,
     );
-    const answers = lesson.review.map((q) => String(q.answer));
+    const answers = lesson.review.map((q) => correctResponse(q));
     for (const answer of answers) {
       review = update(
         review,

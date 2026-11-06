@@ -18,6 +18,7 @@ import {
   type DailyReviewState,
   type MixedReviewState,
   type PlacementState,
+  correctResponse,
 } from "@/lib/learning/domain";
 
 describe("Servicio educativo y reglas reales", () => {
@@ -417,7 +418,7 @@ describe("Servicio educativo y reglas reales", () => {
         if (q === question) break;
         await call(family.app, "recordLearningAction", {
           ...base, expectedRevision: revision++, operationId: crypto.randomUUID(),
-          action: { kind: "answer", questionId: q.id, response: String(q.answer) },
+          action: { kind: "answer", questionId: q.id, response: correctResponse(q) },
         });
         await call(family.app, "recordLearningAction", {
           ...base, expectedRevision: revision++, operationId: crypto.randomUUID(), action: { kind: "next" },
@@ -574,7 +575,7 @@ describe("Servicio educativo y reglas reales", () => {
       expect(new Set(state.items.map((i) => i.lessonId))).toEqual(new Set(["enteros-recta", "enteros-suma-resta"]));
       let stars = 0;
       for (const { question } of mixedQuestions({ ...initialMixedReview("numeros"), ...state })) {
-        await send("repaso-numeros", { kind: "answer", questionId: question.id, response: String(question.answer) });
+        await send("repaso-numeros", { kind: "answer", questionId: question.id, response: correctResponse(question) });
         const next = await send<MixedReviewState>("repaso-numeros", { kind: "next" });
         stars += next.stars;
         state = next.progress;
@@ -623,7 +624,7 @@ describe("Servicio educativo y reglas reales", () => {
         for (const { question } of dailyQuestions(state)) {
           const operationId = crypto.randomUUID();
           firstOperation ||= operationId;
-          await send("diario", { kind: "answer", questionId: question.id, response: String(question.answer) }, operationId);
+          await send("diario", { kind: "answer", questionId: question.id, response: correctResponse(question) }, operationId);
           const next = await send<DailyReviewState>("diario", { kind: "next" });
           stars += next.stars;
           state = next.progress;

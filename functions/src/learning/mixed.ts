@@ -1,7 +1,7 @@
 import { CONTENT_VERSION } from "./version";
 import { getLesson, LEARNING_UNITS, LESSONS } from "./catalog";
 import { independent, LearningError } from "./engine";
-import { isAnswerCorrect } from "./questions";
+import { isAnswerCorrect, MAX_RESPONSE_LENGTH } from "./questions";
 import type {
   CheckResult,
   LearningAction,
@@ -170,7 +170,7 @@ export function applyMixedReviewAction(
   } else if (action.kind === "answer") {
     if (evidence.attempts > 0)
       throw new LearningError("Esta respuesta ya se registró.");
-    if (!action.response.trim() || action.response.length > 64)
+    if (!action.response.trim() || action.response.length > MAX_RESPONSE_LENGTH)
       throw new LearningError("Escribe o selecciona una respuesta.");
     evidence.correct = isAnswerCorrect(current, action.response);
     evidence.firstCorrect = evidence.correct;

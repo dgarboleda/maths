@@ -3,6 +3,26 @@ import type { LessonSummary } from "./types";
 
 export const LESSON_INDEX: readonly LessonSummary[] = [
   {
+    "id": "suma-resta-columnas",
+    "unitId": "numeros",
+    "title": "Sumar y restar en columnas",
+    "objective": "Sumar y restar números de varias cifras, también con decimales, en columnas, llevando y reagrupando con sentido del valor posicional.",
+    "prerequisites": [],
+    "legacyModuleIds": [
+      "aritmetica-d3"
+    ]
+  },
+  {
+    "id": "division-larga",
+    "unitId": "numeros",
+    "title": "La división larga",
+    "objective": "Dividir números de varias cifras entre divisores de una y dos cifras con la división larga, sin olvidar los ceros del cociente y comprobando con el resto.",
+    "prerequisites": [],
+    "legacyModuleIds": [
+      "aritmetica-division-larga"
+    ]
+  },
+  {
     "id": "enteros-recta",
     "unitId": "numeros",
     "title": "Números enteros en la recta",
@@ -76,6 +96,16 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "legacyModuleIds": [
       "aritmetica-notacion-cientifica",
       "aritmetica-potencias"
+    ]
+  },
+  {
+    "id": "mcd-mcm",
+    "unitId": "numeros",
+    "title": "Divisores y múltiplos comunes: MCD y MCM",
+    "objective": "Calcular el MCD y el MCM de dos o tres números con la tabla de factores primos y decidir cuál de los dos resuelve un problema.",
+    "prerequisites": [],
+    "legacyModuleIds": [
+      "aritmetica-mcd-mcm"
     ]
   },
   {
@@ -369,6 +399,16 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "prerequisites": [
       "propiedad-distributiva",
       "potencias-raices"
+    ],
+    "legacyModuleIds": []
+  },
+  {
+    "id": "ruffini",
+    "unitId": "expresiones",
+    "title": "División de polinomios: regla de Ruffini",
+    "objective": "Dividir un polinomio entre (x − r) con la regla de Ruffini, interpretar el cociente y el resto, y usar el teorema del resto para saber si (x − r) es un factor.",
+    "prerequisites": [
+      "expresiones-algebraicas"
     ],
     "legacyModuleIds": []
   },

@@ -9,6 +9,50 @@ import type { Question } from "./types";
  * Se reúnen aquí para revisarlas juntas.
  */
 export const CHECK_CONCEPTS: Record<string, Question> = {
+  ruffini: c(
+    "q0",
+    "Para dividir x³ − 1 entre (x − 1) con Ruffini, ¿cuántas casillas tiene la fila de coeficientes?",
+    [
+      ["2, una por cada término escrito", "Faltan los términos de x² y de x: también ocupan su casilla, con 0."],
+      "Cuatro (1, 0, 0 y −1), porque cada grado de 3 a 0 tiene su casilla",
+      ["3, porque el grado es 3", "Del grado 3 al 0 hay cuatro potencias: x³, x², x y el término independiente."],
+    ],
+    1,
+    "Un polinomio de grado 3 tiene 4 coeficientes: los que faltan se escriben 0. Así, x³ − 1 ÷ (x − 1) da x² + x + 1, resto 0.",
+  ),
+  "mcd-mcm": c(
+    "q0",
+    "Para repartir 30 manzanas y 45 naranjas en bolsas iguales, con el mayor número de bolsas y sin que sobre fruta, ¿qué se calcula?",
+    [
+      ["El MCM de 30 y 45", "El MCM es un múltiplo: sirve para saber cuándo coinciden cosas que se repiten, no para repartir."],
+      "El MCD de 30 y 45, porque el número de bolsas tiene que dividir a los dos",
+      ["30 + 45", "Sumar da el total de frutas, no cuántas bolsas iguales se pueden armar."],
+    ],
+    1,
+    "El número de bolsas divide a 30 y a 45 y es el mayor posible: MCD(30; 45) = 15 bolsas, cada una con 2 manzanas y 3 naranjas.",
+  ),
+  "division-larga": c(
+    "q0",
+    "Sin hacer la división, ¿cuántas cifras tiene el cociente de 4 235 ÷ 7?",
+    [
+      ["4, una por cada cifra del dividendo", "La primera cifra (4) es menor que 7: no da una cifra del cociente."],
+      "3, porque 7 no cabe en 4 y se empieza con 42; luego se bajan 3 y 5",
+      ["2, porque el divisor tiene una cifra", "El número de cifras depende de cuántos pasos hay: 42, luego el 3 y luego el 5."],
+    ],
+    1,
+    "Cada paso da una cifra del cociente: el primero usa 42 y después se bajan dos cifras más, así que son tres (4 235 ÷ 7 = 605).",
+  ),
+  "suma-resta-columnas": c(
+    "q0",
+    "Para quitarle 8 unidades a 305 pidiendo prestado, ¿cómo se reescribe 305?",
+    [
+      "2 centenas, 9 decenas y 15 unidades",
+      ["3 centenas, 0 decenas y 15 unidades", "Esas 10 unidades extra no salen de ninguna parte: el número aumentaría en 10."],
+      ["2 centenas, 10 decenas y 5 unidades", "Es el mismo número, pero las unidades siguen siendo 5 y aún no alcanzan para quitar 8."],
+    ],
+    0,
+    "Como no hay decenas, se cambia 1 centena por 10 decenas y luego 1 decena por 10 unidades: 200 + 90 + 15 = 305.",
+  ),
   "enteros-recta": c(
     "q0",
     "¿Cuál es el opuesto de −8 y por qué?",

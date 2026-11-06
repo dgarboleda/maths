@@ -1,5 +1,5 @@
 import { getAdventure, type AdventureDef } from "./adventures";
-import { isAnswerCorrect } from "./questions";
+import { isAnswerCorrect, MAX_RESPONSE_LENGTH } from "./questions";
 import type {
   AdventureAction,
   AdventureState,
@@ -312,7 +312,7 @@ export function applyLearningAction(
       );
     if (
       typeof action.response !== "string" ||
-      action.response.length > 64 ||
+      action.response.length > MAX_RESPONSE_LENGTH ||
       !action.response.trim()
     )
       throw new LearningError("Escribe o selecciona una respuesta.");

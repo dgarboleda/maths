@@ -16,7 +16,12 @@ import {
   placementQuestion,
   recommendedLesson,
   type PlacementState,
+  correctResponse,
+  isOptionalLesson,
 } from "./domain";
+
+/** El programa evaluable: el catálogo sin las bases opcionales. */
+const PROGRAM = LESSONS.filter((l) => !isOptionalLesson(l.id));
 
 const NOW = 1_700_000_000_000;
 /** Responde la ubicación: `knows(lessonId)` decide si acierta. */
@@ -35,7 +40,7 @@ function run(knows: (lessonId: string) => boolean | "skip") {
             {
               kind: "answer",
               questionId: current.question.id,
-              response: decision ? String(real.answer) : "123456",
+              response: decision ? correctResponse(real) : "123456",
             },
             NOW,
           );
@@ -57,15 +62,16 @@ describe("Evaluación de ubicación", () => {
     expect(state.stage).toBe("done");
     expect(state.items).toHaveLength(LEARNING_UNITS.length);
     expect(state.result!.mastered).toEqual([]);
+    // Las bases opcionales no se evalúan: cada unidad empieza por su primera clase del programa.
     for (const unit of LEARNING_UNITS)
-      expect(state.result!.start[unit.id]).toBe(LESSONS.find((l) => l.unitId === unit.id)!.id);
-    expect(recommendedLesson(new Set(), state.result)).toBe(LESSONS[0]);
+      expect(state.result!.start[unit.id]).toBe(PROGRAM.find((l) => l.unitId === unit.id)!.id);
+    expect(recommendedLesson(new Set(), state.result)).toBe(PROGRAM[0]);
   });
 
   test("quien acierta todo responde dos preguntas por clase de fracciones", () => {
     const state = run(() => true);
-    expect(state.items).toHaveLength(LESSONS.length + LESSONS.filter((l) => l.unitId === "fracciones").length);
-    expect(state.result!.mastered).toHaveLength(LESSONS.length);
+    expect(state.items).toHaveLength(PROGRAM.length + PROGRAM.filter((l) => l.unitId === "fracciones").length);
+    expect(state.result!.mastered).toHaveLength(PROGRAM.length);
     expect(Object.values(state.result!.start).every((s) => s === null)).toBe(true);
     expect(recommendedLesson(new Set(), state.result)).toBeUndefined();
   });
@@ -77,7 +83,7 @@ describe("Evaluación de ubicación", () => {
       const item = state.items.at(-1)!;
       const real = current.lesson.checks[1].find((q) => q.id === item.questionId)!;
       const fail = current.lesson.id === "fracciones-unidad" && real.task === 0;
-      state = applyPlacementAction(state, { kind: "answer", questionId: current.question.id, response: fail ? "respuesta incorrecta" : String(real.answer) }, NOW);
+      state = applyPlacementAction(state, { kind: "answer", questionId: current.question.id, response: fail ? "respuesta incorrecta" : correctResponse(real) }, NOW);
     }
     expect(state.result!.start.fracciones).toBe("fracciones-unidad");
     expect(state.result!.mastered).not.toContain("fracciones-unidad");
@@ -90,7 +96,7 @@ describe("Evaluación de ubicación", () => {
     const last = old.items.at(-1)!;
     last.correct = null;
     const current = placementCurrent(old)!;
-    const finished = applyPlacementAction(old, { kind: "answer", questionId: current.question.id, response: String(placementQuestion(current.lesson).answer) }, NOW);
+    const finished = applyPlacementAction(old, { kind: "answer", questionId: current.question.id, response: correctResponse(placementQuestion(current.lesson)) }, NOW);
     expect(finished.result!.mastered).toContain("fracciones-unidad");
   });
 

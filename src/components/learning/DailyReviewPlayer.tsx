@@ -35,6 +35,7 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import { QuestionActivity } from "./LessonPlayer";
+import { OperationReasoning } from "./Operation";
 import { hasHelpContent, questionHelp } from "@/lib/learning/screenHelp";
 
 /**
@@ -192,12 +193,7 @@ function DailySummary({ state }: { state: DailyReviewState }) {
               {!correct && evidence?.response && (
                 <p className="mt-2 text-sm text-amber-100"><MathText text={errorFeedback(question, evidence.response)} /></p>
               )}
-              <details className="mt-2 text-sm text-slate-300">
-                <summary className="cursor-pointer font-semibold text-cyan-200">Ver el razonamiento</summary>
-                <ol className="mt-2 list-decimal space-y-1 pl-5">
-                  {question.solution.map((step) => <li key={step}><MathText text={step} /></li>)}
-                </ol>
-              </details>
+              <OperationReasoning question={question} response={evidence?.response} />
             </li>
           );
         })}

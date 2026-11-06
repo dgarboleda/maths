@@ -8,7 +8,8 @@ describe("ejercicios de clase en los minijuegos", () => {
       expect(lesson.practice.some((q) => lessonProblem(q) !== null)).toBe(true);
       for (const question of lesson.practice) {
         const problem = lessonProblem(question);
-        if (question.format === "choice") {
+        // Elegir no es responder, y las cuentas en columnas se hacen en su hoja.
+        if (question.format === "choice" || question.column) {
           expect(problem).toBeNull();
           continue;
         }

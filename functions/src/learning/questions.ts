@@ -1,4 +1,26 @@
 import type { Example, Intent, Question } from "./types";
+import { columnTrace } from "./algorithms/columns";
+import { checkFactorWork, factorTrace, factorWorkFeedback } from "./algorithms/factors";
+import { checkRuffiniWork, ruffiniTrace, ruffiniWorkFeedback } from "./algorithms/ruffini";
+import {
+  checkDivisionWork,
+  checkOpenDivision,
+  divisionAnswerText,
+  divisionResponseCorrect,
+  divisionResponseValue,
+  divisionTrace,
+  divisionWorkFeedback,
+} from "./algorithms/division";
+import {
+  operationBugs,
+  operationExpression,
+  operationHints,
+  operationResult,
+  operationSolution,
+  isFactorSpec,
+  isRuffiniSpec,
+  type ColumnSpec,
+} from "./algorithms/operations";
 
 export function numeric(
   id: string,
@@ -24,6 +46,74 @@ export function numeric(
     hints,
     ...(options.unit ? { unit: options.unit } : {}),
     ...(options.errors ? { errors: options.errors } : {}),
+  };
+}
+/**
+ * Pregunta que se resuelve en columnas. El desarrollo, las pistas y los
+ * errores previstos salen del mismo trazado (con «pedir prestado»; la hoja
+ * los muestra también con «compensar»). `errors` extra se suman a los
+ * errores sistemáticos del algoritmo.
+ */
+export function columnar(
+  id: string,
+  spec: ColumnSpec,
+  options: {
+    prompt?: string;
+    intent?: Intent;
+    unit?: string;
+    errors?: Question["errors"];
+  } = {},
+): Question {
+  const result = operationResult(spec);
+  const errors = [
+    ...operationBugs(spec).map(({ value, feedback }) => ({ value, feedback })),
+    ...(options.errors ?? []),
+  ].filter((e, i, all) => e.value !== result && all.findIndex((o) => o.value === e.value) === i);
+  return {
+    ...numeric(
+      id,
+      options.prompt ??
+        (isRuffiniSpec(spec)
+          ? `Divide ${operationExpression(spec)} con la regla de Ruffini: completa la tabla y escribe el resto.`
+          : isFactorSpec(spec)
+          ? `Calcula el ${operationExpression(spec)} con la tabla de factores primos.`
+          : spec.op === "divide"
+            ? `Divide ${operationExpression(spec)} con la división larga: escribe el cociente, cada resta y el resto.`
+            : `Calcula en columnas: ${operationExpression(spec)}.`),
+      result,
+      operationSolution(spec),
+      operationHints(spec),
+      {
+        intent: options.intent ?? "procedure",
+        ...(options.unit ? { unit: options.unit } : {}),
+        ...(errors.length ? { errors } : {}),
+      },
+    ),
+    column: spec,
+  };
+}
+export function columnExample(spec: ColumnSpec, prompt?: string): Example {
+  const steps = isRuffiniSpec(spec)
+    ? ruffiniTrace(spec).steps.map((step) => ({
+        math: step.product === null ? `Bajas ${step.result}` : `${step.coefficient} + (${step.product}) = ${step.result}`,
+        why: step.why,
+      }))
+    : isFactorSpec(spec)
+    ? factorTrace(spec).rows.map((row) => ({ math: `${row.values.join("  ")} | ${row.prime}`, why: row.why }))
+    : spec.op === "divide"
+      ? divisionTrace(spec).steps.map((step) => ({
+          math: `${step.part} ÷ ${spec.b} → ${step.digit}${step.down !== null ? `, bajas el ${step.down}` : ""}`,
+          why: step.why,
+        }))
+      : columnTrace(spec).steps.map((step) => ({
+          math: `${step.workTop} ${spec.op === "add" ? "+" : "−"} ${step.workBottom} → escribes ${step.digit}`,
+          why: step.why,
+        }));
+  return {
+    prompt: prompt ?? `Calcula ${operationExpression(spec)}.`,
+    steps,
+    conclusion: operationSolution(spec).at(-1)!,
+    column: spec,
   };
 }
 /** Una opción es su texto o `[texto, feedback]`: el feedback propio explica
@@ -92,14 +182,44 @@ export function parseNumber(value: string): number | null {
     ? result
     : null;
 }
+/** Longitud máxima de una respuesta: la galera envía el procedimiento completo. */
+export const MAX_RESPONSE_LENGTH = 160;
+
 export function isAnswerCorrect(question: Question, response: string): boolean {
   if (question.format === "choice") return response === question.answer;
+  if (question.column?.op === "divide") return divisionResponseCorrect(question.column, response);
+  if (question.column && isFactorSpec(question.column)) {
+    const work = checkFactorWork(question.column, response);
+    if (work) return work.correct;
+  }
+  if (question.column && isRuffiniSpec(question.column)) {
+    const work = checkRuffiniWork(question.column, response);
+    if (work) return work.correct;
+  }
   const value = parseNumber(response);
   return (
     value !== null &&
     typeof question.answer === "number" &&
     Math.abs(value - question.answer) < 1e-8
   );
+}
+/** La respuesta correcta tal como se escribe (en una división con resto,
+ *  «cociente r resto»). */
+export function correctResponse(question: Question): string {
+  return question.column?.op === "divide" ? divisionAnswerText(question.column) : String(question.answer);
+}
+/** Valor numérico con el que se buscan los errores previstos. */
+export function responseValue(question: Question, response: string): number | null {
+  if (question.column?.op === "divide") return divisionResponseValue(question.column, response);
+  if (question.column && isFactorSpec(question.column)) {
+    const work = checkFactorWork(question.column, response);
+    if (work) return work.answer;
+  }
+  if (question.column && isRuffiniSpec(question.column)) {
+    const work = checkRuffiniWork(question.column, response);
+    if (work) return Number.isFinite(work.remainder) ? work.remainder : null;
+  }
+  return parseNumber(response);
 }
 export function errorFeedback(question: Question, response: string): string {
   if (question.format === "choice") {
@@ -108,14 +228,40 @@ export function errorFeedback(question: Question, response: string): string {
     )?.feedback;
     if (feedback) return feedback;
   }
-  const value = question.format === "choice" ? response : parseNumber(response);
+  const value = question.format === "choice" ? response : responseValue(question, response);
   const error = question.errors?.find((item) =>
     typeof item.value === "number" && typeof value === "number"
       ? Math.abs(item.value - value) < 1e-8
       : item.value === value,
   );
   if (error) return error.feedback;
+  if (question.column && isFactorSpec(question.column)) {
+    const work = checkFactorWork(question.column, response);
+    const text = work && factorWorkFeedback(question.column, work);
+    if (text) return text;
+  }
+  if (question.column && isRuffiniSpec(question.column)) {
+    const work = checkRuffiniWork(question.column, response);
+    const text = work && ruffiniWorkFeedback(question.column, work);
+    if (text) return text;
+  }
+  if (question.column?.op === "divide") {
+    const work = checkDivisionWork(question.column, response);
+    if (work?.firstError) return divisionWorkFeedback(question.column, work.firstError, work.layout);
+    const open = checkOpenDivision(question.column, response);
+    if (open && !open.quotientCorrect)
+      return "El cociente no es correcto. Comprueba con la multiplicación: cociente × divisor + resto tiene que dar el dividendo.";
+    if (open?.mismatch)
+      return divisionWorkFeedback(question.column, open.mismatch, open.mismatch.kind === "p" ? "completa" : "abreviada");
+    if (value !== null) {
+      const { quotient, remainder } = divisionTrace(question.column);
+      if (value === quotient)
+        return `El cociente es correcto; falta el resto o no es ${remainder === 0 ? "0" : "ese"}. Escríbelo así: ${quotient} r ${remainder}.`;
+    }
+  }
   if (question.format !== "choice" && value === null)
-    return "Escribe un número, un decimal con coma o punto, o una fracción como 3/4. Revisa que el denominador sea distinto de cero.";
+    return question.column?.op === "divide"
+      ? "Completa la galera, o escribe el cociente y el resto así: 52 r 3."
+      : "Escribe un número, un decimal con coma o punto, o una fracción como 3/4. Revisa que el denominador sea distinto de cero.";
   return "Revisa qué cantidad buscas y qué representa cada dato. Puedes consultar la clase o pedir una pista antes de intentarlo otra vez.";
 }

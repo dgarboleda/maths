@@ -315,6 +315,7 @@ test("la evaluación de ubicación recomienda por dónde empezar y la familia ve
   const childId = await learner(page);
   await page.getByRole("link", { name: "¿Ya sabes algo? Encuentra tu punto de partida" }).click();
   await page.getByRole("button", { name: "Empezar la evaluación" }).click();
+  // Las bases de primaria son opcionales: la ubicación empieza por el programa.
   const first = getLesson("enteros-recta")!;
   const question = placementQuestion(first);
   await expect(page.getByText(question.prompt, { exact: true })).toBeVisible();

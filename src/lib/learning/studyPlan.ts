@@ -1,4 +1,4 @@
-import { getLesson, LESSONS, recommendedLesson, type LearningProgress, type PlacementState } from "./domain";
+import { getLesson, isOptionalLesson, LESSONS, recommendedLesson, type LearningProgress, type PlacementState } from "./domain";
 
 /** Una preferencia familiar, nunca una acreditación ni un candado. */
 export function plannedLessonIds(value: unknown): string[] {
@@ -30,5 +30,5 @@ export function nextStudyLesson(progress: Record<string, LearningProgress>, plac
     const next = withBases(id);
     if (next) return next;
   }
-  return recommendedLesson(completed, placement?.result ?? null) ?? LESSONS[0];
+  return recommendedLesson(completed, placement?.result ?? null) ?? LESSONS.find((l) => !isOptionalLesson(l.id))!;
 }

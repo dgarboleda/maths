@@ -4,7 +4,7 @@ import { independent, LearningError } from "./engine";
 import { dailyTarget, pickCalibrated, type CalibrationData } from "./calibration";
 import { CALIBRATION } from "./calibrationData";
 import { summarizeMisconceptions, type EvidenceEvent } from "./diagnosis";
-import { isAnswerCorrect } from "./questions";
+import { isAnswerCorrect, MAX_RESPONSE_LENGTH } from "./questions";
 import type { DailyReviewState, DailyStreak, LearningAction, Lesson, Question, ResponseEvidence } from "./types";
 
 export const DAILY_ID = "diario";
@@ -263,7 +263,7 @@ export function applyDailyAction(
   if (action.kind === "hint") evidence.hintsUsed = Math.min(3, evidence.hintsUsed + 1);
   else if (action.kind === "answer") {
     if (evidence.attempts > 0) throw new LearningError("Esta respuesta ya se registró.");
-    if (!action.response.trim() || action.response.length > 64)
+    if (!action.response.trim() || action.response.length > MAX_RESPONSE_LENGTH)
       throw new LearningError("Escribe o selecciona una respuesta.");
     evidence.correct = isAnswerCorrect(current.question, action.response);
     evidence.firstCorrect = evidence.correct;

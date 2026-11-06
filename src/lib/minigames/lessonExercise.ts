@@ -80,7 +80,9 @@ const minus = (text: string) => text.replace(/^-/, "−");
  * inventados si el enunciado no los tiene.
  */
 export function lessonProblem(question: Question): Problem | null {
-  if (question.format === "choice" || typeof question.answer !== "number")
+  // Las operaciones en columnas se practican en su hoja, no eligiendo el
+  // resultado entre alternativas (que serían sus propios errores típicos).
+  if (question.format === "choice" || typeof question.answer !== "number" || question.column)
     return null;
   const answer = question.answer;
   const answerDecimals = decimals(answer);

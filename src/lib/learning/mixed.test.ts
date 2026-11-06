@@ -9,6 +9,7 @@ import {
   planMixedReview,
   unitForReviewId,
   type MixedReviewState,
+  correctResponse,
 } from "./domain";
 
 const NOW = Date.UTC(2026, 9, 19, 12);
@@ -19,7 +20,7 @@ function play(state: MixedReviewState, correct: (i: number) => boolean) {
   let s = state;
   mixedQuestions(s).forEach(({ question }, i) => {
     const response = correct(i)
-      ? String(question.answer)
+      ? correctResponse(question)
       : question.choices
         ? question.choices.find((o) => o.id !== question.answer)!.id
         : "123456";
@@ -81,7 +82,7 @@ describe("Repaso intercalado de una unidad", () => {
     // El resto, de forma autónoma: 5 de 6 → superada.
     let rest = s;
     mixedQuestions(rest).slice(1).forEach(({ question }) => {
-      rest = applyMixedReviewAction(unit, rest, { kind: "answer", questionId: question.id, response: String(question.answer) }, done, NOW);
+      rest = applyMixedReviewAction(unit, rest, { kind: "answer", questionId: question.id, response: correctResponse(question) }, done, NOW);
       rest = applyMixedReviewAction(unit, rest, { kind: "next" }, done, NOW);
     });
     expect(rest.stage).toBe("summary");

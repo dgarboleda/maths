@@ -1,4 +1,5 @@
 /** Dominio educativo compartido por Functions y Next. Sin Firebase ni React. */
+import type { ColumnSpec } from "./algorithms/operations";
 export type Stage =
   | "diagnostic"
   | "class"
@@ -37,11 +38,17 @@ export interface Question {
   /** Tarea de la plantilla (q0…q6; 7 = aplicación). Las formas paralelas de
    *  una misma tarea comparten número: permite comparar su dificultad. */
   task?: number;
+  /** Se resuelve en una hoja de columnas (suma o resta de naturales). La
+   *  respuesta sigue siendo el número final: los errores de procedimiento
+   *  se reconocen por su resultado (ver `algorithms/columns.ts`). */
+  column?: ColumnSpec;
 }
 export interface Example {
   prompt: string;
   steps: { math: string; why: string }[];
   conclusion: string;
+  /** Ejemplo animado columna a columna, con la estrategia que elija el alumno. */
+  column?: ColumnSpec;
 }
 export type Visual =
   | "fraction"
@@ -89,7 +96,11 @@ export type Visual =
   | "square-root"
   | "binomial-square"
   | "distributive"
-  | "expression";
+  | "expression"
+  | "columns"
+  | "long-division"
+  | "factor-table"
+  | "ruffini";
 export type UnitId =
   | "numeros"
   | "fracciones"
