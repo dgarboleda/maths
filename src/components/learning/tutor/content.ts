@@ -55,6 +55,42 @@ const SETUP: Record<string, Pick<Scene, "initial" | "goal">> = {
     initial: { kind: "fractions", top: { num: 1, den: 3 }, bottom: { num: 1, den: 6 }, joined: false },
     goal: (s) => s.kind === "fractions" && s.joined && s.top.num * 2 === s.top.den,
   },
+  "equivalentes-1": {
+    initial: { kind: "fractions", top: { num: 1, den: 2 }, bottom: { num: 1, den: 2 }, joined: false, joinable: false },
+    goal: (s) => s.kind === "fractions" && s.top.num === 4 && s.top.den === 8,
+  },
+  "equivalentes-2": {
+    initial: { kind: "fractions", top: { num: 2, den: 3 }, bottom: { num: 1, den: 2 }, joined: false, joinable: false },
+    goal: (s) => s.kind === "fractions" && s.top.den === s.bottom.den,
+  },
+  "equivalentes-3": {
+    initial: { kind: "fractions", top: { num: 3, den: 4 }, bottom: { num: 5, den: 8 }, joined: false, joinable: false },
+    goal: (s) => s.kind === "fractions" && s.top.den === s.bottom.den,
+  },
+  "enteros-1": {
+    initial: { kind: "line", start: -3, pos: -3, min: -5, max: 5 },
+    goal: (s) => s.kind === "line" && s.pos === 2,
+  },
+  "enteros-2": {
+    initial: { kind: "line", start: 4, pos: 4, min: -5, max: 5 },
+    goal: (s) => s.kind === "line" && s.pos === -2,
+  },
+  "enteros-3": {
+    initial: { kind: "line", start: 3, pos: 3, min: -1, max: 9 },
+    goal: (s) => s.kind === "line" && s.pos === 7,
+  },
+  "ecuaciones-1": {
+    initial: { kind: "balance", xs: 1, left: 3, right: 7 },
+    goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+  },
+  "ecuaciones-2": {
+    initial: { kind: "balance", xs: 3, left: 0, right: 12 },
+    goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+  },
+  "ecuaciones-3": {
+    initial: { kind: "balance", xs: 2, left: 1, right: 9 },
+    goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+  },
 };
 
 export const TUTORIALS: Record<string, Tutorial> = Object.fromEntries(

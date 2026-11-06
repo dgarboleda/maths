@@ -21,6 +21,15 @@ const SOLUTIONS: Record<string, TutorAction[]> = {
   "fracciones-1": [{ type: "split", bar: "top" }],
   "fracciones-2": [{ type: "join" }],
   "fracciones-3": [{ type: "split", bar: "top" }, { type: "join" }],
+  "equivalentes-1": [{ type: "split", bar: "top" }, { type: "split", bar: "top" }],
+  "equivalentes-2": [{ type: "split", bar: "top" }, { type: "split", bar: "bottom", factor: 3 }],
+  "equivalentes-3": [{ type: "split", bar: "top" }],
+  "enteros-1": Array.from({ length: 5 }, () => ({ type: "step", delta: 1 }) as const),
+  "enteros-2": Array.from({ length: 6 }, () => ({ type: "step", delta: -1 }) as const),
+  "enteros-3": Array.from({ length: 4 }, () => ({ type: "step", delta: 1 }) as const),
+  "ecuaciones-1": Array.from({ length: 3 }, () => ({ type: "remove-both" }) as const),
+  "ecuaciones-2": [{ type: "share" }],
+  "ecuaciones-3": [{ type: "remove-both" }, { type: "share" }],
 };
 
 let play: ReturnType<typeof vi.fn<() => Promise<void>>>;
@@ -66,6 +75,19 @@ describe("contenido del tutor visual", () => {
     expect(notice).toBe("no-se-puede-juntar");
   });
 
+  it("la balanza nunca se desequilibra: quitar de un lado o repartir antes de tiempo se explica y no se aplica", () => {
+    const start = TUTORIALS["ecuaciones-un-paso"].scenes[2].initial;
+    expect(reduce(start, { type: "remove-left" })).toEqual({ state: start, notice: "balanza-desequilibrada" });
+    expect(reduce(start, { type: "share" })).toEqual({ state: start, notice: "no-se-puede-repartir" });
+    const after = reduce(reduce(start, { type: "remove-both" }).state, { type: "share" }).state;
+    expect(after).toMatchObject({ xs: 1, left: 0, right: 4 });
+  });
+
+  it("en las escenas de comparación las reservas no se juntan", () => {
+    const start = TUTORIALS["fracciones-equivalentes"].scenes[1].initial;
+    expect(reduce(start, { type: "join" }).state).toBe(start);
+  });
+
   it("la bandeja admite diez unidades como máximo y solo entonces forma una decena", () => {
     let s = TUTORIALS["suma-resta-columnas"].scenes[0].initial;
     s = reduce(s, { type: "bundle" }).state;
@@ -106,6 +128,37 @@ describe("tutor visual en la clase", () => {
     await user.keyboard("{Enter}{Enter}{Enter}");
     expect(screen.getByText(/tres por cuatro es doce/)).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "3 filas de 4 paneles" })).toBeInTheDocument();
+  });
+
+  it("en la recta, restar un negativo se resuelve avanzando con el teclado", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem("maths:tutor:enteros-suma-resta", JSON.stringify({ scene: 2 }));
+    render(<VisualTutor lessonId="enteros-suma-resta" />);
+    screen.getByRole("button", { name: "Avanzar 1 →" }).focus();
+    await user.keyboard("{Enter}{Enter}{Enter}");
+    expect(screen.queryByText(/Llegaste a siete/)).not.toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText(/Llegaste a siete/)).toBeInTheDocument();
+    expect(screen.getByText("3 + 4 = 7")).toBeInTheDocument();
+  });
+
+  it("la balanza explica con voz por qué no se quita de un solo lado", () => {
+    render(<VisualTutor lessonId="ecuaciones-un-paso" />);
+    fireEvent.click(screen.getByRole("button", { name: "Quitar 1 solo a la izquierda" }));
+    expect(screen.getByText(/la balanza se inclina/)).toBeInTheDocument();
+    expect(lastClip()).toBe("/audio/tutor/balanza-desequilibrada.mp3");
+    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole("button", { name: "Quitar 1 de cada lado" }));
+    expect(screen.getByText(/x vale cuatro/)).toBeInTheDocument();
+  });
+
+  it("compara fracciones partiendo en dos y en tres", () => {
+    localStorage.setItem("maths:tutor:fracciones-equivalentes", JSON.stringify({ scene: 1 }));
+    render(<VisualTutor lessonId="fracciones-equivalentes" />);
+    expect(screen.queryByRole("button", { name: "Juntar reservas" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Partir en dos (reserva de arriba)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Partir en tres (reserva de abajo)" }));
+    expect(screen.getByText("4/6 > 3/6")).toBeInTheDocument();
+    expect(screen.getByText(/Dos tercios es más que un medio/)).toBeInTheDocument();
   });
 
   it("explica, con texto y voz, por qué todavía no se pueden juntar las reservas", () => {

@@ -64,9 +64,80 @@
           "logro": "Un tercio son dos sextos. Dos sextos más un sexto son tres sextos, que es un medio."
         }
       ]
+    },
+    "fracciones-equivalentes": {
+      "titulo": "Mismas reservas, otras partes",
+      "escenas": [
+        {
+          "id": "equivalentes-1",
+          "intro": "La reserva de arriba tiene un medio. Pártela en dos y otra vez en dos, hasta tener octavos. Observa si cambia la cantidad llena.",
+          "pista": "Pulsa partir en dos en la reserva de arriba, dos veces.",
+          "logro": "Un medio es lo mismo que dos cuartos y que cuatro octavos. Cambiaron las partes, no la cantidad."
+        },
+        {
+          "id": "equivalentes-2",
+          "intro": "¿Qué es más, dos tercios o un medio? Para comparar, las dos reservas necesitan partes del mismo tamaño.",
+          "pista": "Parte los tercios en dos y el medio en tres. Así las dos reservas quedan en sextos.",
+          "logro": "Con partes del mismo tamaño se ve claro: dos tercios son cuatro sextos y un medio son tres sextos. Dos tercios es más que un medio."
+        },
+        {
+          "id": "equivalentes-3",
+          "intro": "Ahora compara tres cuartos y cinco octavos. No mires solo las cifras: busca partes iguales.",
+          "pista": "Los cuartos son el doble de grandes que los octavos. Parte los cuartos en dos.",
+          "logro": "Seis octavos es más que cinco octavos: tres cuartos es mayor, aunque ocho sea mayor que cuatro."
+        }
+      ]
+    },
+    "enteros-suma-resta": {
+      "titulo": "Desplázate por la recta",
+      "escenas": [
+        {
+          "id": "enteros-1",
+          "intro": "Calcula menos tres más cinco. Empiezas en menos tres. Sumar cinco es avanzar cinco pasos hacia la derecha.",
+          "pista": "Pulsa avanzar cinco veces, contando cada paso.",
+          "logro": "Llegaste a dos. Menos tres más cinco es dos."
+        },
+        {
+          "id": "enteros-2",
+          "intro": "Ahora, cuatro más menos seis. Sumar un número negativo es retroceder hacia la izquierda.",
+          "pista": "Desde cuatro, pulsa retroceder seis veces. Al pasar por el cero sigues contando.",
+          "logro": "Llegaste a menos dos. Cuatro más menos seis es menos dos."
+        },
+        {
+          "id": "enteros-3",
+          "intro": "Último reto: tres menos menos cuatro. Restar un negativo es sumar su opuesto. Piensa hacia dónde te mueves.",
+          "pista": "Restar menos cuatro es lo mismo que sumar cuatro. Avanza cuatro pasos.",
+          "logro": "Llegaste a siete. Quitar una deuda aumenta el saldo: tres menos menos cuatro es siete."
+        }
+      ]
+    },
+    "ecuaciones-un-paso": {
+      "titulo": "Equilibra la balanza",
+      "escenas": [
+        {
+          "id": "ecuaciones-1",
+          "intro": "La balanza muestra x más tres igual a siete. Para dejar la x sola, quita lo mismo de los dos lados, así la balanza sigue equilibrada.",
+          "pista": "Pulsa quitar uno de cada lado hasta que la x quede sola.",
+          "logro": "La x quedó sola frente a cuatro pesas. x vale cuatro, y cuatro más tres es siete."
+        },
+        {
+          "id": "ecuaciones-2",
+          "intro": "Ahora hay tres x iguales que pesan lo mismo que doce. Para saber cuánto pesa una, reparte cada lado en tres grupos.",
+          "pista": "Pulsa repartir. Cada x recibe la misma cantidad de pesas.",
+          "logro": "Doce entre tres es cuatro. x vale cuatro, porque tres por cuatro es doce."
+        },
+        {
+          "id": "ecuaciones-3",
+          "intro": "Un reto de dos pasos: dos x más uno igual a nueve. Primero deja las x solas, y después reparte.",
+          "pista": "Quita la pesa suelta de los dos lados. Luego reparte en dos grupos.",
+          "logro": "Dos x es ocho, así que x vale cuatro. Compruébalo: dos por cuatro más uno es nueve."
+        }
+      ]
     }
   },
   "avisos": {
-    "no-se-puede-juntar": "Todavía no se pueden juntar: las partes tienen tamaños distintos. Pártelas primero."
+    "no-se-puede-juntar": "Todavía no se pueden juntar: las partes tienen tamaños distintos. Pártelas primero.",
+    "balanza-desequilibrada": "Si quitas solo de un lado, la balanza se inclina y la igualdad deja de ser cierta. Quita lo mismo de los dos lados.",
+    "no-se-puede-repartir": "Todavía no puedes repartir: primero deja las x solas en su platillo."
   }
 }

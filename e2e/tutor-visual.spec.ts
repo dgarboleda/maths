@@ -75,7 +75,15 @@ test("tutor visual de multiplicación: voz real, manipulación sin arrastre y si
   expect(backend).toEqual([]);
 });
 
-for (const [lessonId, title] of [["suma-resta-columnas", "Reagrupa las piezas"], ["fracciones-suma-resta", "Junta las reservas"]] as const)
+const OTROS_TUTORES = [
+  ["suma-resta-columnas", "Reagrupa las piezas"],
+  ["fracciones-suma-resta", "Junta las reservas"],
+  ["fracciones-equivalentes", "Mismas reservas, otras partes"],
+  ["enteros-suma-resta", "Desplázate por la recta"],
+  ["ecuaciones-un-paso", "Equilibra la balanza"],
+] as const;
+
+for (const [lessonId, title] of OTROS_TUTORES)
   test(`tutor visual en ${lessonId}: cabe en pantalla y es accesible`, async ({ page }, testInfo) => {
     test.setTimeout(240_000);
     if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
@@ -88,6 +96,8 @@ for (const [lessonId, title] of [["suma-resta-columnas", "Reagrupa las piezas"],
     await expect(tutor).toBeVisible();
     if (lessonId === "suma-resta-columnas")
       for (let i = 0; i < 10; i++) await tutor.getByRole("button", { name: /llevar a la bandeja/ }).first().click();
+    else if (lessonId === "enteros-suma-resta") await tutor.getByRole("button", { name: "Avanzar 1 →" }).click();
+    else if (lessonId === "ecuaciones-un-paso") await tutor.getByRole("button", { name: "Quitar 1 de cada lado" }).click();
     else await tutor.getByRole("button", { name: /Partir en dos \(reserva de arriba\)/ }).click();
     const width = page.viewportSize()!.width;
     for (const control of await tutor.getByRole("button").all()) {
