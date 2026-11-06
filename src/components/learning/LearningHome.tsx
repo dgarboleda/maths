@@ -571,7 +571,7 @@ function LessonCard({
       </div>
       {peru && (
         <p className="mt-2 text-xs text-slate-400">
-          {peru.base ? "Perú · base de primaria (repaso)" : `Perú · ${peru.grade}.° de secundaria (orientativo)`}
+          {peru.base ? "Opcional · repaso de primaria" : `Perú · ${peru.grade}.° de secundaria (orientativo)`}
         </p>
       )}
       <h3 className="mt-4 text-lg font-bold leading-snug text-white">

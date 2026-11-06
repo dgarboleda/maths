@@ -2,7 +2,7 @@ import { CONTENT_VERSION } from "./version";
 import { getLesson, LEARNING_UNITS, LESSONS } from "./catalog";
 import { LearningError } from "./engine";
 import { isAnswerCorrect, MAX_RESPONSE_LENGTH } from "./questions";
-import { PERU_MAP } from "./peru";
+import { isOptionalLesson } from "./peru";
 import type {
   Lesson,
   PlacementAction,
@@ -32,7 +32,8 @@ export function placementQuestion(lesson: Lesson): Question {
 }
 
 const unitOrder = LEARNING_UNITS.map((u) => u.id);
-const lessonsOf = (unitId: string) => LESSONS.filter((l) => l.unitId === unitId);
+// Las clases base opcionales no se evalúan: la ubicación recorre el programa.
+const lessonsOf = (unitId: string) => LESSONS.filter((l) => l.unitId === unitId && !isOptionalLesson(l.id));
 
 /** Siguiente clase a evaluar: avanza dentro de la unidad mientras acierta y
  *  salta a la unidad siguiente en el primer fallo. */
@@ -137,10 +138,7 @@ export function recommendedLesson(
   placement: PlacementResult | null | undefined,
 ): Lesson | undefined {
   const mastered = new Set(placement?.mastered ?? []);
-  // Una base de primaria se recomienda para empezar (o si la ubicación no la
-  // dio por sabida), no a quien ya terminó clases del programa: añadirla al
-  // catálogo no debe hacer retroceder a quien ya avanza.
-  return LESSONS.find(
-    (l) => !completed.has(l.id) && !mastered.has(l.id) && !(PERU_MAP[l.id]?.base && completed.size > 0),
-  );
+  // Las bases de primaria son opcionales: se toman desde el mapa o el plan
+  // familiar, nunca por recomendación automática.
+  return LESSONS.find((l) => !completed.has(l.id) && !mastered.has(l.id) && !isOptionalLesson(l.id));
 }

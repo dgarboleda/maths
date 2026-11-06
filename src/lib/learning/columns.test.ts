@@ -9,6 +9,9 @@ import {
   isAnswerCorrect,
   operationBugs,
   recommendedLesson,
+  isOptionalLesson,
+  placementCurrent,
+  applyPlacementAction,
   type SubtractStrategy,
 } from "./domain";
 
@@ -71,8 +74,12 @@ describe("Operaciones en columnas", () => {
     expect(errorFeedback(q, String(bug.value))).toMatch(/cifra menor de la mayor/);
   });
 
-  test("la base de primaria no hace retroceder a quien ya avanza en el programa", () => {
-    expect(recommendedLesson(new Set(), null)?.id).toBe("suma-resta-columnas");
+  test("las bases de primaria son opcionales: no se recomiendan ni se evalúan en la ubicación", () => {
+    expect(recommendedLesson(new Set(), null)?.id).toBe("enteros-recta");
     expect(recommendedLesson(new Set(["enteros-recta"]), null)?.id).toBe("enteros-suma-resta");
+    expect(isOptionalLesson("suma-resta-columnas")).toBe(true);
+    expect(isOptionalLesson("division-larga")).toBe(true);
+    expect(isOptionalLesson("enteros-recta")).toBe(false);
+    expect(placementCurrent(applyPlacementAction(undefined, { kind: "begin" }, 0))?.lesson.id).toBe("enteros-recta");
   });
 });

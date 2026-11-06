@@ -21,8 +21,9 @@ export const PERU_COMPETENCIES: Record<PeruCompetency, string> = {
 export type PeruGrade = 1 | 2 | 3 | 4 | 5;
 
 export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruGrade; base?: true }> = {
-  // Cálculo escrito de primaria que el programa repasa como base: se ubica
-  // en 1.° como referencia, pero no cuenta para el grado alcanzado.
+  // Cálculo escrito de primaria que el programa repasa como base opcional:
+  // se ubica en 1.° como referencia, pero no cuenta para el grado alcanzado,
+  // no entra en la ubicación ni se recomienda sola (ver `isOptionalLesson`).
   "suma-resta-columnas": { competency: "cantidad", grade: 1, base: true },
   "division-larga": { competency: "cantidad", grade: 1, base: true },
   "enteros-recta": { competency: "cantidad", grade: 1 },
@@ -76,6 +77,11 @@ export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruG
   "volumen-conos-esferas": { competency: "forma", grade: 5 },
   "probabilidad-condicional": { competency: "datos", grade: 5 },
 };
+
+/** Clase base opcional: disponible en el mapa, nunca recomendada ni exigida. */
+export function isOptionalLesson(id: string): boolean {
+  return PERU_MAP[id]?.base === true;
+}
 
 export function peruGradeLabel(grade: PeruGrade): string {
   return `${grade}.° de secundaria`;

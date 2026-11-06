@@ -2,7 +2,6 @@ import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { getLesson, placementQuestion, type Question } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre } from "./utilidades";
-import { escribirColumnas } from "./operaciones";
 
 const familyEmail = new WeakMap<Page, string>();
 async function learner(page: Page) {
@@ -316,13 +315,13 @@ test("la evaluación de ubicación recomienda por dónde empezar y la familia ve
   const childId = await learner(page);
   await page.getByRole("link", { name: "¿Ya sabes algo? Encuentra tu punto de partida" }).click();
   await page.getByRole("button", { name: "Empezar la evaluación" }).click();
-  // La primera clase de números es la base de primaria (sumar y restar en columnas).
-  const first = getLesson("suma-resta-columnas")!;
+  // Las bases de primaria son opcionales: la ubicación empieza por el programa.
+  const first = getLesson("enteros-recta")!;
   const question = placementQuestion(first);
   await expect(page.getByText(question.prompt, { exact: true })).toBeVisible();
-  // La pregunta de ubicación de la clase de columnas se responde en su hoja.
-  expect(question.column?.op).toBe("add");
-  await escribirColumnas(page, String(question.answer));
+  if (question.choices)
+    await page.getByRole("radio", { name: question.choices.find((c) => c.id === question.answer)!.label, exact: true }).check();
+  else await page.getByRole("textbox", { name: /Tu respuesta/ }).fill(String(question.answer));
   await page.getByRole("button", { name: "Responder" }).click();
   // Acertar avanza a la segunda clase de números; "Todavía no lo sé" cierra
   // esa unidad y pasa a la primera clase de cada una de las 6 restantes.
@@ -331,12 +330,12 @@ test("la evaluación de ubicación recomienda por dónde empezar y la familia ve
     await page.getByRole("button", { name: "Todavía no lo sé" }).click();
   }
   await expect(page.getByRole("heading", { name: "Tu punto de partida" })).toBeVisible();
-  await expect(page.getByRole("link", { name: `Empezar por: ${getLesson("division-larga")!.title}` })).toBeVisible();
+  await expect(page.getByRole("link", { name: `Empezar por: ${getLesson("enteros-suma-resta")!.title}` })).toBeVisible();
   await expect(page.getByRole("table", { name: /Currículo Nacional de Perú/ })).toBeVisible();
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   await page.goto(`/jugar/${childId}`);
   await expect(page.getByRole("link", { name: /Tu ubicación: 1 clase sugerida como opcional/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: getLesson("division-larga")!.title, level: 2 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: getLesson("enteros-suma-resta")!.title, level: 2 })).toBeVisible();
 
   // Un error previsto en la práctica aparece en el informe de la familia.
   const lesson = getLesson("perimetro-area")!;

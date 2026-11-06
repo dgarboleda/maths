@@ -19,5 +19,5 @@ test("prioriza la clase elegida después de sus bases y conserva todo el catálo
 test("retoma una clase activa antes de cambiar de prioridad y tolera planes antiguos", () => {
   const active = initialProgress(getLesson("razones")!);
   expect(nextStudyLesson({ razones: { ...active, updatedAt: 123 } }, null, { lessonIds: ["angulos"] }).id).toBe("razones");
-  expect(nextStudyLesson({}, null, { lessonIds: ["retirada"] }).id).toBe("suma-resta-columnas");
+  expect(nextStudyLesson({}, null, { lessonIds: ["retirada"] }).id).toBe("enteros-recta");
 });

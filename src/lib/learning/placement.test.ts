@@ -17,7 +17,11 @@ import {
   recommendedLesson,
   type PlacementState,
   correctResponse,
+  isOptionalLesson,
 } from "./domain";
+
+/** El programa evaluable: el catálogo sin las bases opcionales. */
+const PROGRAM = LESSONS.filter((l) => !isOptionalLesson(l.id));
 
 const NOW = 1_700_000_000_000;
 /** Responde la ubicación: `knows(lessonId)` decide si acierta. */
@@ -58,15 +62,16 @@ describe("Evaluación de ubicación", () => {
     expect(state.stage).toBe("done");
     expect(state.items).toHaveLength(LEARNING_UNITS.length);
     expect(state.result!.mastered).toEqual([]);
+    // Las bases opcionales no se evalúan: cada unidad empieza por su primera clase del programa.
     for (const unit of LEARNING_UNITS)
-      expect(state.result!.start[unit.id]).toBe(LESSONS.find((l) => l.unitId === unit.id)!.id);
-    expect(recommendedLesson(new Set(), state.result)).toBe(LESSONS[0]);
+      expect(state.result!.start[unit.id]).toBe(PROGRAM.find((l) => l.unitId === unit.id)!.id);
+    expect(recommendedLesson(new Set(), state.result)).toBe(PROGRAM[0]);
   });
 
   test("quien acierta todo responde dos preguntas por clase de fracciones", () => {
     const state = run(() => true);
-    expect(state.items).toHaveLength(LESSONS.length + LESSONS.filter((l) => l.unitId === "fracciones").length);
-    expect(state.result!.mastered).toHaveLength(LESSONS.length);
+    expect(state.items).toHaveLength(PROGRAM.length + PROGRAM.filter((l) => l.unitId === "fracciones").length);
+    expect(state.result!.mastered).toHaveLength(PROGRAM.length);
     expect(Object.values(state.result!.start).every((s) => s === null)).toBe(true);
     expect(recommendedLesson(new Set(), state.result)).toBeUndefined();
   });
