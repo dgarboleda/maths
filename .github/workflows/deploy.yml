@@ -105,6 +105,12 @@ jobs:
           echo "$status"
           echo "$status" | grep -q "\"release\":\"$MATHS_RELEASE\"" || { echo "::error::Functions no anuncia $MATHS_RELEASE"; exit 1; }
 
+      # El Worker nuevo necesita las Functions nuevas: si solo se publica el
+      # frontend, se comprueba antes que producción ya tenga este functions/.
+      - name: Comprobar que Functions está al día
+        if: inputs.parte != 'firebase'
+        run: npm run check:functions
+
       - name: Desplegar el Worker de Cloudflare
         if: inputs.parte != 'firebase'
         env:

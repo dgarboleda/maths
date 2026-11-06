@@ -28,7 +28,8 @@
     "functions:build": "npm --prefix functions run build",
     "verify:deployment": "node scripts/verify-deployment.mjs",
     "deploy:all": "npm run deploy",
-    "deploy:frontend": "npm run build && opennextjs-cloudflare deploy",
+    "deploy:frontend": "npm run check:functions && npm run build && opennextjs-cloudflare deploy",
+    "check:functions": "node scripts/check-functions-release.mjs",
     "analisis:items": "node scripts/analisis-items.mjs",
     "indice:lecciones": "node scripts/indice-lecciones.mjs"
   },
