@@ -32,6 +32,7 @@ import {
   useSubtractStrategy,
 } from "./ColumnOperation";
 import { FactorDemo, FactorSheet } from "./FactorOperation";
+import { NumericKeypadArea } from "./NumericKeypad";
 import { RuffiniDemo, RuffiniSheet } from "./RuffiniOperation";
 import { DivisionDemo, DivisionSheet, firstWrongQuotientDigit, LayoutPicker, useDivisionLayout } from "./DivisionOperation";
 
@@ -113,6 +114,7 @@ export function OperationWorkspace({
   return (
     <div className="space-y-3">
       {!(spec.op === "divide" && mode === "open") && <StylePicker spec={spec} disabled={disabled} />}
+      <NumericKeypadArea sign={isRuffiniSpec(spec)}>
       {isRuffiniSpec(spec) ? (
         <RuffiniSheet
           key={`${questionId}-${mode === "guided" ? "g" : "f"}`}
@@ -166,6 +168,7 @@ export function OperationWorkspace({
           disabled={disabled}
         />
       )}
+      </NumericKeypadArea>
     </div>
   );
 }

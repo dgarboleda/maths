@@ -1,5 +1,6 @@
 "use client";
 
+import { useSheetInputMode } from "./NumericKeypad";
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
@@ -7,7 +8,6 @@ import {
   encodeRuffiniWork,
   polynomialText,
   ruffiniTrace,
-  ruffiniWorkFeedback,
   sg,
   termName,
   divisorText,
@@ -155,6 +155,7 @@ export function RuffiniSheet({
   failedResponse?: string | null;
   disabled?: boolean;
 }) {
+  const keypadMode = useSheetInputMode("text");
   const n = spec.coefficients.length;
   const keys = useMemo(() => order(n), [n]);
   const [values, setValues] = useState<Record<string, string>>(() => restore(spec, response));
@@ -207,7 +208,7 @@ export function RuffiniSheet({
             <input
               aria-label={labelOf(spec, key)}
               aria-invalid={miss === key || wrongKey === key}
-              inputMode="text"
+              inputMode={keypadMode}
               autoComplete="off"
               value={values[key] ?? ""}
               disabled={disabled}
@@ -239,7 +240,7 @@ export function RuffiniSheet({
             </span>
           )
         ) : failed?.firstError ? (
-          <span className="block rounded-xl bg-amber-950/40 p-3 text-amber-100">{ruffiniWorkFeedback(spec, failed)}</span>
+          <span className="block rounded-xl bg-amber-950/40 p-3 text-amber-100">Revisa la casilla marcada: es la primera que no coincide.</span>
         ) : (
           <span className="text-xs text-slate-400">
             Completa la tabla: la esquina, los coeficientes (0 si falta un término), cada producto y cada suma. La casilla

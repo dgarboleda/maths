@@ -37,7 +37,8 @@ describe("Tabla de factores primos", () => {
     const { container } = render(
       <FactorSheet spec={{ op: "mcm", values: [12, 18] }} mode="free" response={failed} failedResponse={failed} onChange={onChange} />,
     );
-    expect(screen.getByText(/Para el MCM multiplica todos los primos/)).toBeInTheDocument();
+    // El motivo lo da la respuesta de la actividad: la hoja no lo repite.
+    expect(screen.queryByText(/Para el MCM multiplica todos los primos/)).toBeNull();
     type("MCM de 12, 18", "36");
     expect(onChange).toHaveBeenLastCalledWith("T36;2:6.9|2:3.9|3:1.3|3:1.1");
     expect(await axe(container)).toHaveNoViolations();
@@ -47,5 +48,25 @@ describe("Tabla de factores primos", () => {
     const { container } = render(<FactorDemo spec={{ op: "mcm", values: [12, 18] }} initialStep={Infinity} />);
     expect(screen.getAllByLabelText("divide a todos")).toHaveLength(2);
     expect(container).toHaveTextContent(/MCM = 2 × 2 × 3 × 3 = 36 · MCD = 2 × 3 = 6/);
+  });
+
+  test("libre: al escribir el primo de la última línea aparece otra para los cocientes", () => {
+    // MCD(18; 27): 18, 27 | 2 → 9, 27 | 3 → 3, 9 | 3 → aquí faltaba la línea siguiente.
+    render(<FactorSheet spec={{ op: "mcd", values: [18, 27] }} mode="free" response="" onChange={() => {}} />);
+    type("Primo de la fila 1", "2");
+    type("Fila 2: número 1", "9");
+    type("Fila 2: número 2", "27");
+    type("Primo de la fila 2", "3");
+    type("Fila 3: número 1", "3");
+    type("Fila 3: número 2", "9");
+    expect(screen.queryByLabelText("Fila 4: número 1")).toBeNull();
+    type("Primo de la fila 3", "3");
+    expect(screen.getByLabelText("Fila 4: número 1")).toBeInTheDocument();
+  });
+
+  test("libre: tras un fallo se señala la fila sin repetir el motivo", () => {
+    const failed = "T6;2:6.18|2:3.9|3:1.3|3:1.1";
+    render(<FactorSheet spec={{ op: "mcd", values: [12, 18] }} mode="free" response={failed} failedResponse={failed} onChange={() => {}} />);
+    expect(screen.getByText("Revisa la fila 1: es la primera que no coincide.")).toBeInTheDocument();
   });
 });

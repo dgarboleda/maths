@@ -1,12 +1,12 @@
 "use client";
 
+import { useSheetInputMode } from "./NumericKeypad";
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   checkFactorWork,
   encodeFactorWork,
   factorTrace,
-  factorWorkFeedback,
   isPrime,
   type FactorSpec,
   type FactorTrace,
@@ -132,6 +132,7 @@ export function FactorSheet({
   failedResponse?: string | null;
   disabled?: boolean;
 }) {
+  const keypadMode = useSheetInputMode("numeric");
   const trace = useMemo(() => factorTrace(spec), [spec]);
   const [state, setState] = useState(() => restore(spec, response));
   const [miss, setMiss] = useState<string | null>(null);
@@ -196,6 +197,10 @@ export function FactorSheet({
         setMiss(value.length >= want.length && value !== want ? `${line}:${column}` : null);
       }
     }
+    // Modo libre: al escribir el primo de la última línea aparece debajo
+    // otra para los cocientes (sin tener que pulsar «Añadir fila»).
+    if (mode === "free" && column === "p" && value && line === lines.length - 1 && lines.length < 16)
+      lines.push({ values: spec.values.map(() => ""), prime: "" });
     update({ ...state, lines });
   };
   const setAnswer = (raw: string) => {
@@ -209,7 +214,8 @@ export function FactorSheet({
   };
 
   const failed = mode === "free" && failedResponse !== null && failedResponse === response ? checkFactorWork(spec, failedResponse) : null;
-  const failedText = failed ? factorWorkFeedback(spec, failed) : null;
+  // El motivo ya lo da la respuesta de la actividad: aquí solo se señala la fila.
+  const failedRow = failed?.problem && failed.problem.kind !== "incompleta" ? failed.problem.row : null;
 
   const visibleLines = mode === "guided" ? Math.min(state.lines.length, (active?.line ?? state.lines.length - 1) + 1) : state.lines.length;
   return (
@@ -229,7 +235,7 @@ export function FactorSheet({
             <input
               aria-label={c === "p" ? `Primo de la fila ${line + 1}` : `Fila ${line + 1}: número ${c + 1}`}
               aria-invalid={miss === key}
-              inputMode="numeric"
+              inputMode={keypadMode}
               autoComplete="off"
               value={value}
               disabled={disabled}
@@ -257,7 +263,7 @@ export function FactorSheet({
           <input
             aria-label={`${label} de ${spec.values.join(", ")}`}
             aria-invalid={miss === "answer"}
-            inputMode="numeric"
+            inputMode={keypadMode}
             autoComplete="off"
             value={state.answer}
             disabled={disabled || done}
@@ -289,8 +295,8 @@ export function FactorSheet({
           ) : (
             <span className="block rounded-xl bg-cyan-950/40 p-3 text-cyan-100">Divide entre el primo los que se puedan y baja sin cambiar los demás.</span>
           )
-        ) : failedText ? (
-          <span className="block rounded-xl bg-amber-950/40 p-3 text-amber-100">{failedText}</span>
+        ) : failedRow !== null ? (
+          <span className="block rounded-xl bg-amber-950/40 p-3 text-amber-100">Revisa la fila {failedRow}: es la primera que no coincide.</span>
         ) : (
           <span className="text-xs text-slate-400">
             A la derecha de la raya, un primo por fila; debajo, lo que queda de cada número. Sigue hasta que todos sean 1.

@@ -6,6 +6,7 @@ import { validColumnSpec, validDivisionSpec, type ArithmeticSpec, type DivisionS
 import { secondaryButton } from "./LearningShell";
 import { ColumnSheet, OptionPicker, useSubtractStrategy } from "./ColumnOperation";
 import { DivisionSheet } from "./DivisionOperation";
+import { NumericKeypadArea } from "./NumericKeypad";
 
 /* Borrador de cálculo: el papel de al lado. El alumno escribe una suma, una
  * resta o una división y la resuelve en la hoja de columnas o en la galera.
@@ -118,11 +119,13 @@ export function Borrador({
           {problem && <p role="alert" className="text-sm text-amber-200">{problem}</p>}
           {spec && (
             <>
-              {spec.op === "divide" ? (
-                <DivisionSheet key={`${spec.a}/${spec.b}`} spec={spec} layout="completa" mode="open" response="" onChange={setWork} />
-              ) : (
-                <ColumnSheet key={`${spec.op}${spec.a}-${spec.b}-${strategy}`} spec={spec} strategy={strategy} mode="free" response="" onChange={setWork} />
-              )}
+              <NumericKeypadArea>
+                {spec.op === "divide" ? (
+                  <DivisionSheet key={`${spec.a}/${spec.b}`} spec={spec} layout="completa" mode="open" response="" onChange={setWork} />
+                ) : (
+                  <ColumnSheet key={`${spec.op}${spec.a}-${spec.b}-${strategy}`} spec={spec} strategy={strategy} mode="free" response="" onChange={setWork} />
+                )}
+              </NumericKeypadArea>
               {onUse && targets.length > 0 && (
                 <div className="flex flex-wrap items-end gap-2">
                   {targets.length > 1 && (

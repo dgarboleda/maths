@@ -1,5 +1,6 @@
 "use client";
 
+import { useSheetInputMode } from "./NumericKeypad";
 import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
@@ -91,6 +92,7 @@ function Galera({
   disabled?: boolean;
   complete?: boolean;
 }) {
+  const keypadMode = useSheetInputMode("numeric");
   const digits = trace.dividendDigits;
   const n = digits.length;
   const cell = "flex h-10 w-7 items-center justify-center text-xl font-bold tabular-nums sm:h-11 sm:w-10 sm:text-2xl";
@@ -118,7 +120,7 @@ function Galera({
         }}
         aria-label={cellLabel(f, i)}
         aria-invalid={c.state === "wrong"}
-        inputMode="numeric"
+        inputMode={keypadMode}
         autoComplete="off"
         maxLength={1}
         value={c.value}
@@ -135,7 +137,7 @@ function Galera({
   const quotient = fields.filter((f) => f.kind === "q");
   return (
     // Enfocable: si no cabe (pantallas muy estrechas), se recorre con el teclado.
-    <div className="overflow-x-auto" tabIndex={0} role="group" aria-label={`División ${trace.spec.a} entre ${trace.spec.b}`}>
+    <div data-arrow-nav="" className="overflow-x-auto" tabIndex={0} role="group" aria-label={`División ${trace.spec.a} entre ${trace.spec.b}`}>
       <div className="mx-auto flex w-max items-start">
         <div className="grid gap-y-0.5" style={{ gridTemplateColumns: `repeat(${n}, auto)` }}>
           {digits.map((d, j) => (
@@ -445,6 +447,7 @@ function OpenDivisionSheet({
   failedResponse?: string | null;
   disabled?: boolean;
 }) {
+  const keypadMode = useSheetInputMode("numeric");
   const trace = useMemo(() => divisionTrace(spec), [spec]);
   const n = trace.dividendDigits.length;
   const qCells = Math.max(1, n - String(spec.b).length + 1);
@@ -491,7 +494,7 @@ function OpenDivisionSheet({
         refs.current.set(key, el);
       }}
       aria-label={label}
-      inputMode="numeric"
+      inputMode={keypadMode}
       autoComplete="off"
       maxLength={1}
       value={value}
