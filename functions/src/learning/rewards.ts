@@ -36,7 +36,7 @@ const LEGACY_LESSON_STARS = 5;
 export function lessonRewarded(progress: LearningProgress | undefined): LessonRewards {
   if (!progress) return {};
   if (progress.rewarded) return progress.rewarded;
-  return progress.completedAt ? { lesson: true, check: true, retained: true } : {};
+  return progress.completedAt ? { lesson: true, check: true, retained: true, legacy: true } : {};
 }
 
 /**
@@ -65,7 +65,8 @@ export function lessonStars(previous: LearningProgress | undefined, next: Learni
 /** Estrellas ganadas en una clase (para la interfaz). */
 export function lessonStarsEarned(progress: LearningProgress | undefined): number {
   if (!progress) return 0;
-  if (!progress.rewarded) return progress.completedAt ? LEGACY_LESSON_STARS : 0;
-  const r = progress.rewarded;
+  const r = lessonRewarded(progress);
+  // Lo que cobró de una vez antes del reparto, aunque ya tenga las marcas.
+  if (r.legacy) return LEGACY_LESSON_STARS;
   return (r.lesson ? STAR_REWARDS.lesson : 0) + (r.check ? STAR_REWARDS.lessonCheck : 0) + (r.retained ? STAR_REWARDS.lessonRetained : 0);
 }

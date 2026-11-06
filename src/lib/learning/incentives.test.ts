@@ -79,7 +79,10 @@ describe("Estrellas: terminar, demostrar y recordar", () => {
   test("lo ganado antes del cambio se conserva y no se paga otra vez", () => {
     const legacy = { ...base, completedAt: 1, checkPassedAt: 1 };
     expect(lessonStarsEarned(legacy)).toBe(5);
-    expect(lessonStars(legacy, { ...legacy, retainedAt: NOW }).stars).toBe(0);
+    const after = lessonStars(legacy, { ...legacy, retainedAt: NOW });
+    expect(after.stars).toBe(0);
+    // Tras guardar las marcas, la clase sigue mostrando lo que cobró (5), no 7.
+    expect(lessonStarsEarned({ ...legacy, retainedAt: NOW, rewarded: after.rewarded })).toBe(5);
     // Un avance anterior sin terminar sí cobra según el reparto nuevo.
     expect(lessonStars({ ...base, checkPassedAt: 1 }, { ...base, checkPassedAt: 1, completedAt: 2 }).stars).toBe(5);
   });

@@ -163,6 +163,9 @@ export interface LessonRewards {
   lesson?: boolean;
   check?: boolean;
   retained?: boolean;
+  /** Terminada antes del reparto por partes: cobró 5 estrellas de una vez y
+   *  las marcas solo evitan pagarla otra vez. */
+  legacy?: boolean;
 }
 export interface CheckResult {
   correct: number;
