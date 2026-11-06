@@ -6,8 +6,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ArrowRight, BookOpen, Lightbulb } from "lucide-react";
 import {
-  columnHints,
-  columnSolution,
   currentEvidence,
   currentQuestion,
   errorFeedback,
@@ -45,14 +43,7 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import { LearningVisual } from "./LearningVisual";
-import {
-  ColumnDemo,
-  ColumnExample,
-  ColumnSheet,
-  firstWrongColumn,
-  StrategyPicker,
-  useSubtractStrategy,
-} from "./ColumnOperation";
+import { OperationDemo, OperationExample, OperationWorkspace, useOperationHelp } from "./Operation";
 import {
   lessonProblem,
   pickPracticeGame,
@@ -248,7 +239,7 @@ export function LessonPlayer({
                     <MathText text={lesson.examples[progress.index].prompt} />
                   </h3>
                   {lesson.examples[progress.index].column ? (
-                    <ColumnExample key={progress.index} spec={lesson.examples[progress.index].column!} />
+                    <OperationExample key={progress.index} spec={lesson.examples[progress.index].column!} />
                   ) : (
                   <ol className="space-y-3">
                     {lesson.examples[progress.index].steps.map(
@@ -419,12 +410,8 @@ export function QuestionActivity({
   // Vía accesible: quien no pueda o no quiera jugar responde por escrito.
   const [writing, setWriting] = useState(false);
   const helpOpen = useLearningHelpOpen();
-  const [strategy, setStrategy] = useSubtractStrategy();
   const column = question.column;
-  const columnHelp = useMemo(
-    () => (column ? { hints: columnHints(column, strategy), solution: columnSolution(column, strategy) } : null),
-    [column, strategy],
-  );
+  const columnHelp = useOperationHelp(column);
   const hints = columnHelp?.hints ?? question.hints;
   const solution = columnHelp?.solution ?? question.solution;
   const problem = useMemo(() => lessonProblem(question), [question]);
@@ -488,30 +475,20 @@ export function QuestionActivity({
             ))}
           </div>
         ) : column ? (
-          <div className="space-y-3">
-            {column.op === "subtract" && (
-              <StrategyPicker strategy={strategy} onChange={setStrategy} disabled={disabled} />
-            )}
-            <ColumnSheet
-              key={`${question.id}-${strategy}`}
-              spec={column}
-              strategy={strategy}
-              mode={progress.stage === "guided" ? "guided" : "free"}
-              response={response}
-              onChange={(value) => {
-                setResponse(value);
-                setFormatError(null);
-              }}
-              onComplete={(value) => void run({ kind: "answer", questionId: question.id, response: value })}
-              hintLevel={evidence?.hintsUsed ?? 0}
-              wrongColumn={
-                !assessment && evidence && !evidence.correct && evidence.attempts > 0 && evidence.response === response
-                  ? firstWrongColumn(response, Number(question.answer))
-                  : null
-              }
-              disabled={disabled || locked}
-            />
-          </div>
+          <OperationWorkspace
+            questionId={question.id}
+            spec={column}
+            mode={progress.stage === "guided" ? "guided" : "free"}
+            response={response}
+            onChange={(value) => {
+              setResponse(value);
+              setFormatError(null);
+            }}
+            onComplete={(value) => void run({ kind: "answer", questionId: question.id, response: value })}
+            hintLevel={evidence?.hintsUsed ?? 0}
+            failedResponse={!assessment && evidence && !evidence.correct && evidence.attempts > 0 ? (evidence.response ?? null) : null}
+            disabled={disabled || locked}
+          />
         ) : (
           <div>
             <label
@@ -709,7 +686,7 @@ export function QuestionActivity({
           <h3 className="font-bold text-cyan-200">El razonamiento</h3>
           {column && (
             <div className="mt-3">
-              <ColumnDemo key={strategy} spec={column} strategy={strategy} initialStep={Infinity} />
+              <OperationDemo spec={column} initialStep={Infinity} />
             </div>
           )}
           <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-slate-200">

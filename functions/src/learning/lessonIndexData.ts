@@ -13,6 +13,16 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     ]
   },
   {
+    "id": "division-larga",
+    "unitId": "numeros",
+    "title": "La división larga",
+    "objective": "Dividir números de varias cifras entre divisores de una y dos cifras con la división larga, sin olvidar los ceros del cociente y comprobando con el resto.",
+    "prerequisites": [],
+    "legacyModuleIds": [
+      "aritmetica-division-larga"
+    ]
+  },
+  {
     "id": "enteros-recta",
     "unitId": "numeros",
     "title": "Números enteros en la recta",

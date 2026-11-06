@@ -1,12 +1,14 @@
 import type { Example, Intent, Question } from "./types";
+import { columnTrace } from "./algorithms/columns";
+import { divisionTrace } from "./algorithms/division";
 import {
-  columnBugs,
-  columnExpression,
-  columnHints,
-  columnSolution,
-  columnTrace,
+  operationBugs,
+  operationExpression,
+  operationHints,
+  operationResult,
+  operationSolution,
   type ColumnSpec,
-} from "./algorithms/columns";
+} from "./algorithms/operations";
 
 export function numeric(
   id: string,
@@ -50,18 +52,21 @@ export function columnar(
     errors?: Question["errors"];
   } = {},
 ): Question {
-  const trace = columnTrace(spec);
+  const result = operationResult(spec);
   const errors = [
-    ...columnBugs(spec).map(({ value, feedback }) => ({ value, feedback })),
+    ...operationBugs(spec).map(({ value, feedback }) => ({ value, feedback })),
     ...(options.errors ?? []),
-  ].filter((e, i, all) => e.value !== trace.result && all.findIndex((o) => o.value === e.value) === i);
+  ].filter((e, i, all) => e.value !== result && all.findIndex((o) => o.value === e.value) === i);
   return {
     ...numeric(
       id,
-      options.prompt ?? `Calcula en columnas: ${columnExpression(spec)}.`,
-      trace.result,
-      columnSolution(spec),
-      columnHints(spec),
+      options.prompt ??
+        (spec.op === "divide"
+          ? `Calcula el cociente de ${operationExpression(spec)} con la división larga.`
+          : `Calcula en columnas: ${operationExpression(spec)}.`),
+      result,
+      operationSolution(spec),
+      operationHints(spec),
       {
         intent: options.intent ?? "procedure",
         ...(options.unit ? { unit: options.unit } : {}),
@@ -72,14 +77,20 @@ export function columnar(
   };
 }
 export function columnExample(spec: ColumnSpec, prompt?: string): Example {
-  const trace = columnTrace(spec);
+  const steps =
+    spec.op === "divide"
+      ? divisionTrace(spec).steps.map((step) => ({
+          math: `${step.part} ÷ ${spec.b} → ${step.digit}${step.down !== null ? `, bajas el ${step.down}` : ""}`,
+          why: step.why,
+        }))
+      : columnTrace(spec).steps.map((step) => ({
+          math: `${step.workTop} ${spec.op === "add" ? "+" : "−"} ${step.workBottom} → escribes ${step.digit}`,
+          why: step.why,
+        }));
   return {
-    prompt: prompt ?? `Calcula ${columnExpression(spec)} en columnas.`,
-    steps: trace.steps.map((step) => ({
-      math: `${step.workTop} ${spec.op === "add" ? "+" : "−"} ${step.workBottom} → escribes ${step.digit}`,
-      why: step.why,
-    })),
-    conclusion: columnSolution(spec).at(-1)!,
+    prompt: prompt ?? `Calcula ${operationExpression(spec)}.`,
+    steps,
+    conclusion: operationSolution(spec).at(-1)!,
     column: spec,
   };
 }

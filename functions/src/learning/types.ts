@@ -1,5 +1,5 @@
 /** Dominio educativo compartido por Functions y Next. Sin Firebase ni React. */
-import type { ColumnSpec } from "./algorithms/columns";
+import type { ColumnSpec } from "./algorithms/operations";
 export type Stage =
   | "diagnostic"
   | "class"
@@ -97,7 +97,8 @@ export type Visual =
   | "binomial-square"
   | "distributive"
   | "expression"
-  | "columns";
+  | "columns"
+  | "long-division";
 export type UnitId =
   | "numeros"
   | "fracciones"

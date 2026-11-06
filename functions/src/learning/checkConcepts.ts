@@ -9,6 +9,17 @@ import type { Question } from "./types";
  * Se reúnen aquí para revisarlas juntas.
  */
 export const CHECK_CONCEPTS: Record<string, Question> = {
+  "division-larga": c(
+    "q0",
+    "Sin hacer la división, ¿cuántas cifras tiene el cociente de 4 235 ÷ 7?",
+    [
+      ["4, una por cada cifra del dividendo", "La primera cifra (4) es menor que 7: no da una cifra del cociente."],
+      "3, porque 7 no cabe en 4 y se empieza con 42; luego se bajan 3 y 5",
+      ["2, porque el divisor tiene una cifra", "El número de cifras depende de cuántos pasos hay: 42, luego el 3 y luego el 5."],
+    ],
+    1,
+    "Cada paso da una cifra del cociente: el primero usa 42 y después se bajan dos cifras más, así que son tres (4 235 ÷ 7 = 605).",
+  ),
   "suma-resta-columnas": c(
     "q0",
     "Para quitarle 8 unidades a 305 pidiendo prestado, ¿cómo se reescribe 305?",

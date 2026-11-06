@@ -18,7 +18,7 @@ export const SUBTRACT_STRATEGIES: readonly { id: SubtractStrategy; label: string
   { id: "compensacion", label: "Compensar" },
 ];
 
-export interface ColumnSpec {
+export interface ArithmeticSpec {
   op: ColumnOp;
   /** Naturales; en la resta, a ≥ b. */
   a: number;
@@ -45,7 +45,7 @@ export interface ColumnStep {
 }
 
 export interface ColumnTrace {
-  spec: ColumnSpec;
+  spec: ArithmeticSpec;
   strategy: SubtractStrategy;
   /** Número de columnas del resultado (incluye la llevada final). */
   width: number;
@@ -86,7 +86,7 @@ export function digitsOf(value: number, width = 0): number[] {
 }
 const fromDigits = (digits: number[]) => digits.reduceRight((acc, d) => acc * 10 + d, 0);
 
-export function validColumnSpec(spec: ColumnSpec): boolean {
+export function validColumnSpec(spec: ArithmeticSpec): boolean {
   return (
     Number.isSafeInteger(spec.a) &&
     Number.isSafeInteger(spec.b) &&
@@ -98,7 +98,7 @@ export function validColumnSpec(spec: ColumnSpec): boolean {
   );
 }
 
-export function columnTrace(spec: ColumnSpec, strategy: SubtractStrategy = "prestamo"): ColumnTrace {
+export function columnTrace(spec: ArithmeticSpec, strategy: SubtractStrategy = "prestamo"): ColumnTrace {
   if (!validColumnSpec(spec)) throw new Error(`Operación en columnas no válida: ${JSON.stringify(spec)}`);
   const operandWidth = Math.max(digitsOf(spec.a).length, digitsOf(spec.b).length);
   const topDigits = digitsOf(spec.a, operandWidth);
@@ -194,12 +194,12 @@ export function columnTrace(spec: ColumnSpec, strategy: SubtractStrategy = "pres
 const symbol = (op: ColumnOp) => (op === "add" ? "+" : "−");
 /** Miles separados con espacio fijo, como en el resto del catálogo. */
 export const fmt = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
-export function columnExpression(spec: ColumnSpec): string {
+export function columnExpression(spec: ArithmeticSpec): string {
   return `${fmt(spec.a)} ${symbol(spec.op)} ${fmt(spec.b)}`;
 }
 
 /** Desarrollo completo para «Ver el desarrollo» y la solución. */
-export function columnSolution(spec: ColumnSpec, strategy: SubtractStrategy = "prestamo"): string[] {
+export function columnSolution(spec: ArithmeticSpec, strategy: SubtractStrategy = "prestamo"): string[] {
   const trace = columnTrace(spec, strategy);
   return [
     `Escribe ${columnExpression(spec)} en columnas: unidades bajo unidades, decenas bajo decenas, y empieza por la derecha.`,
@@ -211,7 +211,7 @@ export function columnSolution(spec: ColumnSpec, strategy: SubtractStrategy = "p
 }
 
 /** Pistas de tres niveles: idea → primera columna → todo menos la última. */
-export function columnHints(spec: ColumnSpec, strategy: SubtractStrategy = "prestamo"): [string, string, string] {
+export function columnHints(spec: ArithmeticSpec, strategy: SubtractStrategy = "prestamo"): [string, string, string] {
   const trace = columnTrace(spec, strategy);
   const first = trace.steps[0];
   const lastShown = trace.steps.slice(0, Math.max(1, trace.width - 1));
@@ -241,7 +241,7 @@ export interface ColumnBug {
  * feedback que nombra la columna donde aparece por primera vez. Solo los que
  * dan un resultado distinto del correcto y entre sí.
  */
-export function columnBugs(spec: ColumnSpec): ColumnBug[] {
+export function columnBugs(spec: ArithmeticSpec): ColumnBug[] {
   const trace = columnTrace(spec);
   const n = trace.topDigits.length;
   const top = trace.topDigits, bottom = trace.bottomDigits;

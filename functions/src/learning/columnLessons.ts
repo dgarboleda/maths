@@ -1,5 +1,6 @@
 import { defineLesson } from "./defineLesson";
 import { columnBugs, columnTrace, fmt, placeName } from "./algorithms/columns";
+import { divisionBugs, divisionTrace } from "./algorithms/division";
 import { choice as c, columnExample, columnar, numeric as n } from "./questions";
 import type { Lesson } from "./types";
 
@@ -226,6 +227,234 @@ export const COLUMN_LESSONS: Lesson[] = [
       "Restar la cifra menor de la mayor en lugar de reagrupar (325 − 148 = 223).",
       "Al pedir prestado a un 0, dejarlo en 10 en lugar de 9.",
       "Sumar 10 arriba y no compensar en la columna siguiente.",
+    ],
+  }),
+  defineLesson({
+    id: "division-larga",
+    unitId: "numeros",
+    title: "La división larga",
+    objective:
+      "Dividir números de varias cifras entre divisores de una y dos cifras con la división larga, sin olvidar los ceros del cociente y comprobando con el resto.",
+    purpose:
+      "La planta reparte su producción en cajas, camiones y turnos iguales. Para saber cuánto toca a cada uno y cuánto sobra hay que dividir números grandes con un procedimiento seguro.",
+    prerequisites: [],
+    legacyModuleIds: ["aritmetica-division-larga"],
+    visual: "long-division",
+    vocabulary: [
+      { term: "Dividendo y divisor", meaning: "En 756 ÷ 3, el dividendo es 756 (lo que se reparte) y el divisor es 3 (en cuántas partes)." },
+      { term: "Cociente", meaning: "Cuánto le toca a cada parte: se escribe debajo del divisor, una cifra por cada paso." },
+      { term: "Resto", meaning: "Lo que sobra al final. Siempre es menor que el divisor." },
+      { term: "Bajar una cifra", meaning: "Escribir junto al resto la cifra siguiente del dividendo para formar el próximo número que se divide." },
+    ],
+    sections: [
+      {
+        title: "Se reparte de izquierda a derecha",
+        paragraphs: [
+          "En la suma se empieza por las unidades; en la división, por las cifras más altas. Primero se reparten las centenas, lo que sobra se cambia por decenas y se reparte con las decenas, y así hasta las unidades.",
+          "El primer número que se divide es el más pequeño del principio del dividendo en el que cabe el divisor: en 1 385 ÷ 12, el 1 no alcanza y se empieza con 13.",
+        ],
+        formula: "756 ÷ 3 → 7 centenas, luego 15 decenas, luego 6 unidades",
+      },
+      {
+        title: "Cabe, multiplica, resta y baja",
+        paragraphs: [
+          "En cada paso: cuántas veces cabe el divisor sin pasarse (esa es la cifra del cociente), multiplicas, restas y bajas la cifra siguiente junto a lo que sobró.",
+          "Puedes escribir cada producto y restarlo debajo, o restar de memoria y escribir solo lo que sobra. Las dos formas son correctas y dan el mismo cociente.",
+        ],
+        formula: "7 ÷ 3 → 2;  2 × 3 = 6;  7 − 6 = 1;  bajas el 5 → 15",
+      },
+      {
+        title: "El cero del cociente y la comprobación",
+        paragraphs: [
+          "Si al bajar una cifra el número es menor que el divisor, cabe 0 veces: se escribe 0 en el cociente y se baja la siguiente. En 612 ÷ 6 = 102, sin ese 0 saldría 12, que es diez veces menor.",
+          "Al final, el resto siempre es menor que el divisor. Se comprueba multiplicando: cociente × divisor + resto = dividendo.",
+        ],
+        formula: "dividendo = divisor × cociente + resto,  con resto < divisor",
+      },
+    ],
+    examples: [
+      columnExample({ op: "divide", a: 756, b: 3 }, "Calcula 756 ÷ 3 con la división larga."),
+      columnExample({ op: "divide", a: 612, b: 6 }, "Calcula 612 ÷ 6: atención al cero del cociente."),
+      columnExample({ op: "divide", a: 1385, b: 12 }, "Calcula 1 385 ÷ 12: el divisor tiene dos cifras."),
+    ],
+    diagnostic: [
+      n(
+        "d-1",
+        "¿Cuánto es 7 × 8?",
+        56,
+        ["7 × 8 son 7 grupos de 8, así que 7 × 8 = 56.", "Comprobación: 56 ÷ 8 = 7."],
+        ["Piensa en 7 grupos de 8.", "7 × 8 = 7 × 10 − 7 × 2.", "70 − 14 = 56."],
+      ),
+      n(
+        "d-2",
+        "¿Cuántas veces cabe 6 en 45 sin pasarse?",
+        7,
+        ["6 × 7 = 42, que no pasa de 45; 6 × 8 = 48 ya se pasa.", "Cabe 7 veces y sobran 45 − 42 = 3."],
+        ["Prueba con la tabla del 6.", "6 × 7 = 42 y 6 × 8 = 48.", "Elige el mayor que no pase de 45."],
+      ),
+      n(
+        "d-3",
+        "¿Cuánto es 84 ÷ 4?",
+        21,
+        ["8 decenas entre 4 son 2 decenas.", "4 unidades entre 4 es 1 unidad: 84 ÷ 4 = 21."],
+        ["Reparte primero las decenas.", "8 ÷ 4 = 2 decenas.", "Luego 4 ÷ 4 = 1."],
+      ),
+    ],
+    questions(v) {
+      const concept = v % 3;
+      const [ca, cb] = [[846, 3], [624, 6], [935, 4], [728, 7], [1224, 4], [918, 9]][v];
+      const zeroStep = divisionTrace({ op: "divide", a: ca, b: cb }).steps.find((s) => s.index > 0 && s.digit === 0);
+      const [wb, wr] = [[7, 9], [8, 11], [6, 8], [9, 12], [5, 7], [4, 6]][v];
+      const [da, db] = [[756, 3], [936, 4], [1470, 5], [2184, 6], [875, 7], [3312, 8]][v];
+      const [sa, sb] = [[745, 3], [856, 4], [917, 6], [538, 5], [763, 4], [689, 7]][v];
+      const [za, zb] = [[612, 6], [1545, 5], [2436, 12], [4818, 6], [7245, 7], [5280, 24]][v];
+      const [ea, eb] = [[824, 4], [945, 9], [1236, 6], [721, 7], [816, 8], [2754, 9]][v];
+      const [ta, tb] = [[1428, 4], [2345, 5], [3192, 7], [1872, 8], [4956, 6], [2664, 9]][v];
+      const [ba, bb] = [[250, 12], [500, 24], [347, 8], [1000, 36], [615, 25], [782, 15]][v];
+
+      // q2: el número que se divide después del primer paso.
+      const first = divisionTrace({ op: "divide", a: sa, b: sb }).steps[0];
+      const next = first.rest * 10 + first.down!;
+
+      // q4: el cociente sin el cero.
+      const omitted = divisionBugs({ op: "divide", a: ea, b: eb }).find((bug) => bug.id === "cero-omitido")!;
+
+      const contexts = [
+        { a: "Una imprenta empaca", things: "cuadernos", in: "cajas", ask: "¿Cuántos cuadernos van en cada caja?" },
+        { a: "Un club reparte", things: "soles", in: "equipos", ask: "¿Cuántos soles recibe cada equipo?" },
+        { a: "Un colegio distribuye", things: "lápices", in: "aulas", ask: "¿Cuántos lápices recibe cada aula?" },
+      ][v % 3];
+      const boxes = Math.ceil(ba / bb);
+
+      return [
+        concept === 0
+          ? c(
+              "q0",
+              `Al calcular ${fmt(ca)} ÷ ${cb}, ¿por qué se empieza por la izquierda, al revés que en la suma?`,
+              [
+                ["Porque así se escribe más rápido", "La rapidez no es la razón: el orden depende de qué se reparte primero."],
+                ["Da igual: se puede empezar por las unidades", "Si empiezas por las unidades no sabes qué sobra de las cifras mayores para juntarlo con ellas."],
+                "Porque se reparten primero las cifras más altas y lo que sobra se cambia por unidades menores para el paso siguiente",
+              ],
+              2,
+              "Lo que sobra de las centenas se convierte en decenas y se reparte junto con ellas: por eso se avanza de izquierda a derecha.",
+            )
+          : concept === 1
+            ? c(
+                "q0",
+                `Al dividir ${fmt(ca)} ÷ ${cb}, en un paso queda ${zeroStep!.part}, que es menor que ${cb}. ¿Qué se hace?`,
+                [
+                  "Se escribe 0 en el cociente y se baja la cifra siguiente",
+                  ["Se baja otra cifra sin escribir nada en el cociente", "Sin ese 0 el cociente pierde una posición y queda diez veces menor."],
+                  ["Se termina la división", "Todavía quedan cifras por bajar: la división termina cuando se usan todas."],
+                ],
+                0,
+                `${cb} cabe 0 veces en ${zeroStep!.part}: ese 0 ocupa su lugar en el cociente, como en ${fmt(ca)} ÷ ${cb} = ${fmt(Math.floor(ca / cb))}.`,
+              )
+            : c(
+                "q0",
+                `En una división entre ${wb}, un paso deja un resto de ${wr}. ¿Qué indica?`,
+                [
+                  ["Que todo va bien: el resto puede ser cualquier número", `El resto siempre es menor que el divisor; ${wr} no puede quedar si se divide entre ${wb}.`],
+                  `Que la cifra del cociente se quedó corta: ${wb} todavía cabe una vez más`,
+                  ["Que hay que restar el divisor al final", "No se arregla al final: la cifra de ese paso ya está mal y cambia todo lo que sigue."],
+                ],
+                1,
+                `Si sobra ${wr}, que es mayor o igual que ${wb}, cabía una vez más: hay que aumentar en 1 esa cifra del cociente.`,
+              ),
+        columnar("q1", { op: "divide", a: da, b: db }),
+        n(
+          "q2",
+          `En ${fmt(sa)} ÷ ${sb}, el primer paso deja un resto de ${first.rest} y bajas el ${first.down}. ¿Qué número divides ahora entre ${sb}?`,
+          next,
+          [
+            `La cifra que bajas se escribe a la derecha del resto: ${first.rest} y ${first.down} forman ${next}.`,
+            `Es como cambiar el resto por unidades del orden siguiente: ${first.rest} × 10 + ${first.down} = ${next}.`,
+          ],
+          ["La cifra que bajas se pone al lado del resto.", `El resto ${first.rest} vale ${first.rest} × 10 en la columna siguiente.`, `${first.rest} × 10 + ${first.down}.`],
+          {
+            step: true,
+            errors: [
+              { value: first.down!, feedback: "Olvidaste el resto: lo que sobra se junta con la cifra que bajas." },
+              { value: first.rest + first.down!, feedback: `No se suman: la cifra se escribe al lado del resto, ${first.rest} × 10 + ${first.down}.` },
+            ].filter((e) => e.value !== next),
+          },
+        ),
+        columnar("q3", { op: "divide", a: za, b: zb }),
+        c(
+          "q4",
+          `Un compañero calcula ${fmt(ea)} ÷ ${eb} = ${fmt(omitted.value)}. ¿Qué falla?`,
+          [
+            ["Nada: el resultado es correcto", `Comprueba multiplicando: ${fmt(omitted.value)} × ${eb} = ${fmt(omitted.value * eb)}, lejos de ${fmt(ea)}.`],
+            "Al bajar una cifra que no alcanzaba para el divisor, no escribió 0 en el cociente",
+            ["Debía empezar a dividir por las unidades", "La división larga empieza por la izquierda; el problema es una cifra que falta en el cociente."],
+          ],
+          1,
+          `Cada cifra que se baja da una cifra del cociente, aunque sea 0. Por eso ${fmt(ea)} ÷ ${eb} = ${fmt(Math.floor(ea / eb))}.`,
+          "concept",
+        ),
+        columnar(
+          "q5",
+          { op: "divide", a: ta, b: tb },
+          {
+            prompt: `${contexts.a} ${fmt(ta)} ${contexts.things} en ${tb} ${contexts.in} iguales. ${contexts.ask}`,
+            intent: "transfer",
+            unit: contexts.things,
+            errors: [
+              { value: ta * tb, feedback: "Multiplicaste. Repartir en partes iguales es dividir." },
+              { value: ta - tb, feedback: "Restaste. Repartir en partes iguales es dividir." },
+            ],
+          },
+        ),
+        n(
+          "q6",
+          `Hay que guardar ${fmt(ba)} botellas en cajas de ${bb}. ¿Cuántas cajas hacen falta para que no quede ninguna botella fuera?`,
+          boxes,
+          [
+            `${fmt(ba)} ÷ ${bb} da cociente ${Math.floor(ba / bb)} y resto ${ba % bb}.`,
+            ba % bb
+              ? `Con ${Math.floor(ba / bb)} cajas quedan ${ba % bb} botellas fuera: hace falta una caja más, ${boxes} en total.`
+              : `No sobra nada: bastan ${boxes} cajas.`,
+            `Comprobación: ${boxes} cajas × ${bb} = ${fmt(boxes * bb)} lugares, suficientes para ${fmt(ba)}.`,
+          ],
+          ["Divide las botellas entre lo que cabe en una caja.", "Mira el resto: ¿quedan botellas sin caja?", "Si sobra algo, hace falta una caja más."],
+          {
+            intent: "transfer",
+            unit: "cajas",
+            errors: [
+              { value: Math.floor(ba / bb), feedback: `Con ${Math.floor(ba / bb)} cajas quedan ${ba % bb} botellas fuera: hace falta una caja más para ellas.` },
+              { value: ba % bb, feedback: "Ese es el resto: las botellas que sobran, no las cajas." },
+            ].filter((e) => e.value !== boxes),
+          },
+        ),
+      ];
+    },
+    application: n(
+      "app",
+      "La planta embotelló 9 876 botellas y las empaca en cajas de 24. Una caja solo se despacha si está llena. ¿Cuántas cajas se despachan?",
+      411,
+      [
+        "9 876 ÷ 24: el 9 no alcanza, se empieza con 98. 24 cabe 4 veces (96) y sobran 2; bajas el 7 → 27.",
+        "24 cabe 1 vez en 27 y sobran 3; bajas el 6 → 36. 24 cabe 1 vez en 36 y sobran 12.",
+        "Cociente 411 y resto 12: se despachan 411 cajas llenas y quedan 12 botellas. Comprobación: 411 × 24 + 12 = 9 876.",
+      ],
+      ["Divide las botellas entre 24.", "El cociente son las cajas llenas; el resto, las botellas que sobran.", "Una caja con 12 botellas no está llena."],
+      {
+        intent: "transfer",
+        unit: "cajas",
+        errors: [
+          { value: 412, feedback: "La caja número 412 tendría solo 12 botellas: no está llena y no se despacha." },
+          { value: 12, feedback: "Ese es el resto: las botellas que sobran, no las cajas." },
+          { value: 41, feedback: "Al cociente le falta una cifra: cada cifra que bajas da una cifra del cociente." },
+        ],
+      },
+    ),
+    outcome: "La producción de la planta se reparte sin errores: divides números grandes, cuidas los ceros del cociente y compruebas con el resto.",
+    commonErrors: [
+      "Olvidar el 0 del cociente cuando la cifra que se baja no alcanza (612 ÷ 6 = 12 en lugar de 102).",
+      "Dejar un resto mayor o igual que el divisor.",
+      "Dividir cada cifra por separado sin juntar lo que sobra con la cifra siguiente.",
+      "Confundir el resto con el cociente en los problemas.",
     ],
   }),
 ];

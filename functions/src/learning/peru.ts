@@ -24,6 +24,7 @@ export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruG
   // Cálculo escrito de primaria que el programa repasa como base: se ubica
   // en 1.° como referencia, pero no cuenta para el grado alcanzado.
   "suma-resta-columnas": { competency: "cantidad", grade: 1, base: true },
+  "division-larga": { competency: "cantidad", grade: 1, base: true },
   "enteros-recta": { competency: "cantidad", grade: 1 },
   "enteros-suma-resta": { competency: "cantidad", grade: 1 },
   "enteros-producto-cociente": { competency: "cantidad", grade: 1 },

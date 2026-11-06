@@ -7,7 +7,7 @@ import {
   digitsOf,
   placeName,
   SUBTRACT_STRATEGIES,
-  type ColumnSpec,
+  type ArithmeticSpec,
   type ColumnTrace,
   type SubtractStrategy,
 } from "@/lib/learning/core";
@@ -28,40 +28,85 @@ const placeColor = (column: number) => PLACE_COLORS[column % 3];
 
 // ── Estrategia de resta (preferencia del alumno en este navegador) ──────
 
-const STRATEGY_KEY = "maths:resta:estrategia";
-const STRATEGY_EVENT = "maths:resta:estrategia";
-function readStrategy(): SubtractStrategy {
-  try {
-    return localStorage.getItem(STRATEGY_KEY) === "compensacion" ? "compensacion" : "prestamo";
-  } catch {
-    return "prestamo";
-  }
-}
-function subscribeStrategy(onChange: () => void) {
-  window.addEventListener(STRATEGY_EVENT, onChange);
-  window.addEventListener("storage", onChange);
-  return () => {
-    window.removeEventListener(STRATEGY_EVENT, onChange);
-    window.removeEventListener("storage", onChange);
+/** Preferencia del alumno guardada en este navegador y compartida por todas
+ *  las hojas de la página. Sin almacenamiento, dura mientras la página esté abierta. */
+export function makePreference<T extends string>(key: string, values: readonly T[], fallbackValue: T) {
+  const event = `maths:pref:${key}`;
+  const read = (): T => {
+    try {
+      const v = localStorage.getItem(key);
+      return values.includes(v as T) ? (v as T) : fallbackValue;
+    } catch {
+      return fallbackValue;
+    }
+  };
+  const subscribe = (onChange: () => void) => {
+    window.addEventListener(event, onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener(event, onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  };
+  return function usePreference(): [T, (value: T) => void] {
+    const [memory, setMemory] = useState<T | null>(null);
+    const stored = useSyncExternalStore(subscribe, read, () => fallbackValue);
+    return [
+      memory ?? stored,
+      (next) => {
+        try {
+          localStorage.setItem(key, next);
+          setMemory(null);
+        } catch {
+          setMemory(next);
+        }
+        window.dispatchEvent(new Event(event));
+      },
+    ];
   };
 }
-/** Todas las hojas de la página comparten la estrategia elegida. */
-export function useSubtractStrategy(): [SubtractStrategy, (s: SubtractStrategy) => void] {
-  // Sin almacenamiento, la elección dura mientras la página esté abierta.
-  const [fallback, setFallback] = useState<SubtractStrategy | null>(null);
-  const stored = useSyncExternalStore(subscribeStrategy, readStrategy, () => "prestamo" as const);
-  return [
-    fallback ?? stored,
-    (next) => {
-      try {
-        localStorage.setItem(STRATEGY_KEY, next);
-        setFallback(null);
-      } catch {
-        setFallback(next);
-      }
-      window.dispatchEvent(new Event(STRATEGY_EVENT));
-    },
-  ];
+
+export const useSubtractStrategy = makePreference<SubtractStrategy>(
+  "maths:resta:estrategia",
+  SUBTRACT_STRATEGIES.map((s) => s.id),
+  "prestamo",
+);
+
+/** Elección entre maneras correctas de escribir un procedimiento. */
+export function OptionPicker<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  options: readonly { id: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
+      {options.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          role="radio"
+          aria-checked={value === option.id}
+          disabled={disabled}
+          onClick={() => onChange(option.id)}
+          className={`min-h-11 rounded-full border px-4 text-sm font-semibold ${
+            value === option.id
+              ? "border-cyan-300 bg-cyan-950/60 text-cyan-100"
+              : "border-slate-600 bg-slate-950 text-slate-300"
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export function StrategyPicker({
@@ -74,25 +119,13 @@ export function StrategyPicker({
   disabled?: boolean;
 }) {
   return (
-    <div role="radiogroup" aria-label="Cómo restar cuando la cifra de arriba es menor" className="flex flex-wrap gap-2">
-      {SUBTRACT_STRATEGIES.map((option) => (
-        <button
-          key={option.id}
-          type="button"
-          role="radio"
-          aria-checked={strategy === option.id}
-          disabled={disabled}
-          onClick={() => onChange(option.id)}
-          className={`min-h-11 rounded-full border px-4 text-sm font-semibold ${
-            strategy === option.id
-              ? "border-cyan-300 bg-cyan-950/60 text-cyan-100"
-              : "border-slate-600 bg-slate-950 text-slate-300"
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
+    <OptionPicker
+      label="Cómo restar cuando la cifra de arriba es menor"
+      options={SUBTRACT_STRATEGIES}
+      value={strategy}
+      onChange={onChange}
+      disabled={disabled}
+    />
   );
 }
 
@@ -167,7 +200,13 @@ function Grid({
   const symbol = trace.spec.op === "add" ? "+" : "−";
   const cell = "flex h-12 w-10 items-center justify-center text-3xl font-bold tabular-nums sm:w-12";
   return (
-    <div className="overflow-x-auto">
+    // Enfocable: si no cabe (pantallas muy estrechas), se recorre con el teclado.
+    <div
+      className="overflow-x-auto"
+      tabIndex={0}
+      role="group"
+      aria-label={`${trace.spec.a} ${trace.spec.op === "add" ? "más" : "menos"} ${trace.spec.b} en columnas`}
+    >
       <div
         className="mx-auto grid w-max gap-x-1"
         style={{ gridTemplateColumns: `2.5rem repeat(${columns}, auto)` }}
@@ -284,7 +323,7 @@ export function ColumnDemo({
   strategy,
   initialStep,
 }: {
-  spec: ColumnSpec;
+  spec: ArithmeticSpec;
   strategy: SubtractStrategy;
   /** Pasos ya mostrados al abrir (por defecto, ninguno; el desarrollo completo usa todos). */
   initialStep?: number;
@@ -323,12 +362,12 @@ export function ColumnDemo({
 
 /** Exploración de la clase: el alumno elige los números y la operación. */
 export function ColumnExplorer({ id }: { id: string }) {
-  const [op, setOp] = useState<ColumnSpec["op"]>("add");
+  const [op, setOp] = useState<ArithmeticSpec["op"]>("add");
   const [a, setA] = useState(325);
   const [b, setB] = useState(148);
   const [strategy, setStrategy] = useSubtractStrategy();
   // En la resta se escribe arriba el mayor.
-  const spec: ColumnSpec = op === "add" ? { op, a, b } : { op, a: Math.max(a, b), b: Math.min(a, b) };
+  const spec: ArithmeticSpec = op === "add" ? { op, a, b } : { op, a: Math.max(a, b), b: Math.min(a, b) };
   const trace = columnTrace(spec, strategy);
   const regroups = trace.steps.filter((s) => s.regroup).length;
   const tensTop = digitsOf(spec.a, 3)[1];
@@ -394,7 +433,7 @@ export function ColumnSheet({
   wrongColumn = null,
   disabled,
 }: {
-  spec: ColumnSpec;
+  spec: ArithmeticSpec;
   strategy: SubtractStrategy;
   mode: "guided" | "free";
   response: string;
@@ -533,7 +572,7 @@ export function ColumnSheet({
 }
 
 /** Ejemplo razonado animado, con la estrategia de resta que elija el alumno. */
-export function ColumnExample({ spec }: { spec: ColumnSpec }) {
+export function ColumnExample({ spec }: { spec: ArithmeticSpec }) {
   const [strategy, setStrategy] = useSubtractStrategy();
   return (
     <div className="space-y-3 rounded-xl border border-slate-700 bg-slate-950 p-4">

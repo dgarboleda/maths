@@ -65,3 +65,50 @@ test("sumar y restar en columnas: ejemplo animado con dos estrategias y hoja gui
   await sinDesbordeNiViolaciones(page);
   await page.screenshot({ path: testInfo.outputPath("guiada-columnas.png"), fullPage: true });
 });
+
+test("división larga: galera paso a paso, cero del cociente y hoja guiada", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
+  if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
+  await registrarPadre(page);
+  const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2014-03-02" });
+  const childId = await entrarAlEspacio(page, nombre, pin);
+  const lesson = getLesson("division-larga")!;
+
+  await page.goto(`/jugar/${childId}/aprende/${lesson.id}`);
+  await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+  await expect(page.getByRole("heading", { name: lesson.sections[0].title })).toBeVisible();
+  await expect(page.getByLabel("Divisor")).toBeVisible();
+  await page.getByRole("button", { name: "Continuar la explicación" }).click();
+  await page.getByRole("button", { name: "Continuar la explicación" }).click();
+  await page.getByRole("button", { name: "Ver cómo se resuelve" }).click();
+
+  // Ejemplo 1 (756 ÷ 3) y ejemplo 2 (612 ÷ 6), con el cero del cociente.
+  await page.getByRole("button", { name: /Empezar/ }).click();
+  await expect(page.getByText(/3 cabe 2 veces en 7/)).toBeVisible();
+  await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
+  await page.getByRole("radio", { name: "Restar de memoria" }).click();
+  await page.getByRole("button", { name: /Empezar/ }).click();
+  await page.getByRole("button", { name: /Siguiente paso/ }).click();
+  await expect(page.getByText(/Escribes 0 en el cociente/)).toBeVisible();
+  await page.getByRole("button", { name: /Siguiente paso/ }).click();
+  await expect(page.getByText("Cociente 102 · resto 0")).toBeVisible();
+  await sinDesbordeNiViolaciones(page);
+  await page.screenshot({ path: testInfo.outputPath("ejemplo-division.png"), fullPage: true });
+  await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
+  await page.getByRole("button", { name: "Ahora, hazlo con ayuda" }).click();
+
+  const concept = lesson.guided[0];
+  await page.getByRole("radio", { name: concept.choices!.find((c) => c.id === concept.answer)!.label, exact: true }).check();
+  await page.getByRole("button", { name: "Comprobar mi respuesta" }).click();
+  await page.getByRole("button", { name: "Siguiente actividad" }).click();
+
+  const division = lesson.guided[1];
+  expect(division.column?.op).toBe("divide");
+  const digits = String(division.answer).split("");
+  await page.getByLabel("Cociente: cifra 1").fill(String((Number(digits[0]) + 1) % 10));
+  await expect(page.getByText(/Revisa esa cifra/)).toBeVisible();
+  for (const [i, d] of digits.entries()) await page.getByLabel(`Cociente: cifra ${i + 1}`).fill(d);
+  await expect(page.getByText("Tu respuesta es correcta. Revisa por qué funciona.")).toBeVisible();
+  await sinDesbordeNiViolaciones(page);
+  await page.screenshot({ path: testInfo.outputPath("guiada-division.png"), fullPage: true });
+});

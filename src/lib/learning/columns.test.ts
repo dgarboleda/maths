@@ -7,6 +7,7 @@ import {
   errorFeedback,
   getLesson,
   isAnswerCorrect,
+  operationBugs,
   recommendedLesson,
   type SubtractStrategy,
 } from "./domain";
@@ -65,7 +66,7 @@ describe("Operaciones en columnas", () => {
     const lesson = getLesson("suma-resta-columnas")!;
     const q = lesson.practice.find((item) => item.column?.op === "subtract")!;
     expect(isAnswerCorrect(q, String(q.answer))).toBe(true);
-    const bug = columnBugs(q.column!).find((b) => b.id === "menor-del-mayor")!;
+    const bug = operationBugs(q.column!).find((b) => b.id === "menor-del-mayor")!;
     expect(isAnswerCorrect(q, String(bug.value))).toBe(false);
     expect(errorFeedback(q, String(bug.value))).toMatch(/cifra menor de la mayor/);
   });
