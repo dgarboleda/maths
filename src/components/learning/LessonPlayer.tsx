@@ -45,6 +45,7 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import { LearningVisual } from "./LearningVisual";
+import { hasVisualTutor } from "./tutor/lessons";
 import { OperationDemo, OperationExample, OperationWorkspace, useOperationHelp } from "./Operation";
 import { Borrador } from "./Borrador";
 import {
@@ -55,6 +56,12 @@ import {
   type ArcadeSession,
 } from "@/lib/minigames/lessonExercise";
 
+// Solo tres clases tienen tutor visual: se carga aparte y solo en el navegador
+// (recuerda la escena en localStorage y reproduce audio).
+const VisualTutor = dynamic(
+  () => import("./VisualTutor").then((module) => module.VisualTutor),
+  { ssr: false, loading: () => <p role="status">Preparando el tutor visual…</p> },
+);
 const LessonArcade = dynamic(
   () => import("./LessonArcade").then((module) => module.LessonArcade),
   { ssr: false, loading: () => <p role="status">Preparando la partida…</p> },
@@ -219,6 +226,9 @@ export function LessonPlayer({
                     <MathText text={lesson.sections[progress.index].formula} />
                   </p>
                   <LearningVisual key={lesson.visual} kind={lesson.visual} />
+                  {progress.index === 0 && hasVisualTutor(lesson.id) && (
+                    <VisualTutor key={lesson.id} lessonId={lesson.id} />
+                  )}
                   <button
                     disabled={mutation.blocked}
                     onClick={() => void run({ kind: "next" })}

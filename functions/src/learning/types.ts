@@ -98,6 +98,7 @@ export type Visual =
   | "distributive"
   | "expression"
   | "columns"
+  | "equal-groups"
   | "long-division"
   | "factor-table"
   | "ruffini";
@@ -141,11 +142,10 @@ export interface Lesson {
   };
 }
 /** Lo que el navegador necesita de una clase que no está abierta: sin
- *  bancos ni ejemplos (ver `lessonIndex.ts`). */
-export type LessonSummary = Pick<
-  Lesson,
-  "id" | "unitId" | "title" | "objective" | "prerequisites" | "legacyModuleIds"
->;
+ *  bancos, ejemplos ni textos largos (ver `lessonIndex.ts`). Va en el JS de
+ *  cada clase, que tiene presupuesto en `performance/budgets.json`: el
+ *  objetivo y los módulos antiguos se leen del catálogo completo. */
+export type LessonSummary = Pick<Lesson, "id" | "unitId" | "title" | "prerequisites">;
 export interface ResponseEvidence {
   firstCorrect: boolean;
   correct: boolean;

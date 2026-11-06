@@ -29,9 +29,7 @@ function staticGraph(entry: string): Set<string> {
 describe("Catálogo dividido", () => {
   test("el índice ligero coincide con el catálogo (regenéralo con `npm run indice:lecciones`)", () => {
     expect(LESSON_INDEX).toEqual(
-      LESSONS.map(({ id, unitId, title, objective, prerequisites, legacyModuleIds }) => ({
-        id, unitId, title, objective, prerequisites, legacyModuleIds,
-      })),
+      LESSONS.map(({ id, unitId, title, prerequisites }) => ({ id, unitId, title, prerequisites })),
     );
     for (const lesson of LESSONS) expect(lesson.version).toBe(CONTENT_VERSION);
   });

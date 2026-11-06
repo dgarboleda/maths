@@ -1,0 +1,72 @@
+{
+  "voz": "es-PE-CamilaNeural",
+  "velocidad": "-8%",
+  "tutoriales": {
+    "suma-resta-columnas": {
+      "titulo": "Reagrupa las piezas",
+      "escenas": [
+        {
+          "id": "unidades-1",
+          "intro": "En el almacén hay ocho piezas y llegan cinco más. Toca diez piezas para ponerlas en la bandeja. Cuando la bandeja esté llena, forma una decena.",
+          "pista": "Lleva piezas a la bandeja hasta que tenga diez. Después pulsa formar decena.",
+          "logro": "¡Bien! Diez unidades forman una decena. Quedan una decena y tres unidades: ocho más cinco es trece."
+        },
+        {
+          "id": "unidades-2",
+          "intro": "Ahora sumamos veintisiete más quince. Ya hay tres decenas, pero sueltas hay doce unidades. En una columna solo cabe una cifra: reagrupa.",
+          "pista": "Doce unidades son más de nueve. Junta diez en la bandeja y cámbialas por una decena.",
+          "logro": "Excelente. Cuatro decenas y dos unidades: veintisiete más quince es cuarenta y dos. Eso es llevar uno a las decenas."
+        }
+      ]
+    },
+    "multiplicacion-grupos": {
+      "titulo": "Instala los paneles",
+      "escenas": [
+        {
+          "id": "grupos-1",
+          "intro": "La ciudad instala paneles solares en filas iguales. Arma tres filas con cuatro paneles en cada una.",
+          "pista": "Usa los botones de filas hasta tener tres, y los de paneles por fila hasta tener cuatro.",
+          "logro": "¡Muy bien! Tres filas de cuatro son cuatro más cuatro más cuatro: tres por cuatro es doce."
+        },
+        {
+          "id": "grupos-2",
+          "intro": "Gira la instalación. Observa si cambia el número de paneles.",
+          "pista": "Pulsa el botón girar. Las filas se convierten en columnas.",
+          "logro": "Ahora hay cuatro filas de tres, y siguen siendo doce paneles. Tres por cuatro es igual a cuatro por tres."
+        },
+        {
+          "id": "grupos-3",
+          "intro": "Un techo más grande necesita cinco filas de seis paneles. Ármalo y cuenta de seis en seis.",
+          "pista": "Necesitas cinco filas, y seis paneles en cada fila.",
+          "logro": "Seis, doce, dieciocho, veinticuatro, treinta. Cinco por seis es treinta paneles."
+        }
+      ]
+    },
+    "fracciones-suma-resta": {
+      "titulo": "Junta las reservas",
+      "escenas": [
+        {
+          "id": "fracciones-1",
+          "intro": "Dos reservas del mismo tamaño tienen un medio y un cuarto. Para juntarlas, las partes deben ser del mismo tamaño. Parte la reserva de arriba en piezas más pequeñas.",
+          "pista": "Pulsa partir en dos en la reserva de arriba. Cada medio se convierte en dos cuartos.",
+          "logro": "¡Eso es! Un medio es lo mismo que dos cuartos. La cantidad no cambió; solo el tamaño de las partes."
+        },
+        {
+          "id": "fracciones-2",
+          "intro": "Ahora las dos reservas usan cuartos. Junta las partes en una sola reserva.",
+          "pista": "Pulsa juntar reservas. Solo se pueden juntar partes del mismo tamaño.",
+          "logro": "Dos cuartos más un cuarto son tres cuartos. Un medio más un cuarto es tres cuartos."
+        },
+        {
+          "id": "fracciones-3",
+          "intro": "Un nuevo reto: un tercio más un sexto. Busca partes del mismo tamaño y junta las reservas.",
+          "pista": "Los tercios son más grandes que los sextos. Parte los tercios en dos y después junta.",
+          "logro": "Un tercio son dos sextos. Dos sextos más un sexto son tres sextos, que es un medio."
+        }
+      ]
+    }
+  },
+  "avisos": {
+    "no-se-puede-juntar": "Todavía no se pueden juntar: las partes tienen tamaños distintos. Pártelas primero."
+  }
+}

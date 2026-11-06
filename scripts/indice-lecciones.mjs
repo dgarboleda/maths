@@ -17,9 +17,9 @@ try {
   console.error("Falta compilar Functions: ejecuta `npm run functions:build` antes de generar el índice.");
   process.exit(1);
 }
-const summaries = catalog.LESSONS.map(({ id, unitId, title, objective, prerequisites, legacyModuleIds }) => ({
-  id, unitId, title, objective, prerequisites, legacyModuleIds,
-}));
+// Solo lo que muestra una clase de otra (título, unidad y bases): el índice
+// viaja en el JS de cada clase.
+const summaries = catalog.LESSONS.map(({ id, unitId, title, prerequisites }) => ({ id, unitId, title, prerequisites }));
 const body = [
   "// Generado por scripts/indice-lecciones.mjs a partir del catálogo. No editar a mano.",
   'import type { LessonSummary } from "./types";',
