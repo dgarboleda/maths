@@ -1,5 +1,5 @@
 import guion from "./guion.json";
-import type { ManipulativeState } from "./model";
+import { shareDone, type ManipulativeState } from "./model";
 
 /**
  * Escenas del tutor visual. El texto sale de `guion.json`: la pantalla
@@ -34,6 +34,7 @@ export interface Tutorial {
   scenes: Scene[];
 }
 
+const xAlone: Check = (s) => s.kind === "balance" && s.left === 0 && s.xs > 1;
 const trayFull: Check = (s) => s.kind === "place-value" && s.tray.length === 10;
 
 const units = (a: number, b: number) => [...Array<"a">(a).fill("a"), ...Array<"b">(b).fill("b")];
@@ -115,6 +116,49 @@ const SETUP: Record<string, { initial: ManipulativeState; goal: Check; moments?:
   "ecuaciones-3": {
     initial: { kind: "balance", xs: 2, left: 1, right: 9 },
     goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+  },
+  "reparto-1": {
+    initial: { kind: "share", groups: 3, tens: 6, units: 3, eachTens: 0, eachUnits: 0 },
+    goal: (s) => s.kind === "share" && shareDone(s) && s.eachTens * 10 + s.eachUnits === 21,
+    moments: { "decenas-listas": (s) => s.kind === "share" && s.tens === 0 && s.eachTens > 0 && s.eachUnits === 0 && s.units > 0 },
+  },
+  "reparto-2": {
+    initial: { kind: "share", groups: 3, tens: 7, units: 2, eachTens: 0, eachUnits: 0 },
+    goal: (s) => s.kind === "share" && shareDone(s) && s.eachTens * 10 + s.eachUnits === 24,
+    moments: { "sobra-decena": (s) => s.kind === "share" && s.tens === 1 && s.eachTens === 2 },
+  },
+  "reparto-3": {
+    initial: { kind: "share", groups: 6, tens: 7, units: 5, eachTens: 0, eachUnits: 0 },
+    goal: (s) => s.kind === "share" && shareDone(s) && s.eachTens * 10 + s.eachUnits === 12,
+  },
+  "signos-1": {
+    initial: { kind: "line", start: 0, pos: 0, min: -12, max: 12, jump: -4 },
+    goal: (s) => s.kind === "line" && s.pos === -12,
+  },
+  "signos-2": {
+    initial: { kind: "line", start: 0, pos: 0, min: -12, max: 12, jump: 4, canFlip: true },
+    goal: (s) => s.kind === "line" && s.pos === -12 && (s.flips ?? 0) % 2 === 1,
+    moments: { doce: (s) => s.kind === "line" && s.pos === 12 && (s.flips ?? 0) % 2 === 0 },
+  },
+  "signos-3": {
+    initial: { kind: "line", start: 0, pos: 0, min: -12, max: 12, jump: -4, canFlip: true },
+    goal: (s) => s.kind === "line" && s.pos === 12 && (s.flips ?? 0) % 2 === 1,
+    moments: { "menos-doce": (s) => s.kind === "line" && s.pos === -12 && (s.flips ?? 0) % 2 === 0 },
+  },
+  "dos-pasos-1": {
+    initial: { kind: "balance", xs: 3, left: 5, right: 20 },
+    goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+    moments: { "x-solas": xAlone },
+  },
+  "dos-pasos-2": {
+    initial: { kind: "balance", xs: 2, left: 3, right: 11 },
+    goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+    moments: { "x-solas": xAlone },
+  },
+  "dos-pasos-3": {
+    initial: { kind: "balance", xs: 4, left: 2, right: 14 },
+    goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+    moments: { "x-solas": xAlone },
   },
 };
 

@@ -11,6 +11,16 @@ audio generado). Se usa su API REST, sin SDK:
 
   Requisitos: pip install truststore
 
+Motor ElevenLabs (--motor elevenlabs), voz de español latino:
+
+  ELEVENLABS_API_KEY=<clave> python scripts/generar-voces-tutor.py --motor elevenlabs --todos
+
+  Voz y modelo salen de `elevenlabs` en guion.json (los de los audios
+  publicados); ELEVENLABS_VOICE_ID y ELEVENLABS_MODEL los sustituyen. Con el
+  plan gratuito el audio no admite uso comercial y exige atribución; desde
+  Starter se puede usar. Los publicados se recomprimieron a MP3 mono de
+  48 kbps: ffmpeg -i in.mp3 -ac 1 -codec:a libmp3lame -b:a 48k out.mp3
+
 Motor alternativo, solo para borradores locales: --motor edge
 (pip install edge-tts truststore). edge-tts usa el servicio de lectura en voz
 alta de Edge, que no está pensado para distribuir audio.
@@ -24,6 +34,7 @@ Uso:
   python scripts/generar-voces-tutor.py            # solo los que faltan
   python scripts/generar-voces-tutor.py --todos    # regenera todos
   python scripts/generar-voces-tutor.py --listar   # muestra el guion
+  python scripts/generar-voces-tutor.py --todos --solo=grupos-1-intro   # un clip de prueba
 """
 import asyncio
 import json
@@ -86,6 +97,29 @@ def azure(texto: str, voz: str, velocidad: str, archivo: Path) -> None:
         archivo.write_bytes(respuesta.read())
 
 
+def elevenlabs(texto: str, archivo: Path, config: dict) -> None:
+    """Misma voz y modelo que los audios publicados (`elevenlabs` en guion.json), salvo que se indique otra."""
+    clave = os.environ.get("ELEVENLABS_API_KEY")
+    voz = os.environ.get("ELEVENLABS_VOICE_ID", config.get("voice_id"))
+    if not clave or not voz:
+        sys.exit("Falta ELEVENLABS_API_KEY.")
+    cuerpo = {
+        "text": texto,
+        "model_id": os.environ.get("ELEVENLABS_MODEL", config.get("modelo", "eleven_multilingual_v2")),
+        "language_code": "es",
+        # Estable y clara para niños: poca variación entre clips, ritmo pausado.
+        "voice_settings": {"stability": 0.6, "similarity_boost": 0.8, "style": 0.15, "use_speaker_boost": True, "speed": 0.92},
+    }
+    peticion = urllib.request.Request(
+        f"https://api.elevenlabs.io/v1/text-to-speech/{voz}?output_format=mp3_44100_64",
+        data=json.dumps(cuerpo).encode("utf-8"),
+        headers={"xi-api-key": clave, "Content-Type": "application/json", "Accept": "audio/mpeg", "User-Agent": "maths-tutor-voces"},
+        method="POST",
+    )
+    with urllib.request.urlopen(peticion, timeout=120) as respuesta:
+        archivo.write_bytes(respuesta.read())
+
+
 async def edge(texto: str, voz: str, velocidad: str, archivo: Path) -> None:
     import edge_tts
 
@@ -101,15 +135,20 @@ async def main() -> None:
         return
     todos = "--todos" in sys.argv
     motor = sys.argv[sys.argv.index("--motor") + 1] if "--motor" in sys.argv else "azure"
-    if motor not in ("azure", "edge"):
-        sys.exit("--motor debe ser azure o edge")
+    if motor not in ("azure", "elevenlabs", "edge"):
+        sys.exit("--motor debe ser azure, elevenlabs o edge")
     DESTINO.mkdir(parents=True, exist_ok=True)
+    solo = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--solo=")), None)
     for nombre, texto in clips(guion):
+        if solo and nombre != solo:
+            continue
         archivo = DESTINO / f"{nombre}.mp3"
         if archivo.exists() and not todos:
             continue
         if motor == "azure":
             azure(texto, guion["voz"], guion["velocidad"], archivo)
+        elif motor == "elevenlabs":
+            elevenlabs(texto, archivo, guion.get("elevenlabs", {}))
         else:
             await edge(texto, guion["voz"], guion["velocidad"], archivo)
         print(f"✓ {archivo.relative_to(RAIZ)} ({motor})")

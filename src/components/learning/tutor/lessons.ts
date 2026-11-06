@@ -10,6 +10,9 @@ export const TUTOR_LESSONS: readonly string[] = [
   "fracciones-equivalentes",
   "enteros-suma-resta",
   "ecuaciones-un-paso",
+  "division-larga",
+  "enteros-producto-cociente",
+  "ecuaciones-dos-pasos",
 ];
 
 export function hasVisualTutor(lessonId: string): boolean {

@@ -1,6 +1,12 @@
 {
   "voz": "es-PE-CamilaNeural",
   "velocidad": "-8%",
+  "elevenlabs": {
+    "voice_id": "PrwKJdvtTbJVdosRhS1O",
+    "nombre": "Mia García – Cálida instructora e-learning (español latino neutro)",
+    "modelo": "eleven_v4",
+    "nota": "Audios publicados: una toma por clip, recomprimidos a MP3 mono de 48 kbps."
+  },
   "criterio": "La pantalla da la consigna corta; la voz aporta lo que no está escrito: contexto, una pregunta para predecir, el porqué, errores comunes y la conexión con la clase. Todo lo que dice la voz se puede leer en «Lo que dice la voz».",
   "tutoriales": {
     "suma-resta-columnas": {
@@ -245,6 +251,141 @@
           }
         }
       ]
+    },
+    "division-larga": {
+      "titulo": "Reparte en grupos iguales",
+      "escenas": [
+        {
+          "id": "reparto-1",
+          "consigna": "63 ÷ 3: reparte primero las decenas y después las unidades.",
+          "pista": "Da decenas mientras alcancen para los 3 grupos; luego, unidades.",
+          "logro": "Cada grupo recibe 2 decenas y 1 unidad: 63 ÷ 3 = 21.",
+          "voz": {
+            "intro": "La planta tiene sesenta y tres piezas para repartir en tres cajas iguales. Vienen en barras de diez y sueltas. ¿Por dónde conviene empezar, por las barras o por las sueltas? Igual que en la división larga, empezamos por lo más grande: las decenas.",
+            "pista": "Hay seis decenas y tres grupos. Dale una decena a cada grupo, y otra vez. Después reparte las tres unidades sueltas, una para cada grupo.",
+            "logro": "Cada caja tiene dos decenas y una unidad: veintiuno. La cifra de las decenas del cociente, el dos, salió de repartir las decenas, y la de las unidades, el uno, de repartir las unidades. Así se escribe la división larga, cifra por cifra."
+          },
+          "momentos": {
+            "decenas-listas": "Ya no quedan decenas por repartir. Ahora siguen las unidades."
+          }
+        },
+        {
+          "id": "reparto-2",
+          "consigna": "72 ÷ 3: ¿qué haces con la decena que sobra?",
+          "pista": "Cambia la decena que sobra por 10 unidades y reparte las 12.",
+          "logro": "Cada grupo recibe 2 decenas y 4 unidades: 72 ÷ 3 = 24.",
+          "voz": {
+            "intro": "Ahora setenta y dos entre tres. Empieza repartiendo las decenas, como antes. Pero esta vez algo va a sobrar. Cuando pase, piensa: ¿se puede deshacer una barra de diez?",
+            "pista": "Una decena no alcanza para tres grupos, pero se puede cambiar por diez unidades. Junto con las dos sueltas son doce, y doce sí se reparte entre tres.",
+            "logro": "Veinticuatro para cada grupo. Cambiar la decena que sobró es lo mismo que, en la división larga, bajar la cifra siguiente: esa decena se junta con el dos y forma doce."
+          },
+          "momentos": {
+            "sobra-decena": "Sobra una decena, y no alcanza para los tres grupos. ¿Qué podrías hacer con ella?"
+          }
+        },
+        {
+          "id": "reparto-3",
+          "consigna": "75 ÷ 6: reparte todo lo que puedas. ¿Sobra algo?",
+          "pista": "Si al final quedan menos unidades que grupos, eso es el resto.",
+          "logro": "Cada grupo recibe 12 y sobran 3: 75 ÷ 6 = 12, resto 3.",
+          "voz": {
+            "intro": "Último reparto: setenta y cinco piezas en seis cajas. Esta vez no va a salir exacto. Reparte hasta que ya no puedas darle lo mismo a todas las cajas.",
+            "pista": "Da una decena a cada caja. Cambia la que sobra por diez unidades, y reparte las unidades por rondas. Cuando queden menos de seis, ya no se puede seguir.",
+            "logro": "Doce para cada caja, y sobran tres piezas: ese es el resto. Fíjate que el resto es menor que seis; si fuera seis o más, podrías dar otra ronda. Comprueba: seis por doce, setenta y dos, más tres, setenta y cinco."
+          }
+        }
+      ]
+    },
+    "enteros-producto-cociente": {
+      "titulo": "Saltos con signo",
+      "escenas": [
+        {
+          "id": "signos-1",
+          "consigna": "3 × (−4): da 3 saltos de −4 desde el cero.",
+          "pista": "Pulsa «Saltar −4» tres veces.",
+          "logro": "3 × (−4) = −12.",
+          "voz": {
+            "intro": "Multiplicar es repetir. Tres por menos cuatro significa tres veces menos cuatro: tres saltos de cuatro hacia la izquierda, desde el cero. Antes de saltar, ¿el resultado será positivo o negativo?",
+            "pista": "Cada salto te lleva cuatro lugares a la izquierda. Necesitas tres saltos.",
+            "logro": "Menos doce. Si repites tres veces una deuda de cuatro, debes doce. Positivo por negativo da negativo."
+          }
+        },
+        {
+          "id": "signos-2",
+          "consigna": "(−3) × 4: salta 3 veces +4 y luego toma el opuesto.",
+          "pista": "Tres saltos de +4 y después «Tomar el opuesto».",
+          "logro": "(−3) × 4 = −(3 × 4) = −12.",
+          "voz": {
+            "intro": "¿Cómo se repite algo menos tres veces? No se puede, así que usamos un truco: menos tres es menos uno por tres. Primero calcula tres por cuatro con saltos. Después multiplica por menos uno, que es tomar el opuesto: el punto salta al otro lado del cero.",
+            "pista": "Da tres saltos de cuatro hacia la derecha, hasta el doce. Después pulsa tomar el opuesto.",
+            "logro": "Menos doce, el mismo resultado que antes. El orden de los factores no cambia el producto, aunque haya signos: tres por menos cuatro y menos tres por cuatro dan lo mismo."
+          },
+          "momentos": {
+            "doce": "Tres por cuatro es doce. Ahora aplica el signo menos: toma el opuesto."
+          }
+        },
+        {
+          "id": "signos-3",
+          "consigna": "(−3) × (−4): 3 saltos de −4 y luego el opuesto.",
+          "pista": "Tres saltos de −4 hasta −12; después «Tomar el opuesto».",
+          "logro": "(−3) × (−4) = −(−12) = 12.",
+          "voz": {
+            "intro": "La pregunta más famosa: ¿por qué menos por menos da más? Hagámoslo en la recta. Primero, tres saltos de menos cuatro. Después, el signo del primer factor: tomar el opuesto.",
+            "pista": "Salta tres veces hacia la izquierda, hasta menos doce. Luego pulsa tomar el opuesto.",
+            "logro": "Doce positivo. El opuesto de menos doce está al otro lado del cero. Por eso negativo por negativo da positivo: tomar el opuesto de algo negativo te lleva al lado positivo."
+          },
+          "momentos": {
+            "menos-doce": "Eso es tres por menos cuatro: menos doce. Falta el signo del primer factor."
+          }
+        }
+      ]
+    },
+    "ecuaciones-dos-pasos": {
+      "titulo": "Dos pasos en la balanza",
+      "escenas": [
+        {
+          "id": "dos-pasos-1",
+          "consigna": "3x + 5 = 20: deja las x solas y después reparte.",
+          "pista": "Quita 1 de cada lado cinco veces; luego «Repartir en 3».",
+          "logro": "3x = 15, así que x = 5. Comprobación: 3 × 5 + 5 = 20.",
+          "voz": {
+            "intro": "Esta ecuación se construyó en dos pasos: alguien tomó x, la multiplicó por tres, y le sumó cinco. Para encontrar x, deshacemos esos pasos en orden inverso. ¿Cuál deshaces primero?",
+            "pista": "Lo último que se hizo fue sumar cinco, así que es lo primero que se deshace. Quita cinco pesas de cada lado. Después reparte en tres.",
+            "logro": "Cada caja pesa cinco. Comprobación: tres por cinco es quince, más cinco, veinte. Primero se quitó la suma y después la multiplicación: el orden inverso al de la construcción."
+          },
+          "momentos": {
+            "x-solas": "Las cajas ya están solas: tres x pesan lo mismo que quince. Ahora reparte."
+          }
+        },
+        {
+          "id": "dos-pasos-2",
+          "consigna": "2x + 3 = 11.",
+          "pista": "Quita las 3 pesas sueltas de cada lado; luego reparte en 2.",
+          "logro": "2x = 8, así que x = 4.",
+          "voz": {
+            "intro": "Otra ecuación de dos pasos. Antes de tocar nada, predice: ¿cuántas pesas quedarán a la derecha cuando las x estén solas?",
+            "pista": "Tres pesas acompañan a las x. Quítalas de los dos lados, y después reparte las que quedan en dos grupos.",
+            "logro": "Ocho pesas para dos cajas: cuatro cada una. Si predijiste ocho, ya hacías el primer paso mentalmente: once menos tres."
+          },
+          "momentos": {
+            "x-solas": "Dos x pesan lo mismo que ocho. Una x es la mitad."
+          }
+        },
+        {
+          "id": "dos-pasos-3",
+          "consigna": "Reto: 4x + 2 = 14.",
+          "pista": "Quita 2 de cada lado; luego reparte en 4.",
+          "logro": "4x = 12, así que x = 3.",
+          "voz": {
+            "intro": "Último reto. Intenta resolverlo sin pistas: cuatro cajas y dos pesas equilibran catorce. Recuerda la regla de oro: lo que hagas en un lado, hazlo también en el otro.",
+            "pista": "Primero quita las dos pesas sueltas de los dos lados. Quedan cuatro cajas y doce pesas: reparte en cuatro.",
+            "logro": "Cada caja pesa tres. Comprueba siempre en la ecuación original: cuatro por tres, doce, más dos, catorce. Equilibrada."
+          },
+          "momentos": {
+            "x-solas": "Cuatro x pesan lo mismo que doce. ¿Cuánto pesa cada una?"
+          }
+        }
+      ]
     }
   },
   "avisos": {
@@ -259,6 +400,10 @@
     "no-se-puede-repartir": {
       "texto": "Primero deja las x solas.",
       "voz": "Todavía no conviene repartir: la pesa suelta tendría que partirse en pedazos. Primero quita lo que se está sumando a las x, y después reparte."
+    },
+    "no-alcanza-para-todos": {
+      "texto": "No alcanza para dar lo mismo a todos los grupos.",
+      "voz": "No alcanza para darle lo mismo a cada grupo, y en un reparto justo todos reciben igual. Si quedan decenas, cámbialas por unidades. Si ya no quedan, lo que sobra es el resto."
     }
   }
 }
