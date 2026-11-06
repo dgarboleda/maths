@@ -8,7 +8,7 @@ import {
   type Question,
 } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
-import { escribirColumnas, escribirGalera } from "./operaciones";
+import { escribirColumnas, escribirGaleraAbierta } from "./operaciones";
 
 const DONE = ["suma-resta-columnas", "division-larga"];
 /** Responde en la hoja de columnas o en la galera, o por escrito si no tiene hoja.
@@ -17,7 +17,8 @@ async function responder(page: Page, question: Question, fallar = false) {
   const choice = question.choices?.find((c) => c.id === question.answer);
   if (choice) await page.getByRole("radio", { name: choice.label, exact: true }).check();
   else if (question.column?.op === "divide")
-    await escribirGalera(page, question, "completa", (key, text) => (fallar && key === "p0" ? String(Number(text) + 1) : text));
+    // En los repasos la galera está en blanco.
+    await escribirGaleraAbierta(page, question, (i, text) => (fallar && i === 0 ? String(Number(text) + 1) : text));
   else if (question.column) await escribirColumnas(page, fallar ? String(question.errors![0].value) : String(question.answer));
   else await page.getByRole("textbox", { name: /Tu respuesta/ }).fill(String(question.answer));
   await page.getByRole("button", { name: "Registrar mi respuesta" }).click();

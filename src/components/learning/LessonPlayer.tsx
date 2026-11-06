@@ -478,7 +478,9 @@ export function QuestionActivity({
           <OperationWorkspace
             questionId={question.id}
             spec={column}
-            mode={progress.stage === "guided" ? "guided" : "free"}
+            // Con ayuda y en la práctica, una fila por paso; al comprobar y
+            // repasar, la galera en blanco.
+            mode={progress.stage === "guided" ? "guided" : progress.stage === "practice" ? "free" : "open"}
             response={response}
             onChange={(value) => {
               setResponse(value);

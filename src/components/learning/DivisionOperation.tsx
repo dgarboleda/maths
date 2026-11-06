@@ -4,6 +4,8 @@ import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   checkDivisionWork,
+  checkOpenDivision,
+  encodeOpenDivision,
   DIVISION_LAYOUTS,
   divisionFields,
   divisionTrace,
@@ -261,12 +263,40 @@ export function DivisionSheet({
 }: {
   spec: DivisionSpec;
   layout: DivisionLayout;
-  mode: "guided" | "free";
+  /** guided y free muestran una fila por paso; open deja la galera en
+   *  blanco (comprobaciones, repasos y ubicación). */
+  mode: "guided" | "free" | "open";
   response: string;
   onChange: (response: string) => void;
   onComplete?: (response: string) => void;
   hintLevel?: number;
   /** Respuesta fallida que sigue escrita (fuera de las comprobaciones). */
+  failedResponse?: string | null;
+  disabled?: boolean;
+}) {
+  if (mode === "open")
+    return <OpenDivisionSheet spec={spec} response={response} onChange={onChange} hintLevel={hintLevel} failedResponse={failedResponse} disabled={disabled} />;
+  return <StepDivisionSheet spec={spec} layout={layout} mode={mode} response={response} onChange={onChange} onComplete={onComplete} hintLevel={hintLevel} failedResponse={failedResponse} disabled={disabled} />;
+}
+
+function StepDivisionSheet({
+  spec,
+  layout,
+  mode,
+  response,
+  onChange,
+  onComplete,
+  hintLevel = 0,
+  failedResponse = null,
+  disabled,
+}: {
+  spec: DivisionSpec;
+  layout: DivisionLayout;
+  mode: "guided" | "free";
+  response: string;
+  onChange: (response: string) => void;
+  onComplete?: (response: string) => void;
+  hintLevel?: number;
   failedResponse?: string | null;
   disabled?: boolean;
 }) {
@@ -391,6 +421,149 @@ export function DivisionSheet({
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Galera en blanco: el alumno decide dónde empezar, cuántas filas escribe y
+ * si anota los productos. Se valida el cociente y la secuencia de filas
+ * (ver `checkOpenDivision`), no la posición exacta de cada cifra.
+ */
+function OpenDivisionSheet({
+  spec,
+  response,
+  onChange,
+  hintLevel = 0,
+  failedResponse = null,
+  disabled,
+}: {
+  spec: DivisionSpec;
+  response: string;
+  onChange: (response: string) => void;
+  hintLevel?: number;
+  failedResponse?: string | null;
+  disabled?: boolean;
+}) {
+  const trace = useMemo(() => divisionTrace(spec), [spec]);
+  const n = trace.dividendDigits.length;
+  const qCells = Math.max(1, n - String(spec.b).length + 1);
+  const maxRows = 2 * n + 2;
+  const [state, setState] = useState(() => {
+    const m = /^L(\d+);(.*)$/.exec(response);
+    const quotient = Array<string>(qCells).fill("");
+    const rows: string[][] = [];
+    if (m) {
+      m[1].split("").slice(-qCells).forEach((d, i, all) => (quotient[qCells - all.length + i] = d));
+      for (const text of m[2].split(",")) rows.push(rightAligned(text, n));
+    }
+    while (rows.length < 2) rows.push(Array(n).fill(""));
+    return { quotient, rows };
+  });
+  const refs = useRef(new Map<string, HTMLInputElement | null>());
+  const focus = (key: string) => requestAnimationFrame(() => refs.current.get(key)?.focus());
+
+  const emit = (next: typeof state) => {
+    setState(next);
+    const q = next.quotient.join("");
+    const rows = next.rows.map((r) => r.join("")).filter(Boolean);
+    onChange(q && rows.length ? encodeOpenDivision(q, rows) : "");
+  };
+  const setQ = (i: number, d: string) => {
+    emit({ ...state, quotient: state.quotient.map((c, k) => (k === i ? d : c)) });
+    if (d && i + 1 < qCells) focus(`q:${i + 1}`);
+  };
+  const setCell = (r: number, j: number, d: string) => {
+    emit({ ...state, rows: state.rows.map((row, k) => (k === r ? row.map((c, x) => (x === j ? d : c)) : row)) });
+    if (d && j + 1 < n) focus(`r${r}:${j + 1}`);
+  };
+  const failed = failedResponse !== null && failedResponse === response ? checkOpenDivision(spec, failedResponse) : null;
+  // Pistas: las primeras cifras del cociente, en tenue.
+  const hinted = hintLevel >= 3 ? Math.max(1, trace.steps.length - 1) : hintLevel >= 2 ? 1 : 0;
+  const offset = qCells - trace.steps.length;
+  const cell =
+    "flex h-10 w-7 items-center justify-center rounded-md border text-center text-xl font-bold tabular-nums placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300 sm:h-11 sm:w-10 sm:text-2xl";
+  const colors = (j: number) => PLACE_COLORS[(n - 1 - j) % 3];
+  const input = (key: string, label: string, value: string, onValue: (d: string) => void, extra: string, placeholder?: string) => (
+    <input
+      key={key}
+      ref={(el) => {
+        refs.current.set(key, el);
+      }}
+      aria-label={label}
+      inputMode="numeric"
+      autoComplete="off"
+      maxLength={1}
+      value={value}
+      placeholder={placeholder}
+      disabled={disabled}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => onValue(e.target.value.replace(/\D/g, "").slice(-1))}
+      className={`${cell} ${extra}`}
+    />
+  );
+  return (
+    <div className="space-y-3">
+      <div className="overflow-x-auto" tabIndex={0} role="group" aria-label={`División ${spec.a} entre ${spec.b}`}>
+        <div className="mx-auto flex w-max items-start">
+          <div className="grid gap-y-0.5" style={{ gridTemplateColumns: `repeat(${n}, auto)` }}>
+            {trace.dividendDigits.map((d, j) => (
+              <span key={`d${j}`} className={`flex h-10 w-7 items-center justify-center text-xl font-bold sm:h-11 sm:w-10 sm:text-2xl ${colors(j)}`}>{d}</span>
+            ))}
+            {state.rows.map((row, r) =>
+              row.map((value, j) =>
+                input(`r${r}:${j}`, `Fila ${r + 1}: columna ${j + 1} de ${n}`, value, (d) => setCell(r, j, d), "border-slate-700 bg-slate-950 text-slate-100"),
+              ),
+            )}
+          </div>
+          <div className="ml-1 border-l-2 border-slate-200 pl-2">
+            <div className="border-b-2 border-slate-200 pb-0.5">
+              <span className="flex h-10 items-center px-1 text-xl font-bold text-slate-100 sm:h-11 sm:text-2xl">
+                <span className="sr-only">entre </span>
+                {spec.b}
+              </span>
+            </div>
+            <div className="mt-1 flex gap-0.5" role="group" aria-label="Cociente">
+              {state.quotient.map((value, i) => {
+                const step = i - offset;
+                return input(
+                  `q:${i}`,
+                  `Cociente: cifra ${i + 1}`,
+                  value,
+                  (d) => setQ(i, d),
+                  failed && !failed.quotientCorrect ? "border-amber-400 bg-amber-950/50 text-cyan-100" : "border-slate-600 bg-slate-950 text-cyan-100",
+                  step >= 0 && step < hinted ? String(trace.steps[step].digit) : undefined,
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={secondaryButton}
+          disabled={disabled || state.rows.length >= maxRows}
+          onClick={() => emit({ ...state, rows: [...state.rows, Array(n).fill("")] })}
+        >
+          Añadir fila
+        </button>
+        <button
+          type="button"
+          className={secondaryButton}
+          disabled={disabled || state.rows.length <= 1}
+          onClick={() => emit({ ...state, rows: state.rows.slice(0, -1) })}
+        >
+          Quitar la última fila
+        </button>
+      </div>
+      <p aria-live="polite" className="text-xs text-slate-400">
+        {failed && !failed.quotientCorrect
+          ? "Revisa el cociente."
+          : failed?.mismatch
+            ? `Revisa ${failed.mismatch.kind === "p" ? "el producto" : "la resta"} del paso ${failed.mismatch.step + 1}.`
+            : "Escribe el cociente y, debajo del dividendo, cada resta con la cifra que bajas (puedes anotar también los productos). La última fila es el resto."}
+      </p>
     </div>
   );
 }

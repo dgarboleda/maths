@@ -81,4 +81,23 @@ describe("Galera de la división larga", () => {
     expect(rows(short.container, "producto del paso")).toBe(0);
     expect(rows(short.container, "resta del paso")).toBe(3);
   });
+
+  test("abierta: galera en blanco, filas a elección y respuesta flexible", async () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <DivisionSheet spec={{ op: "divide", a: 612, b: 6 }} layout="completa" mode="open" response="" onChange={onChange} />,
+    );
+    // No se revela la estructura: tres casillas de cociente y dos filas vacías.
+    expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(3);
+    expect(screen.getAllByLabelText(/^Fila 2: columna/)).toHaveLength(3);
+    expect(screen.queryByLabelText(/^Fila 3: columna/)).toBeNull();
+    // De memoria y bajando el 2 junto al 1: «012» y «0».
+    "102".split("").forEach((d, i) => fireEvent.change(quotient(i + 1), { target: { value: d } }));
+    "012".split("").forEach((d, i) => fireEvent.change(screen.getByLabelText(`Fila 1: columna ${i + 1} de 3`), { target: { value: d } }));
+    fireEvent.change(screen.getByLabelText("Fila 2: columna 3 de 3"), { target: { value: "0" } });
+    expect(onChange).toHaveBeenLastCalledWith("L102;012,0");
+    fireEvent.click(screen.getByRole("button", { name: "Añadir fila" }));
+    expect(screen.getAllByLabelText(/^Fila 3: columna/)).toHaveLength(3);
+    expect(await axe(container)).toHaveNoViolations();
+  });
 });

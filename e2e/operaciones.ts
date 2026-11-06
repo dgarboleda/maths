@@ -34,3 +34,25 @@ export async function escribirGalera(
         .fill(d);
   }
 }
+
+/**
+ * Galera abierta (comprobaciones, repasos y ubicación): el cociente alineado
+ * a la derecha de sus casillas y, debajo del dividendo, cada fila de la
+ * disposición completa en su columna. `cambiar` altera una fila (índice).
+ */
+export async function escribirGaleraAbierta(page: Page, question: Question, cambiar: (i: number, text: string) => string = (_, t) => t) {
+  if (question.column?.op !== "divide") throw new Error("No es una división");
+  const trace = divisionTrace(question.column, "completa");
+  const n = trace.dividendDigits.length;
+  const quotient = String(trace.quotient);
+  const cells = await page.getByLabel(/^Cociente: cifra \d+$/).count();
+  for (const [i, d] of quotient.split("").entries())
+    await page.getByLabel(`Cociente: cifra ${cells - quotient.length + i + 1}`, { exact: true }).fill(d);
+  const rows = divisionFields(trace).filter((f) => f.kind !== "q");
+  for (const [r, f] of rows.entries()) {
+    if (r >= 2) await page.getByRole("button", { name: "Añadir fila" }).click();
+    const text = cambiar(r, f.text);
+    for (const [i, d] of text.split("").entries())
+      await page.getByLabel(`Fila ${r + 1}: columna ${f.end - text.length + i + 2} de ${n}`, { exact: true }).fill(d);
+  }
+}

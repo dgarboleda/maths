@@ -2,6 +2,7 @@ import type { Example, Intent, Question } from "./types";
 import { columnTrace } from "./algorithms/columns";
 import {
   checkDivisionWork,
+  checkOpenDivision,
   divisionAnswerText,
   divisionResponseCorrect,
   divisionResponseValue,
@@ -206,6 +207,11 @@ export function errorFeedback(question: Question, response: string): string {
   if (question.column?.op === "divide") {
     const work = checkDivisionWork(question.column, response);
     if (work?.firstError) return divisionWorkFeedback(question.column, work.firstError, work.layout);
+    const open = checkOpenDivision(question.column, response);
+    if (open && !open.quotientCorrect)
+      return "El cociente no es correcto. Comprueba con la multiplicación: cociente × divisor + resto tiene que dar el dividendo.";
+    if (open?.mismatch)
+      return divisionWorkFeedback(question.column, open.mismatch, open.mismatch.kind === "p" ? "completa" : "abreviada");
     if (value !== null) {
       const { quotient, remainder } = divisionTrace(question.column);
       if (value === quotient)

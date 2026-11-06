@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { MathText } from "@/components/MathText";
 import {
   checkDivisionWork,
+  checkOpenDivision,
   divisionWorkFeedback,
   fmt,
   isAnswerCorrect,
@@ -82,7 +83,7 @@ export function OperationWorkspace({
 }: {
   questionId: string;
   spec: ColumnSpec;
-  mode: "guided" | "free";
+  mode: "guided" | "free" | "open";
   response: string;
   onChange: (response: string) => void;
   onComplete: (response: string) => void;
@@ -94,10 +95,10 @@ export function OperationWorkspace({
   const [layout] = useDivisionLayout();
   return (
     <div className="space-y-3">
-      <StylePicker spec={spec} disabled={disabled} />
+      {!(spec.op === "divide" && mode === "open") && <StylePicker spec={spec} disabled={disabled} />}
       {spec.op === "divide" ? (
         <DivisionSheet
-          key={`${questionId}-${layout}`}
+          key={`${questionId}-${mode === "open" ? "open" : layout}`}
           spec={spec}
           layout={layout}
           mode={mode}
@@ -113,7 +114,7 @@ export function OperationWorkspace({
           key={`${questionId}-${strategy}`}
           spec={spec}
           strategy={strategy}
-          mode={mode}
+          mode={mode === "guided" ? "guided" : "free"}
           response={response}
           onChange={onChange}
           onComplete={onComplete}
@@ -131,6 +132,13 @@ export function operationMistake(spec: ColumnSpec, response: string): string | n
   if (spec.op === "divide") {
     const work = checkDivisionWork(spec, response);
     if (work) return work.firstError ? divisionWorkFeedback(spec, work.firstError, work.layout) : null;
+    const open = checkOpenDivision(spec, response);
+    if (open)
+      return !open.quotientCorrect
+        ? `Tu cociente fue ${fmt(open.quotient)}; el correcto es ${fmt(operationResult(spec))}.`
+        : open.mismatch
+          ? divisionWorkFeedback(spec, open.mismatch, open.mismatch.kind === "p" ? "completa" : "abreviada")
+          : null;
   }
   if (!/^\s*\d+\s*$/.test(response)) return null;
   const answer = operationResult(spec);

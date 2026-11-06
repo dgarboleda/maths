@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
   checkDivisionWork,
+  checkOpenDivision,
+  divisionRowVariants,
   correctResponse,
   divisionBugs,
   divisionResponseValue,
@@ -100,5 +102,37 @@ describe("División larga", () => {
     // Paso 2: queda 1 y el alumno escribe 2 en lugar de 0.
     expect(divisionResponseValue(spec, "C122;6,01,12,0,0,0")).toBe(12);
     expect(checkDivisionWork(spec, "C122;6,01,12,0,0,0")?.firstError).toMatchObject({ kind: "q", step: 1 });
+  });
+
+  test("galera abierta: acepta cualquier escritura correcta del procedimiento", () => {
+    const spec = { op: "divide" as const, a: 612, b: 6 };
+    expect(divisionRowVariants(spec).map((v) => v.map((r) => r.value))).toEqual([
+      [6, 1, 0, 12, 12, 0], // con productos y una fila por paso
+      [6, 12, 12, 0], // con productos, bajando el 2 junto al 1
+      [1, 12, 0], // de memoria
+      [12, 0], // de memoria, bajando el 2 junto al 1
+    ]);
+    for (const rows of ["6,1,0,12,12,0", "6,12,12,0", "1,12,0", "12,0", "6,012,12,0"])
+      expect(checkOpenDivision(spec, `L102;${rows}`)?.correct, rows).toBe(true);
+    // Cifras de más a la izquierda en el cociente no cambian su valor.
+    expect(checkOpenDivision(spec, "L0102;12,0")?.correct).toBe(true);
+    // Sin el 0 del cociente: se reconoce el error típico por su valor.
+    expect(checkOpenDivision(spec, "L12;6,12,12,0")).toMatchObject({ correct: false, quotientCorrect: false });
+    expect(divisionResponseValue(spec, "L12;6,12,12,0")).toBe(12);
+    // Un producto mal: se señala ese paso.
+    expect(checkOpenDivision(spec, "L102;6,12,13,0")).toMatchObject({ correct: false, mismatch: { step: 2, kind: "p" } });
+    // Falta el resto.
+    expect(checkOpenDivision(spec, "L102;6,12,12")?.correct).toBe(false);
+  });
+
+  test("galera abierta: la pregunta la evalúa en el servidor y explica el fallo", () => {
+    const q = getLesson("division-larga")!.practice.find((item) => item.task === 1)!;
+    const spec = q.column as { op: "divide"; a: number; b: number };
+    const rows = divisionRowVariants(spec)[0].map((r) => r.value).join(",");
+    expect(isAnswerCorrect(q, `L${divisionTrace(spec).quotient};${rows}`)).toBe(true);
+    const wrong = rows.replace(/^\d+/, (p) => String(Number(p) + 1));
+    expect(isAnswerCorrect(q, `L${divisionTrace(spec).quotient};${wrong}`)).toBe(false);
+    expect(errorFeedback(q, `L${divisionTrace(spec).quotient};${wrong}`)).toMatch(/Revisa el producto del paso 1/);
+    expect(errorFeedback(q, `L1;${rows}`)).toMatch(/El cociente no es correcto/);
   });
 });

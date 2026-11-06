@@ -245,7 +245,7 @@ export function checkDivisionWork(spec: DivisionSpec, response: string): Divisio
 }
 
 /** Qué revisar en la primera casilla incorrecta (sin dar el resultado). */
-export function divisionWorkFeedback(spec: DivisionSpec, field: DivisionField, layout: DivisionLayout): string {
+export function divisionWorkFeedback(spec: DivisionSpec, field: Pick<DivisionField, "step" | "kind">, layout: DivisionLayout): string {
   const step = divisionTrace(spec, layout).steps[field.step];
   const n = field.step + 1;
   if (field.kind === "q")
@@ -269,6 +269,8 @@ export function parseDivisionText(response: string): { quotient: number; remaind
 export function divisionResponseCorrect(spec: DivisionSpec, response: string): boolean {
   const work = checkDivisionWork(spec, response);
   if (work) return work.correct;
+  const open = checkOpenDivision(spec, response);
+  if (open) return open.correct;
   const text = parseDivisionText(response);
   if (!text) return false;
   const { quotient, remainder } = divisionTrace(spec);
@@ -288,6 +290,8 @@ export function divisionResponseValue(spec: DivisionSpec, response: string): num
       return divisionBugs(spec).find((b) => b.id === "cero-omitido")?.value ?? work.quotient;
     return work.quotient;
   }
+  const open = checkOpenDivision(spec, response);
+  if (open) return open.quotient;
   return parseDivisionText(response)?.quotient ?? null;
 }
 
@@ -305,4 +309,83 @@ export function divisionWorkResponse(spec: DivisionSpec, layout: DivisionLayout 
     fields.filter((f) => f.kind === "q").map((f) => f.text).join(""),
     fields.filter((f) => f.kind !== "q").map((f) => f.text),
   );
+}
+
+// ── Galera abierta (comprobaciones y repasos) ───────────────────────────
+
+/** Una fila escrita bajo el dividendo y el paso al que corresponde. */
+export interface DivisionRow {
+  value: number;
+  step: number;
+  kind: "p" | "r";
+}
+
+/**
+ * Maneras correctas de escribir las filas de trabajo, de arriba abajo: con
+ * cada producto o restando de memoria, y con una fila propia en los pasos
+ * con 0 en el cociente o bajando la cifra junto a la fila anterior.
+ */
+export function divisionRowVariants(spec: DivisionSpec): DivisionRow[][] {
+  const variants: DivisionRow[][] = [];
+  for (const layout of ["completa", "abreviada"] as const)
+    for (const merge of [false, true]) {
+      const rows: { text: string; step: number; kind: "p" | "r" }[] = [];
+      for (const s of divisionTrace(spec, layout).steps) {
+        const tail = s.down !== null ? String(s.down) : "";
+        const last = rows.at(-1);
+        if (merge && s.index > 0 && s.digit === 0 && last?.kind === "r") {
+          last.text += tail;
+          continue;
+        }
+        if (layout === "completa") rows.push({ text: String(s.product), step: s.index, kind: "p" });
+        rows.push({ text: String(s.rest) + tail, step: s.index, kind: "r" });
+      }
+      const variant = rows.map((r) => ({ value: Number(r.text), step: r.step, kind: r.kind }));
+      if (!variants.some((v) => JSON.stringify(v) === JSON.stringify(variant))) variants.push(variant);
+    }
+  return variants;
+}
+
+export interface OpenDivisionCheck {
+  quotient: number;
+  remainder: number | null;
+  quotientCorrect: boolean;
+  /** Primera fila que se aparta de la manera correcta más parecida. */
+  mismatch: { step: number; kind: "p" | "r" } | null;
+  correct: boolean;
+}
+
+/** Respuesta de la galera abierta: «L», el cociente y las filas no vacías. */
+export function encodeOpenDivision(quotient: string, rows: string[]): string {
+  return `L${quotient};${rows.join(",")}`;
+}
+
+/**
+ * Revisa una galera abierta: el cociente y cada fila, sin exigir una
+ * disposición ni la posición exacta de las cifras. Es correcta si el
+ * cociente lo es y las filas siguen una de las maneras correctas (la última
+ * es el resto).
+ */
+export function checkOpenDivision(spec: DivisionSpec, response: string): OpenDivisionCheck | null {
+  const m = /^L(\d+);(\d+(?:,\d+)*)$/.exec(response.trim());
+  if (!m) return null;
+  const { quotient, remainder } = divisionTrace(spec);
+  const given = Number(m[1]);
+  const rows = m[2].split(",").map(Number);
+  const variants = divisionRowVariants(spec);
+  let best = { prefix: -1, variant: variants[0] };
+  for (const v of variants) {
+    let prefix = 0;
+    while (prefix < Math.min(v.length, rows.length) && v[prefix].value === rows[prefix]) prefix++;
+    if (prefix === v.length && rows.length === v.length) return { quotient: given, remainder: rows.at(-1)!, quotientCorrect: given === quotient, mismatch: null, correct: given === quotient };
+    if (prefix > best.prefix) best = { prefix, variant: v };
+  }
+  const row = best.variant[Math.min(best.prefix, best.variant.length - 1)];
+  return {
+    quotient: given,
+    remainder: rows.at(-1) ?? null,
+    quotientCorrect: given === quotient,
+    mismatch: { step: row.step, kind: best.prefix >= best.variant.length ? "r" : row.kind },
+    correct: false,
+  };
 }

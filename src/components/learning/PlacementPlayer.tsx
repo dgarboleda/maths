@@ -157,7 +157,7 @@ function PlacementQuestion({
         <OperationWorkspace
           questionId={question.id}
           spec={question.column}
-          mode="free"
+          mode="open"
           response={response}
           onChange={setResponse}
           onComplete={() => {}}
