@@ -29,5 +29,6 @@ run(npm, ["run", "audit:security"]);
 run(npm, ["run", "functions:build"]);
 run(npm, ["run", "build"]);
 run(process.execPath, ["node_modules/firebase-tools/lib/bin/firebase.js", "deploy", "--only", "functions,firestore:rules,firestore:indexes,storage", "--project", project]);
+run(npm, ["run", "check:functions"]);
 run(process.execPath, ["node_modules/@opennextjs/cloudflare/dist/cli/index.js", "deploy"]);
 run(npm, ["run", "verify:deployment"]);
