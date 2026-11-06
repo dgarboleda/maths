@@ -63,6 +63,7 @@ const FractionProductVisual = numberVisual("FractionProductVisual");
 const IntegerProductVisual = numberVisual("IntegerProductVisual");
 const OrderOfOperationsVisual = numberVisual("OrderOfOperationsVisual");
 const SquareRootVisual = numberVisual("SquareRootVisual");
+const EqualGroupsVisual = numberVisual("EqualGroupsVisual");
 
 // Productos notables y distributiva: modelos de área propios de álgebra.
 const algebraVisual = (name: "BinomialSquareVisual" | "DistributiveVisual" | "ExpressionVisual") =>
@@ -314,6 +315,7 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   distributive: DistributiveVisual,
   expression: ExpressionVisual,
   columns: ColumnExplorer,
+  "equal-groups": EqualGroupsVisual,
   "long-division": DivisionExplorer,
   "factor-table": FactorExplorer,
   ruffini: RuffiniExplorer,

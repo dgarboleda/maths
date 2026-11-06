@@ -1,21 +1,67 @@
-"""Genera los clips revisables del tutor; requiere edge-tts instalado aparte."""
+"""Genera los audios del tutor visual a partir del guion compartido.
+
+El texto vive en src/components/learning/tutor/guion.json: la interfaz muestra
+ese mismo texto como alternativa, así que voz y subtítulo no se desincronizan.
+
+Requisitos (fuera del repositorio):  pip install edge-tts truststore
+
+TLS: edge-tts verifica con el paquete certifi, que no incluye las CA de una
+red corporativa o de un proxy con inspección TLS (de ahí el
+SSLCertVerificationError «self-signed certificate in certificate chain»).
+`truststore` hace que Python verifique con el almacén de certificados del
+sistema operativo (Windows, macOS o Linux), donde el administrador ya instaló
+esas CA. La verificación sigue activa: nunca se desactiva.
+El proxy se toma de HTTPS_PROXY si existe.
+
+Uso:
+  python scripts/generar-voces-tutor.py            # solo los que faltan
+  python scripts/generar-voces-tutor.py --todos    # regenera todos
+  python scripts/generar-voces-tutor.py --listar   # muestra el guion
+"""
 import asyncio
+import json
+import os
+import sys
 from pathlib import Path
-import edge_tts
 
-TEXTOS = {
-    "unidades-1": "En el almacén hay ocho piezas y llegan cinco más. Vamos a agruparlas para contar mejor.",
-    "unidades-2": "Una decena representa diez unidades. Podemos cambiar diez piezas por una decena sin cambiar la cantidad.",
-    "grupos-1": "La ciudad instala tres filas de cuatro paneles. Cada fila tiene la misma cantidad.",
-    "grupos-2": "Podemos contar los mismos paneles por filas o por columnas sin cambiar el total.",
-    "fracciones-1": "Dos reservas del mismo tamaño contienen un medio y un cuarto. Para juntarlas necesitamos partes del mismo tamaño.",
-    "fracciones-2": "Ahora las dos cantidades están expresadas en cuartos: dos cuartos y un cuarto.",
-}
+try:
+    import truststore
 
-async def main():
-    destino = Path(__file__).resolve().parent.parent / "public" / "audio" / "tutor"
-    destino.mkdir(parents=True, exist_ok=True)
-    for nombre, texto in TEXTOS.items():
-        await edge_tts.Communicate(texto, "es-PE-CamilaNeural", rate="-10%").save(str(destino / f"{nombre}.mp3"))
+    truststore.inject_into_ssl()  # antes de importar edge_tts: crea su contexto TLS al importarse
+except ImportError:
+    print("Aviso: falta 'truststore'; se usarán solo las CA de certifi.", file=sys.stderr)
+
+RAIZ = Path(__file__).resolve().parent.parent
+GUION = RAIZ / "src" / "components" / "learning" / "tutor" / "guion.json"
+DESTINO = RAIZ / "public" / "audio" / "tutor"
+
+
+def clips(guion: dict):
+    for tutorial in guion["tutoriales"].values():
+        for escena in tutorial["escenas"]:
+            for parte in ("intro", "pista", "logro"):
+                yield f"{escena['id']}-{parte}", escena[parte]
+    for clave, texto in guion["avisos"].items():
+        yield clave, texto
+
+
+async def main() -> None:
+    guion = json.loads(GUION.read_text(encoding="utf-8"))
+    todos = "--todos" in sys.argv
+    if "--listar" in sys.argv:
+        for nombre, texto in clips(guion):
+            print(f"{nombre}: {texto}")
+        return
+    import edge_tts
+
+    DESTINO.mkdir(parents=True, exist_ok=True)
+    proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    for nombre, texto in clips(guion):
+        archivo = DESTINO / f"{nombre}.mp3"
+        if archivo.exists() and not todos:
+            continue
+        await edge_tts.Communicate(texto, guion["voz"], rate=guion["velocidad"], proxy=proxy).save(str(archivo))
+        print(f"✓ {archivo.relative_to(RAIZ)}")
+
 
 asyncio.run(main())

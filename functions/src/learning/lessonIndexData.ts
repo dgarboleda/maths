@@ -23,6 +23,14 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     ]
   },
   {
+    "id": "multiplicacion-grupos",
+    "unitId": "numeros",
+    "title": "Multiplicar con grupos iguales",
+    "objective": "Interpretar la multiplicación como grupos iguales y como filas y columnas, usar que el orden de los factores no cambia el producto y separar un factor para calcular.",
+    "prerequisites": [],
+    "legacyModuleIds": []
+  },
+  {
     "id": "enteros-recta",
     "unitId": "numeros",
     "title": "Números enteros en la recta",

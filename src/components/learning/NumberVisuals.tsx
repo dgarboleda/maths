@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MathText } from "@/components/MathText";
 import { Challenge, num, Slider, Toggle } from "./GraphVisuals";
+import { PanelArray } from "./tutor/Manipulatives";
 
 const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
 const lcm = (a: number, b: number) => (a * b) / gcd(a, b);
@@ -272,6 +273,32 @@ export function SquareRootVisual({ id }: { id: string }) {
         { text: "Encuentra un cuadrado perfecto entre 60 y 90.", met: area > 60 && area < 90 && Number.isInteger(Math.sqrt(area)) },
         { text: "Consigue la raíz más cercana a 8 sin llegar a 8.", met: area === 63 },
         { text: "Haz que la raíz sea exactamente 10.", met: area === 100 },
+      ]} />
+    </>
+  );
+}
+
+/** Multiplicación como filas iguales: el mismo arreglo que manipula el tutor visual. */
+export function EqualGroupsVisual({ id }: { id: string }) {
+  const [rows, setRows] = useState(2);
+  const [cols, setCols] = useState(5);
+  return (
+    <>
+      <Slider id={`${id}-rows`} label="Filas (cantidad de grupos)" value={rows} min={1} max={10} onChange={setRows} />
+      <Slider id={`${id}-cols`} label="Paneles por fila (tamaño del grupo)" value={cols} min={1} max={10} onChange={setCols} />
+      <PanelArray rows={rows} cols={cols} label={`${rows} filas de ${cols} paneles`} />
+      <p className="text-lg font-bold">
+        {rows} × {cols} = {rows * cols}
+      </p>
+      <p className="text-sm text-slate-300">
+        {rows === 1
+          ? `Una sola fila de ${cols}: no hace falta sumar.`
+          : `${Array.from({ length: rows }, () => cols).join(" + ")} = ${rows * cols}. Girado serían ${cols} filas de ${rows}, con los mismos ${rows * cols} paneles.`}
+      </p>
+      <Challenge goals={[
+        { text: "Arma 24 paneles con 4 filas iguales.", met: rows === 4 && cols * rows === 24 },
+        { text: "Reparte 12 paneles en 2 filas iguales. ¿Cuántos van en cada fila?", met: rows === 2 && cols === 6 },
+        { text: "Haz que 7 × 6 se vea como 7 filas: ¿cuántos paneles son?", met: rows === 7 && cols === 6 },
       ]} />
     </>
   );

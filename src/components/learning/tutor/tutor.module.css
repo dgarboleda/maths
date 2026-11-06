@@ -1,0 +1,35 @@
+/* Movimiento breve y con sentido: la pieza aparece donde se coloca y el
+   arreglo gira. La regla global de prefers-reduced-motion (globals.css) lo
+   anula; aquí además se quitan las animaciones por completo. */
+.pop {
+  animation: tutor-pop 220ms ease-out;
+}
+.turn {
+  animation: tutor-turn 420ms ease-out;
+}
+@keyframes tutor-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0.2;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes tutor-turn {
+  from {
+    transform: rotate(-90deg);
+    opacity: 0.4;
+  }
+  to {
+    transform: rotate(0);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pop,
+  .turn {
+    animation: none;
+  }
+}

@@ -98,6 +98,7 @@ export type Visual =
   | "distributive"
   | "expression"
   | "columns"
+  | "equal-groups"
   | "long-division"
   | "factor-table"
   | "ruffini";

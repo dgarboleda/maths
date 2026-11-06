@@ -6,6 +6,7 @@ import { formulasFor } from "./formulas";
  * en el título de la clase («regla de tres», «sucesiones», «parábola»…).
  */
 const SCHOOL_NAMES: Record<string, string[]> = {
+  "multiplicacion-grupos": ["tablas de multiplicar", "veces", "producto", "por"],
   "enteros-recta": ["números negativos", "recta numérica", "valor absoluto"],
   "enteros-suma-resta": ["números negativos", "suma de enteros", "resta de enteros"],
   "enteros-producto-cociente": ["ley de signos", "regla de los signos", "números negativos"],

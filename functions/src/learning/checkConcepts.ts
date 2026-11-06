@@ -53,6 +53,17 @@ export const CHECK_CONCEPTS: Record<string, Question> = {
     0,
     "Como no hay decenas, se cambia 1 centena por 10 decenas y luego 1 decena por 10 unidades: 200 + 90 + 15 = 305.",
   ),
+  "multiplicacion-grupos": c(
+    "q0",
+    "Para saber cuántas sillas hay en 6 filas de 9, Ana suma 9 seis veces y Luis calcula 6 × 9. ¿Quién tiene razón?",
+    [
+      ["Solo Ana: la multiplicación es otra operación", "6 × 9 significa justamente 6 veces 9; los dos cuentan las mismas sillas."],
+      ["Solo Luis, porque sumar da 15", "6 + 9 = 15 suma las filas con las sillas de una fila; Ana suma seis nueves, que es otra cuenta."],
+      "Los dos: 6 × 9 abrevia la suma de seis nueves",
+    ],
+    2,
+    "Multiplicar abrevia una suma de grupos iguales: 9 + 9 + 9 + 9 + 9 + 9 = 6 × 9 = 54 sillas.",
+  ),
   "enteros-recta": c(
     "q0",
     "¿Cuál es el opuesto de −8 y por qué?",
