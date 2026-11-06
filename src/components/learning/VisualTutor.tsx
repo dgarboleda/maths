@@ -44,18 +44,27 @@ export function VisualTutor({ lessonId }: { lessonId: string }) {
   const [state, setState] = useState<ManipulativeState>(scene.initial);
   const [done, setDone] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  // Texto completo de lo último que dijo (o diría) la voz: la transcripción.
+  const [heard, setHeard] = useState<string | null>(null);
+  const [saidMoments, setSaidMoments] = useState<ReadonlySet<string>>(new Set());
   const narration = useNarration();
+  const speak = (clip: string, text: string) => {
+    setHeard(text);
+    narration.say(clip);
+  };
   const last = index + 1 === tutorial.scenes.length;
 
-  const goTo = (next: number, speak: boolean) => {
+  const goTo = (next: number, withVoice: boolean) => {
     const target = tutorial.scenes[next];
     setIndex(next);
     setState(target.initial);
     setDone(false);
     setFeedback(null);
+    setHeard(null);
+    setSaidMoments(new Set());
     save(lessonId, next);
     setResumed(false);
-    if (speak) narration.say(`${target.id}-intro`);
+    if (withVoice) speak(`${target.id}-intro`, target.voice.intro);
     else narration.stop();
   };
 
@@ -67,19 +76,27 @@ export function VisualTutor({ lessonId }: { lessonId: string }) {
     if (scene.goal(next)) {
       setDone(true);
       setFeedback({ kind: "success", text: scene.success });
-      narration.say(`${scene.id}-logro`);
+      speak(`${scene.id}-logro`, scene.voice.success);
       if (last) save(lessonId, 0);
-    } else if (feedback?.kind === "notice") setFeedback(null);
+      return;
+    }
+    if (feedback?.kind === "notice") setFeedback(null);
+    // Comentario a mitad de la actividad: suena una vez, al llegar al momento.
+    const moment = scene.moments.find((m) => !saidMoments.has(m.key) && !m.when(state) && m.when(next));
+    if (moment) {
+      setSaidMoments(new Set([...saidMoments, moment.key]));
+      speak(`${scene.id}-${moment.key}`, moment.voice);
+    }
   };
 
   const announce = (kind: "notice", notice: Notice) => {
-    setFeedback({ kind, text: NOTICES[notice] });
-    narration.say(notice);
+    setFeedback({ kind, text: NOTICES[notice].text });
+    speak(notice, NOTICES[notice].voice);
   };
 
   const hint = () => {
     setFeedback({ kind: "hint", text: scene.hint });
-    narration.say(`${scene.id}-pista`);
+    speak(`${scene.id}-pista`, scene.voice.hint);
   };
 
   const intro = `${scene.id}-intro`;
@@ -105,9 +122,13 @@ export function VisualTutor({ lessonId }: { lessonId: string }) {
         </p>
       )}
 
-      <p className="leading-relaxed text-slate-100">{scene.intro}</p>
+      <p className="text-lg font-semibold leading-snug text-white">{scene.task}</p>
 
       <VoicePlayer narration={narration} fallbackClip={intro} />
+      <details className="group rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300">
+        <summary className="min-h-8 cursor-pointer select-none font-semibold text-slate-200">Lo que dice la voz</summary>
+        <p className="mt-2 leading-relaxed">{heard ?? scene.voice.intro}</p>
+      </details>
       <audio {...narration.audioProps} />
       {narration.status === "unavailable" && (
         <p role="status" className="text-sm text-amber-200">

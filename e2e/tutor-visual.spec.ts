@@ -44,7 +44,7 @@ test("tutor visual de multiplicación: voz real, manipulación sin arrastre y si
   await page.keyboard.press("Enter");
   await page.keyboard.press("Enter");
   await page.keyboard.press("Enter");
-  await expect(tutor.getByText(/tres por cuatro es doce/)).toBeVisible();
+  await expect(tutor.getByText("3 filas de 4: 4 + 4 + 4 = 3 × 4 = 12.")).toBeVisible();
   await expect(page.locator("audio")).toHaveAttribute("src", "/audio/tutor/grupos-1-logro.mp3");
   await sinDesbordeNiViolaciones(page);
   // Ningún control del tutor queda recortado, ni a 320 px.
@@ -57,13 +57,13 @@ test("tutor visual de multiplicación: voz real, manipulación sin arrastre y si
 
   await tutor.getByRole("button", { name: "Continuar actividad" }).click();
   await tutor.getByRole("button", { name: "Girar instalación ↻" }).click();
-  await expect(tutor.getByText(/siguen siendo doce paneles/)).toBeVisible();
+  await expect(tutor.getByText("4 × 3 = 3 × 4 = 12.")).toBeVisible();
 
   // Silenciar: el texto queda y no vuelve a sonar.
   await tutor.getByRole("button", { name: "Silenciar voz" }).click();
   await tutor.getByRole("button", { name: "Continuar actividad" }).click();
   expect(await page.evaluate(() => document.querySelector("audio")!.paused)).toBe(true);
-  await expect(tutor.getByText(/cinco filas de seis paneles/)).toBeVisible();
+  await expect(tutor.getByText("Arma 5 filas de 6 paneles.")).toBeVisible();
 
   // Al volver a la clase se retoma la escena.
   // La clase recuerda su etapa; el tutor, su escena y la voz silenciada.

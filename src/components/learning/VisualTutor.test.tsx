@@ -53,7 +53,9 @@ describe("contenido del tutor visual", () => {
   it("cada texto narrado tiene su audio grabado", () => {
     const dir = join(process.cwd(), "public", "audio", "tutor");
     const clips = [
-      ...Object.values(TUTORIALS).flatMap((t) => t.scenes.flatMap((s) => [`${s.id}-intro`, `${s.id}-pista`, `${s.id}-logro`])),
+      ...Object.values(TUTORIALS).flatMap((t) =>
+        t.scenes.flatMap((s) => [`${s.id}-intro`, `${s.id}-pista`, `${s.id}-logro`, ...s.moments.map((m) => `${s.id}-${m.key}`)]),
+      ),
       ...Object.keys(NOTICES),
     ];
     for (const clip of clips) expect(existsSync(join(dir, `${clip}.mp3`)), clip).toBe(true);
@@ -104,10 +106,10 @@ describe("tutor visual en la clase", () => {
     expect(screen.getByRole("button", { name: "Formar decena" })).toBeDisabled();
     for (let i = 0; i < 10; i++) fireEvent.click(screen.getAllByRole("button", { name: /llevar a la bandeja/ })[0]);
     fireEvent.click(screen.getByRole("button", { name: "Formar decena" }));
-    expect(screen.getByText(/Diez unidades forman una decena/)).toBeInTheDocument();
+    expect(screen.getByText("1 decena y 3 unidades: 8 + 5 = 13.")).toBeInTheDocument();
     expect(lastClip()).toBe("/audio/tutor/unidades-1-logro.mp3");
     fireEvent.click(screen.getByRole("button", { name: "Continuar actividad" }));
-    expect(screen.getByText(/veintisiete más quince/)).toBeInTheDocument();
+    expect(screen.getByText("27 + 15: hay 12 unidades sueltas. Reagrúpalas.")).toBeInTheDocument();
     expect(lastClip()).toBe("/audio/tutor/unidades-2-intro.mp3");
   });
 
@@ -115,7 +117,7 @@ describe("tutor visual en la clase", () => {
     render(<VisualTutor lessonId="multiplicacion-grupos" />);
     expect(play).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Necesito una pista" }));
-    expect(screen.getByText(/Usa los botones de filas/)).toBeInTheDocument();
+    expect(screen.getByText("Filas: 3. Paneles por fila: 4.")).toBeInTheDocument();
     expect(lastClip()).toBe("/audio/tutor/grupos-1-pista.mp3");
   });
 
@@ -126,8 +128,40 @@ describe("tutor visual en la clase", () => {
     await user.keyboard("{Enter}{Enter}");
     screen.getByRole("button", { name: "Añadir: Paneles por fila" }).focus();
     await user.keyboard("{Enter}{Enter}{Enter}");
-    expect(screen.getByText(/tres por cuatro es doce/)).toBeInTheDocument();
+    expect(screen.getByText("3 filas de 4: 4 + 4 + 4 = 3 × 4 = 12.")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "3 filas de 4 paneles" })).toBeInTheDocument();
+  });
+
+  it("la voz explica más que la pantalla y su texto completo queda en la transcripción", () => {
+    render(<VisualTutor lessonId="multiplicacion-grupos" />);
+    const transcript = screen.getByText("Lo que dice la voz").closest("details")!;
+    expect(screen.getByText("Arma 3 filas con 4 paneles en cada una.")).toBeInTheDocument();
+    expect(transcript).toHaveTextContent(/se cuentan rápido y sin errores/);
+    fireEvent.click(screen.getByRole("button", { name: "Necesito una pista" }));
+    expect(transcript).toHaveTextContent(/Hay dos controles/);
+    // En pantalla, la pista es corta; la explicación completa no se repite fuera de la transcripción.
+    expect(screen.getAllByText(/Hay dos controles/)).toHaveLength(1);
+    for (const tutorial of Object.values(TUTORIALS))
+      for (const scene of tutorial.scenes) {
+        expect(scene.voice.intro.length, scene.id).toBeGreaterThan(scene.task.length * 2);
+        expect(scene.voice.success, scene.id).not.toBe(scene.success);
+      }
+  });
+
+  it("comenta momentos clave una sola vez: cruzar el cero y moverse al revés", () => {
+    render(<VisualTutor lessonId="enteros-suma-resta" />);
+    const left = screen.getByRole("button", { name: "← Retroceder 1" });
+    const right = screen.getByRole("button", { name: "Avanzar 1 →" });
+    fireEvent.click(left);
+    expect(lastClip()).toBe("/audio/tutor/enteros-1-al-reves.mp3");
+    fireEvent.click(right);
+    for (let i = 0; i < 3; i++) fireEvent.click(right);
+    expect(lastClip()).toBe("/audio/tutor/enteros-1-cero.mp3");
+    const calls = play.mock.calls.length;
+    fireEvent.click(left);
+    fireEvent.click(right);
+    expect(play.mock.calls.length).toBe(calls);
+    expect(screen.getByText("Lo que dice la voz").closest("details")).toHaveTextContent(/Estás en el cero, la planta baja/);
   });
 
   it("en la recta, restar un negativo se resuelve avanzando con el teclado", async () => {
@@ -136,19 +170,19 @@ describe("tutor visual en la clase", () => {
     render(<VisualTutor lessonId="enteros-suma-resta" />);
     screen.getByRole("button", { name: "Avanzar 1 →" }).focus();
     await user.keyboard("{Enter}{Enter}{Enter}");
-    expect(screen.queryByText(/Llegaste a siete/)).not.toBeInTheDocument();
+    expect(screen.queryByText("3 − (−4) = 3 + 4 = 7.")).not.toBeInTheDocument();
     await user.keyboard("{Enter}");
-    expect(screen.getByText(/Llegaste a siete/)).toBeInTheDocument();
+    expect(screen.getByText("3 − (−4) = 3 + 4 = 7.")).toBeInTheDocument();
     expect(screen.getByText("3 + 4 = 7")).toBeInTheDocument();
   });
 
   it("la balanza explica con voz por qué no se quita de un solo lado", () => {
     render(<VisualTutor lessonId="ecuaciones-un-paso" />);
     fireEvent.click(screen.getByRole("button", { name: "Quitar 1 solo a la izquierda" }));
-    expect(screen.getByText(/la balanza se inclina/)).toBeInTheDocument();
+    expect(screen.getByText("Así la balanza se inclina: quita lo mismo de los dos lados.")).toBeInTheDocument();
     expect(lastClip()).toBe("/audio/tutor/balanza-desequilibrada.mp3");
     for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole("button", { name: "Quitar 1 de cada lado" }));
-    expect(screen.getByText(/x vale cuatro/)).toBeInTheDocument();
+    expect(screen.getByText("x = 4. Comprobación: 4 + 3 = 7.")).toBeInTheDocument();
   });
 
   it("compara fracciones partiendo en dos y en tres", () => {
@@ -158,16 +192,16 @@ describe("tutor visual en la clase", () => {
     fireEvent.click(screen.getByRole("button", { name: "Partir en dos (reserva de arriba)" }));
     fireEvent.click(screen.getByRole("button", { name: "Partir en tres (reserva de abajo)" }));
     expect(screen.getByText("4/6 > 3/6")).toBeInTheDocument();
-    expect(screen.getByText(/Dos tercios es más que un medio/)).toBeInTheDocument();
+    expect(screen.getByText("4/6 > 3/6, así que 2/3 > 1/2.")).toBeInTheDocument();
   });
 
   it("explica, con texto y voz, por qué todavía no se pueden juntar las reservas", () => {
     render(<VisualTutor lessonId="fracciones-suma-resta" />);
     fireEvent.click(screen.getByRole("button", { name: "Juntar reservas" }));
-    expect(screen.getByText(/las partes tienen tamaños distintos. Pártelas primero/)).toBeInTheDocument();
+    expect(screen.getByText("Partes de distinto tamaño: pártelas primero.")).toBeInTheDocument();
     expect(lastClip()).toBe("/audio/tutor/no-se-puede-juntar.mp3");
     fireEvent.click(screen.getByRole("button", { name: /Partir en dos \(reserva de arriba\)/ }));
-    expect(screen.getByText(/Un medio es lo mismo que dos cuartos/)).toBeInTheDocument();
+    expect(screen.getByText("1/2 = 2/4.")).toBeInTheDocument();
   });
 
   it("silenciar detiene la voz, se recuerda y el texto sigue disponible", () => {
@@ -176,7 +210,7 @@ describe("tutor visual en la clase", () => {
     expect(screen.getByRole("button", { name: "Activar voz" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "Necesito una pista" }));
     expect(play).not.toHaveBeenCalled();
-    expect(screen.getByText(/Usa los botones de filas/)).toBeInTheDocument();
+    expect(screen.getByText("Filas: 3. Paneles por fila: 4.")).toBeInTheDocument();
     unmount();
     render(<VisualTutor lessonId="multiplicacion-grupos" />);
     expect(screen.getByRole("button", { name: "Activar voz" })).toBeInTheDocument();
@@ -201,7 +235,7 @@ describe("tutor visual en la clase", () => {
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Escuchar" })));
     expect(screen.getByRole("status")).toHaveTextContent("La voz no está disponible");
     fireEvent.error(container.querySelector("audio")!);
-    expect(screen.getByText(/Dos reservas del mismo tamaño/)).toBeInTheDocument();
+    expect(screen.getByText("1/2 + 1/4: haz que las partes sean del mismo tamaño.")).toBeInTheDocument();
   });
 
   it("al volver a la clase retoma la escena y permite empezar de nuevo", () => {
