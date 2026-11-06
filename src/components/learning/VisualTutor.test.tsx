@@ -8,7 +8,7 @@ import { getLesson } from "@/lib/learning/domain";
 import guion from "./tutor/guion.json";
 import { NOTICES, TUTORIALS } from "./tutor/content";
 import { hasVisualTutor, TUTOR_LESSONS } from "./tutor/lessons";
-import { reduce, type ManipulativeState, type TutorAction } from "./tutor/model";
+import { lineExpression, reduce, type ManipulativeState, type TutorAction } from "./tutor/model";
 import { VisualTutor } from "./VisualTutor";
 
 /** Una forma de resolver cada escena con las acciones del alumno. */
@@ -30,6 +30,15 @@ const SOLUTIONS: Record<string, TutorAction[]> = {
   "ecuaciones-1": Array.from({ length: 3 }, () => ({ type: "remove-both" }) as const),
   "ecuaciones-2": [{ type: "share" }],
   "ecuaciones-3": [{ type: "remove-both" }, { type: "share" }],
+  "reparto-1": [{ type: "share-ten" }, { type: "share-ten" }, { type: "share-unit" }],
+  "reparto-2": [{ type: "share-ten" }, { type: "share-ten" }, { type: "break-ten" }, ...Array.from({ length: 4 }, () => ({ type: "share-unit" }) as const)],
+  "reparto-3": [{ type: "share-ten" }, { type: "break-ten" }, { type: "share-unit" }, { type: "share-unit" }],
+  "signos-1": Array.from({ length: 3 }, () => ({ type: "jump" }) as const),
+  "signos-2": [...Array.from({ length: 3 }, () => ({ type: "jump" }) as const), { type: "flip" }],
+  "signos-3": [...Array.from({ length: 3 }, () => ({ type: "jump" }) as const), { type: "flip" }],
+  "dos-pasos-1": [...Array.from({ length: 5 }, () => ({ type: "remove-both" }) as const), { type: "share" }],
+  "dos-pasos-2": [...Array.from({ length: 3 }, () => ({ type: "remove-both" }) as const), { type: "share" }],
+  "dos-pasos-3": [...Array.from({ length: 2 }, () => ({ type: "remove-both" }) as const), { type: "share" }],
 };
 
 let play: ReturnType<typeof vi.fn<() => Promise<void>>>;
@@ -47,7 +56,7 @@ describe("contenido del tutor visual", () => {
   it("la lista ligera coincide con el guion y cada tutor corresponde a una clase del catálogo", () => {
     expect([...TUTOR_LESSONS].sort()).toEqual(Object.keys(guion.tutoriales).sort());
     for (const id of TUTOR_LESSONS) expect(getLesson(id), id).toBeDefined();
-    expect(hasVisualTutor("division-larga")).toBe(false);
+    expect(hasVisualTutor("mcd-mcm")).toBe(false);
   });
 
   it("cada texto narrado tiene su audio grabado", () => {
@@ -83,6 +92,22 @@ describe("contenido del tutor visual", () => {
     expect(reduce(start, { type: "share" })).toEqual({ state: start, notice: "no-se-puede-repartir" });
     const after = reduce(reduce(start, { type: "remove-both" }).state, { type: "share" }).state;
     expect(after).toMatchObject({ xs: 1, left: 0, right: 4 });
+  });
+
+  it("en un reparto todos reciben lo mismo: si no alcanza, se explica y no se aplica", () => {
+    const start = TUTORIALS["division-larga"].scenes[1].initial;
+    let s = reduce(reduce(start, { type: "share-ten" }).state, { type: "share-ten" }).state;
+    expect(reduce(s, { type: "share-ten" })).toEqual({ state: s, notice: "no-alcanza-para-todos" });
+    s = reduce(s, { type: "break-ten" }).state;
+    expect(s).toMatchObject({ tens: 0, units: 12 });
+  });
+
+  it("tras tomar el opuesto ya no se salta: la recta muestra (−1) × n × salto", () => {
+    let s = TUTORIALS["enteros-producto-cociente"].scenes[1].initial;
+    for (let i = 0; i < 3; i++) s = reduce(s, { type: "jump" }).state;
+    s = reduce(s, { type: "flip" }).state;
+    expect(reduce(s, { type: "jump" }).state).toBe(s);
+    expect(s.kind === "line" && lineExpression(s)).toBe("(−1) × 3 × 4 = −12");
   });
 
   it("en las escenas de comparación las reservas no se juntan", () => {

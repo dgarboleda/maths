@@ -1,6 +1,6 @@
 "use client";
 
-import { TRAY_SIZE, ARRAY_MAX, MAX_DENOMINATOR, balanceEquation, lineExpression, type ArrayState, type BalanceState, type FractionState, type LineState, type PlaceValueState, type TutorAction } from "./model";
+import { TRAY_SIZE, ARRAY_MAX, MAX_DENOMINATOR, balanceEquation, lineExpression, shareDone, type ArrayState, type BalanceState, type FractionState, type LineState, type PlaceValueState, type ShareState, type TutorAction } from "./model";
 import styles from "./tutor.module.css";
 
 /*
@@ -215,6 +215,9 @@ export function NumberLine({ state, dispatch }: { state: LineState; dispatch: Di
   const x = (v: number) => 16 + ((v - state.min) / span) * (W - 32);
   const ticks = Array.from({ length: span + 1 }, (_, i) => state.min + i);
   const moved = state.pos - state.start;
+  // Con saltos grandes solo se rotulan sus múltiplos: la recta sigue legible en un móvil.
+  const labelled = (t: number) => !state.jump || t % state.jump === 0;
+  const jumpLocked = (state.flips ?? 0) % 2 === 1;
   return (
     <div className="space-y-3">
       <svg role="img" viewBox={`0 0 ${W} 80`} className="w-full max-w-lg" aria-label={`Recta numérica: empiezas en ${sg(state.start)} y estás en ${sg(state.pos)}`}>
@@ -226,23 +229,43 @@ export function NumberLine({ state, dispatch }: { state: LineState; dispatch: Di
         {ticks.map((t) => (
           <g key={t}>
             <line x1={x(t)} x2={x(t)} y1={34} y2={46} className={t === 0 ? "stroke-white" : "stroke-slate-500"} strokeWidth={t === 0 ? 2 : 1} />
-            <text x={x(t)} y={68} textAnchor="middle" className={`text-[15px] ${t === 0 ? "fill-white font-bold" : "fill-slate-300"}`}>{sg(t)}</text>
+            {labelled(t) && (
+              <text x={x(t)} y={68} textAnchor="middle" className={`text-[15px] ${t === 0 ? "fill-white font-bold" : "fill-slate-300"}`}>{sg(t)}</text>
+            )}
           </g>
         ))}
         <circle cx={x(state.start)} cy={40} r={6} className="fill-slate-950 stroke-amber-300" strokeWidth={2} />
         <circle cx={x(state.pos)} cy={40} r={7} className="fill-amber-300 transition-all duration-300" />
         <text x={x(state.pos)} y={20} textAnchor="middle" className="fill-amber-200 text-[16px] font-bold">{sg(state.pos)}</text>
       </svg>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className={control} disabled={state.pos <= state.min} onClick={() => dispatch({ type: "step", delta: -1 })}>
-          ← Retroceder 1
-        </button>
-        <button type="button" className={control} disabled={state.pos >= state.max} onClick={() => dispatch({ type: "step", delta: 1 })}>
-          Avanzar 1 →
-        </button>
-      </div>
+      {state.jump ? (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={`${control} border-cyan-300 text-cyan-100`}
+            disabled={jumpLocked || state.pos + state.jump < state.min || state.pos + state.jump > state.max}
+            onClick={() => dispatch({ type: "jump" })}
+          >
+            {state.jump < 0 ? `← Saltar ${sg(state.jump)}` : `Saltar +${state.jump} →`}
+          </button>
+          {state.canFlip && (
+            <button type="button" className={control} onClick={() => dispatch({ type: "flip" })}>
+              Tomar el opuesto (× −1)
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={control} disabled={state.pos <= state.min} onClick={() => dispatch({ type: "step", delta: -1 })}>
+            ← Retroceder 1
+          </button>
+          <button type="button" className={control} disabled={state.pos >= state.max} onClick={() => dispatch({ type: "step", delta: 1 })}>
+            Avanzar 1 →
+          </button>
+        </div>
+      )}
       <p className="text-slate-200">
-        {moved === 0 ? <>Estás en {sg(state.start)}.</> : <strong>{lineExpression(state)}</strong>}
+        {moved === 0 && !state.flips ? <>Estás en {sg(state.start)}.</> : <strong>{lineExpression(state)}</strong>}
       </p>
     </div>
   );
@@ -288,6 +311,73 @@ export function BalanceBoard({ state, dispatch }: { state: BalanceState; dispatc
           Repartir en {state.xs > 1 ? state.xs : "grupos"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function Rods({ tens, units, size = "md" }: { tens: number; units: number; size?: "sm" | "md" }) {
+  const rod = size === "sm" ? "h-8 w-2" : "h-10 w-2.5";
+  const cube = size === "sm" ? "h-2 w-2" : "h-2.5 w-2.5";
+  return (
+    <div className="flex flex-wrap items-end gap-1" aria-hidden="true">
+      {Array.from({ length: tens }, (_, i) => (
+        <span key={`d${i}`} className={`${rod} rounded-sm bg-cyan-300 ${styles.pop}`} />
+      ))}
+      <span className="flex max-w-16 flex-wrap gap-0.5">
+        {Array.from({ length: units }, (_, i) => (
+          <span key={`u${i}`} className={`${cube} rounded-[2px] bg-amber-300 ${styles.pop}`} />
+        ))}
+      </span>
+    </div>
+  );
+}
+
+/** Reparto de una división: se reparten primero las decenas; la que no alcanza se cambia por unidades. */
+export function ShareBoard({ state, dispatch }: { state: ShareState; dispatch: Dispatch }) {
+  const each = state.eachTens * 10 + state.eachUnits;
+  const total = state.groups * each + state.tens * 10 + state.units;
+  const done = shareDone(state);
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border border-dashed border-slate-500 p-2">
+        <p className="text-sm font-semibold text-slate-300">
+          Por repartir: {state.tens} {state.tens === 1 ? "decena" : "decenas"} y {state.units} {state.units === 1 ? "unidad" : "unidades"}
+        </p>
+        <div className="mt-1 min-h-10">
+          <Rods tens={state.tens} units={state.units} />
+        </div>
+      </div>
+      <ul aria-label={`${state.groups} grupos`} className="grid grid-cols-3 gap-2">
+        {Array.from({ length: state.groups }, (_, g) => (
+          <li key={g} className="rounded-lg bg-slate-800 p-2">
+            <p className="text-xs font-semibold text-slate-400">Grupo {g + 1}</p>
+            <div className="mt-1 min-h-8">
+              <Rods tens={state.eachTens} units={state.eachUnits} size="sm" />
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={`${control} border-cyan-300 text-cyan-100`} disabled={state.tens === 0} onClick={() => dispatch({ type: "share-ten" })}>
+          Dar 1 decena a cada grupo
+        </button>
+        <button type="button" className={control} disabled={state.tens === 0} onClick={() => dispatch({ type: "break-ten" })}>
+          Cambiar 1 decena por 10 unidades
+        </button>
+        <button type="button" className={`${control} border-amber-300/70 text-amber-100`} disabled={state.units === 0} onClick={() => dispatch({ type: "share-unit" })}>
+          Dar 1 unidad a cada grupo
+        </button>
+      </div>
+      <p className="text-slate-200">
+        {done ? (
+          <strong>
+            {total} ÷ {state.groups} = {each}
+            {state.units > 0 && `, resto ${state.units}`}
+          </strong>
+        ) : (
+          <>Cada grupo tiene {each}.</>
+        )}
+      </p>
     </div>
   );
 }

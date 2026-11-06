@@ -39,6 +39,22 @@ export interface LineState {
   pos: number;
   min: number;
   max: number;
+  /** Modo saltos (multiplicar enteros): tamaño fijo del salto, con signo. */
+  jump?: number;
+  /** Permite tomar el opuesto (multiplicar por −1). */
+  canFlip?: boolean;
+  jumps?: number;
+  flips?: number;
+}
+/** Reparto (división): decenas y unidades por repartir entre `groups` grupos iguales. */
+export interface ShareState {
+  kind: "share";
+  groups: number;
+  tens: number;
+  units: number;
+  /** Lo que ya recibió cada grupo (todos reciben lo mismo). */
+  eachTens: number;
+  eachUnits: number;
 }
 /** Balanza: `xs` cajas x y `left` pesas de 1 a la izquierda; `right` pesas a la derecha. */
 export interface BalanceState {
@@ -47,7 +63,7 @@ export interface BalanceState {
   left: number;
   right: number;
 }
-export type ManipulativeState = PlaceValueState | ArrayState | FractionState | LineState | BalanceState;
+export type ManipulativeState = PlaceValueState | ArrayState | FractionState | LineState | BalanceState | ShareState;
 
 export type TutorAction =
   | { type: "to-tray"; index: number }
@@ -60,12 +76,17 @@ export type TutorAction =
   | { type: "split"; bar: "top" | "bottom"; factor?: 2 | 3 }
   | { type: "join" }
   | { type: "step"; delta: 1 | -1 }
+  | { type: "jump" }
+  | { type: "flip" }
+  | { type: "share-ten" }
+  | { type: "share-unit" }
+  | { type: "break-ten" }
   | { type: "remove-both" }
   | { type: "remove-left" }
   | { type: "share" };
 
 /** Aviso narrado cuando una acción no se puede hacer (clave de `guion.json`). */
-export type Notice = "no-se-puede-juntar" | "balanza-desequilibrada" | "no-se-puede-repartir";
+export type Notice = "no-se-puede-juntar" | "balanza-desequilibrada" | "no-se-puede-repartir" | "no-alcanza-para-todos";
 
 export const TRAY_SIZE = 10;
 export const ARRAY_MAX = 10;
@@ -83,6 +104,8 @@ export function reduce(state: ManipulativeState, action: TutorAction): { state: 
       return { state: reduceLine(state, action) };
     case "balance":
       return reduceBalance(state, action);
+    case "share":
+      return reduceShare(state, action);
   }
 }
 
@@ -137,9 +160,43 @@ function reduceFractions(s: FractionState, action: TutorAction): { state: Fracti
   }
 }
 
+const clampLine = (s: LineState, pos: number) => Math.min(s.max, Math.max(s.min, pos));
+
 function reduceLine(s: LineState, action: TutorAction): LineState {
-  if (action.type !== "step") return s;
-  return { ...s, pos: Math.min(s.max, Math.max(s.min, s.pos + action.delta)) };
+  switch (action.type) {
+    case "step":
+      return s.jump ? s : { ...s, pos: clampLine(s, s.pos + action.delta) };
+    case "jump": {
+      // Tras tomar el opuesto no se salta más: así la recta muestra (−1) × n × salto.
+      if (!s.jump || (s.flips ?? 0) % 2 === 1) return s;
+      const pos = clampLine(s, s.pos + s.jump);
+      return pos === s.pos ? s : { ...s, pos, jumps: (s.jumps ?? 0) + 1 };
+    }
+    case "flip":
+      return s.canFlip ? { ...s, pos: -s.pos, flips: (s.flips ?? 0) + 1 } : s;
+    default:
+      return s;
+  }
+}
+
+function reduceShare(s: ShareState, action: TutorAction): { state: ShareState; notice?: Notice } {
+  switch (action.type) {
+    case "share-ten":
+      if (s.tens < s.groups) return { state: s, notice: "no-alcanza-para-todos" };
+      return { state: { ...s, tens: s.tens - s.groups, eachTens: s.eachTens + 1 } };
+    case "share-unit":
+      if (s.units < s.groups) return { state: s, notice: "no-alcanza-para-todos" };
+      return { state: { ...s, units: s.units - s.groups, eachUnits: s.eachUnits + 1 } };
+    case "break-ten":
+      return s.tens > 0 ? { state: { ...s, tens: s.tens - 1, units: s.units + 10 } } : { state: s };
+    default:
+      return { state: s };
+  }
+}
+
+/** Ya no se puede dar lo mismo a todos: lo que queda es el resto. */
+export function shareDone(s: ShareState): boolean {
+  return s.tens === 0 && s.units < s.groups;
 }
 
 function reduceBalance(s: BalanceState, action: TutorAction): { state: BalanceState; notice?: Notice } {
@@ -161,6 +218,11 @@ const signed = (n: number) => (n < 0 ? `−${-n}` : String(n));
 
 /** «4 + (−6)» o «−3 + 5»: la operación que representa el desplazamiento. */
 export function lineExpression(s: LineState): string {
+  if (s.jump) {
+    const jumps = s.jumps ?? 0;
+    const factor = s.jump < 0 ? `(${signed(s.jump)})` : String(s.jump);
+    return `${(s.flips ?? 0) % 2 ? "(−1) × " : ""}${jumps} × ${factor} = ${signed(s.pos)}`;
+  }
   const d = s.pos - s.start;
   return `${signed(s.start)} ${d < 0 ? "+ (" + signed(d) + ")" : "+ " + d} = ${signed(s.pos)}`;
 }
@@ -185,9 +247,12 @@ export function describe(state: ManipulativeState): string {
     case "array":
       return `${state.rows} ${state.rows === 1 ? "fila" : "filas"} de ${state.cols} ${state.cols === 1 ? "panel" : "paneles"}: ${state.rows} × ${state.cols} = ${state.rows * state.cols} paneles.`;
     case "line":
+      if (state.jump) return `Estás en ${signed(state.pos)}: ${lineExpression(state)}.`;
       return `Empiezas en ${signed(state.start)} y estás en ${signed(state.pos)}: ${lineExpression(state)}.`;
     case "balance":
       return `Balanza equilibrada: ${balanceEquation(state)}.`;
+    case "share":
+      return `Cada uno de los ${state.groups} grupos tiene ${state.eachTens} ${state.eachTens === 1 ? "decena" : "decenas"} y ${state.eachUnits} ${state.eachUnits === 1 ? "unidad" : "unidades"}. Por repartir: ${state.tens} ${state.tens === 1 ? "decena" : "decenas"} y ${state.units} ${state.units === 1 ? "unidad" : "unidades"}.`;
     case "fractions":
       return state.joined
         ? `Reservas juntas: ${state.top.num}/${state.top.den} de la reserva.`
