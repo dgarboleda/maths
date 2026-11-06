@@ -7,6 +7,28 @@
 .turn {
   animation: tutor-turn 420ms ease-out;
 }
+/* Ecualizador mínimo mientras suena la voz. */
+.bars > span {
+  width: 3px;
+  border-radius: 1px;
+  background: rgb(103 232 249);
+  animation: tutor-bar 900ms ease-in-out infinite;
+}
+.bars > span:nth-child(2) {
+  animation-delay: -300ms;
+}
+.bars > span:nth-child(3) {
+  animation-delay: -600ms;
+}
+@keyframes tutor-bar {
+  0%,
+  100% {
+    height: 30%;
+  }
+  50% {
+    height: 100%;
+  }
+}
 @keyframes tutor-pop {
   from {
     transform: scale(0.6);
@@ -29,7 +51,11 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .pop,
-  .turn {
+  .turn,
+  .bars > span {
     animation: none;
+  }
+  .bars > span {
+    height: 70%;
   }
 }

@@ -5,6 +5,7 @@ import { NOTICES, TUTORIALS, type Scene } from "./tutor/content";
 import { ArrayBuilder, FractionReserves, PlaceValueBoard } from "./tutor/Manipulatives";
 import { describe, reduce, type ManipulativeState, type Notice, type TutorAction } from "./tutor/model";
 import { useNarration } from "./tutor/useNarration";
+import { VoicePlayer } from "./tutor/VoicePlayer";
 
 type Feedback = { kind: "hint" | "notice" | "success"; text: string } | null;
 
@@ -82,7 +83,6 @@ export function VisualTutor({ lessonId }: { lessonId: string }) {
   };
 
   const intro = `${scene.id}-intro`;
-  const playing = narration.status === "playing";
 
   return (
     <section aria-labelledby={`tutor-${lessonId}`} className="space-y-4 rounded-2xl border border-cyan-400/40 bg-slate-950 p-4 sm:p-6">
@@ -107,17 +107,7 @@ export function VisualTutor({ lessonId }: { lessonId: string }) {
 
       <p className="leading-relaxed text-slate-100">{scene.intro}</p>
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Voz del tutor">
-        <button type="button" className={`${button} border-cyan-300 text-cyan-100`} disabled={!narration.voiceOn} onClick={() => narration.toggle(intro)}>
-          {playing ? "Pausar voz" : narration.status === "paused" ? "Continuar voz" : "Escuchar"}
-        </button>
-        <button type="button" className={`${button} border-slate-500 text-slate-100`} disabled={!narration.voiceOn} onClick={() => narration.repeat(intro)}>
-          Repetir
-        </button>
-        <button type="button" aria-pressed={!narration.voiceOn} className={`${button} border-slate-500 text-slate-100`} onClick={() => narration.setVoiceOn(!narration.voiceOn)}>
-          {narration.voiceOn ? "Silenciar voz" : "Activar voz"}
-        </button>
-      </div>
+      <VoicePlayer narration={narration} fallbackClip={intro} />
       <audio {...narration.audioProps} />
       {narration.status === "unavailable" && (
         <p role="status" className="text-sm text-amber-200">

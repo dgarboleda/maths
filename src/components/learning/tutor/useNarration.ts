@@ -21,6 +21,7 @@ export function useNarration() {
   const [voice, setVoice] = useTutorVoice();
   const [status, setStatus] = useState<NarrationStatus>("idle");
   const [clip, setClip] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   const start = useCallback((player: HTMLAudioElement) => {
     try {
@@ -40,6 +41,7 @@ export function useNarration() {
   const say = useCallback(
     (next: string) => {
       setClip(next);
+      setProgress(0);
       const player = audio.current;
       if (!player) return;
       player.pause();
@@ -90,9 +92,16 @@ export function useNarration() {
     preload: "none" as const,
     onPlay: () => setStatus("playing"),
     onPause: () => setStatus((s) => (s === "unavailable" ? s : "paused")),
-    onEnded: () => setStatus("idle"),
+    onEnded: () => {
+      setStatus("idle");
+      setProgress(1);
+    },
+    onTimeUpdate: (event: { currentTarget: HTMLAudioElement }) => {
+      const { currentTime, duration } = event.currentTarget;
+      if (duration > 0 && Number.isFinite(duration)) setProgress(Math.min(1, currentTime / duration));
+    },
     onError: () => setStatus("unavailable"),
   };
 
-  return { audioProps, voiceOn: voice === "on", setVoiceOn, status, clip, say, toggle, repeat, stop };
+  return { audioProps, voiceOn: voice === "on", setVoiceOn, status, clip, progress, say, toggle, repeat, stop };
 }
