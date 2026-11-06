@@ -69,4 +69,20 @@ describe("Hoja de columnas", () => {
     expect(container).toHaveTextContent(/cero añadido 0/);
     expect(firstWrongColumn("4,65", 4.75, 2)).toBe(1);
   });
+
+  test("libre: una casilla vacía entre cifras deja la respuesta incompleta", () => {
+    const onChange = vi.fn();
+    render(<ColumnSheet spec={{ op: "add", a: 586, b: 378 }} strategy="prestamo" mode="free" response="" onChange={onChange} />);
+    // 9, 6 y 4 en millares, centenas y decenas, sin unidades: no es 964.
+    fireEvent.change(digit("unidades de millar"), { target: { value: "9" } });
+    fireEvent.change(digit("centenas"), { target: { value: "6" } });
+    fireEvent.change(digit("decenas"), { target: { value: "4" } });
+    expect(onChange).toHaveBeenLastCalledWith("");
+    expect(screen.getByText(/Completa las casillas vacías entre las cifras/)).toBeInTheDocument();
+    fireEvent.change(digit("unidades"), { target: { value: "4" } });
+    expect(onChange).toHaveBeenLastCalledWith("9644");
+    // Las casillas vacías de la izquierda no cuentan.
+    fireEvent.change(digit("unidades de millar"), { target: { value: "" } });
+    expect(onChange).toHaveBeenLastCalledWith("644");
+  });
 });

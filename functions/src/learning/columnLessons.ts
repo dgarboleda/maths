@@ -87,7 +87,7 @@ export const COLUMN_LESSONS: Lesson[] = [
       const [ra, rb] = [[325, 148], [503, 267], [4012, 1586], [3241, 1765], [700, 254], [6105, 2348]][v];
       const [ea, eb] = [[432, 175], [614, 238], [852, 367], [721, 346], [943, 568], [530, 174]][v];
       // Litros y soles con decimales: se alinea la coma.
-      const [ba, bb] = [[1204, 386], [2315.5, 748.75], [3050, 1275.4], [1432, 965], [4006.25, 2518.5], [2140.8, 876.95]][v];
+      const [ba, bb] = [[1204, 386], [2315.5, 748.75], [3050, 1275.45], [1432, 965], [4006.25, 2518.5], [2140.85, 876.95]][v];
       const [ma, mb] = [[1000, 457], [812, 375], [2000, 1268], [1503, 726], [900, 384], [1250, 687]][v];
 
       // q2: la cifra de las decenas tras llevar desde las unidades.
@@ -212,7 +212,7 @@ export const COLUMN_LESSONS: Lesson[] = [
       "El almacén tenía 2 486 piezas. Llegó un camión con 1 375 y luego se despacharon 948. ¿Cuántas piezas hay ahora en el almacén?",
       2913,
       [
-        "Primero lo que llega se suma: 2 486 + 1 375 = 3 861 (llevas en las unidades, las decenas y las centenas).",
+        "Primero lo que llega se suma: 2 486 + 1 375 = 3 861 (llevas en las unidades y en las decenas).",
         "Después lo que sale se resta: 3 861 − 948 = 2 913 (reagrupas en las unidades y en las centenas).",
         "Comprobación: 2 913 + 948 = 3 861.",
       ],
@@ -272,7 +272,7 @@ export const COLUMN_LESSONS: Lesson[] = [
       {
         title: "El cero del cociente y la comprobación",
         paragraphs: [
-          "Si al bajar una cifra el número es menor que el divisor, cabe 0 veces: se escribe 0 en el cociente y se baja la siguiente. En 612 ÷ 6 = 102, sin ese 0 saldría 12, que es diez veces menor.",
+          "Si al bajar una cifra el número es menor que el divisor, cabe 0 veces: se escribe 0 en el cociente y se baja la siguiente. En 612 ÷ 6 = 102, sin ese 0 saldría 12, y 12 × 6 = 72, muy lejos de 612.",
           "Al final, el resto siempre es menor que el divisor. Se comprueba multiplicando: cociente × divisor + resto = dividendo.",
         ],
         formula: "dividendo = divisor × cociente + resto,  con resto < divisor",
@@ -351,7 +351,7 @@ export const COLUMN_LESSONS: Lesson[] = [
                 `Al dividir ${fmt(ca)} ÷ ${cb}, en un paso queda ${zeroStep!.part}, que es menor que ${cb}. ¿Qué se hace?`,
                 [
                   "Se escribe 0 en el cociente y se baja la cifra siguiente",
-                  ["Se baja otra cifra sin escribir nada en el cociente", "Sin ese 0 el cociente pierde una posición y queda diez veces menor."],
+                  ["Se baja otra cifra sin escribir nada en el cociente", "Sin ese 0 el cociente pierde una cifra y las demás quedan en una posición que no les corresponde."],
                   ["Se termina la división", "Todavía quedan cifras por bajar: la división termina cuando se usan todas."],
                 ],
                 0,
@@ -504,14 +504,15 @@ export const FACTOR_LESSONS: Lesson[] = [
       {
         title: "MCD: los primos que dividen a todos",
         paragraphs: [
-          "El MCD es el producto de los primos marcados, los que dividieron a todos los números a la vez: en la tabla de 12 y 18 son la primera fila (2) y la tercera (3), así que el MCD es 6.",
+          "Para el MCD basta con dividir entre primos que dividan a todos los números a la vez y parar cuando ya no quede ninguno común: 12, 18 | 2 → 6, 9 | 3 → 2, 3. El MCD es el producto de esos primos, 2 × 3 = 6.",
+          "Si ya hiciste la tabla completa hasta 1, también sirve: el MCD es el producto de los primos marcados, los que dividieron a todos.",
           "Para decidir cuál usar: si se busca cuándo vuelven a coincidir cosas que se repiten, es un múltiplo (MCM); si se busca partir en trozos iguales lo más grandes posible, es un divisor (MCD).",
         ],
-        formula: "MCD(12; 18) = 2 × 3 = 6",
+        formula: "12, 18 | 2 → 6, 9 | 3 → 2, 3 (sin divisor común): MCD = 2 × 3 = 6",
       },
     ],
     examples: [
-      columnExample({ op: "mcm", values: [12, 18] }, "Calcula el MCM y el MCD de 12 y 18 con la tabla."),
+      columnExample({ op: "mcm", values: [12, 18] }, "Calcula el MCM de 12 y 18 con la tabla y marca los primos comunes."),
       columnExample({ op: "mcd", values: [24, 36, 60] }, "Calcula el MCD de 24, 36 y 60 con la tabla."),
     ],
     diagnostic: [
@@ -748,7 +749,7 @@ export const RUFFINI_LESSONS: Lesson[] = [
       const [p1, r1] = ([[[2, -3, 1, 5], 2], [[1, 4, -2, 3], 1], [[3, -5, 2, -4], 2], [[1, -2, 4, 1], 3], [[2, 1, -3, 7], -1], [[1, 3, -4, 2], 2]] as [number[], number][])[v];
       const [a0, a1, r2] = [[2, -3, 2], [3, 1, -2], [1, 5, 3], [4, -1, -1], [2, 0, -3], [5, 2, 2]][v];
       const [p3, r3] = ([[[1, 0, -7, 6], -3], [[2, 0, -5, 3], -1], [[1, 0, 0, -8], 2], [[3, 0, -4, 1], -2], [[1, -2, 0, 5], -2], [[2, 0, 1, -3], -1]] as [number[], number][])[v];
-      const [p4, k4] = ([[[1, 2, -3, 4], 2], [[2, -1, 0, 3], 1], [[1, -3, 2, -1], 3], [[3, 1, -2, 2], 1], [[1, 0, -4, 5], 2], [[2, 3, -1, 1], 3]] as [number[], number][])[v];
+      const [p4, k4] = ([[[1, 2, -3, 4], 2], [[2, -1, 0, 3], 1], [[1, -3, 2, -1], 3], [[3, 1, -2, 2], 1], [[1, 0, -3, 5], 2], [[2, 3, -1, 1], 3]] as [number[], number][])[v];
       const [p5, r5] = ([[[1, -6, 11, -6], 1], [[1, 2, -5, -6], 2], [[1, -1, -4, 4], 2], [[2, -3, -2, 1], 1], [[1, 0, -7, 6], 2], [[1, 4, 1, -6], 1]] as [number[], number][])[v];
       const [q6r, q6c] = [[2, -6], [3, -12], [2, -10], [-1, -5], [4, -8], [-2, -6]][v];
       const k6 = -(q6r * q6r + q6c) / q6r;
@@ -832,7 +833,7 @@ export const RUFFINI_LESSONS: Lesson[] = [
           k6,
           [
             `Divisible significa resto 0, y por el teorema del resto el resto es P(${sg(q6r)}).`,
-            `P(${sg(q6r)}) = ${q6r * q6r} + ${sg(q6r)}k ${q6c < 0 ? `− ${-q6c}` : `+ ${q6c}`} = 0, así que k = ${sg(k6)}.`,
+            `P(${sg(q6r)}) = ${q6r * q6r} ${q6r < 0 ? "−" : "+"} ${Math.abs(q6r) === 1 ? "" : Math.abs(q6r)}k ${q6c < 0 ? `− ${-q6c}` : `+ ${q6c}`} = 0, así que k = ${sg(k6)}.`,
             `Comprobación: con k = ${sg(k6)}, P(${sg(q6r)}) = ${q6r * q6r} ${k6 * q6r < 0 ? `− ${-k6 * q6r}` : `+ ${k6 * q6r}`} ${q6c < 0 ? `− ${-q6c}` : `+ ${q6c}`} = 0.`,
           ],
           ["Divisible: el resto tiene que ser 0.", `El resto es P(${sg(q6r)}).`, `Iguala P(${sg(q6r)}) a 0 y despeja k.`],
@@ -858,7 +859,7 @@ export const RUFFINI_LESSONS: Lesson[] = [
         unit: "cm²",
         errors: [
           { value: 60, feedback: "Ese es el volumen V(2). El área de la base es el cociente evaluado en x = 2." },
-          { value: 12, feedback: "Revisa la esquina: para (x + 1) es −1, no 1." },
+          { value: 36, feedback: "Revisa la esquina: para (x + 1) es −1, no 1." },
           { value: 0, feedback: "Ese es el resto de la división. Se pide el cociente evaluado en x = 2." },
         ],
       },

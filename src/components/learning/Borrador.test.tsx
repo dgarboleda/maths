@@ -50,4 +50,15 @@ describe("Borrador de cálculo", () => {
     // Sin destino, el borrador es solo para calcular.
     expect(screen.queryByRole("button", { name: /^Usar/ })).toBeNull();
   });
+
+  test("números fuera de los límites de la hoja: aviso en lugar de error", async () => {
+    render(<Borrador />);
+    await open();
+    numbers("10000000", "1");
+    expect(screen.getByRole("alert")).toHaveTextContent(/menores que 10 000 000/);
+    expect(screen.queryByLabelText(/^Resultado:/)).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: "Dividir" }));
+    numbers("12345678", "3");
+    expect(screen.getByRole("alert")).toHaveTextContent(/menores que 10 000 000/);
+  });
 });

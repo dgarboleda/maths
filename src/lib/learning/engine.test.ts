@@ -15,11 +15,14 @@ import {
 const lesson = getLesson("fraccion-cantidad")!;
 const NOW = Date.UTC(2026, 9, 18, 12);
 const DAY = 86_400_000;
+// Cada acción ocurre unos segundos después de la anterior: responder en el
+// mismo instante en que aparece la pregunta se marcaría como apresurado.
+let clock = NOW;
 const update = (
   state: LearningProgress | undefined,
   action: LearningAction,
-  now = NOW,
-) => applyLearningAction(lesson, state, action, now);
+  now?: number,
+) => applyLearningAction(lesson, state, action, now ?? (clock += 5_000));
 const wrongChoice = (q: { answer: number | string; choices?: { id: string }[] }) =>
   q.choices!.find((o) => o.id !== q.answer)!.id;
 function completeCheck(helpOnTransfer = false) {
@@ -93,8 +96,8 @@ describe("Evidencia educativa", () => {
       conceptual: true,
       transfer: true,
     });
-    expect(state.checkPassedAt).toBe(NOW);
-    expect(state.reviewDueAt).toBe(NOW + 3 * DAY);
+    expect(state.checkPassedAt).toBeGreaterThan(NOW);
+    expect(state.reviewDueAt).toBe(state.checkPassedAt! + 3 * DAY);
     expect(state.retainedAt).toBeNull();
     expect(learningStatus(state)).toBe("Resuelvo solo");
   });
@@ -114,49 +117,36 @@ describe("Evidencia educativa", () => {
     expect(() =>
       update(state, { kind: "begin", stage: "review" }, NOW + DAY),
     ).toThrow(/fecha indicada/);
-    let review = update(
-      state,
-      { kind: "begin", stage: "review" },
-      NOW + 3 * DAY,
-    );
+    let late = NOW + 4 * DAY;
+    let review = update(state, { kind: "begin", stage: "review" }, late);
     const answers = lesson.review.map((q) => correctResponse(q));
     for (const answer of answers) {
       review = update(
         review,
-        {
-          kind: "answer",
-          questionId: currentQuestion(lesson, review)!.id,
-          response: answer,
-        },
-        NOW + 3 * DAY,
+        { kind: "answer", questionId: currentQuestion(lesson, review)!.id, response: answer },
+        (late += 5_000),
       );
-      review = update(review, { kind: "next" }, NOW + 3 * DAY);
+      review = update(review, { kind: "next" }, (late += 5_000));
     }
-    expect(review.retainedAt).toBe(NOW + 3 * DAY);
+    expect(review.retainedAt).toBe(late);
     expect(learningStatus(review)).toBe("Lo recuerdo y lo aplico");
-    expect(review.reviewDueAt).toBe(NOW + 10 * DAY);
+    expect(review.reviewDueAt).toBe(late + 7 * DAY);
   });
   test("un repaso fallado recomienda apoyo y conserva el logro histórico", () => {
-    let state = update(
-      completeCheck(),
-      { kind: "begin", stage: "review" },
-      NOW + 3 * DAY,
-    );
+    const passed = completeCheck();
+    let late = NOW + 4 * DAY;
+    let state = update(passed, { kind: "begin", stage: "review" }, late);
     for (let i = 0; i < 4; i++) {
       state = update(
         state,
-        {
-          kind: "answer",
-          questionId: currentQuestion(lesson, state)!.id,
-          response: "incorrecta",
-        },
-        NOW + 3 * DAY,
+        { kind: "answer", questionId: currentQuestion(lesson, state)!.id, response: "incorrecta" },
+        (late += 5_000),
       );
-      state = update(state, { kind: "next" }, NOW + 3 * DAY);
+      state = update(state, { kind: "next" }, (late += 5_000));
     }
-    expect(state.checkPassedAt).toBe(NOW);
+    expect(state.checkPassedAt).toBe(passed.checkPassedAt);
     expect(state.needsSupport).toBe(true);
-    expect(state.reviewDueAt).toBe(NOW + 6 * DAY);
+    expect(state.reviewDueAt).toBe(late + 3 * DAY);
   });
   test("otra comprobación alterna los datos y borra los aciertos de la ronda anterior", () => {
     const state = completeCheck();
@@ -184,7 +174,7 @@ describe("Evidencia educativa", () => {
     let state = update(undefined, { kind: "begin", stage: "application" });
     state = update(state, { kind: "reveal", questionId: "m-1" });
     state = update(state, { kind: "next" });
-    expect(state.completedAt).toBe(NOW);
+    expect(state.completedAt).toBeGreaterThan(NOW);
     expect(state.checkPassedAt).toBeNull();
     expect(learningStatus(state)).toBe("Resuelvo con apoyo");
     expect(initialProgress(lesson).completedAt).toBeNull();

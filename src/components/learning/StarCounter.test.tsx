@@ -24,7 +24,7 @@ test("el contador muestra las estrellas y anuncia las que se ganan", () => {
 test("el desglose explica cuánto aporta cada sección y cuánto queda", () => {
   const plan = starPlan({ progress: {}, reviews: {}, adventures: {}, ledger: { earned: 4, spent: 0 } });
   render(<StarBreakdown plan={plan} available={4} />);
-  expect(screen.getByRole("rowheader", { name: /Clases.*5 por cada clase terminada/ })).toBeInTheDocument();
+  expect(screen.getByRole("rowheader", { name: /Clases.*1 al terminar cada clase, 4 al superar su comprobación sin ayuda/ })).toBeInTheDocument();
   expect(screen.getByText("sin tope")).toBeInTheDocument();
   expect(screen.getByText(new RegExp(`Todavía puedes ganar`))).toHaveTextContent(`${plan.possible} ⭐`);
 });

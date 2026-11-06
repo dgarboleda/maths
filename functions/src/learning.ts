@@ -41,7 +41,18 @@ import {
   type DailyLessonInfo,
 } from "./learning/daily";
 import { readBalance } from "./stars";
-import { STAR_REWARDS } from "./learning/rewards";
+import { lessonStars, STAR_REWARDS } from "./learning/rewards";
+import { MIN_THINK_MS } from "./learning/engine";
+
+/**
+ * Umbral de respuesta apresurada. Solo en el emulador puede cambiarse
+ * (`functions/.env.demo-numerario`): las pruebas automáticas responden en
+ * milisegundos. En producción siempre es `MIN_THINK_MS`.
+ */
+const MIN_THINK =
+  process.env.FUNCTIONS_EMULATOR === "true" && process.env.LEARNING_MIN_THINK_MS !== undefined
+    ? Number(process.env.LEARNING_MIN_THINK_MS)
+    : MIN_THINK_MS;
 
 const QUESTION_ID = /^[a-z][a-z0-9-]{0,40}$/;
 function validPlacementAction(action: unknown): action is PlacementAction {
@@ -329,6 +340,7 @@ export const recordLearningAction = onCall(
               previous as LearningProgress | undefined,
               action as LearningAction,
               now,
+              MIN_THINK,
             );
         // La ubicación no premia: mide desde dónde empezar.
         const done = (state: typeof previous) =>
@@ -341,11 +353,20 @@ export const recordLearningAction = onCall(
         // Y un extra al alcanzar 7, 14 o 30 días seguidos.
         const streakDays = (next as DailyReviewState).streak?.current ?? 0;
         const milestone = dailyReward && STREAK_MILESTONES.includes(streakDays);
+        // Clases: se premia terminar, demostrar (comprobación sin ayuda) y
+        // recordar (repaso diferido), cada parte una sola vez.
+        const isLesson = !daily && !placement && !adventure && !reviewUnit;
+        const lessonReward = isLesson
+          ? lessonStars(previous as LearningProgress | undefined, next as LearningProgress)
+          : null;
+        if (lessonReward) (next as LearningProgress).rewarded = lessonReward.rewarded;
         const stars = daily
           ? dailyReward ? STAR_REWARDS.daily + (milestone ? STAR_REWARDS.streakBonus : 0) : 0
-          : !placement && !done(previous) && done(next)
-            ? adventure ? STAR_REWARDS.adventure : reviewUnit ? STAR_REWARDS.mixed : STAR_REWARDS.lesson
-            : 0;
+          : lessonReward
+            ? lessonReward.stars
+            : !placement && !done(previous) && done(next)
+              ? adventure ? STAR_REWARDS.adventure : STAR_REWARDS.mixed
+              : 0;
         const outcome = outcomeOf(lessonId, action, previous, next);
         // Todas las lecturas deben preceder las escrituras en la transacción.
         const balance = stars ? await readBalance(tx, child) : null;

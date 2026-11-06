@@ -120,12 +120,17 @@ function clearResponses(state: LearningProgress, stage: string) {
   for (const key of Object.keys(state.responses))
     if (key.startsWith(`${stage}:`)) delete state.responses[key];
 }
+/** Menos tiempo que esto entre ver una actividad y responderla no alcanza
+ *  para leerla y pensarla: la respuesta se marca como apresurada. */
+export const MIN_THINK_MS = 4000;
+
 export function independent(evidence: ResponseEvidence | undefined): boolean {
   return Boolean(
     evidence &&
       evidence.firstCorrect &&
       evidence.hintsUsed === 0 &&
-      !evidence.revealed,
+      !evidence.revealed &&
+      !evidence.rushed,
   );
 }
 function score(
@@ -180,6 +185,8 @@ export function applyLearningAction(
   previous: LearningProgress | undefined,
   action: LearningAction,
   now: number,
+  /** Umbral de respuesta apresurada; solo las pruebas en el emulador lo cambian. */
+  minThinkMs = MIN_THINK_MS,
 ): LearningProgress {
   const base = previous ? migrateProgress(lesson, previous) : initialProgress(lesson);
   const state: LearningProgress = {
@@ -200,6 +207,7 @@ export function applyLearningAction(
       );
     state.stage = action.stage;
     state.index = 0;
+    state.shownAt = now;
     if (action.stage === "check" && state.lastCheck)
       state.checkForm = state.checkForm === 0 ? 1 : 0;
     // Una ronda nueva no hereda aciertos ni ayudas de una ronda anterior.
@@ -207,6 +215,7 @@ export function applyLearningAction(
     return state;
   }
   if (action.kind === "next") {
+    state.shownAt = now;
     if (state.stage === "class") {
       if (state.index + 1 < lesson.sections.length) state.index++;
       else {
@@ -294,6 +303,8 @@ export function applyLearningAction(
       "La actividad cambió. Actualiza la página para continuar.",
     );
   const key = evidenceKey(state.stage, question);
+  // Última acción sobre esta actividad (respuesta, pista o desarrollo).
+  const lastTouched = state.responses[key]?.updatedAt;
   const evidence = {
     ...(state.responses[key] ?? newEvidence(now)),
     updatedAt: now,
@@ -316,6 +327,17 @@ export function applyLearningAction(
       !action.response.trim()
     )
       throw new LearningError("Escribe o selecciona una respuesta.");
+    // Opción múltiple fuera de las comprobaciones: adivinar no compensa.
+    // Tras un fallo hay que pedir una pista; tras dos, ver el desarrollo.
+    if (question.format === "choice" && evidence.attempts > 0 && !evidence.correct) {
+      if (evidence.attempts >= 2)
+        throw new LearningError("Ya lo intentaste dos veces: revisa el desarrollo para continuar.");
+      if (evidence.hintsUsed < evidence.attempts)
+        throw new LearningError("Pide una pista antes de volver a intentarlo.");
+    }
+    // Respuesta antes de poder leer y pensar: no cuenta como hecha sin ayuda.
+    const startedAt = evidence.attempts > 0 ? lastTouched : state.shownAt;
+    if (startedAt !== undefined && now - startedAt < minThinkMs) evidence.rushed = true;
     evidence.correct = isAnswerCorrect(question, action.response);
     if (evidence.attempts === 0) evidence.firstCorrect = evidence.correct;
     evidence.attempts++;

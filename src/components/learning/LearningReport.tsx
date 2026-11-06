@@ -13,6 +13,7 @@ import { useLearningData } from "@/lib/learning/useLearningData";
 import { learningSummary } from "@/lib/learning/summary";
 import { useLearningClock } from "@/lib/learning/useLearningClock";
 import { MisconceptionPanel } from "./MisconceptionPanel";
+import { AnswerHabitsPanel } from "./AnswerHabitsPanel";
 
 export function LearningReport({
   childId,
@@ -233,6 +234,9 @@ export function LearningReport({
               </div>
             );
           })()}
+          {!compact && (
+            <AnswerHabitsPanel parentId={data.parentId} childId={childId} childName={childName} progress={data.progress} now={now} />
+          )}
           {!compact && (
             <MisconceptionPanel parentId={data.parentId} childId={childId} childName={childName} />
           )}

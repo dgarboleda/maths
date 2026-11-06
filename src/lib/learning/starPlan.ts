@@ -3,6 +3,8 @@ import {
   LEARNING_UNITS,
   LESSONS,
   STAR_REWARDS,
+  LESSON_STARS_MAX,
+  lessonStarsEarned,
   type AdventureState,
   type LearningProgress,
   type MixedReviewState,
@@ -51,8 +53,10 @@ export function starPlan({ progress, reviews, adventures, ledger }: {
   const mixedDone = Object.values(reviews).filter((review) => review?.completedAt).length;
   const adventuresDone = ADVENTURES.filter((adventure) => adventures[adventure.id]?.completedAt).length;
   const lessons: StarSection = {
-    id: "lessons", label: "Clases", rule: `${STAR_REWARDS.lesson} por cada clase terminada`,
-    earned: lessonsDone * STAR_REWARDS.lesson, possible: LESSONS.length * STAR_REWARDS.lesson, done: lessonsDone, total: LESSONS.length,
+    id: "lessons", label: "Clases",
+    rule: `${STAR_REWARDS.lesson} al terminar cada clase, ${STAR_REWARDS.lessonCheck} al superar su comprobación sin ayuda y ${STAR_REWARDS.lessonRetained} al superar su repaso`,
+    earned: LESSONS.reduce((sum, lesson) => sum + lessonStarsEarned(progress[lesson.id]), 0),
+    possible: LESSONS.length * LESSON_STARS_MAX, done: lessonsDone, total: LESSONS.length,
   };
   const mixed: StarSection = {
     id: "mixed", label: "Repasos mixtos", rule: `${STAR_REWARDS.mixed} por cada unidad repasada`,

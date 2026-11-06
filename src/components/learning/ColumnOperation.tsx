@@ -1,6 +1,8 @@
 "use client";
 
-import { useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useId, useMemo, useRef, useState } from "react";
+import { makePreference } from "./preferences";
+import { useSheetInputMode } from "./NumericKeypad";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   columnTrace,
@@ -34,43 +36,7 @@ const Comma = () => (
 
 // ── Estrategia de resta (preferencia del alumno en este navegador) ──────
 
-/** Preferencia del alumno guardada en este navegador y compartida por todas
- *  las hojas de la página. Sin almacenamiento, dura mientras la página esté abierta. */
-export function makePreference<T extends string>(key: string, values: readonly T[], fallbackValue: T) {
-  const event = `maths:pref:${key}`;
-  const read = (): T => {
-    try {
-      const v = localStorage.getItem(key);
-      return values.includes(v as T) ? (v as T) : fallbackValue;
-    } catch {
-      return fallbackValue;
-    }
-  };
-  const subscribe = (onChange: () => void) => {
-    window.addEventListener(event, onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener(event, onChange);
-      window.removeEventListener("storage", onChange);
-    };
-  };
-  return function usePreference(): [T, (value: T) => void] {
-    const [memory, setMemory] = useState<T | null>(null);
-    const stored = useSyncExternalStore(subscribe, read, () => fallbackValue);
-    return [
-      memory ?? stored,
-      (next) => {
-        try {
-          localStorage.setItem(key, next);
-          setMemory(null);
-        } catch {
-          setMemory(next);
-        }
-        window.dispatchEvent(new Event(event));
-      },
-    ];
-  };
-}
+export { makePreference } from "./preferences";
 
 export const useSubtractStrategy = makePreference<SubtractStrategy>(
   "maths:resta:estrategia",
@@ -199,6 +165,7 @@ function Grid({
   idPrefix: string;
   disabled?: boolean;
 }) {
+  const keypadMode = useSheetInputMode("numeric");
   const columns = Math.max(trace.steps.length, result.length);
   // De izquierda a derecha en pantalla: la columna más alta primero.
   const order = Array.from({ length: columns }, (_, k) => columns - 1 - k);
@@ -218,6 +185,7 @@ function Grid({
   return (
     // Enfocable: si no cabe (pantallas muy estrechas), se recorre con el teclado.
     <div
+      data-arrow-nav=""
       className="overflow-x-auto"
       tabIndex={0}
       role="group"
@@ -234,7 +202,7 @@ function Grid({
             {notes && onNote ? (
               <input
                 aria-label={`Nota para ${name(i)} (llevada o préstamo, opcional)`}
-                inputMode="numeric"
+                inputMode={keypadMode}
                 maxLength={2}
                 value={notes[i] ?? ""}
                 disabled={disabled}
@@ -320,7 +288,7 @@ function Grid({
               }}
               aria-label={`Resultado: ${name(i)}`}
               aria-invalid={c.state === "wrong"}
-              inputMode="numeric"
+              inputMode={keypadMode}
               autoComplete="off"
               maxLength={1}
               value={c.value}
@@ -494,8 +462,14 @@ export function ColumnSheet({
   const done = mode === "guided" && active === -1;
 
   const emit = (next: string[]) => {
+    // Solo se ignoran las casillas vacías de la izquierda: una casilla vacía
+    // entre cifras (o en las unidades) deja la respuesta incompleta, para no
+    // correr cifras de columna (9, 6 y 4 sin unidades no son 964).
+    const highest = next.reduce((h, d, i) => (d ? i : h), -1);
+    const gap = next.slice(0, highest + 1).some((d) => !d);
     let text: string;
-    if (!scale) text = [...next].reverse().join("").replace(/^0+(?=\d)/, "");
+    if (gap) text = "";
+    else if (!scale) text = [...next].reverse().join("").replace(/^0+(?=\d)/, "");
     else {
       const int = next.slice(scale).reverse().join("").replace(/^0+(?=\d)/, "");
       const frac = next.slice(0, scale).reverse().join("");
@@ -506,6 +480,8 @@ export function ColumnSheet({
   };
 
   const focus = (i: number) => refs.current[i]?.focus();
+  const highestFilled = digits.reduce((h, d, i) => (d ? i : h), -1);
+  const hasGap = mode === "free" && digits.slice(0, highestFilled + 1).some((d) => !d);
 
   const setDigit = (i: number, value: string) => {
     const next = [...digits];
@@ -593,6 +569,8 @@ export function ColumnSheet({
           ) : (
             <p className="rounded-xl bg-emerald-950/40 p-3 text-emerald-100">{lastWhy}</p>
           )
+        ) : hasGap ? (
+          <p className="text-xs text-amber-200">Completa las casillas vacías entre las cifras: cada cifra va en su columna.</p>
         ) : wrongColumn !== null ? (
           <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">
             Revisa la columna de las {placeName(wrongColumn - scale)}: es la primera cifra que no coincide.

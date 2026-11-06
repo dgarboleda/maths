@@ -31,7 +31,7 @@ describe("Tabla de Ruffini", () => {
   test("libre: se envía la tabla completa; tras fallar se señala la casilla", async () => {
     const failed = "R3|1,0,−7,6|3,9,6|1,3,2,12";
     const { container } = render(<RuffiniSheet spec={spec} mode="free" response={failed} failedResponse={failed} onChange={() => {}} />);
-    expect(screen.getByText(/En la esquina va el número que anula el divisor/)).toBeInTheDocument();
+    expect(screen.getByText(/Revisa la casilla marcada/)).toBeInTheDocument();
     expect(screen.getByLabelText("Esquina de la tabla")).toHaveAttribute("aria-invalid", "true");
     expect(await axe(container)).toHaveNoViolations();
   });

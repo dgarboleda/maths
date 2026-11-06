@@ -16,6 +16,8 @@ export interface AnswerOutcome {
   attempt: number;
   hintsUsed: number;
   revealed: boolean;
+  /** Respondió antes de poder leer y pensar (ver `MIN_THINK_MS`). */
+  rushed?: boolean;
   /** Error previsto que coincide con la respuesta: `e:<valor>` para un valor
    *  numérico de `errors`, `c:<opción>` para una opción incorrecta. */
   error: string | null;
@@ -103,6 +105,7 @@ export function answerOutcome(
     attempt: evidence?.attempts ?? 1,
     hintsUsed: evidence?.hintsUsed ?? 0,
     revealed: evidence?.revealed ?? false,
+    rushed: evidence?.rushed ?? false,
     error: matchError(question, response),
   };
 }
