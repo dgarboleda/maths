@@ -1,21 +1,38 @@
 {
   "voz": "es-PE-CamilaNeural",
   "velocidad": "-8%",
+  "criterio": "La pantalla da la consigna corta; la voz aporta lo que no está escrito: contexto, una pregunta para predecir, el porqué, errores comunes y la conexión con la clase. Todo lo que dice la voz se puede leer en «Lo que dice la voz».",
   "tutoriales": {
     "suma-resta-columnas": {
       "titulo": "Reagrupa las piezas",
       "escenas": [
         {
           "id": "unidades-1",
-          "intro": "En el almacén hay ocho piezas y llegan cinco más. Toca diez piezas para ponerlas en la bandeja. Cuando la bandeja esté llena, forma una decena.",
-          "pista": "Lleva piezas a la bandeja hasta que tenga diez. Después pulsa formar decena.",
-          "logro": "¡Bien! Diez unidades forman una decena. Quedan una decena y tres unidades: ocho más cinco es trece."
+          "consigna": "8 + 5: lleva 10 piezas a la bandeja y forma una decena.",
+          "pista": "Llena los 10 huecos de la bandeja y pulsa «Formar decena».",
+          "logro": "1 decena y 3 unidades: 8 + 5 = 13.",
+          "voz": {
+            "intro": "En el almacén había ocho piezas celestes y acaban de llegar cinco amarillas. Contarlas una por una funciona, pero con números grandes nos perderíamos. Por eso agrupamos de diez en diez. Antes de empezar, piensa: cuando la bandeja esté llena, ¿te sobrarán piezas?",
+            "pista": "La bandeja tiene diez huecos. Cuenta en voz alta mientras la llenas: uno, dos, tres. Cuando no quede ningún hueco libre, se activa el botón formar decena.",
+            "logro": "¡Muy bien! Las diez piezas de la bandeja ahora son una sola barra: una decena. Quedaron tres sueltas. Por eso trece se escribe con un uno en las decenas y un tres en las unidades. No perdiste ninguna pieza: solo cambiaste cómo están agrupadas."
+          },
+          "momentos": {
+            "bandeja-llena": "Diez piezas: la bandeja está llena. Mira las que quedaron sueltas. Esas serán las unidades del resultado."
+          }
         },
         {
           "id": "unidades-2",
-          "intro": "Ahora sumamos veintisiete más quince. Ya hay tres decenas, pero sueltas hay doce unidades. En una columna solo cabe una cifra: reagrupa.",
-          "pista": "Doce unidades son más de nueve. Junta diez en la bandeja y cámbialas por una decena.",
-          "logro": "Excelente. Cuatro decenas y dos unidades: veintisiete más quince es cuarenta y dos. Eso es llevar uno a las decenas."
+          "consigna": "27 + 15: hay 12 unidades sueltas. Reagrúpalas.",
+          "pista": "Junta 10 unidades en la bandeja y forma una decena.",
+          "logro": "4 decenas y 2 unidades: 27 + 15 = 42.",
+          "voz": {
+            "intro": "Ahora sumamos veintisiete más quince. Las decenas ya están juntas: dos más una son tres. Pero las unidades, siete más cinco, son doce. En la columna de las unidades solo cabe una cifra, del cero al nueve. ¿Qué podemos hacer con esas doce piezas?",
+            "pista": "Doce es más que nueve, así que no cabe en una columna. Diez de esas piezas pueden convertirse en una decena. Llévalas a la bandeja.",
+            "logro": "Eso que acabas de hacer se llama llevar uno. Cuando sumas en columnas y escribes un uno pequeño encima de las decenas, haces exactamente esto: cambiar diez unidades por una decena. Resultado: cuatro decenas y dos unidades, cuarenta y dos."
+          },
+          "momentos": {
+            "bandeja-llena": "La bandeja está llena. Esta decena nueva se sumará a las tres que ya tenías. ¿Cuántas decenas habrá?"
+          }
         }
       ]
     },
@@ -24,21 +41,39 @@
       "escenas": [
         {
           "id": "grupos-1",
-          "intro": "La ciudad instala paneles solares en filas iguales. Arma tres filas con cuatro paneles en cada una.",
-          "pista": "Usa los botones de filas hasta tener tres, y los de paneles por fila hasta tener cuatro.",
-          "logro": "¡Muy bien! Tres filas de cuatro son cuatro más cuatro más cuatro: tres por cuatro es doce."
+          "consigna": "Arma 3 filas con 4 paneles en cada una.",
+          "pista": "Filas: 3. Paneles por fila: 4.",
+          "logro": "3 filas de 4: 4 + 4 + 4 = 3 × 4 = 12.",
+          "voz": {
+            "intro": "La ciudad instala paneles solares en un techo. Los técnicos siempre los colocan en filas iguales, porque así se cuentan rápido y sin errores. Mientras armas la instalación, mira la suma que aparece debajo: te va a contar un secreto sobre la multiplicación.",
+            "pista": "Hay dos controles. Uno cambia cuántas filas hay, y el otro, cuántos paneles tiene cada fila. Necesitas tres filas, y cuatro paneles en cada una.",
+            "logro": "¡Listo! Podrías contar uno por uno hasta doce, pero es más rápido sumar cuatro más cuatro más cuatro. Y todavía más corto: tres por cuatro. Multiplicar es una forma abreviada de sumar grupos iguales."
+          },
+          "momentos": {
+            "filas-listas": "Ya tienes tres filas. Ahora decide cuántos paneles lleva cada una."
+          }
         },
         {
           "id": "grupos-2",
-          "intro": "Gira la instalación. Observa si cambia el número de paneles.",
-          "pista": "Pulsa el botón girar. Las filas se convierten en columnas.",
-          "logro": "Ahora hay cuatro filas de tres, y siguen siendo doce paneles. Tres por cuatro es igual a cuatro por tres."
+          "consigna": "Gira la instalación. ¿Cambia el total?",
+          "pista": "Pulsa «Girar instalación».",
+          "logro": "4 × 3 = 3 × 4 = 12.",
+          "voz": {
+            "intro": "Antes de girar, haz una predicción. Si las filas se convierten en columnas, ¿habrá más paneles, menos, o los mismos? Piénsalo un momento, y después gira.",
+            "pista": "Girar no añade ni quita paneles: solo cambia cómo los miras. Pulsa girar instalación.",
+            "logro": "Ahora son cuatro filas de tres, y siguen siendo doce paneles. El orden de los factores no cambia el producto. Esto te ayuda a elegir la cuenta más fácil: nueve por dos se piensa mejor como dos por nueve, el doble de nueve."
+          }
         },
         {
           "id": "grupos-3",
-          "intro": "Un techo más grande necesita cinco filas de seis paneles. Ármalo y cuenta de seis en seis.",
-          "pista": "Necesitas cinco filas, y seis paneles en cada fila.",
-          "logro": "Seis, doce, dieciocho, veinticuatro, treinta. Cinco por seis es treinta paneles."
+          "consigna": "Arma 5 filas de 6 paneles.",
+          "pista": "Filas: 5. Paneles por fila: 6.",
+          "logro": "5 × 6 = 30.",
+          "voz": {
+            "intro": "Un techo más grande: cinco filas de seis paneles. Cuando lo tengas armado, intenta contar de seis en seis, una vez por fila, antes de mirar el resultado.",
+            "pista": "Cinco filas, y seis paneles en cada fila. Si te pasas, usa el botón de menos.",
+            "logro": "Seis, doce, dieciocho, veinticuatro, treinta. Si no recuerdas cinco por seis, parte del que sí sabes: cinco por cinco es veinticinco, y una columna más de cinco hace treinta."
+          }
         }
       ]
     },
@@ -47,26 +82,183 @@
       "escenas": [
         {
           "id": "fracciones-1",
-          "intro": "Dos reservas del mismo tamaño tienen un medio y un cuarto. Para juntarlas, las partes deben ser del mismo tamaño. Parte la reserva de arriba en piezas más pequeñas.",
-          "pista": "Pulsa partir en dos en la reserva de arriba. Cada medio se convierte en dos cuartos.",
-          "logro": "¡Eso es! Un medio es lo mismo que dos cuartos. La cantidad no cambió; solo el tamaño de las partes."
+          "consigna": "1/2 + 1/4: haz que las partes sean del mismo tamaño.",
+          "pista": "Parte en dos la reserva de arriba.",
+          "logro": "1/2 = 2/4.",
+          "voz": {
+            "intro": "Tenemos dos reservas de agua del mismo tamaño. Una está llena hasta la mitad, y la otra hasta un cuarto. Queremos saber cuánto hay entre las dos. El problema: un medio y un cuarto son pedazos de distinto tamaño, y no se pueden contar juntos. ¿Cómo podríamos hacer que se parezcan?",
+            "pista": "Los cuartos son más pequeños que los medios. Si partes cada medio en dos, obtienes cuartos. Usa partir en dos en la reserva de arriba.",
+            "logro": "Ahora la reserva de arriba tiene dos cuartos. Mira el nivel del agua: no cambió. Un medio y dos cuartos son la misma cantidad dicha de otra forma. Se llaman fracciones equivalentes."
+          }
         },
         {
           "id": "fracciones-2",
-          "intro": "Ahora las dos reservas usan cuartos. Junta las partes en una sola reserva.",
-          "pista": "Pulsa juntar reservas. Solo se pueden juntar partes del mismo tamaño.",
-          "logro": "Dos cuartos más un cuarto son tres cuartos. Un medio más un cuarto es tres cuartos."
+          "consigna": "2/4 + 1/4: junta las reservas.",
+          "pista": "Pulsa «Juntar reservas».",
+          "logro": "2/4 + 1/4 = 3/4.",
+          "voz": {
+            "intro": "Las dos reservas ya usan cuartos, así que podemos contar partes iguales. Antes de juntarlas, adivina: ¿cuántos cuartos habrá en total?",
+            "pista": "Pulsa juntar reservas. Las partes de abajo se suman a las de arriba.",
+            "logro": "Tres cuartos. Cuidado con un error muy común: sumar arriba y abajo. Uno más uno, sobre dos más cuatro, daría dos sextos, que es menos que un medio. No tiene sentido que al juntar agua haya menos. Se suman las partes, y el tamaño de cada parte, el denominador, se mantiene."
+          }
         },
         {
           "id": "fracciones-3",
-          "intro": "Un nuevo reto: un tercio más un sexto. Busca partes del mismo tamaño y junta las reservas.",
-          "pista": "Los tercios son más grandes que los sextos. Parte los tercios en dos y después junta.",
-          "logro": "Un tercio son dos sextos. Dos sextos más un sexto son tres sextos, que es un medio."
+          "consigna": "Reto: 1/3 + 1/6.",
+          "pista": "Parte los tercios en dos y después junta.",
+          "logro": "2/6 + 1/6 = 3/6 = 1/2.",
+          "voz": {
+            "intro": "Un reto: un tercio más un sexto. Esta vez tú decides qué reserva partir. Piensa primero cuál tiene las partes más grandes.",
+            "pista": "Un tercio es más grande que un sexto. Si partes cada tercio en dos, obtienes sextos. Después junta.",
+            "logro": "Dos sextos más un sexto son tres sextos. Y mira la reserva: está justo a la mitad. Tres sextos es lo mismo que un medio. Al terminar, conviene revisar si el resultado se puede simplificar."
+          }
+        }
+      ]
+    },
+    "fracciones-equivalentes": {
+      "titulo": "Mismas reservas, otras partes",
+      "escenas": [
+        {
+          "id": "equivalentes-1",
+          "consigna": "Parte 1/2 hasta tener octavos.",
+          "pista": "Pulsa «Partir en dos» arriba, dos veces.",
+          "logro": "1/2 = 2/4 = 4/8.",
+          "voz": {
+            "intro": "Las dos reservas tienen un medio. Vamos a partir solo la de arriba en pedazos cada vez más pequeños, y a compararla con la de abajo, que se queda igual. Fíjate en dos cosas: qué pasa con el número de partes, y qué pasa con el agua.",
+            "pista": "Partir en dos convierte cada parte en dos más pequeñas. Hazlo dos veces en la reserva de arriba.",
+            "logro": "Cuatro octavos. Hay cuatro veces más partes, pero cada una es cuatro veces más pequeña, así que el agua es la misma que en la reserva de abajo. Por eso, si multiplicas el numerador y el denominador por el mismo número, la fracción no cambia."
+          },
+          "momentos": {
+            "cuartos": "Dos cuartos: el doble de partes, cada una la mitad de grande. Compara con la reserva de abajo. Una vez más."
+          }
+        },
+        {
+          "id": "equivalentes-2",
+          "consigna": "¿Qué es más: 2/3 o 1/2?",
+          "pista": "Parte los tercios en dos y el medio en tres.",
+          "logro": "4/6 > 3/6, así que 2/3 > 1/2.",
+          "voz": {
+            "intro": "¿Qué es más, dos tercios o un medio? Cuesta decidirlo a simple vista, porque los pedazos son de tamaños distintos. Necesitamos un tamaño que sirva para las dos. Una pista: tanto los tercios como los medios se pueden partir en sextos.",
+            "pista": "Parte en dos la reserva de arriba, y en tres la de abajo. Así las dos quedan en sextos.",
+            "logro": "Con partes del mismo tamaño se ve claro: dos tercios es más que un medio. El tamaño común no se elige al azar: los sextos funcionan porque seis es múltiplo de tres y de dos a la vez."
+          }
+        },
+        {
+          "id": "equivalentes-3",
+          "consigna": "¿Qué es más: 3/4 o 5/8?",
+          "pista": "Parte en dos los cuartos.",
+          "logro": "6/8 > 5/8, así que 3/4 > 5/8.",
+          "voz": {
+            "intro": "Cuidado con esta. Cinco octavos tiene números más grandes que tres cuartos, y mucha gente cree que por eso es mayor. Comprobémoslo con partes del mismo tamaño.",
+            "pista": "Un cuarto es igual a dos octavos. Parte en dos la reserva de arriba.",
+            "logro": "Seis octavos es más que cinco octavos. Gana tres cuartos, aunque sus números sean más pequeños. Un denominador grande significa partes pequeñas. Para comparar, primero partes del mismo tamaño."
+          }
+        }
+      ]
+    },
+    "enteros-suma-resta": {
+      "titulo": "Desplázate por la recta",
+      "escenas": [
+        {
+          "id": "enteros-1",
+          "consigna": "Calcula −3 + 5 moviéndote por la recta.",
+          "pista": "Avanza 5 pasos hacia la derecha.",
+          "logro": "−3 + 5 = 2.",
+          "voz": {
+            "intro": "Imagina un ascensor en el tercer sótano, el piso menos tres. Sube cinco pisos. ¿Dónde termina? En la recta, sumar un número positivo es moverse hacia la derecha. Presta atención a lo que pasa cuando cruzas el cero.",
+            "pista": "Pulsa avanzar cinco veces. Cuenta los pasos, no los números de la recta.",
+            "logro": "Termina en el piso dos. De menos tres a cero hay tres pasos, y te quedaban dos más. Es una buena estrategia: primero llegar al cero, y después seguir."
+          },
+          "momentos": {
+            "cero": "Estás en el cero, la planta baja. Llevas tres pasos. ¿Cuántos te faltan?",
+            "al-reves": "Cuidado: te estás moviendo hacia la izquierda. Sumar cinco hace subir al ascensor, no bajar."
+          }
+        },
+        {
+          "id": "enteros-2",
+          "consigna": "Calcula 4 + (−6) moviéndote por la recta.",
+          "pista": "Retrocede 6 pasos hacia la izquierda.",
+          "logro": "4 + (−6) = −2.",
+          "voz": {
+            "intro": "Tienes cuatro soles y debes seis. Sumar una deuda es como sumar un número negativo: en la recta, te mueves hacia la izquierda. Antes de empezar, ¿crees que te alcanza el dinero?",
+            "pista": "Pulsa retroceder seis veces. Al pasar por el cero, sigue contando.",
+            "logro": "Llegaste a menos dos: después de pagar, todavía debes dos soles. Cuando sumas números de signo distinto, gana el signo del que está más lejos del cero. Seis está más lejos que cuatro, por eso el resultado es negativo."
+          },
+          "momentos": {
+            "cero": "Llegaste al cero: ya usaste los cuatro soles que tenías. Todavía faltan dos pasos.",
+            "al-reves": "Hacia la derecha tu saldo sube. Sumar una deuda lo hace bajar: muévete hacia la izquierda."
+          }
+        },
+        {
+          "id": "enteros-3",
+          "consigna": "Calcula 3 − (−4) moviéndote por la recta.",
+          "pista": "Restar −4 es sumar 4: avanza.",
+          "logro": "3 − (−4) = 3 + 4 = 7.",
+          "voz": {
+            "intro": "Este es el más curioso: tres menos menos cuatro. Restar un negativo es como si te perdonaran una deuda de cuatro soles. ¿Tu saldo sube o baja? Decide hacia dónde moverte.",
+            "pista": "Restar un número es sumar su opuesto. El opuesto de menos cuatro es cuatro. Avanza cuatro pasos.",
+            "logro": "Siete. Si te quitan una deuda, tienes más. Por eso restar un negativo es lo mismo que sumar un positivo: tres menos menos cuatro es igual a tres más cuatro."
+          },
+          "momentos": {
+            "al-reves": "Cuidado: te mueves hacia la izquierda. Que te perdonen una deuda no baja tu saldo, lo sube."
+          }
+        }
+      ]
+    },
+    "ecuaciones-un-paso": {
+      "titulo": "Equilibra la balanza",
+      "escenas": [
+        {
+          "id": "ecuaciones-1",
+          "consigna": "x + 3 = 7: deja la x sola sin desequilibrar.",
+          "pista": "Quita 1 de cada lado, tres veces.",
+          "logro": "x = 4. Comprobación: 4 + 3 = 7.",
+          "voz": {
+            "intro": "La balanza está equilibrada: la caja x más tres pesas pesa lo mismo que siete pesas. No sabemos cuánto pesa la caja. La regla de oro: si haces lo mismo en los dos lados, la balanza sigue equilibrada. ¿Cuántas pesas tienes que quitar para dejar la caja sola?",
+            "pista": "Quita una pesa de cada lado hasta que en la izquierda solo quede la caja. Si quitas de un solo lado, la balanza se inclina.",
+            "logro": "La caja quedó sola frente a cuatro pesas, así que x vale cuatro. Cuando alguien dice que el tres pasa restando al otro lado, en realidad está haciendo esto: quitar tres de los dos lados."
+          },
+          "momentos": {
+            "primera": "La balanza sigue equilibrada, porque quitaste lo mismo de los dos lados. Sigue así."
+          }
+        },
+        {
+          "id": "ecuaciones-2",
+          "consigna": "3x = 12: ¿cuánto pesa una x?",
+          "pista": "Pulsa «Repartir en 3».",
+          "logro": "x = 12 ÷ 3 = 4.",
+          "voz": {
+            "intro": "Ahora hay tres cajas iguales que pesan lo mismo que doce pesas. Si las tres juntas pesan doce, ¿cuánto pesa una? Repartir los dos lados en tres grupos iguales también mantiene el equilibrio.",
+            "pista": "Pulsa repartir. Cada caja se queda con un tercio de las pesas.",
+            "logro": "Doce entre tres es cuatro: cada caja pesa cuatro. La división deshace la multiplicación, igual que antes restar deshacía la suma."
+          }
+        },
+        {
+          "id": "ecuaciones-3",
+          "consigna": "Reto: 2x + 1 = 9.",
+          "pista": "Primero quita la pesa suelta; después reparte en 2.",
+          "logro": "2x = 8, así que x = 4.",
+          "voz": {
+            "intro": "Un reto de dos pasos: dos cajas y una pesa equilibran nueve pesas. ¿Qué harías primero, quitar o repartir? Piensa en qué está más lejos de la x.",
+            "pista": "Si repartes ahora, la pesa suelta tendría que partirse. Primero quita la pesa suelta de los dos lados, y después reparte en dos.",
+            "logro": "Dos cajas pesan ocho, así que cada una pesa cuatro. El orden importa: primero se deshace la suma, y después la multiplicación. Es el orden inverso al que se usó para construir la ecuación."
+          }
         }
       ]
     }
   },
   "avisos": {
-    "no-se-puede-juntar": "Todavía no se pueden juntar: las partes tienen tamaños distintos. Pártelas primero."
+    "no-se-puede-juntar": {
+      "texto": "Partes de distinto tamaño: pártelas primero.",
+      "voz": "Todavía no se pueden juntar. Los pedazos son de distinto tamaño, y contarlos juntos sería como sumar manzanas con sandías. Parte primero, para que las partes se parezcan."
+    },
+    "balanza-desequilibrada": {
+      "texto": "Así la balanza se inclina: quita lo mismo de los dos lados.",
+      "voz": "Mira lo que pasaría: si quitas una pesa solo de la izquierda, ese lado pesa menos y la balanza se inclina. La igualdad deja de ser cierta. Lo que hagas en un lado, hazlo también en el otro."
+    },
+    "no-se-puede-repartir": {
+      "texto": "Primero deja las x solas.",
+      "voz": "Todavía no conviene repartir: la pesa suelta tendría que partirse en pedazos. Primero quita lo que se está sumando a las x, y después reparte."
+    }
   }
 }

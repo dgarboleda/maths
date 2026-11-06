@@ -2,37 +2,57 @@ import guion from "./guion.json";
 import type { ManipulativeState } from "./model";
 
 /**
- * Escenas del tutor visual. El texto (y su audio) sale de `guion.json`; aquí
- * solo se añade el material de partida y la meta que se comprueba sola.
+ * Escenas del tutor visual. El texto sale de `guion.json`: la pantalla
+ * muestra la consigna, la pista y el logro en corto; la voz explica más
+ * (contexto, por qué, errores comunes) y su texto completo se puede leer en
+ * la transcripción. Aquí se añade el material de partida, la meta y cuándo
+ * suena cada comentario a mitad de la actividad («momentos»).
  * Añadir un tema = escenas en el guion + su entrada en `SETUP`.
  */
+type Check = (state: ManipulativeState) => boolean;
+
+export interface Moment {
+  /** Clip `<escena>-<clave>`. */
+  key: string;
+  voice: string;
+  when: Check;
+}
 export interface Scene {
   id: string;
-  intro: string;
+  /** En pantalla: corto y operativo. */
+  task: string;
   hint: string;
   success: string;
+  /** Lo que dice la voz, más completo que la pantalla. */
+  voice: { intro: string; hint: string; success: string };
+  moments: Moment[];
   initial: ManipulativeState;
-  goal: (state: ManipulativeState) => boolean;
+  goal: Check;
 }
 export interface Tutorial {
   title: string;
   scenes: Scene[];
 }
 
+const trayFull: Check = (s) => s.kind === "place-value" && s.tray.length === 10;
+
 const units = (a: number, b: number) => [...Array<"a">(a).fill("a"), ...Array<"b">(b).fill("b")];
 
-const SETUP: Record<string, Pick<Scene, "initial" | "goal">> = {
+const SETUP: Record<string, { initial: ManipulativeState; goal: Check; moments?: Record<string, Check> }> = {
   "unidades-1": {
     initial: { kind: "place-value", tens: 0, loose: units(8, 5), tray: [] },
     goal: (s) => s.kind === "place-value" && s.tens === 1 && s.loose.length + s.tray.length === 3,
+    moments: { "bandeja-llena": trayFull },
   },
   "unidades-2": {
     initial: { kind: "place-value", tens: 3, loose: units(7, 5), tray: [] },
     goal: (s) => s.kind === "place-value" && s.tens === 4 && s.loose.length + s.tray.length === 2,
+    moments: { "bandeja-llena": trayFull },
   },
   "grupos-1": {
     initial: { kind: "array", rows: 1, cols: 1, turns: 0 },
     goal: (s) => s.kind === "array" && s.rows === 3 && s.cols === 4,
+    moments: { "filas-listas": (s) => s.kind === "array" && s.rows === 3 && s.cols !== 4 },
   },
   "grupos-2": {
     initial: { kind: "array", rows: 3, cols: 4, turns: 0 },
@@ -55,6 +75,47 @@ const SETUP: Record<string, Pick<Scene, "initial" | "goal">> = {
     initial: { kind: "fractions", top: { num: 1, den: 3 }, bottom: { num: 1, den: 6 }, joined: false },
     goal: (s) => s.kind === "fractions" && s.joined && s.top.num * 2 === s.top.den,
   },
+  "equivalentes-1": {
+    initial: { kind: "fractions", top: { num: 1, den: 2 }, bottom: { num: 1, den: 2 }, joined: false, joinable: false },
+    goal: (s) => s.kind === "fractions" && s.top.num === 4 && s.top.den === 8,
+    moments: { cuartos: (s) => s.kind === "fractions" && s.top.den === 4 },
+  },
+  "equivalentes-2": {
+    initial: { kind: "fractions", top: { num: 2, den: 3 }, bottom: { num: 1, den: 2 }, joined: false, joinable: false },
+    goal: (s) => s.kind === "fractions" && s.top.den === s.bottom.den,
+  },
+  "equivalentes-3": {
+    initial: { kind: "fractions", top: { num: 3, den: 4 }, bottom: { num: 5, den: 8 }, joined: false, joinable: false },
+    goal: (s) => s.kind === "fractions" && s.top.den === s.bottom.den,
+  },
+  "enteros-1": {
+    initial: { kind: "line", start: -3, pos: -3, min: -5, max: 5 },
+    goal: (s) => s.kind === "line" && s.pos === 2,
+    moments: { cero: (s) => s.kind === "line" && s.pos === 0, "al-reves": (s) => s.kind === "line" && s.pos < s.start },
+  },
+  "enteros-2": {
+    initial: { kind: "line", start: 4, pos: 4, min: -5, max: 5 },
+    goal: (s) => s.kind === "line" && s.pos === -2,
+    moments: { cero: (s) => s.kind === "line" && s.pos === 0, "al-reves": (s) => s.kind === "line" && s.pos > s.start },
+  },
+  "enteros-3": {
+    initial: { kind: "line", start: 3, pos: 3, min: -1, max: 9 },
+    goal: (s) => s.kind === "line" && s.pos === 7,
+    moments: { "al-reves": (s) => s.kind === "line" && s.pos < s.start },
+  },
+  "ecuaciones-1": {
+    initial: { kind: "balance", xs: 1, left: 3, right: 7 },
+    goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+    moments: { primera: (s) => s.kind === "balance" && s.left === 2 },
+  },
+  "ecuaciones-2": {
+    initial: { kind: "balance", xs: 3, left: 0, right: 12 },
+    goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+  },
+  "ecuaciones-3": {
+    initial: { kind: "balance", xs: 2, left: 1, right: 9 },
+    goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
+  },
 };
 
 export const TUTORIALS: Record<string, Tutorial> = Object.fromEntries(
@@ -62,16 +123,33 @@ export const TUTORIALS: Record<string, Tutorial> = Object.fromEntries(
     lessonId,
     {
       title: t.titulo,
-      scenes: t.escenas.map((e) => {
+      scenes: t.escenas.map((e): Scene => {
         const setup = SETUP[e.id];
         if (!setup) throw new Error(`Escena del guion sin material: ${e.id}`);
-        return { id: e.id, intro: e.intro, hint: e.pista, success: e.logro, ...setup };
+        const said = (("momentos" in e ? e.momentos : undefined) ?? {}) as Record<string, string>;
+        const moments = Object.entries(setup.moments ?? {}).map(([key, when]) => {
+          if (!said[key]) throw new Error(`Momento sin texto en el guion: ${e.id}-${key}`);
+          return { key, voice: said[key], when };
+        });
+        return {
+          id: e.id,
+          task: e.consigna,
+          hint: e.pista,
+          success: e.logro,
+          voice: { intro: e.voz.intro, hint: e.voz.pista, success: e.voz.logro },
+          moments,
+          initial: setup.initial,
+          goal: setup.goal,
+        };
       }),
     },
   ]),
 );
 
-export const NOTICES: Record<string, string> = guion.avisos;
+/** Avisos cuando una acción no se puede hacer: texto corto y explicación en voz. */
+export const NOTICES: Record<string, { text: string; voice: string }> = Object.fromEntries(
+  Object.entries(guion.avisos).map(([key, aviso]) => [key, { text: aviso.texto, voice: aviso.voz }]),
+);
 
 export function clipUrl(clip: string): string {
   return `/audio/tutor/${clip}.mp3`;

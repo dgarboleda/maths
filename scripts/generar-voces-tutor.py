@@ -47,12 +47,15 @@ FORMATO_AZURE = "audio-24khz-48kbitrate-mono-mp3"
 
 
 def clips(guion: dict):
+    """Solo lo que dice la voz (`voz`, `momentos`, `avisos.*.voz`), no el texto corto de pantalla."""
     for tutorial in guion["tutoriales"].values():
         for escena in tutorial["escenas"]:
             for parte in ("intro", "pista", "logro"):
-                yield f"{escena['id']}-{parte}", escena[parte]
-    for clave, texto in guion["avisos"].items():
-        yield clave, texto
+                yield f"{escena['id']}-{parte}", escena["voz"][parte]
+            for clave, texto in escena.get("momentos", {}).items():
+                yield f"{escena['id']}-{clave}", texto
+    for clave, aviso in guion["avisos"].items():
+        yield clave, aviso["voz"]
 
 
 def ssml(texto: str, voz: str, velocidad: str) -> str:

@@ -29,8 +29,25 @@ export interface FractionState {
   top: Part;
   bottom: Part;
   joined: boolean;
+  /** Falso en las escenas de equivalencia y comparación: no se suman. */
+  joinable?: boolean;
 }
-export type ManipulativeState = PlaceValueState | ArrayState | FractionState;
+/** Recta numérica: se avanza o retrocede de uno en uno desde `start`. */
+export interface LineState {
+  kind: "line";
+  start: number;
+  pos: number;
+  min: number;
+  max: number;
+}
+/** Balanza: `xs` cajas x y `left` pesas de 1 a la izquierda; `right` pesas a la derecha. */
+export interface BalanceState {
+  kind: "balance";
+  xs: number;
+  left: number;
+  right: number;
+}
+export type ManipulativeState = PlaceValueState | ArrayState | FractionState | LineState | BalanceState;
 
 export type TutorAction =
   | { type: "to-tray"; index: number }
@@ -40,11 +57,15 @@ export type TutorAction =
   | { type: "rows"; delta: 1 | -1 }
   | { type: "cols"; delta: 1 | -1 }
   | { type: "turn" }
-  | { type: "split"; bar: "top" | "bottom" }
-  | { type: "join" };
+  | { type: "split"; bar: "top" | "bottom"; factor?: 2 | 3 }
+  | { type: "join" }
+  | { type: "step"; delta: 1 | -1 }
+  | { type: "remove-both" }
+  | { type: "remove-left" }
+  | { type: "share" };
 
 /** Aviso narrado cuando una acción no se puede hacer (clave de `guion.json`). */
-export type Notice = "no-se-puede-juntar";
+export type Notice = "no-se-puede-juntar" | "balanza-desequilibrada" | "no-se-puede-repartir";
 
 export const TRAY_SIZE = 10;
 export const ARRAY_MAX = 10;
@@ -58,6 +79,10 @@ export function reduce(state: ManipulativeState, action: TutorAction): { state: 
       return { state: reduceArray(state, action) };
     case "fractions":
       return reduceFractions(state, action);
+    case "line":
+      return { state: reduceLine(state, action) };
+    case "balance":
+      return reduceBalance(state, action);
   }
 }
 
@@ -98,17 +123,52 @@ function reduceFractions(s: FractionState, action: TutorAction): { state: Fracti
   switch (action.type) {
     case "split": {
       const part = s[action.bar];
-      if (s.joined || part.den * 2 > MAX_DENOMINATOR) return { state: s };
-      return { state: { ...s, [action.bar]: { num: part.num * 2, den: part.den * 2 } } };
+      const factor = action.factor ?? 2;
+      if (s.joined || part.den * factor > MAX_DENOMINATOR) return { state: s };
+      return { state: { ...s, [action.bar]: { num: part.num * factor, den: part.den * factor } } };
     }
     case "join": {
-      if (s.joined) return { state: s };
+      if (s.joined || s.joinable === false) return { state: s };
       if (s.top.den !== s.bottom.den) return { state: s, notice: "no-se-puede-juntar" };
       return { state: { ...s, top: { num: s.top.num + s.bottom.num, den: s.top.den }, bottom: { num: 0, den: s.bottom.den }, joined: true } };
     }
     default:
       return { state: s };
   }
+}
+
+function reduceLine(s: LineState, action: TutorAction): LineState {
+  if (action.type !== "step") return s;
+  return { ...s, pos: Math.min(s.max, Math.max(s.min, s.pos + action.delta)) };
+}
+
+function reduceBalance(s: BalanceState, action: TutorAction): { state: BalanceState; notice?: Notice } {
+  switch (action.type) {
+    case "remove-both":
+      return s.left > 0 && s.right > 0 ? { state: { ...s, left: s.left - 1, right: s.right - 1 } } : { state: s };
+    case "remove-left":
+      // Quitar de un solo lado rompe la igualdad: se explica y no se aplica.
+      return { state: s, notice: "balanza-desequilibrada" };
+    case "share":
+      if (s.xs > 1 && s.left === 0 && s.right % s.xs === 0) return { state: { ...s, xs: 1, right: s.right / s.xs } };
+      return { state: s, notice: "no-se-puede-repartir" };
+    default:
+      return { state: s };
+  }
+}
+
+const signed = (n: number) => (n < 0 ? `−${-n}` : String(n));
+
+/** «4 + (−6)» o «−3 + 5»: la operación que representa el desplazamiento. */
+export function lineExpression(s: LineState): string {
+  const d = s.pos - s.start;
+  return `${signed(s.start)} ${d < 0 ? "+ (" + signed(d) + ")" : "+ " + d} = ${signed(s.pos)}`;
+}
+
+/** «2x + 1 = 9»: la ecuación que muestra la balanza. */
+export function balanceEquation(s: BalanceState): string {
+  const x = s.xs === 1 ? "x" : `${s.xs}x`;
+  return `${s.left > 0 ? `${x} + ${s.left}` : x} = ${s.right}`;
 }
 
 export function placeValueTotal(s: PlaceValueState): number {
@@ -124,6 +184,10 @@ export function describe(state: ManipulativeState): string {
     }
     case "array":
       return `${state.rows} ${state.rows === 1 ? "fila" : "filas"} de ${state.cols} ${state.cols === 1 ? "panel" : "paneles"}: ${state.rows} × ${state.cols} = ${state.rows * state.cols} paneles.`;
+    case "line":
+      return `Empiezas en ${signed(state.start)} y estás en ${signed(state.pos)}: ${lineExpression(state)}.`;
+    case "balance":
+      return `Balanza equilibrada: ${balanceEquation(state)}.`;
     case "fractions":
       return state.joined
         ? `Reservas juntas: ${state.top.num}/${state.top.den} de la reserva.`
