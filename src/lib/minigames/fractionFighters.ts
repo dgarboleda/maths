@@ -50,3 +50,26 @@ export function playTurn(battle: Battle, action: Action): Battle {
   if (battle.turn >= 15) return { ...result, heroHp, heroShield, enemyShield: nextShield, result: 'draw', log: `${notes.join(' ')} La criatura se retiró. ¡Inténtalo de nuevo!` };
   return { ...result, heroHp, heroShield, enemyShield: nextShield, turn: battle.turn + 1, energy: Math.min(12, energy + 3), log: `${notes.join(' ')} Recuperaste hasta 1/4 de energía.` };
 }
+
+export type FractionChallenge = { kind: 'remaining' | 'equivalence' | 'recharge'; prompt: string; answer: number; hints: [string, string, string] };
+
+/** A challenge is tied to the selected move, using the same exact energy units as combat. */
+export function makeFractionChallenge(battle: Battle, action: Action, variant: number): FractionChallenge {
+  const after = battle.energy - action.cost;
+  const requested = ((Math.floor(variant) % 3) + 3) % 3;
+  // A recharge question must not promise another turn after the fight ends.
+  if (requested === 2 && playTurn(battle, action).result === 'playing') {
+    const recharged = Math.min(12, after + 3);
+    return { kind: 'recharge', answer: recharged,
+      prompt: `Después de usar ${action.name} quedarán ${fraction(after)}. Al comenzar el siguiente turno recuperas hasta 1/4, sin superar 1. ¿Cuánta energía tendrás?`,
+      hints: ['Suma la recuperación a la energía restante, sin pasar de una unidad.', `${fraction(after)} son ${after}/12 y 1/4 son 3/12. Suma y comprueba el máximo.`, `Quedan ${fraction(recharged)} después de recargar.`] };
+  }
+  if (requested === 1 && action.cost > 0) {
+    return { kind: 'equivalence', answer: action.cost,
+      prompt: `${action.name} consume ${action.cost} de las 12 partes de la barra. ¿Qué fracción de una unidad representa ese consumo?`,
+      hints: ['Una fracción indica las partes elegidas sobre el total de partes iguales.', 'Coloca las partes consumidas en el numerador y el total de partes en el denominador.', `${action.cost}/12 equivale a ${fraction(action.cost)}.`] };
+  }
+  return { kind: 'remaining', answer: after,
+    prompt: `Tienes ${fraction(battle.energy)} y ${action.name} cuesta ${fraction(action.cost)}. ¿Cuánta energía quedará?`,
+    hints: ['Compara partes del mismo tamaño: utiliza los doceavos de la barra.', `${fraction(battle.energy)} son ${battle.energy}/12 y ${fraction(action.cost)} son ${action.cost}/12. Resta los numeradores.`, `Quedan ${after}/12, es decir ${fraction(after)}.`] };
+}

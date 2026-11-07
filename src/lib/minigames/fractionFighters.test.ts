@@ -34,3 +34,27 @@ describe('Fraction Fighters', () => {
     expect(playTurn(battle, action('descansar')).result).toBe('draw');
   });
 });
+
+describe('preguntas variadas vinculadas al combate', () => {
+  it('propone resta, equivalencia y recarga con respuestas exactas', async () => {
+    const { makeFractionChallenge } = await import('./fractionFighters');
+    const battle = { ...newBattle(0), turn: 2, energy: 9 };
+    const move = action('rayo');
+    const questions = [0, 1, 2].map(variant => makeFractionChallenge(battle, move, variant));
+    expect(questions.map(question => question.kind)).toEqual(['remaining', 'equivalence', 'recharge']);
+    expect(questions.map(question => question.answer)).toEqual([3, 6, 6]);
+    expect(isCorrectFraction('1/4', questions[0].answer)).toBe(true);
+    expect(isCorrectFraction('6/12', questions[1].answer)).toBe(true);
+    expect(isCorrectFraction('1/2', questions[2].answer)).toBe(true);
+  });
+  it('limita la recarga a una unidad y no promete otro turno al ganar', async () => {
+    const { makeFractionChallenge } = await import('./fractionFighters');
+    expect(makeFractionChallenge(newBattle(0), action('chispa'), 2).answer).toBe(12);
+    const lastHit = { ...newBattle(0), enemyHp: 1 };
+    expect(makeFractionChallenge(lastHit, action('chispa'), 2).kind).toBe('remaining');
+  });
+  it('no pide equivalencias triviales de un coste cero', async () => {
+    const { makeFractionChallenge } = await import('./fractionFighters');
+    expect(makeFractionChallenge(newBattle(0), action('descansar'), 1).kind).toBe('remaining');
+  });
+});
