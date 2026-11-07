@@ -43,4 +43,5 @@ test('respeta movimiento reducido en los personajes durante el combate', async (
   await expect(creature).toHaveAttribute('data-motion', 'ataque');
   await expect(hero).toHaveCSS('animation-name', 'none');
   await expect(creature).toHaveCSS('animation-name', 'none');
+  await expect(page.getByTestId('efectos-combate')).toHaveCSS('display', 'none');
 });
