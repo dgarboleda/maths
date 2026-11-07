@@ -174,6 +174,15 @@ export function LearningHome({
           </Link>
         )}
 
+        {view === "practice" && (
+          <Link href={`/jugar/${childId}/practicar/codebreaker`} className="block rounded-3xl border border-cyan-300/30 bg-gradient-to-r from-cyan-950 to-slate-900 p-6 transition hover:border-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-200">Minijuego · patrones y lógica</span>
+            <h2 className="mt-2 text-2xl font-bold text-white">🔐 CodeBreaker</h2>
+            <p className="mt-2 text-sm text-slate-300">Descifra secuencias, conecta circuitos y abre sistemas secretos.</p>
+            <span className="mt-4 inline-block font-bold text-cyan-200">Iniciar misión →</span>
+          </Link>
+        )}
+
         {view === "home" ? (
           <section
             aria-label="Tu siguiente paso"
