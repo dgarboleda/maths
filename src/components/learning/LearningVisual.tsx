@@ -7,6 +7,7 @@ import type { Visual } from "@/lib/learning/domain";
 import { Challenge } from "./Challenge";
 import { ColumnExplorer } from "./ColumnOperation";
 import { DivisionExplorer } from "./DivisionOperation";
+import { MultiplyExplorer } from "./MultiplyOperation";
 import { FactorExplorer } from "./FactorOperation";
 import { RuffiniExplorer } from "./RuffiniOperation";
 // Las gráficas cartesianas y las de geometría también se cargan bajo demanda:
@@ -331,6 +332,8 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   columns: ColumnExplorer,
   "equal-groups": EqualGroupsVisual,
   "long-division": DivisionExplorer,
+  "column-multiplication": MultiplyExplorer,
+  "decimal-division": ({ id }) => <DivisionExplorer id={id} decimals />,
   "factor-table": FactorExplorer,
   ruffini: RuffiniExplorer,
   sieve: SieveVisual,

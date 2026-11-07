@@ -21,6 +21,14 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "prerequisites": []
   },
   {
+    "id": "multiplicacion-columnas",
+    "unitId": "numeros",
+    "title": "Multiplicar en columnas",
+    "prerequisites": [
+      "multiplicacion-grupos"
+    ]
+  },
+  {
     "id": "enteros-recta",
     "unitId": "numeros",
     "title": "Números enteros en la recta",
@@ -157,6 +165,15 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "title": "Operar con decimales",
     "prerequisites": [
       "fraccion-decimal-porcentaje"
+    ]
+  },
+  {
+    "id": "division-decimales",
+    "unitId": "fracciones",
+    "title": "Dividir con decimales",
+    "prerequisites": [
+      "division-larga",
+      "operaciones-decimales"
     ]
   },
   {

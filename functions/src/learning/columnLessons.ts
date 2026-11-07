@@ -1,5 +1,5 @@
 import { defineLesson } from "./defineLesson";
-import { columnBugs, columnTrace, fmt, placeName } from "./algorithms/columns";
+import { columnBugs, columnTrace, fmt, fmtFixed, placeName } from "./algorithms/columns";
 import { divisionBugs, divisionTrace } from "./algorithms/division";
 import { factorTrace } from "./algorithms/factors";
 import { divisorText, polynomialText, ruffiniTrace, sg } from "./algorithms/ruffini";
@@ -82,9 +82,10 @@ export const COLUMN_LESSONS: Lesson[] = [
     questions(v) {
       const concept = v % 3;
       const [ca, cb] = [[468, 257], [741, 368], [582, 236], [925, 487], [634, 179], [813, 245]][v];
-      const [sa, sb] = [[347, 285], [586, 378], [1476, 2858], [2695, 1548], [739, 468], [3857, 2476]][v];
+      // En algunas formas, con decimales: se alinea la coma.
+      const [sa, sb] = [[347, 285], [586, 378], [1476, 2858], [26.95, 15.48], [739, 468], [38.57, 24.6]][v];
       const [ta, tb] = [[268, 157], [459, 283], [376, 248], [594, 238], [643, 279], [825, 186]][v];
-      const [ra, rb] = [[325, 148], [503, 267], [4012, 1586], [3241, 1765], [700, 254], [6105, 2348]][v];
+      const [ra, rb] = [[325, 148], [503, 267], [4012, 1586], [3241, 1765], [70.5, 25.48], [61.05, 23.4]][v];
       const [ea, eb] = [[432, 175], [614, 238], [852, 367], [721, 346], [943, 568], [530, 174]][v];
       // Litros y soles con decimales: se alinea la coma.
       const [ba, bb] = [[1204, 386], [2315.5, 748.75], [3050, 1275.45], [1432, 965], [4006.25, 2518.5], [2140.85, 876.95]][v];
@@ -97,6 +98,9 @@ export const COLUMN_LESSONS: Lesson[] = [
       // q4: el error «restar la cifra menor de la mayor».
       const smallerBug = columnBugs({ op: "subtract", a: ea, b: eb }).find((bug) => bug.id === "menor-del-mayor")!;
       const firstBorrow = columnTrace({ op: "subtract", a: ea, b: eb }).steps.find((s) => s.regroup)!;
+      // q4 (formas impares): alinear por la derecha en lugar de por la coma.
+      const [ga, gb] = [[0, 0], [12.5, 3.75], [0, 0], [4.8, 2.15], [0, 0], [23.4, 1.52]][v];
+      const misaligned = v % 2 ? columnBugs({ op: "add", a: ga, b: gb }).find((bug) => bug.id === "coma-desalineada")!.value : 0;
 
       const contexts = [
         { what: "La biblioteca tenía", verb: "y prestó", left: "¿Cuántos libros quedan en los estantes?", unit: "libros", things: "libros" },
@@ -165,7 +169,20 @@ export const COLUMN_LESSONS: Lesson[] = [
           },
         ),
         columnar("q3", { op: "subtract", a: ra, b: rb }),
-        c(
+        v % 2
+          ? c(
+              "q4",
+              `Un compañero escribe ${fmt(ga)} + ${fmt(gb)} en columnas alineando las últimas cifras y obtiene ${fmtFixed(misaligned, 2)}. ¿Qué falla?`,
+              [
+                ["Nada: sumó bien columna por columna", `Estima: ${Math.floor(ga)} + ${Math.floor(gb)} ya es ${Math.floor(ga) + Math.floor(gb)}, mucho más que ${fmtFixed(misaligned, 2)}.`],
+                `Alineó por la derecha: la coma de ${fmt(ga)} debía ir sobre la de ${fmt(gb)} (${fmtFixed(ga, 2)} + ${fmtFixed(gb, 2)})`,
+                ["Debía restar en lugar de sumar", "Es una suma; el fallo está en cómo colocó los números."],
+              ],
+              1,
+              `Con decimales se alinea la coma (unidades bajo unidades, décimas bajo décimas) y se completa con ceros: ${fmtFixed(ga, 2)} + ${fmtFixed(gb, 2)} = ${fmtFixed(ga + gb, 2)}.`,
+              "concept",
+            )
+          : c(
           "q4",
           `Un compañero calcula ${fmt(ea)} − ${fmt(eb)} = ${fmt(smallerBug.value)}. ¿Qué falla?`,
           [

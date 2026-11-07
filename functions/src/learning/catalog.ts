@@ -1,5 +1,6 @@
 import { COLUMN_LESSONS, FACTOR_LESSONS, RUFFINI_LESSONS } from "./columnLessons";
 import { MULTIPLICATION_LESSONS } from "./multiplication";
+import { DECIMAL_DIVISION_LESSONS, MULTIPLY_COLUMN_LESSONS } from "./decimalColumnLessons";
 import { NUMBER_LESSONS } from "./numbers";
 import { FRACTION_LESSONS } from "./fractions";
 import { FRACTION_OPERATION_LESSONS } from "./fractionOps";
@@ -43,6 +44,7 @@ export { LEARNING_UNITS } from "./units";
 export const LESSONS: Lesson[] = [
   ...COLUMN_LESSONS,
   ...MULTIPLICATION_LESSONS,
+  ...MULTIPLY_COLUMN_LESSONS,
   ...NUMBER_LESSONS,
   ...NUMBER_EXTRA_LESSONS,
   ...NUMBER_THEORY_LESSONS,
@@ -51,6 +53,7 @@ export const LESSONS: Lesson[] = [
   ...FRACTION_OPERATION_LESSONS,
   ...MIXED_NUMBER_LESSONS,
   ...DECIMAL_LESSONS,
+  ...DECIMAL_DIVISION_LESSONS,
   ...REAL_NUMBER_LESSONS,
   ...PROPORTIONALITY_LESSONS,
   ...INVERSE_LESSONS,

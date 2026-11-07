@@ -2,20 +2,35 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Calculator, ChevronDown, ChevronUp } from "lucide-react";
-import { validColumnSpec, validDivisionSpec, type ArithmeticSpec, type DivisionSpec } from "@/lib/learning/core";
+import {
+  divisionTrace,
+  exactPlaces,
+  isDecimalDivision,
+  multiplyScaled,
+  quotientValue,
+  validColumnSpec,
+  validDivisionSpec,
+  validMultiplySpec,
+  type ArithmeticSpec,
+  type DivisionSpec,
+  type MultiplySpec,
+} from "@/lib/learning/core";
 import { secondaryButton } from "./LearningShell";
 import { ColumnSheet, OptionPicker, useSubtractStrategy } from "./ColumnOperation";
 import { DivisionSheet } from "./DivisionOperation";
+import { MultiplySheet } from "./MultiplyOperation";
 import { NumericKeypadArea } from "./NumericKeypad";
 
 /* Borrador de cálculo: el papel de al lado. El alumno escribe una suma, una
- * resta o una división y la resuelve en la hoja de columnas o en la galera.
+ * resta, una multiplicación o una división (también con decimales) y la
+ * resuelve en la hoja de columnas o en la galera.
  * No se corrige ni se registra como ayuda (es su propio trabajo) y el
  * resultado se puede copiar a la respuesta. */
 
 const OPS = [
   { id: "add", label: "Sumar" },
   { id: "subtract", label: "Restar" },
+  { id: "multiply", label: "Multiplicar" },
   { id: "divide", label: "Dividir" },
 ] as const;
 type Op = (typeof OPS)[number]["id"];
@@ -27,9 +42,15 @@ const decimalInput = (text: string) => {
   return rest.length ? `${int},${rest.join("")}` : int;
 };
 
-/** Resultado escrito en la hoja (en la galera, el cociente). */
-function resultOf(op: Op, response: string): string {
-  if (op === "divide") return /^L(\d+);/.exec(response)?.[1]?.replace(/^0+(?=\d)/, "") ?? "";
+type Spec = ArithmeticSpec | MultiplySpec | DivisionSpec;
+
+/** Resultado escrito en la hoja (en la galera, el cociente con su coma). */
+function resultOf(spec: Spec, response: string): string {
+  if (spec.op === "divide") {
+    const digits = /^L(\d+);/.exec(response)?.[1];
+    if (!digits) return "";
+    return String(quotientValue(divisionTrace(spec), digits)).replace(".", ",");
+  }
   return response;
 }
 
@@ -52,7 +73,7 @@ export function Borrador({
   const [op, setOp] = useState<Op>("add");
   const [a, setA] = useState("");
   const [b, setB] = useState("");
-  const [spec, setSpec] = useState<ArithmeticSpec | DivisionSpec | null>(null);
+  const [spec, setSpec] = useState<Spec | null>(null);
   const [work, setWork] = useState("");
   const [target, setTarget] = useState(0);
   const [strategy] = useSubtractStrategy();
@@ -61,21 +82,33 @@ export function Borrador({
   const write = () => {
     const [x, y] = [Number(a.replace(",", ".")), Number(b.replace(",", "."))];
     if (!a || !b || !Number.isFinite(x) || !Number.isFinite(y)) return setProblem("Escribe los dos números.");
-    if (op === "divide" && (!Number.isInteger(x) || !Number.isInteger(y)))
-      return setProblem("En el borrador, la división es con números enteros.");
     if (/,\d{4,}/.test(`${a} ${b}`)) return setProblem("Usa como mucho tres decimales.");
+    if (op === "divide" && /,\d{3,}/.test(b)) return setProblem("En la división, el divisor puede tener como mucho dos decimales.");
     if (op === "subtract" && x < y) return setProblem("En la resta, el primer número no puede ser menor que el segundo.");
     if (op === "divide" && y === 0) return setProblem("No se puede dividir entre 0.");
-    if (op === "divide" && y > 999) return setProblem("El divisor puede tener hasta 3 cifras.");
-    const next = { op, a: x, b: y } as ArithmeticSpec | DivisionSpec;
-    // Los mismos límites que la hoja: así nunca se dibuja una cuenta que no puede trazar.
-    if (!(next.op === "divide" ? validDivisionSpec(next) : validColumnSpec(next)))
-      return setProblem("Usa números menores que 10 000 000.");
+    if (op === "multiply" && (x === 0 || y === 0)) return setProblem("Multiplicar por 0 da 0: no hace falta escribir la cuenta.");
+    let next: Spec;
+    if (op === "multiply") {
+      // Arriba va el factor de más cifras.
+      const [top, bottom] = String(multiplyScaled({ op, a: y, b: x }).A).length > String(multiplyScaled({ op, a: x, b: y }).A).length ? [y, x] : [x, y];
+      next = { op, a: top, b: bottom };
+      if (!validMultiplySpec(next)) return setProblem("El factor más corto puede tener hasta 3 cifras, y el otro, hasta 6.");
+    } else if (op === "divide") {
+      next = { op, a: x, b: y };
+      // Con coma, se sigue dividiendo hasta que sea exacta (o hasta las centésimas).
+      if (isDecimalDivision(next)) next = { ...next, places: exactPlaces(x, y, 3) ?? 2 };
+      if (y > 999 || Math.round(y * 10 ** (b.split(",")[1]?.length ?? 0)) > 999) return setProblem("El divisor puede tener hasta 3 cifras.");
+      if (!validDivisionSpec(next)) return setProblem("Usa números menores que 10 000 000.");
+    } else {
+      next = { op, a: x, b: y };
+      // Los mismos límites que la hoja: así nunca se dibuja una cuenta que no puede trazar.
+      if (!validColumnSpec(next)) return setProblem("Usa números menores que 10 000 000.");
+    }
     setProblem(null);
     setWork("");
     setSpec(next);
   };
-  const result = spec ? resultOf(spec.op, work) : "";
+  const result = spec ? resultOf(spec, work) : "";
   const field = "mt-1 block min-h-11 w-32 rounded-xl border border-slate-500 bg-slate-950 px-3 font-mono text-lg text-white";
 
   return (
@@ -103,12 +136,12 @@ export function Borrador({
           <OptionPicker label="Operación del borrador" options={OPS} value={op} onChange={setOp} disabled={disabled} />
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-sm text-slate-300">
-              {op === "divide" ? "Dividendo" : "Primer número"}
+              {op === "divide" ? "Dividendo" : op === "multiply" ? "Primer factor" : "Primer número"}
               <input className={field} inputMode="decimal" maxLength={11} value={a} disabled={disabled}
                 onChange={(e) => setA(decimalInput(e.target.value))} />
             </label>
             <label className="text-sm text-slate-300">
-              {op === "divide" ? "Divisor" : "Segundo número"}
+              {op === "divide" ? "Divisor" : op === "multiply" ? "Segundo factor" : "Segundo número"}
               <input className={field} inputMode="decimal" maxLength={11} value={b} disabled={disabled}
                 onChange={(e) => setB(decimalInput(e.target.value))} />
             </label>
@@ -122,6 +155,8 @@ export function Borrador({
               <NumericKeypadArea>
                 {spec.op === "divide" ? (
                   <DivisionSheet key={`${spec.a}/${spec.b}`} spec={spec} layout="completa" mode="open" response="" onChange={setWork} />
+                ) : spec.op === "multiply" ? (
+                  <MultiplySheet key={`${spec.a}x${spec.b}`} spec={spec} mode="free" response="" onChange={setWork} />
                 ) : (
                   <ColumnSheet key={`${spec.op}${spec.a}-${spec.b}-${strategy}`} spec={spec} strategy={strategy} mode="free" response="" onChange={setWork} />
                 )}

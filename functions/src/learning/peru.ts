@@ -26,6 +26,7 @@ export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruG
   // no entra en la ubicación ni se recomienda sola (ver `isOptionalLesson`).
   "suma-resta-columnas": { competency: "cantidad", grade: 1, base: true },
   "multiplicacion-grupos": { competency: "cantidad", grade: 1, base: true },
+  "multiplicacion-columnas": { competency: "cantidad", grade: 1, base: true },
   "division-larga": { competency: "cantidad", grade: 1, base: true },
   "mcd-mcm": { competency: "cantidad", grade: 1 },
   ruffini: { competency: "regularidad", grade: 3 },
@@ -42,6 +43,7 @@ export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruG
   "fracciones-suma-resta": { competency: "cantidad", grade: 1 },
   "fracciones-producto-cociente": { competency: "cantidad", grade: 1 },
   "operaciones-decimales": { competency: "cantidad", grade: 1 },
+  "division-decimales": { competency: "cantidad", grade: 1 },
   razones: { competency: "regularidad", grade: 1 },
   "tasa-unitaria": { competency: "regularidad", grade: 1 },
   proporcionalidad: { competency: "regularidad", grade: 2 },

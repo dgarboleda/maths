@@ -28,9 +28,9 @@ import { Slider } from "./GraphVisuals";
 /** Colores por posición (convención Montessori: unidades verdes, decenas
  *  azules, centenas rojas; se repite en cada periodo de miles). */
 const PLACE_COLORS = ["text-emerald-300", "text-sky-300", "text-rose-300"];
-const placeColor = (column: number) => PLACE_COLORS[((column % 3) + 3) % 3];
+export const placeColor = (column: number) => PLACE_COLORS[((column % 3) + 3) % 3];
 /** La coma decimal, a la derecha de la columna de las unidades. */
-const Comma = () => (
+export const Comma = () => (
   <span aria-hidden="true" className="pointer-events-none absolute -right-2 bottom-0 text-3xl font-bold text-slate-100">,</span>
 );
 
@@ -356,16 +356,33 @@ export function ColumnExplorer({ id }: { id: string }) {
   const [op, setOp] = useState<ArithmeticSpec["op"]>("add");
   const [a, setA] = useState(325);
   const [b, setB] = useState(148);
+  // Decimales de cada número: el deslizador da el número sin coma.
+  const [da, setDa] = useState<"0" | "1" | "2">("0");
+  const [db, setDb] = useState<"0" | "1" | "2">("0");
   const [strategy, setStrategy] = useSubtractStrategy();
+  const x = Number((a / 10 ** Number(da)).toFixed(Number(da)));
+  const y = Number((b / 10 ** Number(db)).toFixed(Number(db)));
   // En la resta se escribe arriba el mayor.
-  const spec: ArithmeticSpec = op === "add" ? { op, a, b } : { op, a: Math.max(a, b), b: Math.min(a, b) };
+  const spec: ArithmeticSpec = op === "add" ? { op, a: x, b: y } : { op, a: Math.max(x, y), b: Math.min(x, y) };
+  const decimalOptions = [
+    { id: "0" as const, label: "Sin coma" },
+    { id: "1" as const, label: "Décimas" },
+    { id: "2" as const, label: "Centésimas" },
+  ];
   const trace = columnTrace(spec, strategy);
   const regroups = trace.steps.filter((s) => s.regroup).length;
   const tensTop = digitsOf(spec.a, 3)[1];
   return (
     <>
-      <Slider id={`${id}-a`} label="Primer número" value={a} min={100} max={999} onChange={setA} />
-      <Slider id={`${id}-b`} label="Segundo número" value={b} min={1} max={999} onChange={setB} />
+      <Slider id={`${id}-a`} label="Primer número (sin coma)" value={a} min={100} max={999} onChange={setA} />
+      <OptionPicker label="Decimales del 1.er número" options={decimalOptions} value={da} onChange={setDa} />
+      <Slider id={`${id}-b`} label="Segundo número (sin coma)" value={b} min={1} max={999} onChange={setB} />
+      <OptionPicker label="Decimales del 2.º número" options={decimalOptions} value={db} onChange={setDb} />
+      <p className="text-sm text-slate-300">
+        Con la coma alineada: <strong className="text-cyan-100">{String(spec.a).replace(".", ",")}</strong> y{" "}
+        <strong className="text-cyan-100">{String(spec.b).replace(".", ",")}</strong>
+        {trace.scale && decimalsOf(spec.a) !== decimalsOf(spec.b) ? " (al que tiene menos decimales se le añaden ceros)" : ""}.
+      </p>
       <div role="radiogroup" aria-label="Operación" className="flex flex-wrap gap-2">
         {(["add", "subtract"] as const).map((value) => (
           <button
@@ -383,17 +400,21 @@ export function ColumnExplorer({ id }: { id: string }) {
         ))}
       </div>
       {op === "subtract" && <StrategyPicker strategy={strategy} onChange={setStrategy} />}
-      {op === "subtract" && b > a && (
+      {op === "subtract" && y > x && (
         <p className="text-sm text-slate-300">En la resta se escribe arriba el número mayor.</p>
       )}
       <ColumnDemo key={`${spec.op}-${spec.a}-${spec.b}-${strategy}`} spec={spec} strategy={strategy} initialStep={Infinity} />
       <Challenge
         goals={[
           { text: "Consigue una resta en la que haya que reagrupar en dos columnas.", met: op === "subtract" && regroups >= 2 },
-          { text: "Consigue una suma cuyo resultado tenga cuatro cifras.", met: op === "add" && a + b >= 1000 },
+          { text: "Consigue una suma cuyo resultado tenga cuatro cifras.", met: op === "add" && !trace.scale && a + b >= 1000 },
+          {
+            text: "Consigue una suma de un número con décimas y otro con centésimas: ¿dónde aparece el cero añadido?",
+            met: op === "add" && decimalsOf(spec.a) + decimalsOf(spec.b) === 3,
+          },
           {
             text: "Consigue una resta con un 0 en las decenas de arriba que tenga que prestar.",
-            met: op === "subtract" && tensTop === 0 && trace.steps[0].regroup === 1,
+            met: op === "subtract" && !trace.scale && tensTop === 0 && trace.steps[0].regroup === 1,
             hint: "Prueba con un primer número como 305 y un segundo que termine en una cifra mayor que 5.",
           },
         ]}

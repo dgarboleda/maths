@@ -9,7 +9,10 @@
  *   reinicia para no mezclar respuestas de enunciados distintos.
  * - 4: operaciones escritas (columnas y división larga con todo el
  *   procedimiento) y clases base de primaria opcionales.
+ * - 5: decimales en las operaciones escritas: multiplicación en columnas,
+ *   división con cociente, dividendo o divisor decimal y formas con
+ *   decimales en suma y resta (cambian bancos de clases existentes).
  *
  * Módulo propio para que el navegador lo importe sin cargar el catálogo.
  */
-export const CONTENT_VERSION = 4;
+export const CONTENT_VERSION = 5;
