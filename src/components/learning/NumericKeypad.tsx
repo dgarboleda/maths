@@ -30,7 +30,7 @@ const useKeyboardChoice = makePreference<"propio" | "telefono">("maths:teclado",
 const KeypadContext = createContext(false);
 
 /** inputMode de una casilla de hoja: «none» si el teclado propio está activo. */
-export function useSheetInputMode(fallback: "numeric" | "text" = "numeric"): "none" | "numeric" | "text" {
+export function useSheetInputMode<T extends "numeric" | "decimal" | "text" = "numeric">(fallback: T = "numeric" as T): "none" | T {
   return useContext(KeypadContext) ? "none" : fallback;
 }
 

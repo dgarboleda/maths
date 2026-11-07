@@ -56,12 +56,13 @@ describe("Hoja de multiplicación", () => {
     fireEvent.change(screen.getByLabelText("Producto: decenas"), { target: { value: "0" } });
     fireEvent.change(screen.getByLabelText("Producto: centenas"), { target: { value: "5" } });
     expect(onChange).toHaveBeenLastCalledWith("500");
-    fireEvent.click(screen.getByRole("button", { name: /Poner la coma/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 3 cifras a su derecha" }));
+    // La coma se escribe en la casilla: en una vacía, a su derecha.
+    fireEvent.change(screen.getByLabelText("Producto: unidades de millar"), { target: { value: "," } });
     expect(onChange).toHaveBeenLastCalledWith("0,500");
-    // También escribiendo «,»: en una casilla llena, la coma va a su izquierda.
+    // En una casilla llena, la coma va a su izquierda (y la cifra no cambia).
     fireEvent.change(screen.getByLabelText("Producto: decenas"), { target: { value: "," } });
     expect(onChange).toHaveBeenLastCalledWith("5,00");
+    expect(screen.getByLabelText("Producto: decenas")).toHaveValue("0");
     expect(await axe(container)).toHaveNoViolations();
   });
 
@@ -112,18 +113,14 @@ describe("Galera con decimales", () => {
     expect(onChange).toHaveBeenLastCalledWith("");
     q(2, "7");
     expect(onChange).toHaveBeenLastCalledWith("L075;20,0");
-    // Sin pedirlo, no hay huecos entre las casillas.
-    expect(screen.queryByRole("button", { name: /después de la cifra/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Poner la coma/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Poner la coma después de la cifra 1 del cociente" }));
-    expect(onChange).toHaveBeenLastCalledWith("L0,75;20,0");
-    fireEvent.click(screen.getByRole("button", { name: /Mover la coma/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Quitar la coma" }));
-    expect(onChange).toHaveBeenLastCalledWith("L075;20,0");
-    // Escribir «,» en una casilla llena: la coma va detrás de ella.
+    // No hay huecos ni botones: «,» en una casilla llena pone la coma detrás de ella.
+    expect(screen.queryByRole("button", { name: /coma/ })).toBeNull();
     q(1, ",");
     expect(onChange).toHaveBeenLastCalledWith("L0,75;20,0");
     expect(screen.getByLabelText("Cociente: cifra 1")).toHaveValue("0");
+    // Otra vez en el mismo sitio la quita.
+    q(1, ",");
+    expect(onChange).toHaveBeenLastCalledWith("L075;20,0");
   });
 
   test("galera guiada: al bajar la primera cifra decimal, el alumno marca la coma del cociente", () => {
@@ -148,17 +145,13 @@ describe("Galera con decimales", () => {
       <DivisionSheet spec={{ op: "divide", a: 12.6, b: 3 }} layout="completa" mode="free" response={response} failedResponse={response} onChange={onChange} />,
     );
     expect(screen.getByText(/Las cifras están bien: revisa la coma del cociente/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Poner la coma/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Poner la coma después de la cifra 1 del cociente" }));
-    expect(onChange).toHaveBeenLastCalledWith("C4,2;12,06,6,0");
     // «,» en una casilla llena del cociente: la coma va detrás de ella.
-    fireEvent.click(screen.getByRole("button", { name: /Mover la coma/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Quitar la coma" }));
     fireEvent.change(screen.getByLabelText("Cociente: cifra 1"), { target: { value: "," } });
     expect(onChange).toHaveBeenLastCalledWith("C4,2;12,06,6,0");
+    expect(screen.getByLabelText("Cociente: cifra 1")).toHaveAttribute("inputmode", "decimal");
     unmount();
-    // Una división natural no ofrece huecos para la coma.
+    // Una división natural no pide coma: teclado solo de cifras.
     render(<DivisionSheet spec={{ op: "divide", a: 756, b: 3 }} layout="completa" mode="free" response="" onChange={() => {}} />);
-    expect(screen.queryByRole("button", { name: /Poner la coma/ })).toBeNull();
+    expect(screen.getByLabelText("Cociente: cifra 1")).toHaveAttribute("inputmode", "numeric");
   });
 });
