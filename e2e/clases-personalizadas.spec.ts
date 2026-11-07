@@ -17,12 +17,14 @@ test("una familia publica una clase y el alumno resuelve sus preguntas", async (
   await page.getByLabel("Tema", { exact: true }).fill("Aritmética");
   await page.getByLabel("Título de la clase").fill("Sumar dos números");
   await page.getByLabel("Contenido de la clase").fill("Sumar es reunir cantidades.");
-  await page.getByRole("button", { name: "Añadir pregunta" }).click();
+  await page.getByRole("button", { name: "Añadir pregunta", exact: true }).click();
   await page.getByLabel("Enunciado").fill("¿Cuánto es 2 + 2?");
   const first = page.getByRole("group", { name: "Pregunta 1" });
   await answers(first, ["3", "4"], "4");
   await first.getByLabel("Explicación").fill("Dos más dos son cuatro.");
-  await page.getByRole("button", { name: "Añadir pregunta" }).click();
+  await first.getByLabel("Pista").fill("Cuenta con los dedos.");
+  await first.getByLabel("Comentario si elige la respuesta 1").fill("Te has quedado a uno.");
+  await page.getByRole("button", { name: "Añadir pregunta", exact: true }).click();
   const second = page.getByRole("group", { name: "Pregunta 2" });
   await second.getByLabel("Enunciado").fill("¿Cuánto es 1 + 1?");
   await answers(second, ["2", "3"], "2");
@@ -35,7 +37,8 @@ test("una familia publica una clase y el alumno resuelve sus preguntas", async (
   await expect(page.getByText("Sumar es reunir cantidades.")).toBeVisible();
   await page.getByRole("button", { name: "Empezar preguntas" }).click();
   await page.getByRole("button", { name: "3", exact: true }).click();
-  await expect(page.getByText("Inténtalo de nuevo.")).toBeVisible();
+  await expect(page.getByText("Inténtalo de nuevo. Te has quedado a uno.")).toBeVisible();
+  await expect(page.getByText("Pista: Cuenta con los dedos.")).toBeVisible();
   await page.getByRole("button", { name: "4", exact: true }).click();
   await expect(page.getByText(/¡Correcto!/)).toBeVisible();
   await page.getByRole("button", { name: "Siguiente pregunta" }).click();
@@ -61,7 +64,7 @@ test("una clase personalizada muestra respuestas de texto en el minijuego", asyn
   await page.getByLabel("Título de la clase").fill("Formas planas");
   await page.getByLabel("Contenido de la clase").fill("Las figuras se distinguen por sus lados.");
   await page.getByLabel("Minijuego").selectOption("breakout");
-  await page.getByRole("button", { name: "Añadir pregunta" }).click();
+  await page.getByRole("button", { name: "Añadir pregunta", exact: true }).click();
   await page.getByLabel("Enunciado").fill("¿Qué figura tiene tres lados?");
   await answers(page.getByRole("group", { name: "Pregunta 1" }), ["Círculo", "Cuadrado", "Triángulo", "Óvalo", "Rectángulo"], "Triángulo");
   await page.getByRole("button", { name: "Publicar para alumnos" }).click();
@@ -83,4 +86,32 @@ test("una clase personalizada muestra respuestas de texto en el minijuego", asyn
   await page.getByRole("button", { name: "Terminar clase" }).click();
   await expect(page.getByText("¡Terminaste la clase!")).toBeVisible();
   await expect(page.getByRole("link", { name: "Elegir otra clase" })).toHaveAttribute("href", `/jugar/${childId}/aprende`);
+});
+
+test("una pregunta numérica acepta fracciones y decimales equivalentes", async ({ page }) => {
+  const correo = await registrarPadre(page);
+  const child = await crearHijo(page, { nombre: "Noa" });
+  const childId = await entrarAlEspacio(page, child.nombre, child.pin);
+  await entrarComoFamilia(page, correo);
+  await page.goto("/panel/clases");
+  await page.getByLabel("Tema", { exact: true }).fill("Fracciones");
+  await page.getByLabel("Título de la clase").fill("Simplificar");
+  await page.getByLabel("Contenido de la clase").fill("Divide numerador y denominador entre el mismo número.");
+  await page.getByRole("button", { name: "Añadir pregunta numérica" }).click();
+  const question = page.getByRole("group", { name: "Pregunta 1" });
+  await question.getByLabel("Enunciado").fill("Simplifica 6/8");
+  await question.getByLabel("Respuesta correcta").fill("3/4");
+  await page.getByRole("button", { name: "Publicar para alumnos" }).click();
+  await expect(page.getByText("Clase publicada para tus alumnos.")).toBeVisible();
+  await page.goto(`/jugar/${childId}/aprende`);
+  await page.getByRole("region", { name: "Clases creadas para ti" }).getByRole("link", { name: "Simplificar" }).click();
+  await page.getByRole("button", { name: "Empezar preguntas" }).click();
+  await page.getByLabel("Tu respuesta").fill("0,7");
+  await page.getByRole("button", { name: "Comprobar" }).click();
+  await expect(page.getByText("Inténtalo de nuevo.")).toBeVisible();
+  await page.getByLabel("Tu respuesta").fill("0,75");
+  await page.getByRole("button", { name: "Comprobar" }).click();
+  await expect(page.getByText(/¡Correcto!/)).toBeVisible();
+  await page.getByRole("button", { name: "Terminar clase" }).click();
+  await expect(page.getByText(/¡Terminaste la clase! Has ganado 5 estrellas\./)).toBeVisible();
 });

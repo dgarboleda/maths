@@ -26,7 +26,7 @@ try {
   release = undefined;
 }
 
-if (status.service !== "maths-functions" || status.protocol !== 14) {
+if (status.service !== "maths-functions" || status.protocol !== 15) {
   throw new Error("deploymentStatus: servicio o protocolo incompatible.");
 }
 // Despliegues anteriores a la huella solo anuncian el commit.
