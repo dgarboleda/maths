@@ -757,7 +757,7 @@ export const QUADRATIC_LESSONS: Lesson[] = [
       "Resolver ecuaciones cuadráticas sencillas (x² = c y por factorización), usar la propiedad del producto nulo e interpretar las soluciones en un contexto.",
     purpose:
       "Al diseñar placas y parcelas aparecen áreas que dependen de una longitud desconocida al cuadrado.",
-    prerequisites: ["propiedad-distributiva", "potencias-raices"],
+    prerequisites: ["propiedad-distributiva", "potencias-raices", "factorizacion"],
     legacyModuleIds: ["algebra-d10", "aritmetica-raices"],
     visual: "parabola",
     vocabulary: [

@@ -150,7 +150,8 @@ describe("Correspondencia con el CNEB (Perú)", () => {
     expect(peruLevel("forma", new Set())).toBe(0);
     expect(peruLevel("forma", new Set(grade1))).toBe(1);
     expect(peruLevel("forma", new Set([...grade1, "circulo"]))).toBe(1);
-    expect(peruLevel("forma", new Set([...grade1, "circulo", "volumen"]))).toBe(2);
+    expect(peruLevel("forma", new Set([...grade1, "circulo", "volumen"]))).toBe(1);
+    expect(peruLevel("forma", new Set([...grade1, "circulo", "volumen", "area-superficie"]))).toBe(2);
   });
 });
 

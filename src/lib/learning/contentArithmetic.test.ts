@@ -113,8 +113,10 @@ function audit(text: string): string[] {
     const before = text.slice(0, m.index).trimEnd().slice(-1);
     const rest = text.slice(m.index! + m[0].length);
     const after = rest.trimStart().slice(0, 1);
-    // Variables, unidades, porcentajes, raíces y razones quedan fuera.
-    if ((before && /[\p{L}\d√)²³_'%]/u.test(before)) || /\d:$/.test(text.slice(0, m.index))) continue;
+    // Variables, unidades, porcentajes, raíces y razones quedan fuera. Un
+    // subíndice es una base o un índice («log₂ 8 = 3», «a₁ = 5»), no parte
+    // del número que sigue.
+    if ((before && /[\p{L}\d√)²³_'%₀-₉]/u.test(before)) || /\d:$/.test(text.slice(0, m.index))) continue;
     if (/^[+\-−×·÷/=]/.test(m[0].trim())) continue;
     if ((after && /[\p{L}%√(²³]/u.test(after)) || /^:\d/.test(rest)) continue;
     const parts = m[0].split("=");
@@ -142,6 +144,8 @@ describe("aritmética del contenido", () => {
     expect(audit("14 ÷ 3 = 4,67: caben 4")).toHaveLength(1);
     expect(audit("Suma: 5/6 = 5/6.")).toHaveLength(1);
     expect(audit("En 5x + 3 = 2x + 15 hay x en ambos lados; Q1 = 20; 60/80 = 75%; 2:3 = 4:6")).toEqual([]);
+    expect(audit("log₂ 8 = 3 y log₃ 81 = 4")).toEqual([]);
+    expect(audit("log₂ 8 = 3; 2³ = 9")).toHaveLength(1);
   });
 
   test.each(LESSONS.map((l) => [l.id, l] as const))("%s: toda igualdad numérica es verdadera", (_, lesson) => {

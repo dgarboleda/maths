@@ -65,6 +65,20 @@ const OrderOfOperationsVisual = numberVisual("OrderOfOperationsVisual");
 const SquareRootVisual = numberVisual("SquareRootVisual");
 const EqualGroupsVisual = numberVisual("EqualGroupsVisual");
 
+// Modelos de los temas que completan el programa (criba, romanos,
+// frecuencias, desarrollos planos, unidades y trinomios): solo los cargan
+// sus clases.
+const topicVisual = (name: keyof typeof import("./TopicVisuals")) =>
+  dynamic<{ id: string }>(() => import("./TopicVisuals").then((module) => module[name]), {
+    loading: () => <p role="status">Preparando el modelo…</p>,
+  });
+const SieveVisual = topicVisual("SieveVisual");
+const RomanVisual = topicVisual("RomanVisual");
+const FrequencyVisual = topicVisual("FrequencyVisual");
+const NetVisual = topicVisual("NetVisual");
+const MetricVisual = topicVisual("MetricVisual");
+const TrinomialVisual = topicVisual("TrinomialVisual");
+
 // Productos notables y distributiva: modelos de área propios de álgebra.
 const algebraVisual = (name: "BinomialSquareVisual" | "DistributiveVisual" | "ExpressionVisual") =>
   dynamic<{ id: string }>(() => import("./AlgebraVisuals").then((module) => module[name]), {
@@ -319,6 +333,12 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   "long-division": DivisionExplorer,
   "factor-table": FactorExplorer,
   ruffini: RuffiniExplorer,
+  sieve: SieveVisual,
+  roman: RomanVisual,
+  frequency: FrequencyVisual,
+  net: NetVisual,
+  metric: MetricVisual,
+  trinomial: TrinomialVisual,
   balance: ({ id }) => <BalanceVisual id={id} initial="balance" />,
   equation: ({ id }) => <BalanceVisual id={id} initial="equation" />,
 };

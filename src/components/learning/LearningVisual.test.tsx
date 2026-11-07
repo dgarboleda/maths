@@ -85,6 +85,14 @@ describe("Modelos visuales de las clases", () => {
       "estadistica-dispersion": "boxplot",
       combinatoria: "counting",
       transformaciones: "transform",
+      "numeros-primos": "sieve",
+      "numeros-romanos": "roman",
+      "tablas-frecuencia": "frequency",
+      "graficos-estadisticos": "frequency",
+      "area-superficie": "net",
+      "sistema-metrico": "metric",
+      factorizacion: "trinomial",
+      "fracciones-algebraicas": "trinomial",
     };
     for (const [id, visual] of Object.entries(expected))
       expect(LESSONS.find((l) => l.id === id)?.visual, id).toBe(visual);
