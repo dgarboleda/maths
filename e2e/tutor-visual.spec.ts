@@ -19,7 +19,8 @@ test("tutor visual de multiplicación: voz real, manipulación sin arrastre y si
 
   await page.goto(`/jugar/${childId}/aprende/${lesson.id}`);
   await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
-  await expect(page.getByRole("heading", { name: lesson.sections[0].title })).toBeVisible();
+  await page.getByRole("button", { name: "Practicar con el tutor" }).click();
+  await expect(page.getByRole("heading", { name: lesson.sections[0].title, exact: true })).toBeVisible();
   const tutor = page.getByRole("region", { name: "Instala los paneles" });
   await expect(tutor).toBeVisible();
   await expect(tutor.getByText("Práctica guiada: no cuenta como comprobación ni suma estrellas.")).toBeVisible();
@@ -30,8 +31,9 @@ test("tutor visual de multiplicación: voz real, manipulación sin arrastre y si
     if (r.url().includes(":5002/") || /firestore.*(Write|commit)/i.test(r.url())) backend.push(r.url());
   });
 
-  // La voz real se descarga y suena.
-  await tutor.getByRole("button", { name: "Escuchar" }).click();
+  // Abrir el tutor es el gesto que arranca la voz: se descarga y suena sola,
+  // y el foco pasa al tutor.
+  await expect(tutor.getByRole("heading", { name: "Instala los paneles" })).toBeFocused();
   await expect(tutor.getByRole("button", { name: "Pausar voz" })).toBeVisible();
   await page.waitForFunction(() => (document.querySelector("audio")?.currentTime ?? 0) > 0.2);
   await tutor.getByRole("button", { name: "Pausar voz" }).click();
@@ -68,6 +70,7 @@ test("tutor visual de multiplicación: voz real, manipulación sin arrastre y si
   // Al volver a la clase se retoma la escena.
   // La clase recuerda su etapa; el tutor, su escena y la voz silenciada.
   await page.reload();
+  await page.getByRole("button", { name: "Practicar con el tutor" }).click();
   await expect(page.getByText("Retomas donde lo dejaste.")).toBeVisible();
   await expect(page.getByText(/escena 3 de 3/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Activar voz" })).toHaveAttribute("aria-pressed", "true");
@@ -84,6 +87,8 @@ const OTROS_TUTORES = [
   ["division-larga", "Reparte en grupos iguales"],
   ["enteros-producto-cociente", "Saltos con signo"],
   ["ecuaciones-dos-pasos", "Dos pasos en la balanza"],
+  ["fraccion-cantidad", "Partes de una cantidad"],
+  ["proporcionalidad", "Sensores y consumo"],
 ] as const;
 
 for (const [lessonId, title] of OTROS_TUTORES)
@@ -95,6 +100,7 @@ for (const [lessonId, title] of OTROS_TUTORES)
     const childId = await entrarAlEspacio(page, nombre, pin);
     await page.goto(`/jugar/${childId}/aprende/${lessonId}`);
     await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+    await page.getByRole("button", { name: "Practicar con el tutor" }).click();
     const tutor = page.getByRole("region", { name: title });
     await expect(tutor).toBeVisible();
     if (lessonId === "suma-resta-columnas")
@@ -104,6 +110,8 @@ for (const [lessonId, title] of OTROS_TUTORES)
     else if (lessonId === "ecuaciones-dos-pasos") await tutor.getByRole("button", { name: "Quitar 1 de cada lado" }).click();
     else if (lessonId === "division-larga") await tutor.getByRole("button", { name: "Dar 1 decena a cada grupo" }).click();
     else if (lessonId === "enteros-producto-cociente") await tutor.getByRole("button", { name: "← Saltar −4" }).click();
+    else if (lessonId === "fraccion-cantidad") await tutor.getByRole("button", { name: "Más grupos" }).click();
+    else if (lessonId === "proporcionalidad") await tutor.getByRole("button", { name: "Añadir: Sensores" }).click();
     else await tutor.getByRole("button", { name: /Partir en dos \(reserva de arriba\)/ }).click();
     const width = page.viewportSize()!.width;
     for (const control of await tutor.getByRole("button").all()) {

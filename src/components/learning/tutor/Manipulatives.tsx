@@ -1,6 +1,6 @@
 "use client";
 
-import { TRAY_SIZE, ARRAY_MAX, MAX_DENOMINATOR, balanceEquation, lineExpression, shareDone, type ArrayState, type BalanceState, type FractionState, type LineState, type PlaceValueState, type ShareState, type TutorAction } from "./model";
+import { TRAY_SIZE, ARRAY_MAX, MAX_DENOMINATOR, balanceEquation, divisors, lineExpression, shareDone, type ArrayState, type BalanceState, type FractionState, type LineState, type PartOfState, type PlaceValueState, type ShareState, type TutorAction } from "./model";
 import styles from "./tutor.module.css";
 
 /*
@@ -80,13 +80,24 @@ export function PlaceValueBoard({ state, dispatch }: { state: PlaceValueState; d
 }
 
 /** Arreglo de paneles en filas y columnas. También lo usa el modelo visual de la clase. */
-export function PanelArray({ rows, cols, turns = 0, label }: { rows: number; cols: number; turns?: number; label: string }) {
+export function PanelArray({ rows, cols, turns = 0, split, label }: { rows: number; cols: number; turns?: number; split?: number; label: string }) {
   return (
     <div role="img" aria-label={label} className="overflow-x-auto">
       <div key={turns} className={`grid w-fit gap-1.5 ${turns > 0 ? styles.turn : ""}`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-        {Array.from({ length: rows * cols }, (_, i) => (
-          <span key={i} aria-hidden="true" className={`h-7 w-7 rounded-md border border-cyan-100 bg-gradient-to-br from-cyan-400 to-blue-600 sm:h-8 sm:w-8 ${styles.pop}`} />
-        ))}
+        {Array.from({ length: rows * cols }, (_, i) => {
+          // Con separación, la segunda parte va en ámbar y con un hueco que marca el corte.
+          const second = split !== undefined && i % cols >= split;
+          const edge = split !== undefined && i % cols === split;
+          return (
+            <span
+              key={i}
+              aria-hidden="true"
+              className={`h-7 w-7 rounded-md border sm:h-8 sm:w-8 ${edge ? "ml-2" : ""} ${
+                second ? "border-amber-100 bg-gradient-to-br from-amber-300 to-orange-500" : "border-cyan-100 bg-gradient-to-br from-cyan-400 to-blue-600"
+              } transition-colors duration-300`}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -110,6 +121,64 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
 
 export function ArrayBuilder({ state, dispatch }: { state: ArrayState; dispatch: Dispatch }) {
   const sums = Array.from({ length: state.rows }, () => state.cols).join(" + ");
+  if (state.lockSize) {
+    const { rows, cols, split } = state;
+    return (
+      <div className="space-y-3">
+        <PanelArray rows={rows} cols={cols} split={split} label={split === undefined ? `Rectángulo de ${rows} por ${cols}` : `Rectángulo de ${rows} por ${cols}, partido en ${split} y ${cols - split} columnas`} />
+        {split !== undefined && (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={control} disabled={split <= 1} onClick={() => dispatch({ type: "move-split", delta: -1 })}>
+              ◀ Mover el corte
+            </button>
+            <button type="button" className={control} disabled={split >= cols - 1} onClick={() => dispatch({ type: "move-split", delta: 1 })}>
+              Mover el corte ▶
+            </button>
+            {state.canMerge && (
+              <button type="button" className={`${control} border-cyan-300 text-cyan-100`} onClick={() => dispatch({ type: "merge" })}>
+                Juntar en un rectángulo
+              </button>
+            )}
+          </div>
+        )}
+        <p className="text-slate-200">
+          {split === undefined ? (
+            <strong>
+              {rows} × {cols} = {rows * cols}
+            </strong>
+          ) : (
+            <strong>
+              {rows} × ({split} + {cols - split}) = {rows} × {split} + {rows} × {cols - split} = {rows * split} + {rows * (cols - split)} = {rows * cols}
+            </strong>
+          )}
+        </p>
+      </div>
+    );
+  }
+  if (state.lockCols) {
+    const rowsLabel = state.rowsLabel ?? "Filas";
+    const colsLabel = state.colsLabel ?? "por fila";
+    return (
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Stepper label={rowsLabel} value={state.rows} onChange={(delta) => dispatch({ type: "rows", delta })} />
+          <p className="text-sm text-slate-300">
+            {colsLabel}: <strong className="text-amber-200">{state.cols}</strong> (fijo)
+          </p>
+        </div>
+        <PanelArray rows={state.rows} cols={state.cols} label={`${state.rows} × ${state.cols}`} />
+        <p className="text-slate-200">
+          <strong>
+            {state.rows} × {state.cols} = {state.rows * state.cols}
+          </strong>
+          <span className="text-slate-400">
+            {" "}
+            · razón {state.rows * state.cols}/{state.rows} = {state.cols}
+          </span>
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-3">
@@ -377,6 +446,60 @@ export function ShareBoard({ state, dispatch }: { state: ShareState; dispatch: D
         ) : (
           <>Cada grupo tiene {each}.</>
         )}
+      </p>
+    </div>
+  );
+}
+
+/** Fracción de una cantidad: el denominador parte el total en grupos iguales; el numerador dice cuántos tomar. */
+export function PartOfBoard({ state, dispatch }: { state: PartOfState; dispatch: Dispatch }) {
+  const each = state.total / state.den;
+  const options = divisors(state.total);
+  const i = options.indexOf(state.den);
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-3">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <button type="button" className={control} aria-label="Menos grupos" disabled={i <= 0} onClick={() => dispatch({ type: "den", delta: -1 })}>
+            −
+          </button>
+          <span className="min-w-0 flex-1 text-center text-slate-100 sm:min-w-36">
+            Grupos: <strong>{state.den}</strong>
+          </span>
+          <button type="button" className={control} aria-label="Más grupos" disabled={i >= options.length - 1} onClick={() => dispatch({ type: "den", delta: 1 })}>
+            +
+          </button>
+        </div>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <button type="button" className={control} aria-label="Tomar un grupo menos" disabled={state.taken <= 0} onClick={() => dispatch({ type: "take", delta: -1 })}>
+            −
+          </button>
+          <span className="min-w-0 flex-1 text-center text-slate-100 sm:min-w-36">
+            Tomados: <strong>{state.taken}</strong>
+          </span>
+          <button type="button" className={control} aria-label="Tomar un grupo más" disabled={state.taken >= state.den} onClick={() => dispatch({ type: "take", delta: 1 })}>
+            +
+          </button>
+        </div>
+      </div>
+      <ul aria-label={`${state.total} en ${state.den} grupos de ${each}`} className="flex flex-wrap gap-2">
+        {Array.from({ length: state.den }, (_, g) => (
+          <li
+            key={`${state.den}-${g}`}
+            className={`rounded-lg border-2 p-1.5 transition-colors duration-300 ${g < state.taken ? "border-emerald-300 bg-emerald-950/60" : "border-slate-600 bg-slate-800"}`}
+          >
+            <div className="grid grid-cols-5 gap-1" aria-hidden="true">
+              {Array.from({ length: each }, (_, d) => (
+                <span key={d} className={`h-2.5 w-2.5 rounded-full ${g < state.taken ? "bg-emerald-300" : "bg-slate-400"} ${styles.pop}`} />
+              ))}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p className="text-slate-200">
+        <strong>
+          {state.taken}/{state.den} de {state.total} = {state.taken} × ({state.total} ÷ {state.den}) = {state.taken} × {each} = {state.taken * each}
+        </strong>
       </p>
     </div>
   );

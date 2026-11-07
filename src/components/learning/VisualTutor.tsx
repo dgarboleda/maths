@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NOTICES, TUTORIALS, type Scene } from "./tutor/content";
-import { ArrayBuilder, BalanceBoard, FractionReserves, NumberLine, PlaceValueBoard, ShareBoard } from "./tutor/Manipulatives";
+import { ArrayBuilder, BalanceBoard, FractionReserves, NumberLine, PartOfBoard, PlaceValueBoard, ShareBoard } from "./tutor/Manipulatives";
 import { describe, reduce, type ManipulativeState, type Notice, type TutorAction } from "./tutor/model";
 import { useNarration } from "./tutor/useNarration";
 import { VoicePlayer } from "./tutor/VoicePlayer";
@@ -36,7 +36,7 @@ const button = "min-h-11 rounded-lg border px-3 font-semibold";
  * comprobación ni da estrellas (no recibe ninguna función del avance). Solo
  * recuerda en este navegador en qué escena se quedó.
  */
-export function VisualTutor({ lessonId }: { lessonId: string }) {
+export function VisualTutor({ lessonId, autoStart = false }: { lessonId: string; autoStart?: boolean }) {
   const tutorial = TUTORIALS[lessonId];
   const [index, setIndex] = useState(() => readSaved(lessonId, tutorial.scenes.length));
   const [resumed, setResumed] = useState(index > 0);
@@ -101,13 +101,27 @@ export function VisualTutor({ lessonId }: { lessonId: string }) {
 
   const intro = `${scene.id}-intro`;
 
+  // Abierto a petición del alumno: ese clic cuenta como gesto para el audio,
+  // así que suena la presentación y el foco pasa al tutor que acaba de aparecer.
+  // Sin guarda de «ya empezó»: en desarrollo React monta dos veces y la
+  // limpieza de la narración pausa la primera reproducción.
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (!autoStart) return;
+    heading.current?.focus();
+    // La transcripción ya muestra la presentación mientras no se haya dicho otra cosa.
+    narration.say(intro);
+    // Solo al montar: las escenas siguientes arrancan su voz con «Continuar».
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <section aria-labelledby={`tutor-${lessonId}`} className="space-y-4 rounded-2xl border border-cyan-400/40 bg-slate-950 p-4 sm:p-6">
       <header className="space-y-1">
         <p className="text-xs font-bold uppercase tracking-wide text-cyan-300">
           Tutor visual · escena {index + 1} de {tutorial.scenes.length}
         </p>
-        <h4 id={`tutor-${lessonId}`} className="text-xl font-bold text-white">
+        <h4 id={`tutor-${lessonId}`} ref={heading} tabIndex={-1} className="text-xl font-bold text-white outline-none">
           {tutorial.title}
         </h4>
         <p className="text-sm text-slate-400">Práctica guiada: no cuenta como comprobación ni suma estrellas.</p>
@@ -143,6 +157,7 @@ export function VisualTutor({ lessonId }: { lessonId: string }) {
         {state.kind === "line" && <NumberLine state={state} dispatch={dispatch} />}
         {state.kind === "balance" && <BalanceBoard state={state} dispatch={dispatch} />}
         {state.kind === "share" && <ShareBoard state={state} dispatch={dispatch} />}
+        {state.kind === "part-of" && <PartOfBoard state={state} dispatch={dispatch} />}
         <p className="sr-only" aria-live="polite">
           {describe(state)}
         </p>

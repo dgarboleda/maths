@@ -8,7 +8,7 @@ import {
   useLearningAction,
   useLearningData,
 } from "@/lib/learning/useLearningData";
-import { initialAdventure, type AdventureState } from "@/lib/learning/domain";
+import { initialAdventure, type AdventureState } from "@/lib/learning/core";
 import {
   LearningLoading,
   LearningLoadError,

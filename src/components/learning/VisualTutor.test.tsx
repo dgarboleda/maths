@@ -39,6 +39,12 @@ const SOLUTIONS: Record<string, TutorAction[]> = {
   "dos-pasos-1": [...Array.from({ length: 5 }, () => ({ type: "remove-both" }) as const), { type: "share" }],
   "dos-pasos-2": [...Array.from({ length: 3 }, () => ({ type: "remove-both" }) as const), { type: "share" }],
   "dos-pasos-3": [...Array.from({ length: 2 }, () => ({ type: "remove-both" }) as const), { type: "share" }],
+  "parte-1": [{ type: "den", delta: 1 }, { type: "den", delta: 1 }, { type: "take", delta: 1 }],
+  "parte-2": Array.from({ length: 3 }, () => ({ type: "take", delta: 1 }) as const),
+  "parte-3": [...Array.from({ length: 3 }, () => ({ type: "den", delta: 1 }) as const), { type: "take", delta: 1 }, { type: "take", delta: 1 }],
+  "prop-1": Array.from({ length: 3 }, () => ({ type: "rows", delta: 1 }) as const),
+  "prop-2": Array.from({ length: 4 }, () => ({ type: "rows", delta: 1 }) as const),
+  "prop-3": Array.from({ length: 6 }, () => ({ type: "rows", delta: 1 }) as const),
 };
 
 let play: ReturnType<typeof vi.fn<() => Promise<void>>>;
@@ -110,6 +116,21 @@ describe("contenido del tutor visual", () => {
     expect(s.kind === "line" && lineExpression(s)).toBe("(−1) × 3 × 4 = −12");
   });
 
+  it("las partes de una cantidad siempre son iguales y un rectángulo con corte no cambia de tamaño", () => {
+    let p = TUTORIALS["fraccion-cantidad"].scenes[0].initial;
+    const dens: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      p = reduce(p, { type: "den", delta: 1 }).state;
+      if (p.kind === "part-of") dens.push(p.den);
+    }
+    expect(dens).toEqual([2, 4, 5, 10, 10, 10]);
+    const d: ManipulativeState = { kind: "array", rows: 3, cols: 7, turns: 0, lockSize: true, split: 1 };
+    expect(reduce(d, { type: "rows", delta: 1 }).state).toBe(d);
+    expect(reduce(d, { type: "turn" }).state).toBe(d);
+    const prop = TUTORIALS["proporcionalidad"].scenes[0].initial;
+    expect(reduce(prop, { type: "cols", delta: 1 }).state).toBe(prop);
+  });
+
   it("en las escenas de comparación las reservas no se juntan", () => {
     const start = TUTORIALS["fracciones-equivalentes"].scenes[1].initial;
     expect(reduce(start, { type: "join" }).state).toBe(start);
@@ -144,6 +165,13 @@ describe("tutor visual en la clase", () => {
     fireEvent.click(screen.getByRole("button", { name: "Necesito una pista" }));
     expect(screen.getByText("Filas: 3. Paneles por fila: 4.")).toBeInTheDocument();
     expect(lastClip()).toBe("/audio/tutor/grupos-1-pista.mp3");
+  });
+
+  it("abierto por el alumno, presenta la escena con voz y recibe el foco", () => {
+    render(<VisualTutor lessonId="multiplicacion-grupos" autoStart />);
+    expect(lastClip()).toBe("/audio/tutor/grupos-1-intro.mp3");
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("heading", { name: "Instala los paneles" })).toHaveFocus();
   });
 
   it("se resuelve solo con el teclado", async () => {

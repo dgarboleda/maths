@@ -34,6 +34,15 @@ export interface Tutorial {
   scenes: Scene[];
 }
 
+const SENSORS: ManipulativeState & { kind: "array" } = {
+  kind: "array",
+  rows: 1,
+  cols: 3,
+  turns: 0,
+  lockCols: true,
+  rowsLabel: "Sensores",
+  colsLabel: "Consumo por sensor",
+};
 const xAlone: Check = (s) => s.kind === "balance" && s.left === 0 && s.xs > 1;
 const trayFull: Check = (s) => s.kind === "place-value" && s.tray.length === 10;
 
@@ -159,6 +168,33 @@ const SETUP: Record<string, { initial: ManipulativeState; goal: Check; moments?:
     initial: { kind: "balance", xs: 4, left: 2, right: 14 },
     goal: (s) => s.kind === "balance" && s.xs === 1 && s.left === 0,
     moments: { "x-solas": xAlone },
+  },
+  "parte-1": {
+    initial: { kind: "part-of", total: 20, den: 1, taken: 0 },
+    goal: (s) => s.kind === "part-of" && s.den === 4 && s.taken === 1,
+    moments: { "grupos-listos": (s) => s.kind === "part-of" && s.den === 4 && s.taken === 0 },
+  },
+  "parte-2": {
+    initial: { kind: "part-of", total: 20, den: 4, taken: 0 },
+    goal: (s) => s.kind === "part-of" && s.den === 4 && s.taken === 3,
+  },
+  "parte-3": {
+    initial: { kind: "part-of", total: 30, den: 1, taken: 0 },
+    goal: (s) => s.kind === "part-of" && s.den === 5 && s.taken === 2,
+    moments: { "grupos-listos": (s) => s.kind === "part-of" && s.den === 5 && s.taken === 0 },
+  },
+  "prop-1": {
+    initial: { ...SENSORS, rows: 1 },
+    goal: (s) => s.kind === "array" && s.rows === 4,
+    moments: { dos: (s) => s.kind === "array" && s.rows === 2 },
+  },
+  "prop-2": {
+    initial: { ...SENSORS, rows: 4 },
+    goal: (s) => s.kind === "array" && s.rows === 8,
+  },
+  "prop-3": {
+    initial: { ...SENSORS, rows: 1 },
+    goal: (s) => s.kind === "array" && s.rows * s.cols === 21,
   },
 };
 

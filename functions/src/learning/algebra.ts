@@ -1079,7 +1079,8 @@ export const ALGEBRA_LESSONS: Lesson[] = [
           count,
           [
             `Disponible sin envío: ${maxBudget - fixed}.`,
-            `${maxBudget - fixed} ÷ ${price} = ${((maxBudget - fixed) / price).toLocaleString("es", { maximumFractionDigits: 2 })}: caben ${count} sensores; ${count + 1} costarían ${(count + 1) * price + fixed}, que supera ${maxBudget}.`,
+            // División entera: el resto dice lo que sobra, sin un decimal redondeado escrito con «=».
+            `${maxBudget - fixed} ÷ ${price} = ${count}${(maxBudget - fixed) % price ? ` y sobran ${(maxBudget - fixed) % price}` : ""}: caben ${count} sensores; ${count + 1} costarían ${(count + 1) * price + fixed}, que supera ${maxBudget}.`,
           ],
           [
             "La cantidad de sensores debe ser entera.",
