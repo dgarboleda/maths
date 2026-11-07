@@ -175,6 +175,24 @@ export function LearningHome({
         )}
 
         {view === "practice" && (
+          <Link href={`/jugar/${childId}/practicar/estacion-proporcion`} className="block rounded-3xl border border-fuchsia-300/30 bg-gradient-to-r from-indigo-950 to-slate-900 p-6 transition hover:border-fuchsia-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-300">
+            <span className="text-xs font-bold uppercase tracking-widest text-fuchsia-200">Minijuego · proporciones y estrategia</span>
+            <h2 className="mt-2 text-2xl font-bold text-white">🚀 Estación Proporción</h2>
+            <p className="mt-2 text-sm text-slate-300">Prepara suministros, repara máquinas y recupera una estación espacial.</p>
+            <span className="mt-4 inline-block font-bold text-cyan-200">Despegar →</span>
+          </Link>
+        )}
+
+        {view === "practice" && (
+          <Link href={`/jugar/${childId}/practicar/geocraft`} className="block rounded-3xl border border-emerald-300/30 bg-gradient-to-r from-teal-950 to-slate-900 p-6 transition hover:border-emerald-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-200">Minijuego · geometría y creatividad</span>
+            <h2 className="mt-2 text-2xl font-bold text-white">🏝️ GeoCraft</h2>
+            <p className="mt-2 text-sm text-slate-300">Construye una isla y descubre cómo cambian el área y el perímetro.</p>
+            <span className="mt-4 inline-block font-bold text-cyan-200">Construir mi isla →</span>
+          </Link>
+        )}
+
+        {view === "practice" && (
           <Link href={`/jugar/${childId}/practicar/codebreaker`} className="block rounded-3xl border border-cyan-300/30 bg-gradient-to-r from-cyan-950 to-slate-900 p-6 transition hover:border-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300">
             <span className="text-xs font-bold uppercase tracking-widest text-cyan-200">Minijuego · patrones y lógica</span>
             <h2 className="mt-2 text-2xl font-bold text-white">🔐 CodeBreaker</h2>

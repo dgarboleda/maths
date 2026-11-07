@@ -58,4 +58,15 @@ describe('sincronización del juego', () => {
     await waitFor(() => expect(mock.paths.some(path => String(path.at(-1)).startsWith('codebreaker-v1-'))).toBe(true));
   });
 
+  it.each(['geocraft', 'estacion-proporcion'] as const)('aísla el progreso local y remoto de %s', async game => {
+    localStorage.setItem('numerario:target-masters:ana', JSON.stringify({ unlocked: 90, stars: {}, daily: '' }));
+    localStorage.setItem(`numerario:${game}:ana`, JSON.stringify({ unlocked: 3, stars: { '1': 2 }, daily: '' }));
+    const { result } = renderHook(() => useTargetProgress('ana', game));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.visible.unlocked).toBe(3);
+    await waitFor(() => expect(mock.receive).not.toBeNull());
+    act(() => mock.receive?.({ docs: [], metadata: { fromCache: false, hasPendingWrites: false } }));
+    await waitFor(() => expect(mock.paths.some(path => String(path.at(-1)).startsWith(`${game}-v1-`))).toBe(true));
+  });
+
 });
