@@ -7,8 +7,11 @@ import type { Visual } from "@/lib/learning/domain";
 import { Challenge } from "./Challenge";
 import { ColumnExplorer } from "./ColumnOperation";
 import { DivisionExplorer } from "./DivisionOperation";
-import { FactorExplorer } from "./FactorOperation";
-import { RuffiniExplorer } from "./RuffiniOperation";
+const MultiplyExplorer = dynamic<{ id: string }>(() => import("./MultiplyOperation").then((module) => module.MultiplyExplorer), {
+  loading: () => <p role="status">Preparando el modelo…</p>,
+});
+const FactorExplorer = dynamic<{ id: string }>(() => import("./FactorOperation").then((module) => module.FactorExplorer));
+const RuffiniExplorer = dynamic<{ id: string }>(() => import("./RuffiniOperation").then((module) => module.RuffiniExplorer));
 // Las gráficas cartesianas y las de geometría también se cargan bajo demanda:
 // cada clase descarga solo su modelo (presupuesto de JS de la clase).
 const graphVisual = (name: "LinearVisual" | "ParabolaVisual" | "InequalityVisual") =>
@@ -331,6 +334,8 @@ const OWN_VISUALS: Partial<Record<Visual, React.ComponentType<{ id: string }>>> 
   columns: ColumnExplorer,
   "equal-groups": EqualGroupsVisual,
   "long-division": DivisionExplorer,
+  "column-multiplication": MultiplyExplorer,
+  "decimal-division": ({ id }) => <DivisionExplorer id={id} decimals />,
   "factor-table": FactorExplorer,
   ruffini: RuffiniExplorer,
   sieve: SieveVisual,

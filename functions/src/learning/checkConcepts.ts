@@ -42,6 +42,28 @@ export const CHECK_CONCEPTS: Record<string, Question> = {
     1,
     "Cada paso da una cifra del cociente: el primero usa 42 y después se bajan dos cifras más, así que son tres (4 235 ÷ 7 = 605).",
   ),
+  "multiplicacion-columnas": c(
+    "q0",
+    "Para calcular 523 × 40, Rosa escribe primero un 0 en las unidades y después multiplica 523 × 4. ¿Por qué funciona?",
+    [
+      ["Porque el 0 no cuenta en una multiplicación", "El 0 sí cuenta: multiplicar por 40 no es lo mismo que por 4."],
+      "Porque 523 × 40 son 523 × 4 decenas: el producto son decenas y el 0 ocupa las unidades",
+      ["No funciona: hay que hacer también la fila del 0", "La fila del 0 serían solo ceros: no cambia la suma."],
+    ],
+    1,
+    "523 × 40 = 523 × 4 × 10: se calcula 523 × 4 = 2 092 y se pasa a decenas, 20 920.",
+  ),
+  "division-decimales": c(
+    "q0",
+    "Al dividir 2,8 ÷ 7, el 7 no cabe en 2. ¿Cómo empieza el cociente y por qué?",
+    [
+      ["Por 4, porque 28 ÷ 7 = 4", "Las 28 son décimas: 2 unidades no alcanzan para repartir 1 entera a cada parte."],
+      "Por 0,: 2 unidades no alcanzan; son 28 décimas y tocan 4 décimas, 0,4",
+      ["Por 0,0, porque hay que bajar dos cifras", "Solo se baja una cifra decimal: 28 décimas entre 7 son 4 décimas."],
+    ],
+    1,
+    "En la parte entera el 7 no cabe en 2: el cociente empieza por 0, y con las décimas, 28 ÷ 7 = 4 → 0,4.",
+  ),
   "suma-resta-columnas": c(
     "q0",
     "Para quitarle 8 unidades a 305 pidiendo prestado, ¿cómo se reescribe 305?",

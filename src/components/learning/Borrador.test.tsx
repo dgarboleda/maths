@@ -41,6 +41,38 @@ describe("Borrador de cálculo", () => {
     expect(onUse).toHaveBeenCalledWith("102", 1);
   });
 
+  test("usa el resultado como operando de otra cuenta", async () => {
+    render(<Borrador />);
+    await open();
+    numbers("12", "3");
+    fireEvent.change(screen.getByLabelText("Resultado: unidades", { exact: true }), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText("Resultado: decenas", { exact: true }), { target: { value: "1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Usar 15 como primer número" }));
+    expect(screen.getAllByRole("textbox")[0]).toHaveValue("15");
+    fireEvent.click(screen.getByRole("radio", { name: "Multiplicar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Escribir la cuenta" }));
+    expect(screen.getByRole("group", { name: /15 por 3 en columnas/ })).toBeInTheDocument();
+  });
+
+  test("puede continuar una división de enteros con decimales", async () => {
+    render(<Borrador />);
+    await open();
+    fireEvent.click(screen.getByRole("radio", { name: "Dividir" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Continuar la división/ }));
+    numbers("3", "4");
+    expect(screen.getByRole("group", { name: /División 3 entre 4/ })).toHaveTextContent("3");
+    expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(3);
+  });
+
+  test("conserva los ceros decimales escritos al multiplicar", async () => {
+    render(<Borrador />);
+    await open();
+    fireEvent.click(screen.getByRole("radio", { name: "Multiplicar" }));
+    numbers("2,50", "0,4");
+    expect(screen.getByRole("group", { name: /2,50 por 0,4 en columnas/ })).toHaveTextContent("2,50");
+    expect(screen.getAllByText(/cuántas cifras decimales lleva/i).length).toBeGreaterThan(0);
+  });
+
   test("avisa de cuentas que no se pueden escribir", async () => {
     render(<Borrador />);
     await open();

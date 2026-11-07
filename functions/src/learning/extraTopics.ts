@@ -1,5 +1,5 @@
 import { defineLesson } from "./defineLesson";
-import { choice as c, example as ex, numeric as n } from "./questions";
+import { choice as c, columnar, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
 
 const fmt = (x: number) => x.toLocaleString("es", { maximumFractionDigits: 6 });
@@ -296,19 +296,13 @@ export const DECIMAL_LESSONS: Lesson[] = [
               2,
               "Dividir entre un número menor que 1 cuenta cuántas veces cabe esa parte pequeña.",
             ),
-        n(
-          "q1",
-          `Calcula ${fmt(a)} × ${fmt(b)}.`,
-          r6(a * b),
-          [`Sin coma: ${Math.round(a * 10 ** pdec(a))} × ${Math.round(b * 10 ** pdec(b))} = ${Math.round(a * 10 ** pdec(a)) * Math.round(b * 10 ** pdec(b))}.`, `Decimales: ${pdec(a)} + ${pdec(b)} = ${pdec(a) + pdec(b)} → ${fmt(r6(a * b))}.`],
-          ["Multiplica como si no hubiera coma.", "Cuenta los decimales de ambos factores.", "Coloca la coma y estima."],
-          {
-            errors: [
-              { value: r6(a * b * 10), feedback: "Pusiste un decimal menos: cuenta los decimales de ambos factores." },
-              { value: r6(a * b / 10), feedback: "Pusiste un decimal de más." },
-            ],
-          },
-        ),
+        columnar("q1", { op: "multiply", a, b }, {
+          prompt: `Calcula ${fmt(a)} × ${fmt(b)} en columnas y coloca la coma.`,
+          errors: [
+            { value: r6(a * b * 10), feedback: "Pusiste un decimal menos: cuenta los decimales de ambos factores." },
+            { value: r6(a * b / 10), feedback: "Pusiste un decimal de más." },
+          ],
+        }),
         n(
           "q2",
           `Completa: ${fmt(d1)} ÷ ${fmt(d2)} = ${fmt(r6(d1 * 10 ** pdec(d2)))} ÷ __.`,
@@ -317,14 +311,10 @@ export const DECIMAL_LESSONS: Lesson[] = [
           ["El divisor debe quedar entero.", `Multiplica ${fmt(d2)} por ${fmt(10 ** pdec(d2))}.`, "El cociente no cambia si multiplicas ambos por lo mismo."],
           { step: true, errors: [{ value: d2, feedback: "Si multiplicas el dividendo, también hay que multiplicar el divisor." }] },
         ),
-        n(
-          "q3",
-          `Calcula ${fmt(d1)} ÷ ${fmt(d2)}.`,
-          r6(d1 / d2),
-          [`Multiplicamos dividendo y divisor por ${fmt(10 ** pdec(d2))}: el divisor queda entero y el cociente no cambia.`, `${fmt(d1)} ÷ ${fmt(d2)} = ${fmt(r6(d1 * 10 ** pdec(d2)))} ÷ ${Math.round(d2 * 10 ** pdec(d2))} = ${fmt(r6(d1 / d2))}.`, `Comprobación: ${fmt(r6(d1 / d2))} × ${fmt(d2)} = ${fmt(d1)}; el resultado es mayor que ${fmt(d1)} porque ${fmt(d2)} es menor que 1.`],
-          ["Convierte el divisor en un entero.", "Multiplica ambos por la misma potencia de 10.", "Divide."],
-          { errors: [{ value: r6(d1 * d2), feedback: "Multiplicaste. Se pide cuántas veces cabe el divisor." }] },
-        ),
+        columnar("q3", { op: "divide", a: d1, b: d2 }, {
+          prompt: `Calcula ${fmt(d1)} ÷ ${fmt(d2)} con la galera: primero haz entero el divisor.`,
+          errors: [{ value: r6(d1 * d2), feedback: "Multiplicaste. Se pide cuántas veces cabe el divisor." }],
+        }),
         c(
           "q4",
           `Un compañero calcula ${fmt(b)} × ${fmt(b)} = ${fmt(r6(b * b * 10))}. ¿Qué falla?`,

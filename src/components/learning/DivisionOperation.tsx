@@ -6,6 +6,9 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   checkDivisionWork,
   checkOpenDivision,
+  dividendText,
+  exactPlaces,
+  fmt,
   encodeOpenDivision,
   DIVISION_LAYOUTS,
   divisionFields,
@@ -19,7 +22,7 @@ import {
 import { secondaryButton } from "./LearningShell";
 import { Challenge } from "./Challenge";
 import { Slider } from "./GraphVisuals";
-import { makePreference, OptionPicker } from "./ColumnOperation";
+import { Comma, makePreference, OptionPicker, placeColor } from "./ColumnOperation";
 
 /* División larga en la «galera»: el dividendo a la izquierda, el divisor a
  * la derecha y el cociente debajo de él. El alumno escribe todo el
@@ -28,7 +31,46 @@ import { makePreference, OptionPicker } from "./ColumnOperation";
  * es el resto. Modos: guiado (cada casilla se corrige al escribirla), libre
  * (se revisa al enviar, en el servidor) y demostración. */
 
-const PLACE_COLORS = ["text-emerald-300", "text-sky-300", "text-rose-300"];
+/** Color de la cifra j del dividendo según su posición (unidades verdes…). */
+const dividendColor = (trace: DivisionTrace, j: number) => placeColor(trace.intLength - 1 - j);
+/** «4,8 entre 0,15» para el lector de pantalla. */
+const say = (n: number) => String(n).replace(".", ",");
+
+/** El dividendo de la galera: con su coma y los ceros añadidos en tenue. */
+function DividendDigit({ trace, j, className }: { trace: DivisionTrace; j: number; className: string }) {
+  const added = j >= trace.dividendDigits.length - trace.padded;
+  return (
+    <span className={`${className} relative ${dividendColor(trace, j)} ${added ? "opacity-40" : ""}`}>
+      {added && <span className="sr-only">cero añadido </span>}
+      {trace.dividendDigits[j]}
+      {trace.decimals > 0 && j === trace.intLength - 1 && <Comma />}
+    </span>
+  );
+}
+
+/** Nota previa cuando el divisor tiene coma: los dos se multiplican por 10, 100… */
+function ShiftNote({ trace }: { trace: DivisionTrace }) {
+  if (!trace.shift) return null;
+  return (
+    <p className="rounded-xl bg-slate-950 p-3 text-sm text-slate-200">
+      El divisor tiene coma: multiplica los dos por {fmt(10 ** trace.shift)}.{" "}
+      <strong className="text-cyan-100">
+        {fmt(trace.spec.a)} ÷ {fmt(trace.spec.b)} = {fmt(trace.dividend)} ÷ {fmt(trace.divisor)}
+      </strong>
+      : el cociente no cambia.
+    </p>
+  );
+}
+
+/** Lo que va delante de la primera cifra del cociente (0,…) en la galera. */
+function QuotientPrefix({ trace }: { trace: DivisionTrace }) {
+  if (!trace.quotientPrefix) return null;
+  return (
+    <span className="flex h-10 items-center px-0.5 text-xl font-bold text-cyan-100/70 sm:h-11 sm:text-2xl">
+      {trace.quotientPrefix}
+    </span>
+  );
+}
 
 export const useDivisionLayout = makePreference<DivisionLayout>(
   "maths:division:disposicion",
@@ -96,7 +138,6 @@ function Galera({
   const digits = trace.dividendDigits;
   const n = digits.length;
   const cell = "flex h-10 w-7 items-center justify-center text-xl font-bold tabular-nums sm:h-11 sm:w-10 sm:text-2xl";
-  const color = (column: number) => PLACE_COLORS[(n - 1 - column) % 3];
   const ring = (state: CellState) =>
     state === "wrong"
       ? "border-amber-400 bg-amber-950/50"
@@ -137,11 +178,11 @@ function Galera({
   const quotient = fields.filter((f) => f.kind === "q");
   return (
     // Enfocable: si no cabe (pantallas muy estrechas), se recorre con el teclado.
-    <div data-arrow-nav="" className="overflow-x-auto" tabIndex={0} role="group" aria-label={`División ${trace.spec.a} entre ${trace.spec.b}`}>
+    <div data-arrow-nav="" className="overflow-x-auto" tabIndex={0} role="group" aria-label={`División ${say(trace.dividend)} entre ${say(trace.divisor)}`}>
       <div className="mx-auto flex w-max items-start">
         <div className="grid gap-y-0.5" style={{ gridTemplateColumns: `repeat(${n}, auto)` }}>
-          {digits.map((d, j) => (
-            <span key={`d${j}`} className={`${cell} ${color(j)}`}>{d}</span>
+          {digits.map((_, j) => (
+            <DividendDigit key={`d${j}`} trace={trace} j={j} className={cell} />
           ))}
           {rows.map((f) => {
             const start = f.end - f.width + 1;
@@ -166,18 +207,30 @@ function Galera({
           <div className="border-b-2 border-slate-200 pb-0.5">
             <span className={`${cell} w-auto px-1 text-slate-100`}>
               <span className="sr-only">entre </span>
-              {trace.spec.b}
+              {trace.divisor}
             </span>
           </div>
           <div className="mt-1 flex gap-0.5" aria-label="Cociente" role="group">
-            {quotient.map((f) => render(f, cells(f)[0], 0, "text-cyan-100"))}
+            <QuotientPrefix trace={trace} />
+            {quotient.map((f) => (
+              <span key={f.key} className="relative">
+                {render(f, cells(f)[0], 0, "text-cyan-100")}
+                {trace.commaAfter === f.step && <Comma />}
+              </span>
+            ))}
           </div>
         </div>
       </div>
       {complete && (
         <p className="mt-2 text-center text-sm text-slate-300">
-          Cociente <strong className="text-cyan-100">{trace.quotient}</strong> · resto{" "}
-          <strong className="text-amber-200">{trace.remainder}</strong>
+          Cociente <strong className="text-cyan-100">{trace.quotientText}</strong>
+          {trace.decimals || trace.shift ? (
+            trace.remainder ? " (no es exacta: sigue sobrando algo)" : " · exacta"
+          ) : (
+            <>
+              {" "}· resto <strong className="text-amber-200">{trace.remainder}</strong>
+            </>
+          )}
         </p>
       )}
     </div>
@@ -201,6 +254,7 @@ export function DivisionDemo({
   const current = shown > 0 ? trace.steps[shown - 1] : null;
   return (
     <div className="space-y-3">
+      <ShiftNote trace={trace} />
       <Galera
         trace={trace}
         fields={visible}
@@ -229,7 +283,7 @@ export function DivisionDemo({
 /** Primera cifra del cociente (desde la izquierda) que no coincide. */
 export function firstWrongQuotientDigit(response: string, answer: number): number | null {
   const given = response.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-  const expected = String(answer);
+  const expected = String(answer).replace(/\D/g, "").replace(/^0+(?=\d)/, "");
   for (let i = 0; i < Math.max(given.length, expected.length); i++) if (given[i] !== expected[i]) return i;
   return null;
 }
@@ -397,6 +451,7 @@ function StepDivisionSheet({
 
   return (
     <div className="space-y-3">
+      <ShiftNote trace={trace} />
       <Galera trace={trace} fields={visible} cells={cells} onInput={onInput} onKey={onKey} refs={refs} disabled={disabled} complete={done} />
       <div aria-live="polite" className="text-sm leading-relaxed">
         {mode === "guided" ? (
@@ -419,7 +474,8 @@ function StepDivisionSheet({
         ) : (
           <p className="text-xs text-slate-400">
             Escribe todo el procedimiento: en cada paso, la cifra del cociente,
-            {layout === "completa" ? " el producto debajo," : ""} lo que queda al restar con la cifra que bajas al lado. La última fila es el resto.
+            {layout === "completa" ? " el producto debajo," : ""} lo que queda al restar con la cifra que bajas al lado.{" "}
+            {trace.decimals ? "La coma del cociente ya está colocada: sube cuando bajas la primera cifra decimal." : "La última fila es el resto."}
           </p>
         )}
       </div>
@@ -450,7 +506,9 @@ function OpenDivisionSheet({
   const keypadMode = useSheetInputMode("numeric");
   const trace = useMemo(() => divisionTrace(spec), [spec]);
   const n = trace.dividendDigits.length;
-  const qCells = Math.max(1, n - String(spec.b).length + 1);
+  // Con decimales, la coma del cociente queda fija antes de las últimas casillas.
+  const qCells = Math.max(1, n - String(trace.divisor).length + 1, trace.decimals + 1);
+  const commaBox = trace.decimals ? qCells - trace.decimals - 1 : -1;
   const maxRows = 2 * n + 2;
   const [state, setState] = useState(() => {
     const m = /^L(\d+);(.*)$/.exec(response);
@@ -468,7 +526,11 @@ function OpenDivisionSheet({
 
   const emit = (next: typeof state) => {
     setState(next);
-    const q = next.quotient.join("");
+    // Con coma fija, una casilla vacía a la derecha de la primera cifra deja
+    // el cociente incompleto (si no, las cifras cambiarían de posición).
+    const first = next.quotient.findIndex((d) => d !== "");
+    const gap = trace.decimals > 0 && first >= 0 && next.quotient.slice(first).some((d) => d === "");
+    const q = gap ? "" : next.quotient.join("");
     const rows = next.rows.map((r) => r.join("")).filter(Boolean);
     onChange(q && rows.length ? encodeOpenDivision(q, rows) : "");
   };
@@ -486,7 +548,6 @@ function OpenDivisionSheet({
   const offset = qCells - trace.steps.length;
   const cell =
     "flex h-10 w-7 items-center justify-center rounded-md border text-center text-xl font-bold tabular-nums placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300 sm:h-11 sm:w-10 sm:text-2xl";
-  const colors = (j: number) => PLACE_COLORS[(n - 1 - j) % 3];
   const input = (key: string, label: string, value: string, onValue: (d: string) => void, extra: string, placeholder?: string) => (
     <input
       key={key}
@@ -507,11 +568,12 @@ function OpenDivisionSheet({
   );
   return (
     <div className="space-y-3">
-      <div className="overflow-x-auto" tabIndex={0} role="group" aria-label={`División ${spec.a} entre ${spec.b}`}>
+      <ShiftNote trace={trace} />
+      <div className="overflow-x-auto" tabIndex={0} role="group" aria-label={`División ${say(trace.dividend)} entre ${say(trace.divisor)}`}>
         <div className="mx-auto flex w-max items-start">
           <div className="grid gap-y-0.5" style={{ gridTemplateColumns: `repeat(${n}, auto)` }}>
-            {trace.dividendDigits.map((d, j) => (
-              <span key={`d${j}`} className={`flex h-10 w-7 items-center justify-center text-xl font-bold sm:h-11 sm:w-10 sm:text-2xl ${colors(j)}`}>{d}</span>
+            {trace.dividendDigits.map((_, j) => (
+              <DividendDigit key={`d${j}`} trace={trace} j={j} className="flex h-10 w-7 items-center justify-center text-xl font-bold sm:h-11 sm:w-10 sm:text-2xl" />
             ))}
             {state.rows.map((row, r) =>
               row.map((value, j) =>
@@ -523,19 +585,25 @@ function OpenDivisionSheet({
             <div className="border-b-2 border-slate-200 pb-0.5">
               <span className="flex h-10 items-center px-1 text-xl font-bold text-slate-100 sm:h-11 sm:text-2xl">
                 <span className="sr-only">entre </span>
-                {spec.b}
+                {trace.divisor}
               </span>
             </div>
             <div className="mt-1 flex gap-0.5" role="group" aria-label="Cociente">
               {state.quotient.map((value, i) => {
                 const step = i - offset;
-                return input(
+                const box = input(
                   `q:${i}`,
                   `Cociente: cifra ${i + 1}`,
                   value,
                   (d) => setQ(i, d),
                   failed && !failed.quotientCorrect ? "border-amber-400 bg-amber-950/50 text-cyan-100" : "border-slate-600 bg-slate-950 text-cyan-100",
                   step >= 0 && step < hinted ? String(trace.steps[step].digit) : undefined,
+                );
+                return (
+                  <span key={`qb${i}`} className="relative">
+                    {box}
+                    {i === commaBox && <Comma />}
+                  </span>
                 );
               })}
             </div>
@@ -565,7 +633,9 @@ function OpenDivisionSheet({
           ? "Revisa el cociente."
           : failed?.mismatch
             ? `Revisa ${failed.mismatch.kind === "p" ? "el producto" : "la resta"} del paso ${failed.mismatch.step + 1}.`
-            : "Escribe el cociente y, debajo del dividendo, cada resta con la cifra que bajas (puedes anotar también los productos). La última fila es el resto."}
+            : `Escribe el cociente y, debajo del dividendo, cada resta con la cifra que bajas (puedes anotar también los productos). ${
+                trace.decimals ? "La coma del cociente está fija: escribe un 0 delante si el cociente empieza por 0,…" : "La última fila es el resto."
+              }`}
       </p>
     </div>
   );
@@ -574,38 +644,86 @@ function OpenDivisionSheet({
 /** Lo que se pregunta en cada casilla del modo guiado. */
 function guidedAsk(trace: DivisionTrace, f: DivisionField): string {
   const s = trace.steps[f.step];
-  const b = trace.spec.b;
+  const b = trace.divisor;
   if (f.kind === "q") return s.ask;
   if (f.kind === "p") return `Multiplica la cifra del cociente por el divisor: ${s.digit} × ${b}. Escríbelo debajo de ${s.part}, alineado a la derecha.`;
   return s.down === null
-    ? `Resta ${s.part} − ${s.product}: lo que queda es el resto.`
+    ? `Resta ${s.part} − ${s.product}: lo que queda ${trace.decimals || trace.shift ? "es lo que sobra al final" : "es el resto"}.`
     : `Resta ${s.part} − ${s.product} y escribe al lado la cifra que bajas (${s.down}).`;
 }
 
-/** Exploración de la clase: el alumno elige dividendo y divisor. */
-export function DivisionExplorer({ id }: { id: string }) {
-  const [a, setA] = useState(756);
-  const [b, setB] = useState(3);
+/** Exploración de la clase: el alumno elige dividendo y divisor; con
+ *  `decimals`, también si sigue dividiendo tras la coma o si los datos tienen coma. */
+export function DivisionExplorer({ id, decimals = false }: { id: string; decimals?: boolean }) {
+  const [a, setA] = useState(decimals ? 27 : 756);
+  const [b, setB] = useState(decimals ? 8 : 3);
+  const [kind, setKind] = useState<"natural" | "cociente" | "dividendo" | "divisor">(decimals ? "cociente" : "natural");
   const [layout, setLayout] = useDivisionLayout();
-  const spec: DivisionSpec = { op: "divide", a, b };
+  // Los datos con coma se forman dividiendo entre 10 los que da el deslizador.
+  const base: DivisionSpec =
+    kind === "dividendo" ? { op: "divide", a: a / 10, b } : kind === "divisor" ? { op: "divide", a, b: b / 10 } : { op: "divide", a, b };
+  // Con coma, se sigue dividiendo hasta que sea exacta (o hasta las centésimas).
+  const spec: DivisionSpec = kind === "natural" ? base : { ...base, places: exactPlaces(base.a, base.b, 3) ?? 2 };
   const trace = divisionTrace(spec, layout);
-  const q = String(trace.quotient);
+  const q = trace.steps.map((s) => s.digit).join("");
+  const exact = trace.remainder === 0;
   return (
     <>
-      <Slider id={`${id}-a`} label="Dividendo" value={a} min={100} max={999} onChange={setA} />
-      <Slider id={`${id}-b`} label="Divisor" value={b} min={2} max={25} onChange={setB} />
+      {decimals && (
+        <OptionPicker
+          label="Qué tiene coma"
+          options={[
+            { id: "natural", label: "Sin coma (con resto)" },
+            { id: "cociente", label: "Seguir tras la coma" },
+            { id: "dividendo", label: "Dividendo con coma" },
+            { id: "divisor", label: "Divisor con coma" },
+          ]}
+          value={kind}
+          onChange={setKind}
+        />
+      )}
+      <Slider id={`${id}-a`} label={kind === "dividendo" ? "Dividendo (en décimas)" : "Dividendo"} value={a} min={decimals ? 1 : 100} max={999} onChange={setA} />
+      <Slider id={`${id}-b`} label={kind === "divisor" ? "Divisor (en décimas)" : "Divisor"} value={b} min={2} max={25} onChange={setB} />
       <LayoutPicker layout={layout} onChange={setLayout} />
-      <DivisionDemo key={`${a}-${b}-${layout}`} spec={spec} layout={layout} initialStep={Infinity} />
+      {decimals && (
+        <p className="text-sm text-slate-300">
+          {fmt(spec.a)} ÷ {fmt(spec.b)}
+          {trace.shift ? ` = ${fmt(trace.dividend)} ÷ ${fmt(trace.divisor)}` : ""} ={" "}
+          <strong className="text-cyan-100">{trace.quotientText}</strong>
+          {kind !== "natural" && !exact ? ` (con ${trace.decimals} decimales; no es exacta)` : ""}
+          {trace.padded ? `. Dividendo con ceros añadidos: ${dividendText(trace)}` : ""}
+        </p>
+      )}
+      <DivisionDemo key={`${spec.a}-${spec.b}-${spec.places ?? 0}-${layout}`} spec={spec} layout={layout} initialStep={Infinity} />
       <Challenge
-        goals={[
-          {
-            text: "Consigue una división con un 0 en medio del cociente.",
-            met: q.length > 2 && q.slice(1, -1).includes("0"),
-            hint: "Prueba con un dividendo como 612 y un divisor que quepa justo en la primera cifra.",
-          },
-          { text: "Consigue una división exacta (resto 0) con un divisor mayor que 9.", met: b > 9 && trace.remainder === 0 },
-          { text: "Consigue un cociente de dos cifras. ¿Qué tiene que pasar con la primera cifra del dividendo?", met: q.length === 2 },
-        ]}
+        goals={
+          decimals
+            ? [
+                {
+                  text: "Sigue tras la coma y consigue un cociente exacto con dos cifras decimales.",
+                  met: kind === "cociente" && exact && trace.decimals === 2,
+                  hint: "Prueba a dividir entre 4: los restos 1, 2 y 3 se acaban en las centésimas.",
+                },
+                {
+                  text: "Consigue un cociente que empiece por 0, (el divisor no cabe en la parte entera).",
+                  met: trace.quotientPrefix !== "",
+                },
+                {
+                  text: "Con el divisor con coma, consigue un cociente mayor que el dividendo. ¿Qué tiene que pasar con el divisor?",
+                  met: kind === "divisor" && trace.quotient > spec.a,
+                  hint: "Un divisor menor que 1 cabe más de una vez en cada unidad.",
+                },
+              ]
+            : [
+                {
+                  text: "Consigue una división con un 0 en medio del cociente.",
+                  met: q.length > 2 && q.slice(1, -1).includes("0"),
+                  hint: "Prueba con un dividendo como 612 y un divisor que quepa justo en la primera cifra.",
+                },
+                { text: "Consigue una división exacta (resto 0) con un divisor mayor que 9.", met: b > 9 && trace.remainder === 0 },
+                { text: "Consigue un cociente de dos cifras. ¿Qué tiene que pasar con la primera cifra del dividendo?", met: q.length === 2 },
+              ]
+        }
       />
     </>
   );

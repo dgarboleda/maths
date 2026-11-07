@@ -21,7 +21,7 @@ test("borrador de cálculo en una aventura: la cuenta se hace en columnas y el r
   await page.getByRole("button", { name: "Escribir la cuenta" }).click();
   await escribirColumnas(page, "36");
   await page.getByLabel("Copiar en").selectOption({ label: "Baldosas" });
-  await page.getByRole("button", { name: "Usar 36" }).click();
+  await page.getByRole("button", { name: "Usar 36", exact: true }).click();
   await expect(page.getByLabel("Baldosas", { exact: true })).toHaveValue("36");
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -51,7 +51,7 @@ test("teclado numérico propio en móvil: escribe en la hoja sin abrir el del si
   await units.tap();
   await keypad.getByRole("button", { name: "Escribir 6" }).tap();
   await keypad.getByRole("button", { name: "Escribir 3" }).tap();
-  await expect(page.getByRole("button", { name: "Usar 36" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Usar 36", exact: true })).toBeVisible();
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("teclado-movil.png"), fullPage: false });

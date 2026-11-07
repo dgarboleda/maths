@@ -100,6 +100,8 @@ export type Visual =
   | "columns"
   | "equal-groups"
   | "long-division"
+  | "column-multiplication"
+  | "decimal-division"
   | "factor-table"
   | "ruffini"
   | "sieve"

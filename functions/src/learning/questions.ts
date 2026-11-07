@@ -1,5 +1,6 @@
 import type { Example, Intent, Question } from "./types";
-import { columnTrace } from "./algorithms/columns";
+import { columnTrace, fmt } from "./algorithms/columns";
+import { multiplyTrace } from "./algorithms/multiplication";
 import { checkFactorWork, factorTrace, factorWorkFeedback } from "./algorithms/factors";
 import { checkRuffiniWork, ruffiniTrace, ruffiniWorkFeedback } from "./algorithms/ruffini";
 import {
@@ -10,6 +11,7 @@ import {
   divisionResponseValue,
   divisionTrace,
   divisionWorkFeedback,
+  isDecimalDivision,
 } from "./algorithms/division";
 import {
   operationBugs,
@@ -18,6 +20,7 @@ import {
   operationResult,
   operationSolution,
   isFactorSpec,
+  isMultiplySpec,
   isRuffiniSpec,
   type ColumnSpec,
 } from "./algorithms/operations";
@@ -72,14 +75,18 @@ export function columnar(
   return {
     ...numeric(
       id,
-      options.prompt ??
+      (options.prompt ??
         (isRuffiniSpec(spec)
           ? `Divide ${operationExpression(spec)} con la regla de Ruffini: completa la tabla y escribe el resto.`
           : isFactorSpec(spec)
           ? `Calcula el ${operationExpression(spec)} con la tabla de factores primos.`
+          : isMultiplySpec(spec)
+            ? `Multiplica en columnas: ${operationExpression(spec)}.`
           : spec.op === "divide"
-            ? `Divide ${operationExpression(spec)} con la división larga: escribe el cociente, cada resta y el resto.`
-            : `Calcula en columnas: ${operationExpression(spec)}.`),
+            ? `Divide ${operationExpression(spec)} con la división larga: escribe ${divisionTrace(spec).decimals ? "cada resta y el cociente con su coma" : "el cociente, cada resta y el resto"}.`
+            : `Calcula en columnas: ${operationExpression(spec)}.`)) +
+        (spec.op === "divide" && isDecimalDivision(spec) && divisionTrace(spec).remainder
+          ? ` Da el cociente truncado a ${divisionTrace(spec).decimals} cifras decimales.` : ""),
       result,
       operationSolution(spec),
       operationHints(spec),
@@ -100,9 +107,19 @@ export function columnExample(spec: ColumnSpec, prompt?: string): Example {
       }))
     : isFactorSpec(spec)
     ? factorTrace(spec).rows.map((row) => ({ math: `${row.values.join("  ")} | ${row.prime}`, why: row.why }))
+    : isMultiplySpec(spec)
+    ? multiplyTrace(spec).steps
+        .filter((step) => step.kind !== "row" || step.topIndex >= 0 || step.digit !== 0)
+        .map((step) => ({
+          math:
+            step.kind === "comma"
+              ? `${step.digit} decimales → ${fmt(multiplyTrace(spec).result)}`
+              : `${step.kind === "sum" ? "Suma" : "Fila"} ${step.row + 1}: escribes ${step.digit}${step.carry ? `, llevas ${step.carry}` : ""}`,
+          why: step.why,
+        }))
     : spec.op === "divide"
       ? divisionTrace(spec).steps.map((step) => ({
-          math: `${step.part} ÷ ${spec.b} → ${step.digit}${step.down !== null ? `, bajas el ${step.down}` : ""}`,
+          math: `${step.part} ÷ ${divisionTrace(spec).divisor} → ${step.digit}${step.down !== null ? `, bajas el ${step.down}` : ""}`,
           why: step.why,
         }))
       : columnTrace(spec).steps.map((step) => ({
@@ -253,7 +270,7 @@ export function errorFeedback(question: Question, response: string): string {
       return "El cociente no es correcto. Comprueba con la multiplicación: cociente × divisor + resto tiene que dar el dividendo.";
     if (open?.mismatch)
       return divisionWorkFeedback(question.column, open.mismatch, open.mismatch.kind === "p" ? "completa" : "abreviada");
-    if (value !== null) {
+    if (value !== null && !isDecimalDivision(question.column)) {
       const { quotient, remainder } = divisionTrace(question.column);
       if (value === quotient)
         return `El cociente es correcto; falta el resto o no es ${remainder === 0 ? "0" : "ese"}. Escríbelo así: ${quotient} r ${remainder}.`;
@@ -261,7 +278,9 @@ export function errorFeedback(question: Question, response: string): string {
   }
   if (question.format !== "choice" && value === null)
     return question.column?.op === "divide"
-      ? "Completa la galera, o escribe el cociente y el resto así: 52 r 3."
+      ? isDecimalDivision(question.column)
+        ? "Completa la galera, o escribe el cociente con su coma, por ejemplo 0,75."
+        : "Completa la galera, o escribe el cociente y el resto así: 52 r 3."
       : "Escribe un número, un decimal con coma o punto, o una fracción como 3/4. Revisa que el denominador sea distinto de cero.";
   return "Revisa qué cantidad buscas y qué representa cada dato. Puedes consultar la clase o pedir una pista antes de intentarlo otra vez.";
 }

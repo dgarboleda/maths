@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import dynamic from "next/dynamic";
 import { MathText } from "@/components/MathText";
 import {
   checkDivisionWork,
@@ -8,7 +9,9 @@ import {
   checkOpenDivision,
   factorWorkFeedback,
   isFactorSpec,
+  isMultiplySpec,
   isRuffiniSpec,
+  multiplyTrace,
   checkRuffiniWork,
   ruffiniWorkFeedback,
   type FactorSpec,
@@ -23,6 +26,7 @@ import {
   operationResult,
   operationSolution,
   type ColumnSpec,
+  type MultiplySpec,
 } from "@/lib/learning/core";
 import {
   ColumnDemo,
@@ -31,13 +35,17 @@ import {
   StrategyPicker,
   useSubtractStrategy,
 } from "./ColumnOperation";
-import { FactorDemo, FactorSheet } from "./FactorOperation";
 import { NumericKeypadArea } from "./NumericKeypad";
-import { RuffiniDemo, RuffiniSheet } from "./RuffiniOperation";
 import { DivisionDemo, DivisionSheet, firstWrongQuotientDigit, LayoutPicker, useDivisionLayout } from "./DivisionOperation";
 
-/* Punto de entrada único para las operaciones escritas (suma, resta y
- * división larga): elige la hoja, la demostración y las ayudas según la
+const FactorDemo = dynamic(() => import("./FactorOperation").then((module) => module.FactorDemo));
+const FactorSheet = dynamic(() => import("./FactorOperation").then((module) => module.FactorSheet));
+const MultiplyDemo = dynamic(() => import("./MultiplyOperation").then((module) => module.MultiplyDemo));
+const MultiplySheet = dynamic(() => import("./MultiplyOperation").then((module) => module.MultiplySheet));
+const RuffiniDemo = dynamic(() => import("./RuffiniOperation").then((module) => module.RuffiniDemo));
+const RuffiniSheet = dynamic(() => import("./RuffiniOperation").then((module) => module.RuffiniSheet));
+/* Punto de entrada único para las operaciones escritas (suma, resta,
+ * multiplicación y división larga): elige la hoja, la demostración y las ayudas según la
  * operación y las preferencias del alumno. */
 
 /** Pistas y desarrollo con la manera de escribir que eligió el alumno. */
@@ -65,10 +73,11 @@ function StylePicker({ spec, disabled }: { spec: ColumnSpec; disabled?: boolean 
 export function OperationDemo({ spec, initialStep }: { spec: ColumnSpec; initialStep?: number }) {
   if (isFactorSpec(spec)) return <FactorDemo spec={spec} initialStep={initialStep} />;
   if (isRuffiniSpec(spec)) return <RuffiniDemo spec={spec} initialStep={initialStep} />;
+  if (isMultiplySpec(spec)) return <MultiplyDemo spec={spec} initialStep={initialStep} />;
   return <WrittenDemo spec={spec} initialStep={initialStep} />;
 }
 
-function WrittenDemo({ spec, initialStep }: { spec: Exclude<ColumnSpec, FactorSpec | RuffiniSpec>; initialStep?: number }) {
+function WrittenDemo({ spec, initialStep }: { spec: Exclude<ColumnSpec, FactorSpec | RuffiniSpec | MultiplySpec>; initialStep?: number }) {
   const [strategy] = useSubtractStrategy();
   const [layout] = useDivisionLayout();
   return spec.op === "divide" ? (
@@ -137,6 +146,18 @@ export function OperationWorkspace({
           failedResponse={failedResponse}
           disabled={disabled}
         />
+      ) : isMultiplySpec(spec) ? (
+        <MultiplySheet
+          key={`${questionId}-${mode === "guided" ? "g" : "f"}`}
+          spec={spec}
+          mode={mode === "guided" ? "guided" : "free"}
+          response={response}
+          onChange={onChange}
+          onComplete={onComplete}
+          hintLevel={hintLevel}
+          failedResponse={failedResponse}
+          disabled={disabled}
+        />
       ) : spec.op === "divide" ? (
         <DivisionSheet
           key={`${questionId}-${mode === "open" ? "open" : layout}`}
@@ -197,13 +218,22 @@ export function operationMistake(spec: ColumnSpec, response: string): string | n
   }
   if (!/^\s*\d+(?:[,.]\d+)?\s*$/.test(response)) return null;
   const answer = operationResult(spec);
+  const given = Number(response.replace(",", "."));
   if (spec.op === "divide") {
     const i = firstWrongQuotientDigit(response, answer);
-    return i === null ? null : `Tu cociente fue ${fmt(Number(response))}: la primera cifra distinta es la ${i + 1}.ª del cociente.`;
+    return i === null ? null : `Tu cociente fue ${fmt(given)}: la primera cifra distinta es la ${i + 1}.ª del cociente.`;
+  }
+  if (isMultiplySpec(spec)) {
+    const t = multiplyTrace(spec);
+    const digits = response.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+    if (digits === String(t.product) && given !== t.result)
+      return `Tu resultado fue ${fmt(given)}: las cifras están bien, pero la coma no. El producto lleva ${t.scale} ${t.scale === 1 ? "cifra decimal" : "cifras decimales"}.`;
+    const column = firstWrongColumn(digits, t.product);
+    return column === null ? null : `Tu resultado fue ${fmt(given)}: sin la coma, la primera cifra distinta está en las ${placeName(column)}.`;
   }
   const { scale } = scaled(spec);
   const column = firstWrongColumn(response, answer, scale);
-  return column === null ? null : `Tu resultado fue ${fmt(Number(response.replace(",", ".")))}: la primera cifra distinta está en las ${placeName(column - scale)}.`;
+  return column === null ? null : `Tu resultado fue ${fmt(given)}: la primera cifra distinta está en las ${placeName(column - scale)}.`;
 }
 
 /**

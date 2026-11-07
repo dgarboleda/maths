@@ -14,9 +14,13 @@ import {
 const PLACES = ["unidades", "decenas", "centenas", "unidades de millar", "decenas de millar"];
 
 /** Escribe el resultado de una suma o resta en la hoja de columnas. */
-export async function escribirColumnas(page: Page, value: string) {
-  for (const [i, d] of value.split("").reverse().entries())
+export async function escribirColumnas(page: Page, value: string, scale = 0) {
+  const [integer, fraction = ""] = value.replace(",", ".").split(".");
+  const decimalPlaces = ["décimas", "centésimas", "milésimas"];
+  for (const [i, d] of integer.split("").reverse().entries())
     await page.getByLabel(`Resultado: ${PLACES[i]}`, { exact: true }).fill(d);
+  for (const [i, d] of fraction.padEnd(scale, "0").split("").entries())
+    await page.getByLabel(`Resultado: ${decimalPlaces[i]}`, { exact: true }).fill(d);
 }
 
 /**
@@ -54,7 +58,7 @@ export async function escribirGaleraAbierta(page: Page, question: Question, camb
   if (question.column?.op !== "divide") throw new Error("No es una división");
   const trace = divisionTrace(question.column, "completa");
   const n = trace.dividendDigits.length;
-  const quotient = String(trace.quotient);
+  const quotient = trace.quotientText.replace(/[^\d]/g, "");
   const cells = await page.getByLabel(/^Cociente: cifra \d+$/).count();
   for (const [i, d] of quotient.split("").entries())
     await page.getByLabel(`Cociente: cifra ${cells - quotient.length + i + 1}`, { exact: true }).fill(d);

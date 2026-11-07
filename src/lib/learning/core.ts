@@ -15,6 +15,7 @@ export * from "../../../functions/src/learning/calibration";
 export * from "../../../functions/src/learning/rewards";
 export * from "../../../functions/src/learning/algorithms/columns";
 export * from "../../../functions/src/learning/algorithms/division";
+export * from "../../../functions/src/learning/algorithms/multiplication";
 export * from "../../../functions/src/learning/algorithms/operations";
 export * from "../../../functions/src/learning/algorithms/factors";
 export * from "../../../functions/src/learning/algorithms/ruffini";
