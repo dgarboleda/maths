@@ -27,6 +27,7 @@ import {
   operationSolution,
   type ColumnSpec,
   type MultiplySpec,
+  type ArithmeticSpec,
 } from "@/lib/learning/core";
 import {
   ColumnDemo,
@@ -182,16 +183,25 @@ export function OperationWorkspace({
           onComplete={onComplete}
           hintLevel={hintLevel}
           wrongColumn={
-            failedResponse !== null && failedResponse === response
+            failedResponse !== null && failedResponse === response && !commaMisplaced(spec, response)
               ? firstWrongColumn(response, operationResult(spec), scaled(spec).scale)
               : null
           }
+          commaWrong={failedResponse !== null && failedResponse === response && commaMisplaced(spec, response)}
           disabled={disabled}
         />
       )}
       </NumericKeypadArea>
     </div>
   );
+}
+
+/** Suma o resta con decimales: ¿la respuesta tiene la coma en otro sitio (o
+ *  no la tiene) aunque lleve cifras? Entonces las columnas no se comparan. */
+function commaMisplaced(spec: ArithmeticSpec, response: string): boolean {
+  const { scale } = scaled(spec);
+  if (!scale || !/\d/.test(response)) return false;
+  return (response.split(/[,.]/)[1]?.length ?? 0) !== scale;
 }
 
 /** Dónde se separó una respuesta numérica del resultado, en palabras. */
@@ -207,7 +217,12 @@ export function operationMistake(spec: ColumnSpec, response: string): string | n
   }
   if (spec.op === "divide") {
     const work = checkDivisionWork(spec, response);
-    if (work) return work.firstError ? divisionWorkFeedback(spec, work.firstError, work.layout) : null;
+    if (work)
+      return work.firstError
+        ? divisionWorkFeedback(spec, work.firstError, work.layout)
+        : work.commaCorrect
+          ? null
+          : "Las cifras del cociente están bien, pero la coma no: se pone en el cociente al bajar la primera cifra decimal del dividendo.";
     const open = checkOpenDivision(spec, response);
     if (open)
       return !open.quotientCorrect
@@ -232,6 +247,13 @@ export function operationMistake(spec: ColumnSpec, response: string): string | n
     return column === null ? null : `Tu resultado fue ${fmt(given)}: sin la coma, la primera cifra distinta está en las ${placeName(column)}.`;
   }
   const { scale } = scaled(spec);
+  if (commaMisplaced(spec, response)) {
+    const digits = response.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+    const expected = String(Math.round(answer * 10 ** scale));
+    return digits === expected
+      ? `Tu resultado fue ${fmt(given)}: las cifras están bien, pero la coma no. Va debajo de las comas de los números, con ${scale} ${scale === 1 ? "cifra decimal" : "cifras decimales"}.`
+      : `Tu resultado fue ${fmt(given)}: revisa la coma, que va debajo de las de los números, y las cifras.`;
+  }
   const column = firstWrongColumn(response, answer, scale);
   return column === null ? null : `Tu resultado fue ${fmt(given)}: la primera cifra distinta está en las ${placeName(column - scale)}.`;
 }

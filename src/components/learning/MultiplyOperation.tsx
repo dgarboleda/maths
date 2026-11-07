@@ -16,7 +16,7 @@ import { useSheetInputMode } from "./NumericKeypad";
 import { secondaryButton } from "./LearningShell";
 import { Challenge } from "./Challenge";
 import { Slider } from "./GraphVisuals";
-import { Comma, OptionPicker, placeColor } from "./ColumnOperation";
+import { Comma, CommaSlotRow, columnsText, OptionPicker, placeColor, writtenColumns } from "./ColumnOperation";
 
 /* Multiplicación en columnas: el factor de más cifras arriba y el otro
  * debajo, alineados por la derecha (no por la coma). Una fila por cada cifra
@@ -68,7 +68,10 @@ function Grid({
   inputRefs,
   idPrefix,
   disabled,
+  slots,
 }: {
+  /** Huecos bajo el producto para que el alumno ponga la coma. */
+  slots?: { active: number | null; onPick: (k: number) => void; wrong?: boolean };
   trace: MultiplyTrace;
   columns: number;
   /** Llevadas sobre el factor de arriba (por columna). */
@@ -148,6 +151,7 @@ function Grid({
         {rows.map((row) => (
           <Row key={row.key} row={row} order={order} cell={cell} onInput={onInput} onKey={onKey} inputRefs={inputRefs} idPrefix={idPrefix} disabled={disabled} keypadMode={keypadMode} />
         ))}
+        {slots && <CommaSlotRow order={order} cells={columns} active={slots.active} onPick={slots.onPick} disabled={disabled} wrong={slots.wrong} />}
       </div>
     </div>
   );
@@ -318,43 +322,6 @@ export function MultiplyDemo({ spec, initialStep }: { spec: MultiplySpec; initia
 
 // ── Hoja para responder ─────────────────────────────────────────────────
 
-/** Elección de cuántas cifras decimales lleva el producto. */
-function DecimalsPicker({
-  value,
-  onChange,
-  max,
-  disabled,
-}: {
-  value: number | null;
-  onChange: (n: number) => void;
-  max: number;
-  disabled?: boolean;
-}) {
-  const options = Array.from({ length: max + 1 }, (_, n) => ({ id: String(n), label: String(n) }));
-  return (
-    <div className="space-y-1">
-      <p className="text-sm text-slate-300">¿Cuántas cifras decimales lleva el producto?</p>
-      <OptionPicker
-        label="Cifras decimales del producto"
-        options={options}
-        value={value === null ? ("" as string) : String(value)}
-        onChange={(v) => onChange(Number(v))}
-        disabled={disabled}
-      />
-    </div>
-  );
-}
-
-/** Lee una respuesta ya escrita («0,72») como cifras por columna y decimales. */
-function restore(response: string, cells: number): { digits: string[]; decimals: number | null } {
-  const clean = response.replace(/[^\d,.]/g, "");
-  if (!clean) return { digits: Array(cells).fill(""), decimals: null };
-  const [int = "", frac] = clean.split(/[,.]/);
-  // Sin los ceros de la izquierda, salvo los que sostienen la coma (0,06).
-  const all = (int + (frac ?? "")).replace(/^0+(?=\d)/, "").padStart((frac?.length ?? 0) + 1, "0").split("").reverse();
-  return { digits: Array.from({ length: cells }, (_, i) => all[i] ?? ""), decimals: frac === undefined ? 0 : frac.length };
-}
-
 export function MultiplySheet({
   spec,
   mode,
@@ -394,20 +361,20 @@ export function MultiplySheet({
   const scratchRows = trace.bottomDigits.length > 1 ? trace.bottomDigits.length : 0;
   const [scratch, setScratch] = useState<string[][]>(() => Array.from({ length: scratchRows }, () => Array(columns).fill("")));
   const [notes, setNotes] = useState<string[]>(() => Array(columns).fill(""));
-  const initial = useMemo(() => restore(response, columns), []); // eslint-disable-line react-hooks/exhaustive-deps
-  const [digits, setDigits] = useState<string[]>(initial.digits);
-  const [decimals, setDecimals] = useState<number | null>(trace.scale ? initial.decimals : 0);
+  const initial = useMemo(() => writtenColumns(response), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [digits, setDigits] = useState<string[]>(() => Array.from({ length: columns }, (_, i) => initial.digits[i] ?? ""));
+  // La coma la pone el alumno: hueco k, con k cifras a su derecha.
+  const [commaAt, setCommaAt] = useState<number | null>(initial.comma || null);
+  const [commaMiss, setCommaMiss] = useState<number | null>(null);
 
   const active = mode === "guided" && filled < writing.length ? writing[filled] : null;
   const askingComma = mode === "guided" && !active && !!commaStep && !commaOk;
   const done = mode === "guided" && !active && !askingComma;
 
-  const emitFree = (nextDigits: string[], nextDecimals: number | null) => {
+  const emitFree = (nextDigits: string[], comma: number | null) => {
     const highest = nextDigits.reduce((h, d, i) => (d ? i : h), -1);
     const gap = nextDigits.slice(0, highest + 1).some((d) => !d);
-    if (gap || highest < 0 || nextDecimals === null) return onChange("");
-    const text = [...nextDigits.slice(0, highest + 1)].reverse().join("").replace(/^0+(?=\d)/, "");
-    onChange(nextDecimals ? productText(Number(text), nextDecimals) : text);
+    onChange(gap ? "" : columnsText(nextDigits, comma));
   };
 
   const finish = () => {
@@ -431,7 +398,7 @@ export function MultiplySheet({
     if (row === resultKey) {
       const next = digits.map((d, i) => (i === column ? value : d));
       setDigits(next);
-      emitFree(next, decimals);
+      emitFree(next, commaAt);
     } else {
       const r = Number(row.slice(1));
       setScratch((s) => s.map((cells, k) => (k === r ? cells.map((d, i) => (i === column ? value : d)) : cells)));
@@ -450,18 +417,19 @@ export function MultiplySheet({
       focus(`${row}:${column - 1}`);
     }
   };
-  const pickDecimals = (n: number) => {
+  const pickComma = (k: number) => {
     if (mode === "guided") {
-      if (n === commaStep?.digit) {
+      if (k === commaStep?.digit) {
         setCommaOk(true);
-        setMiss(null);
+        setCommaMiss(null);
         setLastWhy(commaStep.why);
         finish();
-      } else setMiss(String(n));
+      } else setCommaMiss(k);
       return;
     }
-    setDecimals(n);
-    emitFree(digits, n);
+    const next = commaAt === k ? null : k;
+    setCommaAt(next);
+    emitFree(digits, next);
   };
 
   // Tras un intento fallido (fuera de las comprobaciones): qué revisar.
@@ -478,7 +446,7 @@ export function MultiplySheet({
     rows = writtenRows(
       trace,
       filled,
-      () => ({ kind: "input", value: miss && !askingComma ? miss : "", state: miss && !askingComma ? "wrong" : "active" }),
+      () => ({ kind: "input", value: miss ?? "", state: miss ? "wrong" : "active" }),
       commaOk,
     );
     rows = rows.map((r) => ({ ...r, cells: r.cells.map((c) => (c?.kind === "digit" && !c.ghost ? { ...c, state: "ok" as const } : c)) }));
@@ -504,7 +472,7 @@ export function MultiplySheet({
     rows.push({
       key: resultKey,
       label: "Producto",
-      comma: trace.scale && decimals ? decimals : null,
+      comma: commaAt,
       cells: digits.map((value, i) => ({
         kind: "input",
         value,
@@ -528,25 +496,28 @@ export function MultiplySheet({
         inputRefs={refs}
         idPrefix={id}
         disabled={disabled}
+        slots={
+          mode === "guided"
+            ? askingComma
+              ? { active: commaMiss, onPick: pickComma, wrong: commaMiss !== null }
+              : undefined
+            : trace.scale > 0
+              ? { active: commaAt, onPick: pickComma, wrong: commaOnly }
+              : undefined
+        }
       />
-      {trace.scale > 0 && (mode === "free" || askingComma || commaOk) && (
-        <DecimalsPicker
-          value={mode === "guided" ? (commaOk ? trace.scale : null) : decimals}
-          onChange={pickDecimals}
-          max={Math.max(4, trace.scale + 1)}
-          disabled={disabled || (mode === "guided" && commaOk)}
-        />
-      )}
       <div aria-live="polite" className="text-sm leading-relaxed">
         {mode === "guided" ? (
-          miss !== null ? (
+          askingComma && commaMiss !== null ? (
             <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">
-              {askingComma ? `Revisa: cuenta las cifras decimales de ${fmt(spec.a)} y de ${fmt(spec.b)} y súmalas.` : `Revisa esa cifra. ${active?.ask ?? ""}`}
+              Ahí no: cuenta las cifras decimales de {fmt(spec.a)} y de {fmt(spec.b)}, súmalas y deja ese número de cifras a la derecha de la coma.
             </p>
+          ) : miss !== null ? (
+            <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">Revisa esa cifra. {active?.ask ?? ""}</p>
           ) : !done ? (
             <p className="rounded-xl bg-cyan-950/40 p-3 text-cyan-100">
               {lastWhy && <span className="block text-slate-300">{lastWhy}</span>}
-              {askingComma ? commaStep!.ask : active?.ask}
+              {askingComma ? "¿Dónde va la coma del producto? Cuenta las cifras decimales de los dos factores y toca su lugar debajo de las casillas." : active?.ask}
             </p>
           ) : (
             <p className="rounded-xl bg-emerald-950/40 p-3 text-emerald-100">
@@ -565,7 +536,7 @@ export function MultiplySheet({
           <p className="text-xs text-slate-400">
             Escribe el producto en la última fila, desde la derecha.
             {scratchRows ? " Arriba tienes filas de borrador para cada cifra de abajo." : ""}
-            {trace.scale ? " Después elige cuántas cifras decimales lleva." : ""}
+            {trace.scale ? " Después toca, debajo de las casillas, dónde va la coma." : ""}
           </p>
         )}
       </div>

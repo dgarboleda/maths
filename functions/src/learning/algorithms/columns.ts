@@ -281,7 +281,7 @@ export function columnHints(spec: ArithmeticSpec, strategy: SubtractStrategy = "
 }
 
 export interface ColumnBug {
-  id: "sin-llevar" | "sin-reagrupar" | "menor-del-mayor" | "sin-devolver" | "cero-sin-restar" | "coma-desalineada";
+  id: "sin-llevar" | "sin-reagrupar" | "menor-del-mayor" | "sin-devolver" | "cero-sin-restar" | "coma-desalineada" | "coma-olvidada";
   value: number;
   feedback: string;
 }
@@ -364,6 +364,13 @@ export function columnBugs(spec: ArithmeticSpec): ColumnBug[] {
         feedback: "Alineaste las cifras por la derecha. Con decimales se alinea la coma: unidades bajo unidades, décimas bajo décimas; completa con ceros (3,5 = 3,50).",
       });
   }
+  // Cifras bien, pero sin la coma en el resultado.
+  if (scale)
+    bugs.push({
+      id: "coma-olvidada",
+      value: fromDigits(trace.resultDigits),
+      feedback: "Falta la coma en el resultado: va justo debajo de las comas de los dos números, con las mismas cifras decimales.",
+    });
   const seen = new Set([trace.result]);
   return bugs.filter((bug) => (!Number.isFinite(bug.value) || seen.has(bug.value) ? false : (seen.add(bug.value), true)));
 }
