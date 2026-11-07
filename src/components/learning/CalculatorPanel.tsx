@@ -214,7 +214,8 @@ export function CalculatorPanel({
           {problem && <p role="alert" className="text-sm text-amber-200">{problem}</p>}
           {spec && (
             <>
-              <NumericKeypadArea>
+              {/* En el panel no hay navegación inferior: el teclado va pegado abajo. */}
+              <NumericKeypadArea bottom="0px">
                 {spec.op === "divide" ? (
                   <DivisionSheet key={`division-${revision}`} spec={spec} layout="completa" mode="open" response="" onChange={setWork} />
                 ) : spec.op === "multiply" ? (
