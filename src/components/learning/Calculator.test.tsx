@@ -135,6 +135,25 @@ describe("Calculadora global", () => {
     expect(screen.queryByRole("button", { name: /^Usar/ })).toBeNull();
   });
 
+  test("«Continuar la división con decimales» se aplica al momento a la división escrita", async () => {
+    sessionStorage.clear();
+    renderCalculator();
+    await open();
+    fireEvent.click(screen.getByRole("radio", { name: "Dividir" }));
+    numbers("3", "4");
+    // Sin decimales: 3 ÷ 4 = 0 y sobran 3, una sola casilla en el cociente.
+    expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(1);
+    const box = screen.getByRole("checkbox", { name: /Continuar la división/ });
+    fireEvent.click(box);
+    expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(3);
+    fireEvent.click(box);
+    expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(1);
+    // Con coma en los números siempre sigue con decimales: la casilla queda marcada y fija.
+    fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: "3,5" } });
+    expect(screen.getByRole("checkbox", { name: /Continuar la división/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Continuar la división/ })).toBeDisabled();
+  });
+
   test("conserva los ceros decimales al multiplicar y respeta los límites de la hoja", async () => {
     sessionStorage.clear();
     renderCalculator();
