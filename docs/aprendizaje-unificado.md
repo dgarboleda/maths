@@ -1,6 +1,6 @@
 # Un solo recorrido de aprendizaje
 
-El programa incluido contiene 54 clases en 7 unidades (dos de ellas, bases de primaria opcionales). El alumno puede comenzar una clase, practicar con los nueve minijuegos o por escrito, comprobar su comprensión, repasar y aplicar lo aprendido en una aventura sin que su familia prepare mundos, módulos o niveles.
+El programa incluido contiene 73 clases en 7 unidades (cuatro de ellas, bases de primaria opcionales). Las 18 últimas se describen en [temas añadidos](temas-anadidos.md). El alumno puede comenzar una clase, practicar con los nueve minijuegos o por escrito, comprobar su comprensión, repasar y aplicar lo aprendido en una aventura sin que su familia prepare mundos, módulos o niveles.
 
 ## Progreso y acompañamiento familiar
 

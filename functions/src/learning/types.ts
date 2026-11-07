@@ -101,7 +101,13 @@ export type Visual =
   | "equal-groups"
   | "long-division"
   | "factor-table"
-  | "ruffini";
+  | "ruffini"
+  | "sieve"
+  | "roman"
+  | "frequency"
+  | "net"
+  | "metric"
+  | "trinomial";
 export type UnitId =
   | "numeros"
   | "fracciones"

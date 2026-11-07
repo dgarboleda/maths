@@ -475,11 +475,11 @@ export const FACTOR_LESSONS: Lesson[] = [
       "Calcular el MCD y el MCM de dos o tres números con la tabla de factores primos y decidir cuál de los dos resuelve un problema.",
     purpose:
       "Los buses de la ciudad coinciden en el paradero cada cierto tiempo y las telas se cortan en trozos iguales sin desperdicio. Para saber cuándo y cuánto hay que encontrar múltiplos y divisores comunes.",
-    prerequisites: [],
+    prerequisites: ["numeros-primos"],
     legacyModuleIds: ["aritmetica-mcd-mcm"],
     visual: "factor-table",
     vocabulary: [
-      { term: "Número primo", meaning: "Solo se divide exactamente entre 1 y sí mismo: 2, 3, 5, 7, 11…" },
+      { term: "Número primo", meaning: "Número natural mayor que 1 que solo se divide exactamente entre 1 y sí mismo: 2, 3, 5, 7, 11…" },
       { term: "MCD", meaning: "Máximo común divisor: el mayor número que divide a todos a la vez." },
       { term: "MCM", meaning: "Mínimo común múltiplo: el menor número (distinto de 0) que es múltiplo de todos." },
       { term: "Tabla de factores", meaning: "Los números a la izquierda de una raya; a la derecha, en cada fila, un primo que divide a alguno." },

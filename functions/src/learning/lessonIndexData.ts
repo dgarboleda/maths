@@ -67,10 +67,32 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     ]
   },
   {
+    "id": "divisibilidad",
+    "unitId": "numeros",
+    "title": "Divisores, múltiplos y criterios de divisibilidad",
+    "prerequisites": []
+  },
+  {
+    "id": "numeros-primos",
+    "unitId": "numeros",
+    "title": "Números primos y descomposición en factores primos",
+    "prerequisites": [
+      "divisibilidad"
+    ]
+  },
+  {
+    "id": "numeros-romanos",
+    "unitId": "numeros",
+    "title": "Números romanos",
+    "prerequisites": []
+  },
+  {
     "id": "mcd-mcm",
     "unitId": "numeros",
     "title": "Divisores y múltiplos comunes: MCD y MCM",
-    "prerequisites": []
+    "prerequisites": [
+      "numeros-primos"
+    ]
   },
   {
     "id": "fracciones-unidad",
@@ -121,11 +143,38 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     ]
   },
   {
+    "id": "numeros-mixtos",
+    "unitId": "fracciones",
+    "title": "Fracciones impropias y números mixtos",
+    "prerequisites": [
+      "fracciones-unidad",
+      "fracciones-suma-resta"
+    ]
+  },
+  {
     "id": "operaciones-decimales",
     "unitId": "fracciones",
     "title": "Operar con decimales",
     "prerequisites": [
       "fraccion-decimal-porcentaje"
+    ]
+  },
+  {
+    "id": "numeros-reales",
+    "unitId": "numeros",
+    "title": "Números racionales e irracionales",
+    "prerequisites": [
+      "potencias-raices",
+      "fraccion-decimal-porcentaje"
+    ]
+  },
+  {
+    "id": "radicales",
+    "unitId": "numeros",
+    "title": "Simplificar y operar con raíces",
+    "prerequisites": [
+      "numeros-primos",
+      "numeros-reales"
     ]
   },
   {
@@ -169,6 +218,15 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "title": "Proporcionalidad inversa",
     "prerequisites": [
       "proporcionalidad"
+    ]
+  },
+  {
+    "id": "regla-tres-compuesta",
+    "unitId": "proporcionalidad",
+    "title": "Regla de tres compuesta",
+    "prerequisites": [
+      "proporcionalidad",
+      "proporcionalidad-inversa"
     ]
   },
   {
@@ -263,6 +321,23 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     ]
   },
   {
+    "id": "factorizacion",
+    "unitId": "expresiones",
+    "title": "Factorización de polinomios",
+    "prerequisites": [
+      "productos-notables"
+    ]
+  },
+  {
+    "id": "fracciones-algebraicas",
+    "unitId": "expresiones",
+    "title": "Fracciones algebraicas",
+    "prerequisites": [
+      "factorizacion",
+      "fracciones-suma-resta"
+    ]
+  },
+  {
     "id": "ruffini",
     "unitId": "expresiones",
     "title": "División de polinomios: regla de Ruffini",
@@ -285,7 +360,8 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "title": "Ecuaciones de segundo grado",
     "prerequisites": [
       "propiedad-distributiva",
-      "potencias-raices"
+      "potencias-raices",
+      "factorizacion"
     ]
   },
   {
@@ -317,11 +393,43 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     ]
   },
   {
+    "id": "logaritmos",
+    "unitId": "expresiones",
+    "title": "Logaritmos",
+    "prerequisites": [
+      "funciones-exponenciales"
+    ]
+  },
+  {
+    "id": "sistema-metrico",
+    "unitId": "geometria",
+    "title": "Unidades de longitud, masa y capacidad",
+    "prerequisites": [
+      "operaciones-decimales"
+    ]
+  },
+  {
     "id": "angulos",
     "unitId": "geometria",
     "title": "Ángulos y polígonos",
     "prerequisites": [
       "jerarquia-operaciones"
+    ]
+  },
+  {
+    "id": "clasificacion-figuras",
+    "unitId": "geometria",
+    "title": "Clasificar triángulos y cuadriláteros",
+    "prerequisites": [
+      "angulos"
+    ]
+  },
+  {
+    "id": "rectas-paralelas",
+    "unitId": "geometria",
+    "title": "Rectas paralelas cortadas por una secante",
+    "prerequisites": [
+      "angulos"
     ]
   },
   {
@@ -358,12 +466,36 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     ]
   },
   {
+    "id": "areas-poligonos",
+    "unitId": "geometria",
+    "title": "Área de paralelogramos, trapecios y polígonos regulares",
+    "prerequisites": [
+      "perimetro-area"
+    ]
+  },
+  {
+    "id": "area-superficie",
+    "unitId": "geometria",
+    "title": "Área lateral y total de prismas y cilindros",
+    "prerequisites": [
+      "volumen"
+    ]
+  },
+  {
     "id": "semejanza",
     "unitId": "geometria",
     "title": "Semejanza y escalas",
     "prerequisites": [
       "razones",
       "perimetro-area"
+    ]
+  },
+  {
+    "id": "tales-congruencia",
+    "unitId": "geometria",
+    "title": "Congruencia de triángulos y teorema de Tales",
+    "prerequisites": [
+      "semejanza"
     ]
   },
   {
@@ -400,6 +532,22 @@ export const LESSON_INDEX: readonly LessonSummary[] = [
     "prerequisites": [
       "pitagoras",
       "semejanza"
+    ]
+  },
+  {
+    "id": "tablas-frecuencia",
+    "unitId": "datos",
+    "title": "Tablas de frecuencias",
+    "prerequisites": [
+      "fraccion-decimal-porcentaje"
+    ]
+  },
+  {
+    "id": "graficos-estadisticos",
+    "unitId": "datos",
+    "title": "Gráficos de barras, pictogramas y gráficos circulares",
+    "prerequisites": [
+      "tablas-frecuencia"
     ]
   },
   {

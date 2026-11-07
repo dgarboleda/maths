@@ -79,6 +79,25 @@ export const PERU_MAP: Record<string, { competency: PeruCompetency; grade: PeruG
   "funcion-cuadratica": { competency: "regularidad", grade: 4 },
   "volumen-conos-esferas": { competency: "forma", grade: 5 },
   "probabilidad-condicional": { competency: "datos", grade: 5 },
+  // Temas añadidos al completar el programa.
+  divisibilidad: { competency: "cantidad", grade: 1 },
+  "numeros-primos": { competency: "cantidad", grade: 1 },
+  "numeros-romanos": { competency: "cantidad", grade: 1, base: true },
+  "numeros-mixtos": { competency: "cantidad", grade: 1 },
+  "numeros-reales": { competency: "cantidad", grade: 3 },
+  radicales: { competency: "cantidad", grade: 3 },
+  "regla-tres-compuesta": { competency: "regularidad", grade: 2 },
+  factorizacion: { competency: "regularidad", grade: 3 },
+  "fracciones-algebraicas": { competency: "regularidad", grade: 4 },
+  logaritmos: { competency: "regularidad", grade: 5 },
+  "sistema-metrico": { competency: "cantidad", grade: 1 },
+  "clasificacion-figuras": { competency: "forma", grade: 1 },
+  "rectas-paralelas": { competency: "forma", grade: 1 },
+  "areas-poligonos": { competency: "forma", grade: 1 },
+  "area-superficie": { competency: "forma", grade: 2 },
+  "tales-congruencia": { competency: "forma", grade: 3 },
+  "tablas-frecuencia": { competency: "datos", grade: 1 },
+  "graficos-estadisticos": { competency: "datos", grade: 1 },
 };
 
 /** Clase base opcional: disponible en el mapa, nunca recomendada ni exigida. */
