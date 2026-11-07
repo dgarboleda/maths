@@ -777,7 +777,7 @@ export const QUADRATIC_LESSONS: Lesson[] = [
         title: "Producto nulo",
         paragraphs: [
           "(x − 3)(x + 5) = 0 solo es posible si x − 3 = 0 o x + 5 = 0: las soluciones son 3 y −5.",
-          "Factorizar convierte una cuadrática en un producto: x² + 2x − 15 = (x − 3)(x + 5). Busca dos números que sumen 2 y multipliquen −15.",
+          "Factorizar convierte una cuadrática en un producto: x² + 2x − 15 = (x − 3)(x + 5). Se buscan las dos soluciones p y q: multiplican −15 y suman −2, el coeficiente de x con el signo cambiado (3 + (−5) = −2).",
         ],
         formula: "x² + bx + c = (x − p)(x − q) con p + q = −b, p · q = c",
       },
@@ -792,14 +792,14 @@ export const QUADRATIC_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Resuelve x² − 5x + 6 = 0.", [
-        ["Buscamos p y q: suma 5, producto 6", "2 + 3 = 5 y 2 · 3 = 6, así que son 2 y 3."],
+        ["Buscamos p y q: suma 5, producto 6", "La suma es −b = −(−5) = 5 y el producto es c = 6. Como 2 + 3 = 5 y 2 · 3 = 6, son 2 y 3."],
         ["(x − 2)(x − 3) = 0", "Factorizamos."],
         ["x = 2 o x = 3", "Producto nulo. Comprobación: 4 − 10 + 6 = 0 y 9 − 15 + 6 = 0."],
       ], "Las soluciones son 2 y 3."),
       ex("Una parcela rectangular tiene 4 m más de largo que de ancho y 45 m² de área. ¿Cuál es su ancho?", [
         ["x(x + 4) = 45", "Área = ancho × largo."],
-        ["x² + 4x − 45 = 0 → (x + 9)(x − 5) = 0", "Números que suman 4 y multiplican −45 → 9 y −5."],
-        ["x = 5 (x = −9 no es una longitud)", "Interpretamos en el contexto."],
+        ["x² + 4x − 45 = 0 → (x + 9)(x − 5) = 0", "p y q suman −4 y multiplican −45 → −9 y 5, así que los factores son (x − (−9)) = (x + 9) y (x − 5)."],
+        ["x = 5 (x = −9 no es una longitud)", "Producto nulo, e interpretamos en el contexto. Comprobación: 5 · 9 = 45."],
       ], "El ancho mide 5 m y el largo 9 m."),
     ],
     diagnostic: [

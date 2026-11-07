@@ -960,7 +960,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
       {
         title: "No es lo mismo al revés",
         paragraphs: [
-          "Si 22 estudiantes prefieren vóley y 14 son de 5.°, P(5.° | vóley) = 14/22 ≈ 0,64, distinto de 0,7.",
+          "Al revés, el grupo conocido es otro: si 22 estudiantes prefieren vóley y 14 de ellos son de 5.°, P(5.° | vóley) = 14/22 ≈ 0,64, distinto de 0,7.",
           "Confundir P(A | B) con P(B | A) es un error frecuente en titulares y en la interpretación de pruebas médicas.",
         ],
         formula: "P(vóley | 5.°) ≠ P(5.° | vóley)",
@@ -984,7 +984,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
         ["Infectados: 20; positivos entre ellos: 18", "El 90% de 20 son 18."],
         ["Sanos: 980; falsos positivos: 49", "El 5% de 980 son 49."],
         ["P(infectado | positivo) = 18 ÷ (18 + 49) = 18/67 ≈ 0,27", "Hay muchos más sanos, así que la mayoría de positivos son falsos."],
-      ], "Solo un 27% aproximado de los positivos está infectado."),
+      ], "Solo alrededor del 27% de los positivos está infectado, aunque la prueba detecte al 90% de los infectados."),
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 12/20 como decimal?", 0.6, ["Una fracción es una división: 12/20 = 12 ÷ 20.", "Simplificando, 12/20 = 3/5 = 0,6."], ["Simplifica: 12/20 = 3/5.", "3 ÷ 5.", "0,6."]),

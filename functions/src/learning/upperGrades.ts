@@ -255,8 +255,8 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
       {
         title: "Al principio parecido, después enorme",
         paragraphs: [
-          "Con valores pequeños de n, sumar y multiplicar dan resultados cercanos; con el tiempo, el factor acumulado hace que el exponencial supere a cualquier lineal.",
-          "Por eso 2¹⁰ = 1024: diez duplicaciones convierten 1 en más de mil.",
+          "Con valores pequeños de n, sumar y multiplicar dan resultados cercanos; con el tiempo, si el factor es mayor que 1, el factor acumulado hace que el exponencial supere a cualquier lineal. Si está entre 0 y 1, la cantidad se acerca a 0 sin llegar nunca.",
+          "Por ejemplo, 2¹⁰ = 1024: diez duplicaciones convierten 1 en más de mil, mientras que sumar 2 diez veces solo llega a 21.",
         ],
         formula: "2¹⁰ = 1024",
       },
@@ -479,11 +479,11 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
         ["sen α = 6/10", "El seno es cateto opuesto entre hipotenusa; el lado 6 está frente al ángulo α."],
         ["sen α = 0,6", "Simplificamos: es el mismo seno que en el triángulo 3-4-5, que es semejante."],
       ], "sen α = 0,6."),
-      ex("Desde 20 m de un edificio, su parte más alta se ve con un ángulo α tal que tan α = 0,84. ¿Qué altura tiene?", [
-        ["tan α = h ÷ 20", "La altura es el cateto opuesto y la distancia, el adyacente."],
-        ["h = 20 · 0,84", "Despejamos h multiplicando por 20."],
-        ["h = 16,8 m", "Medida desde la altura de los ojos de quien mira."],
-      ], "El edificio mide unos 16,8 m sobre la altura de los ojos."),
+      ex("Una persona cuyos ojos están a 1,5 m del suelo mira, desde 20 m de un edificio, su parte más alta con un ángulo α tal que tan α = 0,84. ¿Qué altura tiene el edificio?", [
+        ["tan α = h ÷ 20", "El triángulo empieza a la altura de los ojos: h es el cateto opuesto y la distancia, el adyacente."],
+        ["h = 20 · 0,84 = 16,8 m", "Despejamos h multiplicando por 20: es la altura por encima de los ojos."],
+        ["16,8 + 1,5 = 18,3 m", "Sumamos lo que hay entre el suelo y los ojos, que el triángulo no incluye."],
+      ], "El edificio mide unos 18,3 m. Responder 16,8 m sería olvidar la altura de los ojos."),
     ],
     diagnostic: [
       n("d-1", "Un triángulo rectángulo tiene catetos de 3 y 4. ¿Cuánto mide la hipotenusa?", 5, ["En un triángulo rectángulo, la hipotenusa cumple c² = a² + b².", "3² + 4² = 9 + 16 = 25, y √25 = 5."], ["Usa a² + b² = c².", "9 + 16 = 25.", "√25 = 5."]),
