@@ -85,53 +85,6 @@ export function CommaSlotRow({
   );
 }
 
-/**
- * Control de la coma de una hoja: los huecos no se muestran hasta pedirlo
- * (una fila de comas entre todas las casillas distrae). También se puede
- * escribir «,» en la casilla, con el teclado o con la tecla del teclado propio.
- */
-export function CommaControl({
-  placed,
-  picking,
-  onPicking,
-  onRemove,
-  disabled,
-}: {
-  placed: boolean;
-  picking: boolean;
-  onPicking: (on: boolean) => void;
-  onRemove: () => void;
-  disabled?: boolean;
-}) {
-  const small =
-    "inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-600 bg-slate-900 px-3 text-sm font-semibold text-slate-100 hover:bg-slate-800 disabled:opacity-50";
-  return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      {picking ? (
-        <>
-          <span className="text-cyan-100">Toca el hueco donde va la coma.</span>
-          {placed && (
-            <button type="button" className={small} disabled={disabled} onClick={onRemove}>
-              Quitar la coma
-            </button>
-          )}
-          <button type="button" className={small} disabled={disabled} onClick={() => onPicking(false)}>
-            Cancelar
-          </button>
-        </>
-      ) : (
-        <>
-          <button type="button" className={small} disabled={disabled} onClick={() => onPicking(true)}>
-            <span aria-hidden="true" className="text-xl font-bold leading-none">,</span>
-            {placed ? "Mover la coma" : "Poner la coma"}
-          </button>
-          <span className="text-xs text-slate-400">También puedes escribir «,» en la casilla.</span>
-        </>
-      )}
-    </div>
-  );
-}
-
 /** «,» o «.» escrito en una casilla de una cifra: se pone la coma y la cifra no cambia. */
 export const typedComma = (raw: string) => /[,.]/.test(raw);
 
@@ -295,7 +248,8 @@ function Grid({
   idPrefix: string;
   disabled?: boolean;
 }) {
-  const keypadMode = useSheetInputMode("numeric");
+  // Con decimales, el teclado del teléfono también ofrece la coma.
+  const keypadMode = useSheetInputMode(trace.scale ? "decimal" : "numeric");
   const columns = Math.max(trace.steps.length, result.length);
   // De izquierda a derecha en pantalla: la columna más alta primero.
   const order = Array.from({ length: columns }, (_, k) => columns - 1 - k);
@@ -616,7 +570,6 @@ export function ColumnSheet({
   const [commaAt, setCommaAt] = useState<number | null>(scale ? initial.comma : null);
   const [commaOk, setCommaOk] = useState(false);
   const [commaMiss, setCommaMiss] = useState<number | null>(null);
-  const [picking, setPicking] = useState(false);
   const [notes, setNotes] = useState<string[]>(() => Array(cells).fill(""));
   const [miss, setMiss] = useState<{ column: number; value: string } | null>(null);
   const [lastWhy, setLastWhy] = useState<string>("");
@@ -651,16 +604,15 @@ export function ColumnSheet({
   };
   const placeComma = (k: number | null) => {
     setCommaAt(k);
-    setPicking(false);
     emit(digits, k);
   };
   // «,» en una casilla: la coma va justo después de la última cifra escrita
   // (se escribe de derecha a izquierda): a la izquierda de una casilla llena,
-  // a la derecha de una vacía.
+  // a la derecha de una vacía. Escribirla donde ya está la quita.
   const typeComma = (i: number, filled: boolean) => {
     if (mode !== "free" || !scale) return;
     const k = filled ? i + 1 : i;
-    if (k >= 1 && k < cells) placeComma(k);
+    if (k >= 1 && k < cells) placeComma(k === commaAt ? null : k);
   };
 
   const focus = (i: number) => refs.current[i]?.focus();
@@ -743,17 +695,8 @@ export function ColumnSheet({
         disabled={disabled}
         resultComma={mode === "guided" ? (commaOk ? scale : null) : commaAt}
         onComma={typeComma}
-        slots={
-          askingComma
-            ? { active: commaMiss, onPick: pickComma, wrong: commaMiss !== null }
-            : mode === "free" && scale > 0 && picking
-              ? { active: commaAt, onPick: pickComma, wrong: commaWrong }
-              : undefined
-        }
+        slots={askingComma ? { active: commaMiss, onPick: pickComma, wrong: commaMiss !== null } : undefined}
       />
-      {mode === "free" && scale > 0 && (
-        <CommaControl placed={commaAt !== null} picking={picking} onPicking={setPicking} onRemove={() => placeComma(null)} disabled={disabled} />
-      )}
       <div aria-live="polite" className="text-sm leading-relaxed">
         {mode === "guided" ? (
           askingComma ? (
@@ -786,7 +729,7 @@ export function ColumnSheet({
         ) : (
           <p className="text-xs text-slate-400">
             Escribe el resultado desde la derecha. Arriba puedes anotar llevadas o préstamos.
-            {scale ? " Después pon la coma: escribe «,» donde va o usa «Poner la coma»." : ""}
+            {scale ? " Pon la coma escribiendo «,» en la casilla donde va (otra vez en el mismo sitio, la quitas)." : ""}
           </p>
         )}
       </div>

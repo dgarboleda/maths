@@ -87,14 +87,21 @@ export function CalculatorPanel({
     if (open) heading.current?.focus();
   }, [open]);
 
-  const write = () => {
-    const outcome = calculatorSpec(op, a, b, continueDecimal);
+  const write = (next = { op, a, b }, decimals = continueDecimal) => {
+    const outcome = calculatorSpec(next.op, next.a, next.b, decimals);
     if ("problem" in outcome) return setProblem(outcome.problem);
     setProblem(null);
     setWork("");
     setRevision((n) => n + 1);
     setSpec(outcome.spec);
-    setWritten({ op, a, b });
+    setWritten(next);
+  };
+  // Con coma en los números, la división siempre sigue con decimales.
+  const forcedDecimals = a.includes(",") || b.includes(",");
+  /** La casilla se aplica al momento a la división que ya está escrita. */
+  const toggleDecimals = (on: boolean) => {
+    setContinueDecimal(on);
+    if (written?.op === "divide") write(written, on);
   };
   const result = spec ? calculatorResult(spec, work) : "";
   const last = chain.at(-1);
@@ -202,14 +209,20 @@ export function CalculatorPanel({
               {op === "divide" ? "Divisor" : op === "multiply" ? "Segundo factor" : "Segundo número"}
               <input ref={second} className={field} inputMode="decimal" maxLength={11} value={b} onChange={(e) => setB(decimalInput(e.target.value))} />
             </label>
-            <button type="button" className={secondaryButton} onClick={write}>
+            <button type="button" className={secondaryButton} onClick={() => write()}>
               Escribir la cuenta
             </button>
           </div>
           {op === "divide" && (
             <label className="flex items-center gap-2 text-sm text-slate-300">
-              <input type="checkbox" checked={continueDecimal} onChange={(e) => setContinueDecimal(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={continueDecimal || forcedDecimals}
+                disabled={forcedDecimals}
+                onChange={(e) => toggleDecimals(e.target.checked)}
+              />
               Continuar la división con decimales
+              {forcedDecimals && <span className="text-xs text-slate-400">(con coma en los números, siempre)</span>}
             </label>
           )}
           {problem && <p role="alert" className="text-sm text-amber-200">{problem}</p>}

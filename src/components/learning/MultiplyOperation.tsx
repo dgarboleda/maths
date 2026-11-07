@@ -16,7 +16,7 @@ import { useSheetInputMode } from "./NumericKeypad";
 import { secondaryButton } from "./LearningShell";
 import { Challenge } from "./Challenge";
 import { Slider } from "./GraphVisuals";
-import { Comma, CommaControl, CommaSlotRow, columnsText, OptionPicker, placeColor, typedComma, writtenColumns } from "./ColumnOperation";
+import { Comma, CommaSlotRow, columnsText, OptionPicker, placeColor, typedComma, writtenColumns } from "./ColumnOperation";
 
 /* Multiplicación en columnas: el factor de más cifras arriba y el otro
  * debajo, alineados por la derecha (no por la coma). Una fila por cada cifra
@@ -89,7 +89,8 @@ function Grid({
   idPrefix: string;
   disabled?: boolean;
 }) {
-  const keypadMode = useSheetInputMode("numeric");
+  // Con decimales, el teclado del teléfono también ofrece la coma.
+  const keypadMode = useSheetInputMode(trace.scale ? "decimal" : "numeric");
   const order = Array.from({ length: columns }, (_, k) => columns - 1 - k);
   const { scaleA, scaleB } = trace;
   // Con coma, el 0 de las unidades también se escribe (0,4).
@@ -182,7 +183,7 @@ function Row({
   inputRefs?: React.MutableRefObject<Map<string, HTMLInputElement | null>>;
   idPrefix: string;
   disabled?: boolean;
-  keypadMode: "none" | "numeric" | "text";
+  keypadMode: "none" | "numeric" | "decimal" | "text";
 }) {
   const comma = (i: number) => (row.comma && i === row.comma ? <Comma /> : null);
   return (
@@ -375,7 +376,6 @@ export function MultiplySheet({
   // La coma la pone el alumno: hueco k, con k cifras a su derecha.
   const [commaAt, setCommaAt] = useState<number | null>(initial.comma || null);
   const [commaMiss, setCommaMiss] = useState<number | null>(null);
-  const [picking, setPicking] = useState(false);
 
   const active = mode === "guided" && filled < writing.length ? writing[filled] : null;
   const askingComma = mode === "guided" && !active && !!commaStep && !commaOk;
@@ -441,7 +441,6 @@ export function MultiplySheet({
   };
   const placeComma = (k: number | null) => {
     setCommaAt(k);
-    setPicking(false);
     emitFree(digits, k);
   };
   // «,» en una casilla del producto: justo después de la última cifra escrita
@@ -449,7 +448,8 @@ export function MultiplySheet({
   const typeComma = (row: string, i: number, filled: boolean) => {
     if (mode !== "free" || !trace.scale || row !== resultKey) return;
     const k = filled ? i + 1 : i;
-    if (k >= 1 && k < columns) placeComma(k);
+    // Escribirla donde ya está la quita.
+    if (k >= 1 && k < columns) placeComma(k === commaAt ? null : k);
   };
 
   // Tras un intento fallido (fuera de las comprobaciones): qué revisar.
@@ -522,14 +522,9 @@ export function MultiplySheet({
             ? askingComma
               ? { active: commaMiss, onPick: pickComma, wrong: commaMiss !== null }
               : undefined
-            : trace.scale > 0 && picking
-              ? { active: commaAt, onPick: pickComma, wrong: commaOnly }
-              : undefined
+            : undefined
         }
       />
-      {mode === "free" && trace.scale > 0 && (
-        <CommaControl placed={commaAt !== null} picking={picking} onPicking={setPicking} onRemove={() => placeComma(null)} disabled={disabled} />
-      )}
       <div aria-live="polite" className="text-sm leading-relaxed">
         {mode === "guided" ? (
           askingComma && commaMiss !== null ? (
@@ -560,7 +555,7 @@ export function MultiplySheet({
           <p className="text-xs text-slate-400">
             Escribe el producto en la última fila, desde la derecha.
             {scratchRows ? " Arriba tienes filas de borrador para cada cifra de abajo." : ""}
-            {trace.scale ? " Después pon la coma: escribe «,» donde va o usa «Poner la coma»." : ""}
+            {trace.scale ? " Pon la coma escribiendo «,» en la casilla donde va (otra vez en el mismo sitio, la quitas)." : ""}
           </p>
         )}
       </div>
