@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Compass } from "lucide-react";
 import { useLearningData } from "@/lib/learning/useLearningData";
-import { ADVENTURES, LEARNING_UNITS } from "@/lib/learning/domain";
+import { ADVENTURES, LEARNING_UNITS } from "@/lib/learning/core";
 import {
   LearningLoading,
   LearningLoadError,

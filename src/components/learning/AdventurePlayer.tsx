@@ -8,13 +8,15 @@ import {
   useLearningAction,
   useLearningData,
 } from "@/lib/learning/useLearningData";
+// `core`, no `domain`: la aventura solo necesita los títulos de sus clases
+// (índice ligero), no el catálogo completo con todos los bancos.
 import {
   getAdventure,
-  getLesson,
+  getLessonSummary,
   initialAdventure,
   type AdventureDef,
   type AdventureState,
-} from "@/lib/learning/domain";
+} from "@/lib/learning/core";
 import {
   LearningLoading,
   LearningLoadError,
@@ -281,7 +283,7 @@ function AdventureGame({
               href={`/jugar/${childId}/aprende/${id}`}
               className={secondaryButton}
             >
-              {getLesson(id)?.title ?? id}
+              {getLessonSummary(id)?.title ?? id}
             </Link>
           ))}
         </div>
