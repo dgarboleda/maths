@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Borrador } from "./Borrador";
+import { OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
 import { useState } from "react";
 import { CheckCircle2, Circle, Minus, Plus, Search, Zap } from "lucide-react";
 import {
@@ -91,6 +91,12 @@ function AdventureGame({
     setInvalid(null);
     setValues((old) => old.map((v, at) => (at === i ? value : v)));
   };
+  // La calculadora global puede pasar su resultado a un valor del plan.
+  useCalculatorTarget(
+    adventure.inputs.map((input) => input.label),
+    (value, i) => change(i, value),
+    state.inspected && !mutation.blocked,
+  );
   const nudge = (i: number, delta: number) => {
     const input = adventure.inputs[i],
       current = Number(values[i].replace("−", "-"));
@@ -232,11 +238,7 @@ function AdventureGame({
                   </div>
                 ))}
               </fieldset>
-              <Borrador
-                targets={adventure.inputs.map((input) => input.label)}
-                disabled={mutation.blocked}
-                onUse={(value, i) => change(i, value)}
-              />
+              <OpenCalculatorButton disabled={mutation.blocked} />
               {invalid && (
                 <p role="alert" className="text-sm text-amber-200">
                   {invalid}

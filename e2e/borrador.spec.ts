@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 import { escribirColumnas } from "./operaciones";
 
-test("borrador de cálculo en una aventura: la cuenta se hace en columnas y el resultado pasa al plan", async ({ page }, testInfo) => {
+test("calculadora global en una aventura: la cuenta se hace en columnas y el resultado pasa al plan", async ({ page }, testInfo) => {
   test.setTimeout(180_000);
   if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
   await registrarPadre(page);
@@ -14,14 +14,18 @@ test("borrador de cálculo en una aventura: la cuenta se hace en columnas y el r
   await page.getByRole("button", { name: "Investigar la situación" }).click();
   await page.getByLabel("Lado del jardín (m)").fill("8");
 
-  // 4 lados de 8 baldosas y 4 esquinas: 32 + 4 en el borrador.
-  await page.getByRole("button", { name: /Borrador de cálculo/ }).click();
+  // 4 lados de 8 baldosas y 4 esquinas: 32 + 4 en la calculadora (botón flotante).
+  await page.getByRole("button", { name: "Calculadora", exact: true }).click();
   await page.getByLabel("Primer número").fill("32");
   await page.getByLabel("Segundo número").fill("4");
   await page.getByRole("button", { name: "Escribir la cuenta" }).click();
   await escribirColumnas(page, "36");
   await page.getByLabel("Copiar en").selectOption({ label: "Baldosas" });
+  expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath("calculadora-panel.png"), fullPage: false });
   await page.getByRole("button", { name: "Usar 36", exact: true }).click();
+  // Al usar el resultado, el panel se cierra y el valor queda en el plan.
+  await expect(page.getByRole("complementary", { name: "Calculadora" })).toBeHidden();
   await expect(page.getByLabel("Baldosas", { exact: true })).toHaveValue("36");
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -40,7 +44,7 @@ test("teclado numérico propio en móvil: escribe en la hoja sin abrir el del si
   await page.goto(`/jugar/${childId}/aventura`);
   await page.getByRole("link", { name: /El jardín de baldosas/ }).click();
   await page.getByRole("button", { name: "Investigar la situación" }).click();
-  await page.getByRole("button", { name: /Borrador de cálculo/ }).click();
+  await page.getByRole("button", { name: "Hacer cuentas en la calculadora" }).click();
   await page.getByLabel("Primer número").fill("32");
   await page.getByLabel("Segundo número").fill("4");
   await page.getByRole("button", { name: "Escribir la cuenta" }).click();
@@ -52,7 +56,7 @@ test("teclado numérico propio en móvil: escribe en la hoja sin abrir el del si
   await keypad.getByRole("button", { name: "Escribir 6" }).tap();
   await keypad.getByRole("button", { name: "Escribir 3" }).tap();
   await expect(page.getByRole("button", { name: "Usar 36", exact: true })).toBeVisible();
-  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+  expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("teclado-movil.png"), fullPage: false });
 });
