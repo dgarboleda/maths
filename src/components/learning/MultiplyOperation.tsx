@@ -90,14 +90,14 @@ function Grid({
   const topDigits = digitsOf(trace.A, scaleA + 1);
   const bottomDigits = digitsOf(trace.B, scaleB + 1);
   const cell = "flex h-11 w-8 items-center justify-center text-2xl font-bold tabular-nums sm:h-12 sm:w-11 sm:text-3xl";
-  const say = (n: number) => String(n).replace(".", ",");
+  const say = (n: number, scale: number) => n.toFixed(scale).replace(".", ",");
   return (
     <div
       data-arrow-nav=""
       className="overflow-x-auto"
       tabIndex={0}
       role="group"
-      aria-label={`${say(trace.spec.a)} por ${say(trace.spec.b)} en columnas`}
+      aria-label={`${say(trace.spec.a, scaleA)} por ${say(trace.spec.b, scaleB)} en columnas`}
     >
       <div className="mx-auto grid w-max gap-x-1" style={{ gridTemplateColumns: `1.75rem repeat(${columns}, auto)` }}>
         {/* Llevadas */}

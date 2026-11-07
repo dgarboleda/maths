@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import dynamic from "next/dynamic";
 import { MathText } from "@/components/MathText";
 import {
   checkDivisionWork,
@@ -34,12 +35,15 @@ import {
   StrategyPicker,
   useSubtractStrategy,
 } from "./ColumnOperation";
-import { FactorDemo, FactorSheet } from "./FactorOperation";
-import { MultiplyDemo, MultiplySheet } from "./MultiplyOperation";
 import { NumericKeypadArea } from "./NumericKeypad";
-import { RuffiniDemo, RuffiniSheet } from "./RuffiniOperation";
 import { DivisionDemo, DivisionSheet, firstWrongQuotientDigit, LayoutPicker, useDivisionLayout } from "./DivisionOperation";
 
+const FactorDemo = dynamic(() => import("./FactorOperation").then((module) => module.FactorDemo));
+const FactorSheet = dynamic(() => import("./FactorOperation").then((module) => module.FactorSheet));
+const MultiplyDemo = dynamic(() => import("./MultiplyOperation").then((module) => module.MultiplyDemo));
+const MultiplySheet = dynamic(() => import("./MultiplyOperation").then((module) => module.MultiplySheet));
+const RuffiniDemo = dynamic(() => import("./RuffiniOperation").then((module) => module.RuffiniDemo));
+const RuffiniSheet = dynamic(() => import("./RuffiniOperation").then((module) => module.RuffiniSheet));
 /* Punto de entrada único para las operaciones escritas (suma, resta,
  * multiplicación y división larga): elige la hoja, la demostración y las ayudas según la
  * operación y las preferencias del alumno. */

@@ -75,6 +75,9 @@ describe("Multiplicación en columnas", () => {
     const small = multiplyTrace({ op: "multiply", a: 0.2, b: 0.3 });
     expect(small.resultDigits).toEqual([6, 0, 0]);
     expect(small.steps.at(-1)!.why).toMatch(/completas con 2 ceros a la izquierda: 0,06/);
+    const writtenZeros = multiplyTrace({ op: "multiply", a: 2.5, b: 0.4, scaleA: 2, scaleB: 1 });
+    expect([writtenZeros.A, writtenZeros.B, writtenZeros.scale, writtenZeros.result]).toEqual([250, 4, 3, 1]);
+    expect(writtenZeros.steps.at(-1)?.why).toContain("2,50 tiene 2");
     expect(fmtProduct(6, 2)).toBe("0,06");
     expect(fmtProduct(12345, 1)).toBe("1 234,5");
     expect(multiplyHints({ op: "multiply", a: 2.4, b: 0.3 })[0]).toMatch(/cuenta los decimales/);
@@ -156,6 +159,16 @@ describe("División con decimales", () => {
     expect(bugs(6.12, 6)).toMatchObject({ "cero-omitido": 1.2 });
     expect(exactPlaces(3, 4)).toBe(2);
     expect(exactPlaces(10, 3)).toBeNull();
+  });
+
+  test("sin precisión explícita continúa una división decimal hasta ser exacta", () => {
+    const spec = { op: "divide" as const, a: 1.2, b: 8 };
+    expect(divisionTrace(spec).quotient).toBe(0.15);
+    expect(divisionResponseCorrect(spec, "0,1")).toBe(false);
+    expect(divisionResponseCorrect(spec, "0,15")).toBe(true);
+    const recurring = divisionTrace({ op: "divide", a: 1.2, b: 7 });
+    expect([recurring.quotient, recurring.decimals]).toEqual([0.1714, 4]);
+    expect(recurring.remainder).toBeGreaterThan(0);
   });
 
   test("las divisiones naturales no cambian", () => {

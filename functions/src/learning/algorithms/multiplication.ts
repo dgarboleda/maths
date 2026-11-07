@@ -10,7 +10,7 @@
  *
  * Puro: sin React ni Firebase, compartido por Functions y el navegador.
  */
-import { decimalsOf, digitsOf, fmt, placeName } from "./columns";
+import { decimalsOf, digitsOf, fmt, fmtFixed, placeName } from "./columns";
 
 export interface MultiplySpec {
   op: "multiply";
@@ -18,6 +18,9 @@ export interface MultiplySpec {
   a: number;
   /** Factor de abajo (hasta 3 cifras sin contar la coma). */
   b: number;
+  /** Cifras escritas, incluidos ceros finales significativos. */
+  scaleA?: number;
+  scaleB?: number;
 }
 
 /** Una fila de productos parciales: todo el número de arriba por una cifra de abajo. */
@@ -82,7 +85,7 @@ const fromDigits = (digits: number[]) => digits.reduceRight((acc, d) => acc * 10
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 export function multiplyScaled(spec: MultiplySpec) {
-  const scaleA = decimalsOf(spec.a), scaleB = decimalsOf(spec.b);
+  const scaleA = spec.scaleA ?? decimalsOf(spec.a), scaleB = spec.scaleB ?? decimalsOf(spec.b);
   return {
     scaleA,
     scaleB,
@@ -94,7 +97,7 @@ export function multiplyScaled(spec: MultiplySpec) {
 export function validMultiplySpec(spec: MultiplySpec): boolean {
   if (!Number.isFinite(spec.a) || !Number.isFinite(spec.b) || spec.a <= 0 || spec.b <= 0) return false;
   const { scaleA, scaleB, A, B } = multiplyScaled(spec);
-  return scaleA <= 3 && scaleB <= 3 && A < 1e6 && B < 1000 && Number.isSafeInteger(A * B);
+  return Number.isInteger(scaleA) && Number.isInteger(scaleB) && scaleA >= decimalsOf(spec.a) && scaleB >= decimalsOf(spec.b) && scaleA <= 3 && scaleB <= 3 && A < 1e6 && B < 1000 && Number.isSafeInteger(A * B);
 }
 
 /** Valor de un producto sin coma con `scale` decimales. */
@@ -222,7 +225,7 @@ export function multiplyTrace(spec: MultiplySpec): MultiplyTrace {
       carry: 0,
       topIndex: -1,
       ask: "¿Cuántas cifras decimales lleva el producto? Cuenta las de los dos factores.",
-      why: `${fmt(spec.a)} tiene ${scaleA} ${plural(scaleA, "cifra decimal", "cifras decimales")} y ${fmt(spec.b)} tiene ${scaleB}: el producto lleva ${scale}. Separas ${scale} ${plural(scale, "cifra", "cifras")} desde la derecha${
+      why: `${fmtFixed(spec.a, scaleA)} tiene ${scaleA} ${plural(scaleA, "cifra decimal", "cifras decimales")} y ${fmtFixed(spec.b, scaleB)} tiene ${scaleB}: el producto lleva ${scale}. Separas ${scale} ${plural(scale, "cifra", "cifras")} desde la derecha${
         missing ? ` y, como no alcanzan, completas con ${missing === 1 ? "un cero" : `${missing} ceros`} a la izquierda` : ""
       }: ${fmtProduct(product, scale)}.`,
     });
@@ -249,7 +252,7 @@ export function multiplyTrace(spec: MultiplySpec): MultiplyTrace {
 }
 
 export function multiplyExpression(spec: MultiplySpec): string {
-  return `${fmt(spec.a)} × ${fmt(spec.b)}`;
+  return `${fmtFixed(spec.a, spec.scaleA ?? decimalsOf(spec.a))} × ${fmtFixed(spec.b, spec.scaleB ?? decimalsOf(spec.b))}`;
 }
 
 export function multiplySolution(spec: MultiplySpec): string[] {

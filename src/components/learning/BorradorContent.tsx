@@ -78,6 +78,8 @@ export function Borrador({
   const [target, setTarget] = useState(0);
   const [strategy] = useSubtractStrategy();
   const [problem, setProblem] = useState<string | null>(null);
+  const [continueDecimal, setContinueDecimal] = useState(false);
+  const [revision, setRevision] = useState(0);
 
   const write = () => {
     const [x, y] = [Number(a.replace(",", ".")), Number(b.replace(",", "."))];
@@ -91,12 +93,14 @@ export function Borrador({
     if (op === "multiply") {
       // Arriba va el factor de más cifras.
       const [top, bottom] = String(multiplyScaled({ op, a: y, b: x }).A).length > String(multiplyScaled({ op, a: x, b: y }).A).length ? [y, x] : [x, y];
-      next = { op, a: top, b: bottom };
+      const scale = (value: string) => (value.split(",")[1] ?? "").length;
+      const swapped = top === y && bottom === x && x !== y;
+      next = { op, a: top, b: bottom, scaleA: scale(swapped ? b : a), scaleB: scale(swapped ? a : b) };
       if (!validMultiplySpec(next)) return setProblem("El factor más corto puede tener hasta 3 cifras, y el otro, hasta 6.");
     } else if (op === "divide") {
       next = { op, a: x, b: y };
-      // Con coma, se sigue dividiendo hasta que sea exacta (o hasta las centésimas).
-      if (isDecimalDivision(next)) next = { ...next, places: exactPlaces(x, y, 3) ?? 2 };
+      // Hasta tres decimales: así el resultado se puede usar en otra cuenta.
+      if (isDecimalDivision(next) || a.includes(",") || b.includes(",") || continueDecimal) next = { ...next, places: exactPlaces(x, y, 3) ?? 3 };
       if (y > 999 || Math.round(y * 10 ** (b.split(",")[1]?.length ?? 0)) > 999) return setProblem("El divisor puede tener hasta 3 cifras.");
       if (!validDivisionSpec(next)) return setProblem("Usa números menores que 10 000 000.");
     } else {
@@ -106,6 +110,7 @@ export function Borrador({
     }
     setProblem(null);
     setWork("");
+    setRevision((n) => n + 1);
     setSpec(next);
   };
   const result = spec ? resultOf(spec, work) : "";
@@ -149,18 +154,33 @@ export function Borrador({
               Escribir la cuenta
             </button>
           </div>
+          {op === "divide" && (
+            <label className="flex items-center gap-2 text-sm text-slate-300">
+              <input type="checkbox" checked={continueDecimal} disabled={disabled} onChange={(e) => setContinueDecimal(e.target.checked)} />
+              Continuar la división con decimales
+            </label>
+          )}
           {problem && <p role="alert" className="text-sm text-amber-200">{problem}</p>}
           {spec && (
             <>
               <NumericKeypadArea>
                 {spec.op === "divide" ? (
-                  <DivisionSheet key={`${spec.a}/${spec.b}`} spec={spec} layout="completa" mode="open" response="" onChange={setWork} />
+                  <DivisionSheet key={`division-${revision}`} spec={spec} layout="completa" mode="open" response="" onChange={setWork} />
                 ) : spec.op === "multiply" ? (
-                  <MultiplySheet key={`${spec.a}x${spec.b}`} spec={spec} mode="free" response="" onChange={setWork} />
+                  <MultiplySheet key={`multiply-${revision}`} spec={spec} mode="free" response="" onChange={setWork} />
                 ) : (
-                  <ColumnSheet key={`${spec.op}${spec.a}-${spec.b}-${strategy}`} spec={spec} strategy={strategy} mode="free" response="" onChange={setWork} />
+                  <ColumnSheet key={`${revision}-${strategy}`} spec={spec} strategy={strategy} mode="free" response="" onChange={setWork} />
                 )}
               </NumericKeypadArea>
+              {result && spec.op === "divide" && divisionTrace(spec).remainder !== 0 && (
+                <p className="text-sm text-amber-200">El cociente es incompleto: todavía queda un resto. Si lo usas, el siguiente cálculo será aproximado.</p>
+              )}
+              {result && (
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className={secondaryButton} disabled={disabled} onClick={() => setA(result)}>Usar {result} como primer número</button>
+                  <button type="button" className={secondaryButton} disabled={disabled} onClick={() => setB(result)}>Usar {result} como segundo número</button>
+                </div>
+              )}
               {onUse && targets.length > 0 && (
                 <div className="flex flex-wrap items-end gap-2">
                   {targets.length > 1 && (

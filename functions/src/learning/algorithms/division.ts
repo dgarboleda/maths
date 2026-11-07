@@ -109,7 +109,15 @@ export function divisionTrace(spec: DivisionSpec, layout: DivisionLayout = "comp
   if (!validDivisionSpec(spec)) throw new Error(`División no válida: ${JSON.stringify(spec)}`);
   const { shift, divisor: b, dividend } = shifted(spec);
   const [intText, fracText = ""] = String(dividend).split(".");
-  const decimals = Math.max(fracText.length, spec.places ?? 0);
+  // Si no se indicó precisión, completar una división decimal hasta que sea
+  // exacta. Para periódicos se muestran cuatro cifras como aproximación.
+  let places = spec.places;
+  if (places === undefined && isDecimalDivision(spec)) {
+    const whole = Number(intText + fracText);
+    places = fracText.length;
+    while (places < 4 && (whole * 10 ** (places - fracText.length)) % b !== 0) places++;
+  }
+  const decimals = Math.max(fracText.length, places ?? 0);
   const padded = decimals - fracText.length;
   const intLength = intText.length;
   const digits = (intText + fracText + "0".repeat(padded)).split("").map(Number);
@@ -246,7 +254,7 @@ export function divisionSolution(spec: DivisionSpec, layout: DivisionLayout = "c
   const check = !isDecimalDivision(spec)
     ? `Cociente ${fmt(t.quotient)}${t.remainder ? ` y resto ${t.remainder}` : ", resto 0"}. Comprobación: ${fmt(t.quotient)} × ${fmt(spec.b)}${t.remainder ? ` + ${t.remainder}` : ""} = ${fmt(spec.a)}.`
     : t.remainder
-      ? `Cociente ${t.quotientText}, con ${t.decimals} ${t.decimals === 1 ? "cifra decimal" : "cifras decimales"}: la división no es exacta. Comprobación: ${t.quotientText} × ${fmt(spec.b)} = ${fmt(Number((t.quotient * spec.b).toFixed(6)))}, casi ${fmt(spec.a)}.`
+      ? `Cociente aproximado por truncamiento ${t.quotientText}, con ${t.decimals} ${t.decimals === 1 ? "cifra decimal" : "cifras decimales"}: la división no es exacta. Comprobación: ${t.quotientText} × ${fmt(spec.b)} = ${fmt(Number((t.quotient * spec.b).toFixed(6)))}, casi ${fmt(spec.a)}.`
       : `Cociente ${t.quotientText}. Comprobación: ${t.quotientText} × ${fmt(spec.b)} = ${fmt(spec.a)}.`;
   return [...intro, ...t.steps.map((s) => s.why), check];
 }

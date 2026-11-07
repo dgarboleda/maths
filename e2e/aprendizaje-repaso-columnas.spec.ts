@@ -5,6 +5,7 @@ import {
   initialMixedReview,
   mixedQuestions,
   planMixedReview,
+  scaled,
   type Question,
 } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
@@ -19,7 +20,8 @@ async function responder(page: Page, question: Question, fallar = false) {
   else if (question.column?.op === "divide")
     // En los repasos la galera está en blanco.
     await escribirGaleraAbierta(page, question, (i, text) => (fallar && i === 0 ? String(Number(text) + 1) : text));
-  else if (question.column) await escribirColumnas(page, fallar ? String(question.errors![0].value) : String(question.answer));
+  else if (question.column && (question.column.op === "add" || question.column.op === "subtract"))
+    await escribirColumnas(page, fallar ? String(question.errors![0].value) : String(question.answer), scaled(question.column).scale);
   else await page.getByRole("textbox", { name: /Tu respuesta/ }).fill(String(question.answer));
   await page.getByRole("button", { name: "Registrar mi respuesta" }).click();
   await expect(page.getByText(/Respuesta registrada/)).toBeVisible();

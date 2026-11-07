@@ -75,7 +75,7 @@ export function columnar(
   return {
     ...numeric(
       id,
-      options.prompt ??
+      (options.prompt ??
         (isRuffiniSpec(spec)
           ? `Divide ${operationExpression(spec)} con la regla de Ruffini: completa la tabla y escribe el resto.`
           : isFactorSpec(spec)
@@ -84,7 +84,9 @@ export function columnar(
             ? `Multiplica en columnas: ${operationExpression(spec)}.`
           : spec.op === "divide"
             ? `Divide ${operationExpression(spec)} con la división larga: escribe ${divisionTrace(spec).decimals ? "cada resta y el cociente con su coma" : "el cociente, cada resta y el resto"}.`
-            : `Calcula en columnas: ${operationExpression(spec)}.`),
+            : `Calcula en columnas: ${operationExpression(spec)}.`)) +
+        (spec.op === "divide" && isDecimalDivision(spec) && divisionTrace(spec).remainder
+          ? ` Da el cociente truncado a ${divisionTrace(spec).decimals} cifras decimales.` : ""),
       result,
       operationSolution(spec),
       operationHints(spec),
