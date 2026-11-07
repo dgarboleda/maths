@@ -47,4 +47,15 @@ describe('sincronización del juego', () => {
     await waitFor(() => expect(mock.paths.some(path => String(path.at(-1)).startsWith('fraction-fighters-v1-'))).toBe(true));
   });
 
+  it('mantiene CodeBreaker aislado de los otros juegos y usa su propia clave remota', async () => {
+    localStorage.setItem('numerario:target-masters:ana', JSON.stringify({ unlocked: 90, stars: {}, daily: '' }));
+    localStorage.setItem('numerario:codebreaker:ana', JSON.stringify({ unlocked: 3, stars: { '1': 2 }, daily: '' }));
+    const { result } = renderHook(() => useTargetProgress('ana', 'codebreaker'));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.visible.unlocked).toBe(3);
+    await waitFor(() => expect(mock.receive).not.toBeNull());
+    act(() => mock.receive?.({ docs: [], metadata: { fromCache: false, hasPendingWrites: false } }));
+    await waitFor(() => expect(mock.paths.some(path => String(path.at(-1)).startsWith('codebreaker-v1-'))).toBe(true));
+  });
+
 });
