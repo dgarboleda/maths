@@ -85,6 +85,56 @@ export function CommaSlotRow({
   );
 }
 
+/**
+ * Control de la coma de una hoja: los huecos no se muestran hasta pedirlo
+ * (una fila de comas entre todas las casillas distrae). También se puede
+ * escribir «,» en la casilla, con el teclado o con la tecla del teclado propio.
+ */
+export function CommaControl({
+  placed,
+  picking,
+  onPicking,
+  onRemove,
+  disabled,
+}: {
+  placed: boolean;
+  picking: boolean;
+  onPicking: (on: boolean) => void;
+  onRemove: () => void;
+  disabled?: boolean;
+}) {
+  const small =
+    "inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-600 bg-slate-900 px-3 text-sm font-semibold text-slate-100 hover:bg-slate-800 disabled:opacity-50";
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      {picking ? (
+        <>
+          <span className="text-cyan-100">Toca el hueco donde va la coma.</span>
+          {placed && (
+            <button type="button" className={small} disabled={disabled} onClick={onRemove}>
+              Quitar la coma
+            </button>
+          )}
+          <button type="button" className={small} disabled={disabled} onClick={() => onPicking(false)}>
+            Cancelar
+          </button>
+        </>
+      ) : (
+        <>
+          <button type="button" className={small} disabled={disabled} onClick={() => onPicking(true)}>
+            <span aria-hidden="true" className="text-xl font-bold leading-none">,</span>
+            {placed ? "Mover la coma" : "Poner la coma"}
+          </button>
+          <span className="text-xs text-slate-400">También puedes escribir «,» en la casilla.</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** «,» o «.» escrito en una casilla de una cifra: se pone la coma y la cifra no cambia. */
+export const typedComma = (raw: string) => /[,.]/.test(raw);
+
 /** Cifras de una respuesta escrita con coma, por columna (0 = la de la
  *  derecha), y cuántas quedan tras la coma (null si no hay coma). */
 export function writtenColumns(response: string): { digits: string[]; comma: number | null } {
@@ -225,8 +275,11 @@ function Grid({
   disabled,
   resultComma,
   slots,
+  onComma,
 }: {
   trace: ColumnTrace;
+  /** Se escribió «,» en la casilla `column` (con o sin cifra ya escrita). */
+  onComma?: (column: number, filled: boolean) => void;
   /** Coma del resultado: undefined, la de la operación; null, ninguna; k, con k cifras a la derecha. */
   resultComma?: number | null;
   /** Huecos para que el alumno ponga la coma bajo el resultado. */
@@ -373,7 +426,10 @@ function Grid({
               value={c.value}
               placeholder={c.placeholder}
               disabled={disabled || (c.state === "ok" && c.kind === "input" && !onKey)}
-              onChange={(e) => onInput?.(i, e.target.value.replace(/\D/g, "").slice(-1))}
+              onChange={(e) => {
+                if (typedComma(e.target.value)) return onComma?.(i, c.value !== "");
+                onInput?.(i, e.target.value.replace(/\D/g, "").slice(-1));
+              }}
               onKeyDown={(e) => onKey?.(i, e)}
               onFocus={(e) => e.target.select()}
               className={`${cell} rounded-lg border ${ring} ${color(i)} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
@@ -560,6 +616,7 @@ export function ColumnSheet({
   const [commaAt, setCommaAt] = useState<number | null>(scale ? initial.comma : null);
   const [commaOk, setCommaOk] = useState(false);
   const [commaMiss, setCommaMiss] = useState<number | null>(null);
+  const [picking, setPicking] = useState(false);
   const [notes, setNotes] = useState<string[]>(() => Array(cells).fill(""));
   const [miss, setMiss] = useState<{ column: number; value: string } | null>(null);
   const [lastWhy, setLastWhy] = useState<string>("");
@@ -590,9 +647,20 @@ export function ColumnSheet({
       } else setCommaMiss(k);
       return;
     }
-    const next = commaAt === k ? null : k;
-    setCommaAt(next);
-    emit(digits, next);
+    placeComma(commaAt === k ? null : k);
+  };
+  const placeComma = (k: number | null) => {
+    setCommaAt(k);
+    setPicking(false);
+    emit(digits, k);
+  };
+  // «,» en una casilla: la coma va justo después de la última cifra escrita
+  // (se escribe de derecha a izquierda): a la izquierda de una casilla llena,
+  // a la derecha de una vacía.
+  const typeComma = (i: number, filled: boolean) => {
+    if (mode !== "free" || !scale) return;
+    const k = filled ? i + 1 : i;
+    if (k >= 1 && k < cells) placeComma(k);
   };
 
   const focus = (i: number) => refs.current[i]?.focus();
@@ -674,12 +742,18 @@ export function ColumnSheet({
         idPrefix={id}
         disabled={disabled}
         resultComma={mode === "guided" ? (commaOk ? scale : null) : commaAt}
+        onComma={typeComma}
         slots={
-          scale > 0 && (mode === "free" || askingComma)
-            ? { active: mode === "guided" ? commaMiss : commaAt, onPick: pickComma, wrong: mode === "guided" ? commaMiss !== null : commaWrong }
-            : undefined
+          askingComma
+            ? { active: commaMiss, onPick: pickComma, wrong: commaMiss !== null }
+            : mode === "free" && scale > 0 && picking
+              ? { active: commaAt, onPick: pickComma, wrong: commaWrong }
+              : undefined
         }
       />
+      {mode === "free" && scale > 0 && (
+        <CommaControl placed={commaAt !== null} picking={picking} onPicking={setPicking} onRemove={() => placeComma(null)} disabled={disabled} />
+      )}
       <div aria-live="polite" className="text-sm leading-relaxed">
         {mode === "guided" ? (
           askingComma ? (
@@ -712,7 +786,7 @@ export function ColumnSheet({
         ) : (
           <p className="text-xs text-slate-400">
             Escribe el resultado desde la derecha. Arriba puedes anotar llevadas o préstamos.
-            {scale ? " Después toca, debajo de las casillas, dónde va la coma." : ""}
+            {scale ? " Después pon la coma: escribe «,» donde va o usa «Poner la coma»." : ""}
           </p>
         )}
       </div>

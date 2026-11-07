@@ -13,6 +13,14 @@ import {
 
 const PLACES = ["unidades", "decenas", "centenas", "unidades de millar", "decenas de millar"];
 
+/** Toca el hueco de la coma. En el modo libre los huecos se muestran con
+ *  «Poner la coma»; en el guiado aparecen solos cuando se pide la coma. */
+async function tocarComa(page: Page, name: string) {
+  const hueco = page.getByRole("button", { name, exact: true });
+  if ((await hueco.count()) === 0) await page.getByRole("button", { name: "Poner la coma", exact: true }).click();
+  await hueco.click();
+}
+
 /** Escribe el resultado de una suma o resta en la hoja de columnas y, con
  *  decimales, toca el hueco de la coma (la pone el alumno). */
 export async function escribirColumnas(page: Page, value: string, scale = 0) {
@@ -22,7 +30,7 @@ export async function escribirColumnas(page: Page, value: string, scale = 0) {
     await page.getByLabel(`Resultado: ${PLACES[i]}`, { exact: true }).fill(d);
   for (const [i, d] of fraction.padEnd(scale, "0").split("").entries())
     await page.getByLabel(`Resultado: ${decimalPlaces[i]}`, { exact: true }).fill(d);
-  if (scale) await page.getByRole("button", { name: `Poner la coma con ${scale} ${scale === 1 ? "cifra" : "cifras"} a su derecha`, exact: true }).click();
+  if (scale) await tocarComa(page, `Poner la coma con ${scale} ${scale === 1 ? "cifra" : "cifras"} a su derecha`);
 }
 
 /**
@@ -51,7 +59,7 @@ export async function escribirGalera(
         .fill(d);
     // Al bajar la primera cifra decimal, el alumno pone la coma del cociente.
     if (trace.commaAfter !== null && f.key === `r${trace.commaAfter}`)
-      await page.getByRole("button", { name: `Poner la coma después de la cifra ${trace.commaAfter + 1} del cociente`, exact: true }).click();
+      await tocarComa(page, `Poner la coma después de la cifra ${trace.commaAfter + 1} del cociente`);
   }
 }
 
@@ -69,9 +77,7 @@ export async function escribirGaleraAbierta(page: Page, question: Question, camb
   for (const [i, d] of quotient.split("").entries())
     await page.getByLabel(`Cociente: cifra ${cells - quotient.length + i + 1}`, { exact: true }).fill(d);
   if (trace.commaAfter !== null)
-    await page
-      .getByRole("button", { name: `Poner la coma después de la cifra ${cells - quotient.length + trace.commaAfter + 1} del cociente`, exact: true })
-      .click();
+    await tocarComa(page, `Poner la coma después de la cifra ${cells - quotient.length + trace.commaAfter + 1} del cociente`);
   const rows = divisionFields(trace).filter((f) => f.kind !== "q");
   for (const [r, f] of rows.entries()) {
     if (r >= 2) await page.getByRole("button", { name: "Añadir fila" }).click();

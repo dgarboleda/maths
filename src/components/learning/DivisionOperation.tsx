@@ -23,7 +23,7 @@ import {
 import { secondaryButton } from "./LearningShell";
 import { Challenge } from "./Challenge";
 import { Slider } from "./GraphVisuals";
-import { Comma, makePreference, OptionPicker, placeColor } from "./ColumnOperation";
+import { Comma, CommaControl, makePreference, OptionPicker, placeColor, typedComma } from "./ColumnOperation";
 
 /* División larga en la «galera»: el dividendo a la izquierda, el divisor a
  * la derecha y el cociente debajo de él. El alumno escribe todo el
@@ -100,10 +100,13 @@ function QuotientRow({ boxes, comma, disabled }: { boxes: React.ReactNode[]; com
     <div className="mt-1 flex items-end gap-0.5" role="group" aria-label="Cociente">
       {boxes.map((box, i) => (
         <span key={i} className="flex items-end gap-0.5">
-          <span className="relative">
-            {box}
-            {comma && !comma.onPick && comma.at === i && <Comma />}
-          </span>
+          {box}
+          {comma && !comma.onPick && comma.at === i && (
+            <span className="self-end pb-0.5 text-3xl font-bold leading-none text-cyan-100">
+              <span aria-hidden="true">,</span>
+              <span className="sr-only">coma</span>
+            </span>
+          )}
           {comma?.onPick && i < boxes.length - 1 && <CommaSlot i={i} comma={comma} disabled={disabled} />}
         </span>
       ))}
@@ -158,6 +161,7 @@ function Galera({
   fields,
   cells,
   onInput,
+  onComma,
   onKey,
   refs,
   disabled,
@@ -171,6 +175,8 @@ function Galera({
   fields: DivisionField[];
   cells: (f: DivisionField) => Cell[];
   onInput?: (f: DivisionField, i: number, value: string) => void;
+  /** Se escribió «,» en una casilla del cociente (con o sin cifra ya escrita). */
+  onComma?: (f: DivisionField, filled: boolean) => void;
   onKey?: (f: DivisionField, i: number, event: React.KeyboardEvent<HTMLInputElement>) => void;
   refs?: React.MutableRefObject<Map<string, HTMLInputElement | null>>;
   disabled?: boolean;
@@ -209,7 +215,10 @@ function Galera({
         value={c.value}
         placeholder={c.placeholder}
         disabled={disabled}
-        onChange={(e) => onInput?.(f, i, e.target.value.replace(/\D/g, "").slice(-1))}
+        onChange={(e) => {
+          if (typedComma(e.target.value)) return f.kind === "q" ? onComma?.(f, c.value !== "") : undefined;
+          onInput?.(f, i, e.target.value.replace(/\D/g, "").slice(-1));
+        }}
         onKeyDown={(e) => onKey?.(f, i, e)}
         onFocus={(e) => e.target.select()}
         className={`${cell} rounded-md border ${ring(c.state)} ${extra} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
@@ -406,6 +415,7 @@ function StepDivisionSheet({
   const [comma, setComma] = useState<number | null>(initial.comma);
   const [commaOk, setCommaOk] = useState(false);
   const [commaMiss, setCommaMiss] = useState<number | null>(null);
+  const [picking, setPicking] = useState(false);
 
   const value = (f: DivisionField, w: Work = work) => norm(typed(w[f.key]));
   const accepted = (f: DivisionField, w: Work = work) => value(f, w) !== "" && Number(value(f, w)) === f.expected;
@@ -440,9 +450,19 @@ function StepDivisionSheet({
       } else setCommaMiss(i);
       return;
     }
-    const next = comma === i ? null : i;
-    setComma(next);
-    onChange(encode(work, next));
+    placeComma(comma === i ? null : i);
+  };
+  const placeComma = (at: number | null) => {
+    setComma(at);
+    setPicking(false);
+    onChange(encode(work, at));
+  };
+  // «,» en el cociente (se escribe de izquierda a derecha): después de una
+  // casilla llena, o antes de una vacía.
+  const typeComma = (f: DivisionField, filled: boolean) => {
+    if (mode !== "free" || !decimal) return;
+    const at = filled ? f.step : f.step - 1;
+    if (at >= 0 && at < trace.steps.length - 1) placeComma(at);
   };
   const focusField = (f: DivisionField, i = f.kind === "q" ? 0 : Math.max(0, f.width - f.text.length)) =>
     requestAnimationFrame(() => refs.current.get(`${f.key}:${i}`)?.focus());
@@ -528,6 +548,7 @@ function StepDivisionSheet({
         fields={visible}
         cells={cells}
         onInput={onInput}
+        onComma={typeComma}
         onKey={onKey}
         refs={refs}
         disabled={disabled}
@@ -538,10 +559,15 @@ function StepDivisionSheet({
               ? { at: commaMiss, onPick: pickComma, wrong: commaMiss !== null }
               : { at: commaOk ? trace.commaAfter : null }
             : decimal
-              ? { at: comma, onPick: pickComma, wrong: commaWrong }
+              ? picking
+                ? { at: comma, onPick: pickComma, wrong: commaWrong }
+                : { at: comma }
               : undefined
         }
       />
+      {mode === "free" && decimal && (
+        <CommaControl placed={comma !== null} picking={picking} onPicking={setPicking} onRemove={() => placeComma(null)} disabled={disabled} />
+      )}
       <div aria-live="polite" className="text-sm leading-relaxed">
         {mode === "guided" ? (
           askingComma ? (
@@ -576,7 +602,7 @@ function StepDivisionSheet({
             Escribe todo el procedimiento: en cada paso, la cifra del cociente,
             {layout === "completa" ? " el producto debajo," : ""} lo que queda al restar con la cifra que bajas al lado.{" "}
             {decimal
-              ? "Toca entre las cifras del cociente dónde va la coma, si la lleva: se pone al bajar la primera cifra decimal."
+              ? "Pon la coma del cociente, si la lleva: se pone al bajar la primera cifra decimal. Escribe «,» en su casilla o usa «Poner la coma»."
               : "La última fila es el resto."}
           </p>
         )}
@@ -664,7 +690,20 @@ function OpenDivisionSheet({
   const offset = qCells - trace.steps.length;
   const cell =
     "flex h-10 w-7 items-center justify-center rounded-md border text-center text-xl font-bold tabular-nums placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300 sm:h-11 sm:w-10 sm:text-2xl";
-  const input = (key: string, label: string, value: string, onValue: (d: string) => void, extra: string, placeholder?: string) => (
+  const [picking, setPicking] = useState(false);
+  const placeComma = (at: number | null) => {
+    setPicking(false);
+    emit({ ...state, comma: at });
+  };
+  const input = (
+    key: string,
+    label: string,
+    value: string,
+    onValue: (d: string) => void,
+    extra: string,
+    placeholder?: string,
+    onComma?: (filled: boolean) => void,
+  ) => (
     <input
       key={key}
       ref={(el) => {
@@ -678,7 +717,10 @@ function OpenDivisionSheet({
       placeholder={placeholder}
       disabled={disabled}
       onFocus={(e) => e.target.select()}
-      onChange={(e) => onValue(e.target.value.replace(/\D/g, "").slice(-1))}
+      onChange={(e) => {
+        if (typedComma(e.target.value)) return onComma?.(value !== "");
+        onValue(e.target.value.replace(/\D/g, "").slice(-1));
+      }}
       className={`${cell} ${extra}`}
     />
   );
@@ -705,7 +747,13 @@ function OpenDivisionSheet({
               </span>
             </div>
             <QuotientRow
-              comma={decimal ? { at: state.comma, onPick: (i) => emit({ ...state, comma: state.comma === i ? null : i }), wrong: !!failed && !failed.quotientCorrect } : undefined}
+              comma={
+                !decimal
+                  ? undefined
+                  : picking
+                    ? { at: state.comma, onPick: (i) => placeComma(state.comma === i ? null : i), wrong: !!failed && !failed.quotientCorrect }
+                    : { at: state.comma }
+              }
               disabled={disabled}
               boxes={state.quotient.map((value, i) => {
                 const step = i - offset;
@@ -716,12 +764,22 @@ function OpenDivisionSheet({
                   (d) => setQ(i, d),
                   failed && !failed.quotientCorrect ? "border-amber-400 bg-amber-950/50 text-cyan-100" : "border-slate-600 bg-slate-950 text-cyan-100",
                   step >= 0 && step < hinted ? String(trace.steps[step].digit) : undefined,
+                  // «,»: después de una casilla llena, o antes de una vacía.
+                  decimal
+                    ? (filled) => {
+                        const at = filled ? i : i - 1;
+                        if (at >= 0 && at < qCells - 1) placeComma(at);
+                      }
+                    : undefined,
                 );
               })}
             />
           </div>
         </div>
       </div>
+      {decimal && (
+        <CommaControl placed={state.comma !== null} picking={picking} onPicking={setPicking} onRemove={() => placeComma(null)} disabled={disabled} />
+      )}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -746,7 +804,7 @@ function OpenDivisionSheet({
           : failed?.mismatch
             ? `Revisa ${failed.mismatch.kind === "p" ? "el producto" : "la resta"} del paso ${failed.mismatch.step + 1}.`
             : `Escribe el cociente y, debajo del dividendo, cada resta con la cifra que bajas (puedes anotar también los productos). ${
-                decimal ? "Toca entre las cifras del cociente dónde va la coma, si la lleva." : "La última fila es el resto."
+                decimal ? "Pon la coma del cociente, si la lleva: escribe «,» en su casilla o usa «Poner la coma»." : "La última fila es el resto."
               }`}
       </p>
     </div>

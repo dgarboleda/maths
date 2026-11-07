@@ -10,7 +10,9 @@ import {
   exactPlaces,
   isDecimalDivision,
   multiplyScaled,
+  multiplyTrace,
   quotientValue,
+  scaled,
   validColumnSpec,
   validDivisionSpec,
   validMultiplySpec,
@@ -73,6 +75,13 @@ export function calculatorSpec(
   // Los mismos límites que la hoja: así nunca se dibuja una cuenta que no puede trazar.
   const spec: ArithmeticSpec = { op, a: x, b: y };
   return validColumnSpec(spec) ? { spec } : { problem: "Usa números menores que 10 000 000." };
+}
+
+/** ¿Lleva coma el resultado (o puede llevarla)? Entonces la hoja ofrece la tecla «,». */
+export function hasDecimals(spec: CalculatorSpec): boolean {
+  if (spec.op === "multiply") return multiplyTrace(spec).scale > 0;
+  if (spec.op === "divide") return isDecimalDivision(spec);
+  return scaled(spec).scale > 0;
 }
 
 /** Resultado escrito en la hoja (en la galera, el cociente con su coma). */
