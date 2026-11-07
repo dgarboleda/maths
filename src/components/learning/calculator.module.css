@@ -1,0 +1,56 @@
+/* Botón flotante de la calculadora: a la derecha, simétrico a la bombilla
+   de ayuda (izquierda) y por encima de la navegación inferior en móvil. */
+.fab {
+  position: fixed;
+  z-index: 45;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: calc(6rem + env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 1px solid #67e8f9;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 35%, #cffafe, #22d3ee 75%);
+  color: #083344;
+  box-shadow: 0 0 22px #22d3ee40, 0 4px 16px #02061780;
+  cursor: pointer;
+}
+.fab:hover { background: #a5f3fc; }
+.fab:focus-visible { outline: 3px solid #fcd34d; outline-offset: 4px; }
+.fab[aria-expanded="true"] { background: #0e7490; color: #ecfeff; }
+
+/* Panel lateral: a pantalla completa en móvil, columna derecha en escritorio. */
+.panel {
+  position: fixed;
+  z-index: 60;
+  inset: 0 0 0 auto;
+  display: flex;
+  width: min(100vw, 30rem);
+  flex-direction: column;
+  border-left: 1px solid #334155;
+  background: #020617;
+  color: #f1f5f9;
+  color-scheme: dark;
+  box-shadow: -12px 0 40px #02061799;
+}
+.panel[hidden] { display: none; }
+.panel :focus-visible { outline-color: #67e8f9; }
+.body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+}
+/* Al enfocar una casilla, que quede por encima del teclado numérico propio
+   (pegado abajo dentro del panel). */
+.body :is(input, button, select) { scroll-margin-bottom: 16rem; }
+.footer {
+  border-top: 1px solid #334155;
+  background: #0f172a;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 640px) {
+  .fab { bottom: calc(1.25rem + env(safe-area-inset-bottom)); }
+}

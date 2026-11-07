@@ -47,7 +47,7 @@ import {
 import { LearningVisual } from "./LearningVisual";
 import { hasVisualTutor } from "./tutor/lessons";
 import { OperationDemo, OperationExample, OperationWorkspace, useOperationHelp } from "./Operation";
-import { Borrador } from "./Borrador";
+import { OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
 import {
   lessonProblem,
   pickPracticeGame,
@@ -465,6 +465,16 @@ export function QuestionActivity({
       evidence?.revealed ||
       (assessment && evidence && evidence.attempts > 0),
   );
+  // La calculadora global puede pasar su resultado a la respuesta escrita.
+  const calculatorReady = question.format !== "choice" && !column && !locked && !arcade && !disabled;
+  useCalculatorTarget(
+    ["tu respuesta"],
+    (value) => {
+      setResponse(value);
+      setFormatError(null);
+    },
+    calculatorReady,
+  );
   const showSolution =
     evidence?.revealed || (!silentCheck && evidence?.correct);
   // Opción múltiple fuera de las comprobaciones: tras un fallo, una pista;
@@ -707,17 +717,8 @@ export function QuestionActivity({
       ) : (
         <>
           {answerForm}
-          {/* Borrador para hacer cuentas: no se corrige ni cuenta como ayuda. */}
-          {question.format !== "choice" && !column && !locked && (
-            <Borrador
-              targets={["tu respuesta"]}
-              disabled={disabled}
-              onUse={(value) => {
-                setResponse(value);
-                setFormatError(null);
-              }}
-            />
-          )}
+          {/* Calculadora para hacer cuentas: no se corrige ni cuenta como ayuda. */}
+          {question.format !== "choice" && !column && !locked && <OpenCalculatorButton disabled={disabled} />}
         </>
       )}
       <div aria-live="polite" aria-atomic="true">

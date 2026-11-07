@@ -59,7 +59,17 @@ function navigate(container: HTMLElement, input: HTMLInputElement, key: "ArrowLe
   next?.focus();
 }
 
-export function NumericKeypadArea({ sign = false, children }: { sign?: boolean; children: React.ReactNode }) {
+export function NumericKeypadArea({
+  sign = false,
+  bottom = "calc(5rem + env(safe-area-inset-bottom))",
+  children,
+}: {
+  sign?: boolean;
+  /** Distancia del teclado al borde inferior de lo que se desplaza: por
+   *  defecto deja sitio a la navegación inferior de la página. */
+  bottom?: string;
+  children: React.ReactNode;
+}) {
   const coarse = useCoarsePointer();
   const [choice, setChoice] = useKeyboardChoice();
   const active = coarse && choice === "propio";
@@ -107,7 +117,7 @@ export function NumericKeypadArea({ sign = false, children }: { sign?: boolean; 
             role="group"
             aria-label="Teclado numérico"
             className="sticky z-30 mt-3 rounded-2xl border border-slate-700 bg-slate-950/95 p-2 shadow-lg backdrop-blur"
-            style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+            style={{ bottom }}
           >
             <div className="grid grid-cols-6 gap-1.5">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map((d) => (
