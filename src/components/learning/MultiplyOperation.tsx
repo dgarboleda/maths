@@ -16,7 +16,7 @@ import { useSheetInputMode } from "./NumericKeypad";
 import { secondaryButton } from "./LearningShell";
 import { Challenge } from "./Challenge";
 import { Slider } from "./GraphVisuals";
-import { Comma, CommaSlotRow, columnsText, OptionPicker, placeColor, writtenColumns } from "./ColumnOperation";
+import { Comma, CommaControl, CommaSlotRow, columnsText, OptionPicker, placeColor, typedComma, writtenColumns } from "./ColumnOperation";
 
 /* Multiplicación en columnas: el factor de más cifras arriba y el otro
  * debajo, alineados por la derecha (no por la coma). Una fila por cada cifra
@@ -64,6 +64,7 @@ function Grid({
   onNote,
   rows,
   onInput,
+  onComma,
   onKey,
   inputRefs,
   idPrefix,
@@ -81,6 +82,8 @@ function Grid({
   onNote?: (column: number, value: string) => void;
   rows: GridRow[];
   onInput?: (row: string, column: number, value: string) => void;
+  /** Se escribió «,» en una casilla (con o sin cifra ya escrita). */
+  onComma?: (row: string, column: number, filled: boolean) => void;
   onKey?: (row: string, column: number, event: React.KeyboardEvent<HTMLInputElement>) => void;
   inputRefs?: React.MutableRefObject<Map<string, HTMLInputElement | null>>;
   idPrefix: string;
@@ -149,7 +152,7 @@ function Grid({
         ))}
         <span aria-hidden="true" className="col-span-full my-1 h-0.5 bg-slate-200" />
         {rows.map((row) => (
-          <Row key={row.key} row={row} order={order} cell={cell} onInput={onInput} onKey={onKey} inputRefs={inputRefs} idPrefix={idPrefix} disabled={disabled} keypadMode={keypadMode} />
+          <Row key={row.key} row={row} order={order} cell={cell} onInput={onInput} onComma={onComma} onKey={onKey} inputRefs={inputRefs} idPrefix={idPrefix} disabled={disabled} keypadMode={keypadMode} />
         ))}
         {slots && <CommaSlotRow order={order} cells={columns} active={slots.active} onPick={slots.onPick} disabled={disabled} wrong={slots.wrong} />}
       </div>
@@ -162,6 +165,7 @@ function Row({
   order,
   cell,
   onInput,
+  onComma,
   onKey,
   inputRefs,
   idPrefix,
@@ -172,6 +176,8 @@ function Row({
   order: number[];
   cell: string;
   onInput?: (row: string, column: number, value: string) => void;
+  /** Se escribió «,» en una casilla (con o sin cifra ya escrita). */
+  onComma?: (row: string, column: number, filled: boolean) => void;
   onKey?: (row: string, column: number, event: React.KeyboardEvent<HTMLInputElement>) => void;
   inputRefs?: React.MutableRefObject<Map<string, HTMLInputElement | null>>;
   idPrefix: string;
@@ -219,7 +225,10 @@ function Row({
               value={c.value}
               placeholder={c.placeholder}
               disabled={disabled}
-              onChange={(e) => onInput?.(row.key, i, e.target.value.replace(/\D/g, "").slice(-1))}
+              onChange={(e) => {
+                if (typedComma(e.target.value)) return onComma?.(row.key, i, c.value !== "");
+                onInput?.(row.key, i, e.target.value.replace(/\D/g, "").slice(-1));
+              }}
               onKeyDown={(e) => onKey?.(row.key, i, e)}
               onFocus={(e) => e.target.select()}
               className={`${cell} rounded-lg border ${ring(c.state)} ${placeColor(i)} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
@@ -366,6 +375,7 @@ export function MultiplySheet({
   // La coma la pone el alumno: hueco k, con k cifras a su derecha.
   const [commaAt, setCommaAt] = useState<number | null>(initial.comma || null);
   const [commaMiss, setCommaMiss] = useState<number | null>(null);
+  const [picking, setPicking] = useState(false);
 
   const active = mode === "guided" && filled < writing.length ? writing[filled] : null;
   const askingComma = mode === "guided" && !active && !!commaStep && !commaOk;
@@ -427,9 +437,19 @@ export function MultiplySheet({
       } else setCommaMiss(k);
       return;
     }
-    const next = commaAt === k ? null : k;
-    setCommaAt(next);
-    emitFree(digits, next);
+    placeComma(commaAt === k ? null : k);
+  };
+  const placeComma = (k: number | null) => {
+    setCommaAt(k);
+    setPicking(false);
+    emitFree(digits, k);
+  };
+  // «,» en una casilla del producto: justo después de la última cifra escrita
+  // (de derecha a izquierda).
+  const typeComma = (row: string, i: number, filled: boolean) => {
+    if (mode !== "free" || !trace.scale || row !== resultKey) return;
+    const k = filled ? i + 1 : i;
+    if (k >= 1 && k < columns) placeComma(k);
   };
 
   // Tras un intento fallido (fuera de las comprobaciones): qué revisar.
@@ -496,16 +516,20 @@ export function MultiplySheet({
         inputRefs={refs}
         idPrefix={id}
         disabled={disabled}
+        onComma={typeComma}
         slots={
           mode === "guided"
             ? askingComma
               ? { active: commaMiss, onPick: pickComma, wrong: commaMiss !== null }
               : undefined
-            : trace.scale > 0
+            : trace.scale > 0 && picking
               ? { active: commaAt, onPick: pickComma, wrong: commaOnly }
               : undefined
         }
       />
+      {mode === "free" && trace.scale > 0 && (
+        <CommaControl placed={commaAt !== null} picking={picking} onPicking={setPicking} onRemove={() => placeComma(null)} disabled={disabled} />
+      )}
       <div aria-live="polite" className="text-sm leading-relaxed">
         {mode === "guided" ? (
           askingComma && commaMiss !== null ? (
@@ -536,7 +560,7 @@ export function MultiplySheet({
           <p className="text-xs text-slate-400">
             Escribe el producto en la última fila, desde la derecha.
             {scratchRows ? " Arriba tienes filas de borrador para cada cifra de abajo." : ""}
-            {trace.scale ? " Después toca, debajo de las casillas, dónde va la coma." : ""}
+            {trace.scale ? " Después pon la coma: escribe «,» donde va o usa «Poner la coma»." : ""}
           </p>
         )}
       </div>

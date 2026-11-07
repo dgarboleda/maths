@@ -26,6 +26,32 @@ describe("Teclado numérico de las hojas", () => {
     window.matchMedia = original;
   });
 
+  test("con decimales ofrece la tecla «,», que pone la coma sin borrar la cifra", () => {
+    touch(true);
+    const onChange = vi.fn();
+    render(
+      <NumericKeypadArea comma>
+        <ColumnSheet spec={{ op: "add", a: 3.5, b: 1.25 }} strategy="prestamo" mode="free" response="" onChange={onChange} />
+      </NumericKeypadArea>,
+    );
+    act(() => screen.getByLabelText("Resultado: centésimas", { exact: true }).focus());
+    key("Escribir 5");
+    key("Escribir 7");
+    key("Escribir coma");
+    key("Escribir 4");
+    expect(onChange).toHaveBeenLastCalledWith("4,75");
+  });
+
+  test("sin decimales no hay tecla de coma", () => {
+    touch(true);
+    render(
+      <NumericKeypadArea>
+        <ColumnSheet spec={{ op: "add", a: 958, b: 76 }} strategy="prestamo" mode="free" response="" onChange={() => {}} />
+      </NumericKeypadArea>,
+    );
+    expect(screen.queryByRole("button", { name: "Escribir coma" })).toBeNull();
+  });
+
   test("en pantalla táctil escribe en la casilla enfocada sin abrir el teclado del sistema", async () => {
     touch(true);
     const onChange = vi.fn();

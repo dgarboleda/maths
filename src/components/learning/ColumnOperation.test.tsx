@@ -66,11 +66,19 @@ describe("Hoja de columnas", () => {
     fireEvent.change(digit("unidades"), { target: { value: "4" } });
     // La coma la pone el alumno: sin ella, el resultado no lleva decimales.
     expect(onChange).toHaveBeenLastCalledWith("475");
+    // Los huecos no se ven hasta pedirlos (una fila de comas distrae).
+    expect(screen.queryByRole("button", { name: /a su derecha/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Poner la coma/ }));
     fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 1 cifra a su derecha" }));
     expect(onChange).toHaveBeenLastCalledWith("47,5");
+    expect(screen.queryByRole("button", { name: /a su derecha/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Mover la coma/ }));
     fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 2 cifras a su derecha" }));
     expect(onChange).toHaveBeenLastCalledWith("4,75");
+    fireEvent.click(screen.getByRole("button", { name: /Mover la coma/ }));
     expect(screen.getByRole("button", { name: "Poner la coma con 2 cifras a su derecha" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Quitar la coma" }));
+    expect(onChange).toHaveBeenLastCalledWith("475");
     // El 0 que completa 3,5 → 3,50 se ve y se anuncia.
     expect(container).toHaveTextContent(/cero añadido 0/);
     expect(firstWrongColumn("4,65", 4.75, 2)).toBe(1);
@@ -93,7 +101,23 @@ describe("Hoja de columnas", () => {
   test("libre: tras un intento, avisa si las cifras están bien y la coma no", () => {
     render(<ColumnSheet spec={{ op: "add", a: 3.5, b: 1.25 }} strategy="prestamo" mode="free" response="47,5" commaWrong onChange={() => {}} />);
     expect(screen.getByText(/Las cifras están bien: revisa la coma/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Mover la coma/ }));
     expect(screen.getByRole("button", { name: "Poner la coma con 1 cifra a su derecha" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("libre: escribir «,» en una casilla pone la coma tras la última cifra escrita", () => {
+    const onChange = vi.fn();
+    render(<ColumnSheet spec={{ op: "add", a: 3.5, b: 1.25 }} strategy="prestamo" mode="free" response="" onChange={onChange} />);
+    fireEvent.change(digit("centésimas"), { target: { value: "5" } });
+    fireEvent.change(digit("décimas"), { target: { value: "7" } });
+    // Se escribe de derecha a izquierda: «,» en la casilla vacía siguiente.
+    fireEvent.change(digit("unidades"), { target: { value: "," } });
+    fireEvent.change(digit("unidades"), { target: { value: "4" } });
+    expect(onChange).toHaveBeenLastCalledWith("4,75");
+    // En una casilla llena, la coma va a su izquierda y la cifra no cambia.
+    fireEvent.change(digit("centésimas"), { target: { value: "." } });
+    expect(onChange).toHaveBeenLastCalledWith("47,5");
+    expect(digit("centésimas")).toHaveValue("5");
   });
 
   test("libre: una casilla vacía entre cifras deja la respuesta incompleta", () => {

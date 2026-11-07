@@ -37,6 +37,7 @@ import {
   useSubtractStrategy,
 } from "./ColumnOperation";
 import { NumericKeypadArea } from "./NumericKeypad";
+import { hasDecimals } from "@/lib/learning/calculator";
 import { DivisionDemo, DivisionSheet, firstWrongQuotientDigit, LayoutPicker, useDivisionLayout } from "./DivisionOperation";
 
 const FactorDemo = dynamic(() => import("./FactorOperation").then((module) => module.FactorDemo));
@@ -124,7 +125,7 @@ export function OperationWorkspace({
   return (
     <div className="space-y-3">
       {!(spec.op === "divide" && mode === "open") && <StylePicker spec={spec} disabled={disabled} />}
-      <NumericKeypadArea sign={isRuffiniSpec(spec)}>
+      <NumericKeypadArea sign={isRuffiniSpec(spec)} comma={!isRuffiniSpec(spec) && !isFactorSpec(spec) && hasDecimals(spec)}>
       {isRuffiniSpec(spec) ? (
         <RuffiniSheet
           key={`${questionId}-${mode === "guided" ? "g" : "f"}`}

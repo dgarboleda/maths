@@ -61,10 +61,13 @@ function navigate(container: HTMLElement, input: HTMLInputElement, key: "ArrowLe
 
 export function NumericKeypadArea({
   sign = false,
+  comma = false,
   bottom = "calc(5rem + env(safe-area-inset-bottom))",
   children,
 }: {
   sign?: boolean;
+  /** Tecla «,» para poner la coma desde la casilla (operaciones con decimales). */
+  comma?: boolean;
   /** Distancia del teclado al borde inferior de lo que se desplaza: por
    *  defecto deja sitio a la navegación inferior de la página. */
   bottom?: string;
@@ -130,6 +133,11 @@ export function NumericKeypadArea({
                 <button type="button" aria-label="Escribir signo menos" className={keyClass}
                   onPointerDown={(e) => e.preventDefault()} onClick={() => press("−")}>
                   −
+                </button>
+              ) : comma ? (
+                <button type="button" aria-label="Escribir coma" className={keyClass}
+                  onPointerDown={(e) => e.preventDefault()} onClick={() => press(",")}>
+                  ,
                 </button>
               ) : (
                 <span aria-hidden="true" />

@@ -9,6 +9,7 @@ import {
   calculatorSpec,
   decimalInput,
   entryText,
+  hasDecimals,
   type CalculatorEntry,
   type CalculatorOp,
   type CalculatorSpec,
@@ -215,7 +216,7 @@ export function CalculatorPanel({
           {spec && (
             <>
               {/* En el panel no hay navegación inferior: el teclado va pegado abajo. */}
-              <NumericKeypadArea bottom="0px">
+              <NumericKeypadArea bottom="0px" comma={hasDecimals(spec)}>
                 {spec.op === "divide" ? (
                   <DivisionSheet key={`division-${revision}`} spec={spec} layout="completa" mode="open" response="" onChange={setWork} />
                 ) : spec.op === "multiply" ? (
