@@ -84,6 +84,8 @@ const OTROS_TUTORES = [
   ["division-larga", "Reparte en grupos iguales"],
   ["enteros-producto-cociente", "Saltos con signo"],
   ["ecuaciones-dos-pasos", "Dos pasos en la balanza"],
+  ["fraccion-cantidad", "Partes de una cantidad"],
+  ["proporcionalidad", "Sensores y consumo"],
 ] as const;
 
 for (const [lessonId, title] of OTROS_TUTORES)
@@ -104,6 +106,8 @@ for (const [lessonId, title] of OTROS_TUTORES)
     else if (lessonId === "ecuaciones-dos-pasos") await tutor.getByRole("button", { name: "Quitar 1 de cada lado" }).click();
     else if (lessonId === "division-larga") await tutor.getByRole("button", { name: "Dar 1 decena a cada grupo" }).click();
     else if (lessonId === "enteros-producto-cociente") await tutor.getByRole("button", { name: "← Saltar −4" }).click();
+    else if (lessonId === "fraccion-cantidad") await tutor.getByRole("button", { name: "Más grupos" }).click();
+    else if (lessonId === "proporcionalidad") await tutor.getByRole("button", { name: "Añadir: Sensores" }).click();
     else await tutor.getByRole("button", { name: /Partir en dos \(reserva de arriba\)/ }).click();
     const width = page.viewportSize()!.width;
     for (const control of await tutor.getByRole("button").all()) {

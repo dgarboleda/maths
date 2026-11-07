@@ -19,6 +19,24 @@ export interface ArrayState {
   cols: number;
   /** Cambia en cada giro: permite volver a reproducir la animación. */
   turns: number;
+  /** Proporcionalidad: el valor por fila es fijo; solo cambia el número de filas. */
+  lockCols?: boolean;
+  /** Distributiva: el rectángulo es fijo y se parte por columnas. */
+  lockSize?: boolean;
+  /** Columna donde empieza la segunda parte (1…cols−1); sin valor, un solo bloque. */
+  split?: number;
+  /** Factor común: permite quitar la separación y juntar los dos bloques. */
+  canMerge?: boolean;
+  /** Nombres en contexto: «sensores» y «unidades por sensor». */
+  rowsLabel?: string;
+  colsLabel?: string;
+}
+/** Fracción de una cantidad: el total se parte en `den` grupos iguales y se toman `taken`. */
+export interface PartOfState {
+  kind: "part-of";
+  total: number;
+  den: number;
+  taken: number;
 }
 export interface Part {
   num: number;
@@ -63,7 +81,7 @@ export interface BalanceState {
   left: number;
   right: number;
 }
-export type ManipulativeState = PlaceValueState | ArrayState | FractionState | LineState | BalanceState | ShareState;
+export type ManipulativeState = PlaceValueState | ArrayState | FractionState | LineState | BalanceState | ShareState | PartOfState;
 
 export type TutorAction =
   | { type: "to-tray"; index: number }
@@ -81,6 +99,10 @@ export type TutorAction =
   | { type: "share-ten" }
   | { type: "share-unit" }
   | { type: "break-ten" }
+  | { type: "move-split"; delta: 1 | -1 }
+  | { type: "merge" }
+  | { type: "den"; delta: 1 | -1 }
+  | { type: "take"; delta: 1 | -1 }
   | { type: "remove-both" }
   | { type: "remove-left" }
   | { type: "share" };
@@ -106,6 +128,8 @@ export function reduce(state: ManipulativeState, action: TutorAction): { state: 
       return reduceBalance(state, action);
     case "share":
       return reduceShare(state, action);
+    case "part-of":
+      return { state: reducePartOf(state, action) };
   }
 }
 
@@ -132,11 +156,18 @@ function reduceArray(s: ArrayState, action: TutorAction): ArrayState {
   const clamp = (n: number) => Math.min(ARRAY_MAX, Math.max(1, n));
   switch (action.type) {
     case "rows":
-      return { ...s, rows: clamp(s.rows + action.delta) };
+      return s.lockSize ? s : { ...s, rows: clamp(s.rows + action.delta) };
     case "cols":
-      return { ...s, cols: clamp(s.cols + action.delta) };
+      return s.lockSize || s.lockCols ? s : { ...s, cols: clamp(s.cols + action.delta) };
     case "turn":
-      return { ...s, rows: s.cols, cols: s.rows, turns: s.turns + 1 };
+      return s.lockSize || s.lockCols ? s : { ...s, rows: s.cols, cols: s.rows, turns: s.turns + 1 };
+    case "move-split": {
+      if (s.split === undefined) return s;
+      const split = Math.min(s.cols - 1, Math.max(1, s.split + action.delta));
+      return { ...s, split };
+    }
+    case "merge":
+      return s.canMerge && s.split !== undefined ? { ...s, split: undefined } : s;
     default:
       return s;
   }
@@ -194,6 +225,26 @@ function reduceShare(s: ShareState, action: TutorAction): { state: ShareState; n
   }
 }
 
+/** Partes posibles: solo divisores del total, para que los grupos sean iguales. */
+export function divisors(total: number): number[] {
+  return Array.from({ length: Math.min(total, 10) }, (_, i) => i + 1).filter((d) => total % d === 0);
+}
+
+function reducePartOf(s: PartOfState, action: TutorAction): PartOfState {
+  switch (action.type) {
+    case "den": {
+      const options = divisors(s.total);
+      const i = options.indexOf(s.den) + action.delta;
+      if (i < 0 || i >= options.length) return s;
+      return { ...s, den: options[i], taken: Math.min(s.taken, options[i]) };
+    }
+    case "take":
+      return { ...s, taken: Math.min(s.den, Math.max(0, s.taken + action.delta)) };
+    default:
+      return s;
+  }
+}
+
 /** Ya no se puede dar lo mismo a todos: lo que queda es el resto. */
 export function shareDone(s: ShareState): boolean {
   return s.tens === 0 && s.units < s.groups;
@@ -245,12 +296,16 @@ export function describe(state: ManipulativeState): string {
       return `${state.tens} ${state.tens === 1 ? "decena" : "decenas"} y ${units} ${units === 1 ? "unidad" : "unidades"} (${state.tray.length} en la bandeja). En total, ${placeValueTotal(state)}.`;
     }
     case "array":
+      if (state.split !== undefined)
+        return `${state.rows} × ${state.cols} partido en ${state.split} y ${state.cols - state.split} columnas: ${state.rows} × ${state.split} + ${state.rows} × ${state.cols - state.split} = ${state.rows * state.cols}.`;
       return `${state.rows} ${state.rows === 1 ? "fila" : "filas"} de ${state.cols} ${state.cols === 1 ? "panel" : "paneles"}: ${state.rows} × ${state.cols} = ${state.rows * state.cols} paneles.`;
     case "line":
       if (state.jump) return `Estás en ${signed(state.pos)}: ${lineExpression(state)}.`;
       return `Empiezas en ${signed(state.start)} y estás en ${signed(state.pos)}: ${lineExpression(state)}.`;
     case "balance":
       return `Balanza equilibrada: ${balanceEquation(state)}.`;
+    case "part-of":
+      return `${state.total} en ${state.den} ${state.den === 1 ? "grupo" : "grupos"} de ${state.total / state.den}; tomas ${state.taken}: ${state.taken * (state.total / state.den)}.`;
     case "share":
       return `Cada uno de los ${state.groups} grupos tiene ${state.eachTens} ${state.eachTens === 1 ? "decena" : "decenas"} y ${state.eachUnits} ${state.eachUnits === 1 ? "unidad" : "unidades"}. Por repartir: ${state.tens} ${state.tens === 1 ? "decena" : "decenas"} y ${state.units} ${state.units === 1 ? "unidad" : "unidades"}.`;
     case "fractions":

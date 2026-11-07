@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { NOTICES, TUTORIALS, type Scene } from "./tutor/content";
-import { ArrayBuilder, BalanceBoard, FractionReserves, NumberLine, PlaceValueBoard, ShareBoard } from "./tutor/Manipulatives";
+import { ArrayBuilder, BalanceBoard, FractionReserves, NumberLine, PartOfBoard, PlaceValueBoard, ShareBoard } from "./tutor/Manipulatives";
 import { describe, reduce, type ManipulativeState, type Notice, type TutorAction } from "./tutor/model";
 import { useNarration } from "./tutor/useNarration";
 import { VoicePlayer } from "./tutor/VoicePlayer";
@@ -143,6 +143,7 @@ export function VisualTutor({ lessonId }: { lessonId: string }) {
         {state.kind === "line" && <NumberLine state={state} dispatch={dispatch} />}
         {state.kind === "balance" && <BalanceBoard state={state} dispatch={dispatch} />}
         {state.kind === "share" && <ShareBoard state={state} dispatch={dispatch} />}
+        {state.kind === "part-of" && <PartOfBoard state={state} dispatch={dispatch} />}
         <p className="sr-only" aria-live="polite">
           {describe(state)}
         </p>

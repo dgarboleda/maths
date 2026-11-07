@@ -13,6 +13,8 @@ export const TUTOR_LESSONS: readonly string[] = [
   "division-larga",
   "enteros-producto-cociente",
   "ecuaciones-dos-pasos",
+  "fraccion-cantidad",
+  "proporcionalidad",
 ];
 
 export function hasVisualTutor(lessonId: string): boolean {

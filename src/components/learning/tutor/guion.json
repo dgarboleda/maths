@@ -386,6 +386,91 @@
           }
         }
       ]
+    },
+    "fraccion-cantidad": {
+      "titulo": "Partes de una cantidad",
+      "escenas": [
+        {
+          "id": "parte-1",
+          "consigna": "1/4 de 20: parte las 20 cajas en 4 grupos y toma 1.",
+          "pista": "Grupos: 4. Tomados: 1.",
+          "logro": "1/4 de 20 = 20 ÷ 4 = 5.",
+          "voz": {
+            "intro": "En la bodega hay veinte cajas, y necesitamos un cuarto de ellas. El denominador, el cuatro, dice en cuántos grupos iguales partir el total. El numerador, el uno, dice cuántos de esos grupos tomar. Empieza por los grupos.",
+            "pista": "Usa el control de grupos hasta tener cuatro grupos iguales. Después toma uno.",
+            "logro": "Cinco cajas. Partir en cuatro grupos es dividir entre cuatro: veinte entre cuatro, cinco. Un cuarto de veinte es cinco."
+          },
+          "momentos": {
+            "grupos-listos": "Cuatro grupos de cinco. Ahora toma los que pide el numerador."
+          }
+        },
+        {
+          "id": "parte-2",
+          "consigna": "3/4 de 20: ¿cuántos grupos tomas ahora?",
+          "pista": "Ya hay 4 grupos: toma 3.",
+          "logro": "3/4 de 20 = 3 × 5 = 15.",
+          "voz": {
+            "intro": "Ahora tres cuartos de veinte. Los grupos ya están hechos: cuatro grupos de cinco. ¿Cuántos tomas? Antes de tocar, estima: ¿el resultado será más o menos que veinte?",
+            "pista": "El numerador es tres: toma tres de los cuatro grupos.",
+            "logro": "Quince. Cada cuarto vale cinco, y tres cuartos valen tres por cinco. Es menos que veinte porque tres cuartos es menos que el total. Y si sumas el cuarto que quedó, cinco, vuelves a veinte."
+          }
+        },
+        {
+          "id": "parte-3",
+          "consigna": "Reto: 2/5 de 30.",
+          "pista": "Grupos: 5. Tomados: 2.",
+          "logro": "2/5 de 30 = 2 × 6 = 12.",
+          "voz": {
+            "intro": "Último reto, sin ayudas: dos quintos de treinta. Recuerda el orden: primero el denominador, después el numerador.",
+            "pista": "Parte en cinco grupos: cada uno tiene seis. Después toma dos.",
+            "logro": "Doce. Treinta entre cinco es seis, y dos grupos de seis son doce. También podrías multiplicar primero, dos por treinta, sesenta, y dividir entre cinco: el resultado es el mismo."
+          },
+          "momentos": {
+            "grupos-listos": "Cinco grupos de seis. ¿Cuántos tomas?"
+          }
+        }
+      ]
+    },
+    "proporcionalidad": {
+      "titulo": "Sensores y consumo",
+      "escenas": [
+        {
+          "id": "prop-1",
+          "consigna": "Cada sensor consume 3 unidades. ¿Cuánto consumen 4 sensores?",
+          "pista": "Sensores: 4.",
+          "logro": "4 × 3 = 12 unidades. Razón: 12/4 = 3.",
+          "voz": {
+            "intro": "En la planta, cada sensor consume tres unidades de energía. Agrega sensores de uno en uno y mira cómo crece el consumo. Fíjate en la razón: el consumo entre el número de sensores.",
+            "pista": "Usa el botón de más hasta tener cuatro sensores.",
+            "logro": "Doce unidades. Doce entre cuatro es tres: la misma razón que con un sensor. Cuando la razón no cambia, la relación es proporcional."
+          },
+          "momentos": {
+            "dos": "Dos sensores, seis unidades. La razón sigue siendo tres."
+          }
+        },
+        {
+          "id": "prop-2",
+          "consigna": "Duplica los sensores. ¿Se duplica el consumo?",
+          "pista": "Sensores: 8.",
+          "logro": "8 × 3 = 24: el doble de 12.",
+          "voz": {
+            "intro": "Predice antes de tocar: si pasas de cuatro a ocho sensores, ¿el consumo será el doble, más del doble o menos?",
+            "pista": "Lleva los sensores hasta ocho, el doble de cuatro.",
+            "logro": "Veinticuatro, exactamente el doble de doce. En una relación proporcional, si una cantidad se duplica, la otra también. No pasaría si hubiera un consumo fijo, como en tres x más cinco."
+          }
+        },
+        {
+          "id": "prop-3",
+          "consigna": "Hay 21 unidades de energía. ¿Para cuántos sensores alcanza?",
+          "pista": "Busca cuántos sensores consumen 21.",
+          "logro": "21 ÷ 3 = 7 sensores.",
+          "voz": {
+            "intro": "Ahora al revés: tenemos veintiuna unidades. ¿Cuántos sensores podemos encender? Puedes probar, o usar la razón: cada sensor necesita tres.",
+            "pista": "Veintiuno entre tres. Agrega sensores hasta que el consumo llegue a veintiuno.",
+            "logro": "Siete sensores. Con la constante tres, la relación es y igual a tres x: si conoces y, divides entre tres para encontrar x."
+          }
+        }
+      ]
     }
   },
   "avisos": {
