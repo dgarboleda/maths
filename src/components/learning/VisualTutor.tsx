@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { NOTICES, TUTORIALS, type Scene } from "./tutor/content";
 import { ArrayBuilder, BalanceBoard, FractionReserves, NumberLine, PartOfBoard, PlaceValueBoard, ShareBoard } from "./tutor/Manipulatives";
 import { describe, reduce, type ManipulativeState, type Notice, type TutorAction } from "./tutor/model";
@@ -101,14 +101,12 @@ export function VisualTutor({ lessonId, autoStart = false }: { lessonId: string;
 
   const intro = `${scene.id}-intro`;
 
-  // Abierto a petición del alumno: ese clic cuenta como gesto para el audio,
-  // así que suena la presentación y el foco pasa al tutor que acaba de aparecer.
+  // Al entrar en la clase se intenta reproducir la presentación. El navegador
+  // puede exigir una interacción antes de permitir el sonido.
   // Sin guarda de «ya empezó»: en desarrollo React monta dos veces y la
   // limpieza de la narración pausa la primera reproducción.
-  const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     if (!autoStart) return;
-    heading.current?.focus();
     // La transcripción ya muestra la presentación mientras no se haya dicho otra cosa.
     narration.say(intro);
     // Solo al montar: las escenas siguientes arrancan su voz con «Continuar».
@@ -121,7 +119,7 @@ export function VisualTutor({ lessonId, autoStart = false }: { lessonId: string;
         <p className="text-xs font-bold uppercase tracking-wide text-cyan-300">
           Tutor visual · escena {index + 1} de {tutorial.scenes.length}
         </p>
-        <h4 id={`tutor-${lessonId}`} ref={heading} tabIndex={-1} className="text-xl font-bold text-white outline-none">
+        <h4 id={`tutor-${lessonId}`} className="text-xl font-bold text-white outline-none">
           {tutorial.title}
         </h4>
         <p className="text-sm text-slate-400">Práctica guiada: no cuenta como comprobación ni suma estrellas.</p>
@@ -144,6 +142,11 @@ export function VisualTutor({ lessonId, autoStart = false }: { lessonId: string;
         <p className="mt-2 leading-relaxed">{heard ?? scene.voice.intro}</p>
       </details>
       <audio {...narration.audioProps} />
+      {narration.status === "blocked" && (
+        <p role="status" className="text-sm text-amber-200">
+          Pulsa Escuchar para iniciar la voz.
+        </p>
+      )}
       {narration.status === "unavailable" && (
         <p role="status" className="text-sm text-amber-200">
           La voz no está disponible. Puedes seguir leyendo y completar la actividad.
