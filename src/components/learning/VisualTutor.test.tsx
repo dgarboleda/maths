@@ -167,6 +167,13 @@ describe("tutor visual en la clase", () => {
     expect(lastClip()).toBe("/audio/tutor/grupos-1-pista.mp3");
   });
 
+  it("abierto por el alumno, presenta la escena con voz y recibe el foco", () => {
+    render(<VisualTutor lessonId="multiplicacion-grupos" autoStart />);
+    expect(lastClip()).toBe("/audio/tutor/grupos-1-intro.mp3");
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("heading", { name: "Instala los paneles" })).toHaveFocus();
+  });
+
   it("se resuelve solo con el teclado", async () => {
     const user = userEvent.setup();
     render(<VisualTutor lessonId="multiplicacion-grupos" />);
