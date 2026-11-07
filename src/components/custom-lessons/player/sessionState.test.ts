@@ -19,12 +19,12 @@ describe("sesión de una clase", () => {
     expect([...c.order].sort()).toEqual([0, 1, 2]);
   });
   test("un fallo muestra comentario y pista; un acierto la explicación y deja avanzar", () => {
-    const wrong = run([loaded(), { type: "start" }, { type: "answering" }, { type: "answered", correct: false, explanation: "", comment: "Has restado.", hint: "Cuenta con los dedos.", stars: 0 }]);
+    const wrong = run([loaded(), { type: "start" }, { type: "answering" }, { type: "answered", version: 7, questionId: "q1", correct: false, explanation: "", comment: "Has restado.", hint: "Cuenta con los dedos.", stars: 0 }]);
     expect(wrong).toMatchObject({ solved: false, busy: false, feedback: { kind: "wrong", comment: "Has restado.", hint: "Cuenta con los dedos." } });
-    const right = sessionReducer(wrong, { type: "answered", correct: true, explanation: "2 + 2 = 4", comment: "", hint: "", stars: 0 });
+    const right = sessionReducer(sessionReducer(wrong, { type: "answering" }), { type: "answered", version: 7, questionId: "q1", correct: true, explanation: "2 + 2 = 4", comment: "", hint: "", stars: 0 });
     expect(right).toMatchObject({ solved: true, completed: ["q1"], feedback: { kind: "correct", explanation: "2 + 2 = 4" } });
     expect(hasNextOpen(right)).toBe(true);
-    const last = run([{ type: "next" }, { type: "answered", correct: true, explanation: "", comment: "", hint: "", stars: 5 }], right);
+    const last = run([{ type: "next" }, { type: "answering" }, { type: "answered", version: 7, questionId: "q2", correct: true, explanation: "", comment: "", hint: "", stars: 5 }], right);
     expect(hasNextOpen(last)).toBe(false);
     expect(run([{ type: "next" }], last)).toMatchObject({ phase: "finished", stars: 5 });
   });
@@ -32,6 +32,15 @@ describe("sesión de una clase", () => {
     const playing = run([loaded(), { type: "start" }]);
     expect(sessionReducer(playing, loaded([], { ...lesson, title: "Sumas fáciles" }))).toMatchObject({ phase: "question", lesson: { title: "Sumas fáciles" } });
     expect(sessionReducer(playing, loaded([], { ...lesson, version: 8 }))).toMatchObject({ phase: "intro", notice: expect.stringContaining("actualizado") });
+  });
+  test("descarta respuestas y errores pendientes de una versión anterior", () => {
+    const waiting = run([loaded(), { type: "start" }, { type: "answering" }]);
+    const updated = sessionReducer(waiting, loaded([], { ...lesson, version: 8 }));
+    const stale = { version: 7, questionId: "q1" };
+    expect(sessionReducer(updated, { type: "answered", ...stale, correct: true, explanation: "", comment: "", hint: "", stars: 5 })).toEqual(updated);
+    expect(sessionReducer(updated, { type: "error", ...stale, text: "Error antiguo" })).toEqual(updated);
+    const missing = sessionReducer(waiting, { type: "loaded", lesson: null, completed: [], locked: false });
+    expect(sessionReducer(missing, { type: "answered", ...stale, correct: true, explanation: "", comment: "", hint: "", stars: 0 })).toEqual(missing);
   });
   test("clase no disponible o bloqueada", () => {
     expect(sessionReducer(initialSession, { type: "loaded", lesson: null, completed: [], locked: false }).status).toBe("missing");

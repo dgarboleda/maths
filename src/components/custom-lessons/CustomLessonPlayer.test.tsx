@@ -38,7 +38,8 @@ describe("reproductor de clases personalizadas", () => {
     fireEvent.change(screen.getByLabelText("Tu respuesta"), { target: { value: "1/2" } });
     fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
     await waitFor(() => expect(answer).toHaveBeenCalledWith("1/2"));
-    state = sessionReducer(state, { type: "answered", correct: false, explanation: "", comment: "Escríbelo con coma.", hint: "Divide 1 entre 2.", stars: 0 });
+    state = sessionReducer(state, { type: "answering" });
+    state = sessionReducer(state, { type: "answered", version: lesson.version, questionId: "q2", correct: false, explanation: "", comment: "Escríbelo con coma.", hint: "Divide 1 entre 2.", stars: 0 });
     rerender(<CustomLessonPlayer childId="c1" lessonId="l1" />);
     expect(screen.getByText(/Escríbelo con coma/)).toBeInTheDocument();
     expect(screen.getByText(/Pista:/)).toHaveTextContent("Divide 1 entre 2.");

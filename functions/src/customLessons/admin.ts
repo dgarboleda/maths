@@ -103,19 +103,24 @@ export const syncCustomLessons = onCall(async (request) => {
     db.collection(`parents/${parentId}/customLessons`).get(),
     db.collection(`parents/${parentId}/customLessonsPublic`).select().get(),
   ]);
-  const writer = db.bulkWriter();
-  const keep = new Set<string>();
+  // Las consultas solo enumeran IDs. Cada proyección se decide dentro de una
+  // transacción que relee la clase: un guardado o borrado simultáneo obliga
+  // a reintentar con el documento actual, sin restaurar una audiencia antigua.
+  const ids = new Set([...lessons.docs.map((doc) => doc.id), ...shown.docs.map((doc) => doc.id)]);
   let published = 0;
-  for (const doc of lessons.docs) {
-    const data = doc.data();
-    if (data.published !== true) continue;
-    // Clases antiguas o escritas a mano: solo se muestran si siguen siendo válidas.
-    if (describeCustomLessonErrors(data).length) continue;
-    keep.add(doc.id);
-    published++;
-    writer.set(db.doc(`parents/${parentId}/customLessonsPublic/${doc.id}`), publicLesson(sanitizeLesson(data as CustomLesson)));
+  for (const id of ids) {
+    const { lesson, shown: projection } = refs(db, parentId, id);
+    const isPublished = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(lesson);
+      const data = snap.data();
+      if (!data || data.published !== true || describeCustomLessonErrors(data).length) {
+        tx.delete(projection);
+        return false;
+      }
+      tx.set(projection, publicLesson(sanitizeLesson(data as CustomLesson)));
+      return true;
+    });
+    if (isPublished) published++;
   }
-  for (const doc of shown.docs) if (!keep.has(doc.id)) writer.delete(doc.ref);
-  await writer.close();
   return { published };
 });

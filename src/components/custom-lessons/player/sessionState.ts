@@ -31,8 +31,8 @@ export type SessionAction =
   | { type: "loaded"; lesson: PublicLesson | null; completed: string[]; locked: boolean }
   | { type: "start"; random?: () => number }
   | { type: "answering" }
-  | { type: "answered"; correct: boolean; explanation: string; comment: string; hint: string; stars: number }
-  | { type: "error"; text: string }
+  | { type: "answered"; version: number; questionId: string; correct: boolean; explanation: string; comment: string; hint: string; stars: number }
+  | { type: "error"; version: number; questionId: string; text: string }
   | { type: "next"; random?: () => number };
 
 export const initialSession: SessionState = { status: "loading", lesson: null, completed: [], phase: "intro", index: -1, order: [], solved: false, busy: false, feedback: null, stars: 0, notice: "" };
@@ -74,11 +74,13 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
     case "answering":
       return { ...state, busy: true, feedback: null };
     case "answered": {
-      const q = state.lesson!.questions[state.index];
+      const q = state.lesson?.questions[state.index];
+      if (!state.busy || state.phase !== "question" || state.lesson?.version !== action.version || q?.id !== action.questionId) return state;
       if (!action.correct) return { ...state, busy: false, feedback: { kind: "wrong", comment: action.comment, hint: action.hint } };
       return { ...state, busy: false, solved: true, completed: [...new Set([...state.completed, q.id])], stars: state.stars + action.stars, feedback: { kind: "correct", explanation: action.explanation } };
     }
     case "error":
+      if (!state.busy || state.phase !== "question" || state.lesson?.version !== action.version || state.lesson.questions[state.index]?.id !== action.questionId) return state;
       return { ...state, busy: false, feedback: { kind: "error", text: action.text } };
     case "next":
       return state.lesson ? enter(state, nextOpen(state.lesson, state.completed, state.index + 1), action.random) : state;

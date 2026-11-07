@@ -33,7 +33,7 @@ export function AssignmentFields({ draft, students, lessons, errors, set }: Prop
   const fieldError = (field: LessonError["field"]) => errors.find((e) => e.question === undefined && e.field === field)?.message;
   const toggle = (id: string, on: boolean) => {
     const next = on ? [...assigned, id] : assigned.filter((x) => x !== id);
-    set({ assignedTo: next.length ? next : undefined });
+    if (next.length) set({ assignedTo: next });
   };
   const sameTopic = (l: { topic: string }) => l.topic.trim().toLocaleLowerCase("es") === draft.topic.trim().toLocaleLowerCase("es");
   const ordered = [...lessons].sort((a, b) => Number(sameTopic(b)) - Number(sameTopic(a)) || a.title.localeCompare(b.title, "es"));
@@ -49,10 +49,11 @@ export function AssignmentFields({ draft, students, lessons, errors, set }: Prop
           </label>
           {students.map((s) => (
             <label key={s.id} className="flex items-center gap-2">
-              <input type="checkbox" checked={!everyone && assigned.includes(s.id)} onChange={(e) => toggle(s.id, e.target.checked)} />
+              <input type="checkbox" checked={!everyone && assigned.includes(s.id)} disabled={!everyone && assigned.length === 1 && assigned.includes(s.id)} onChange={(e) => toggle(s.id, e.target.checked)} />
               {s.name}
             </label>
           ))}
+          {!everyone && <p className="text-sm text-slate-400">Selecciona al menos un alumno, o elige todos los alumnos.</p>}
           <p className="text-sm text-amber-200">{fieldError("assignedTo")}</p>
         </div>
       )}

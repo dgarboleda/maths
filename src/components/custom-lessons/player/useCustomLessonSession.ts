@@ -60,13 +60,15 @@ export function useCustomLessonSession(parentId: string | null | undefined, chil
   async function answer(value: number | string): Promise<boolean> {
     const { lesson, index, busy, solved } = state;
     if (!parentId || !lesson || busy || solved || state.phase !== "question") return false;
+    const questionId = lesson.questions[index].id;
+    const version = lesson.version;
     dispatch({ type: "answering" });
     try {
-      const result = await answerLesson({ parentId, childId, lessonId, questionId: lesson.questions[index].id, answer: value, lessonVersion: lesson.version });
-      dispatch({ type: "answered", correct: result.correct, explanation: result.explanation, comment: result.feedback ?? "", hint: result.hint ?? "", stars: result.stars ?? 0 });
+      const result = await answerLesson({ parentId, childId, lessonId, questionId, answer: value, lessonVersion: version });
+      dispatch({ type: "answered", version, questionId, correct: result.correct, explanation: result.explanation, comment: result.feedback ?? "", hint: result.hint ?? "", stars: result.stars ?? 0 });
       return result.correct;
     } catch {
-      dispatch({ type: "error", text: "No se pudo guardar la respuesta. Si la clase cambió, vuelve a cargar la página." });
+      dispatch({ type: "error", version, questionId, text: "No se pudo guardar la respuesta. Si la clase cambió, vuelve a cargar la página." });
       return false;
     }
   }
