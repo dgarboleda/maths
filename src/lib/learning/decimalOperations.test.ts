@@ -98,9 +98,11 @@ describe("Multiplicación en columnas", () => {
 describe("División con decimales", () => {
   test("cociente decimal de naturales: se añaden ceros y la coma sube al cociente", () => {
     const t = divisionTrace({ op: "divide", a: 3, b: 4, places: 2 });
-    expect([t.quotient, t.remainder, t.quotientText, t.quotientPrefix]).toEqual([0.75, 0, "0,75", "0,"]);
+    expect([t.quotient, t.remainder, t.quotientText, t.commaAfter]).toEqual([0.75, 0, "0,75", 0]);
     expect(dividendText(t)).toBe("3,00");
-    expect(t.steps[0].why).toMatch(/^En la parte entera no cabe 4: llegas hasta las décimas, así que el cociente empieza con «0,»/);
+    // El reparto no cruza la coma: 3 unidades no alcanzan y el cociente empieza con un 0 escrito.
+    expect(t.steps.map((s) => s.digit)).toEqual([0, 7, 5]);
+    expect(t.steps[0].why).toMatch(/^En la parte entera, 3 es menor que 4: escribes 0 en el cociente.*como empiezas con las décimas, pones la coma/);
     expect(divisionAnswerText({ op: "divide", a: 3, b: 4, places: 2 })).toBe("0,75");
     const u = divisionTrace({ op: "divide", a: 27, b: 4, places: 2 });
     expect([u.quotientText, u.commaAfter]).toEqual(["6,75", 0]);
@@ -145,9 +147,18 @@ describe("División con decimales", () => {
     expect(divisionResponseCorrect(spec, "75")).toBe(false);
     expect(divisionResponseCorrect(spec, divisionWorkResponse(spec))).toBe(true);
     expect(checkDivisionWork(spec, divisionWorkResponse(spec, "abreviada"))).toMatchObject({ correct: true, quotient: 0.75 });
-    // Galera abierta: las cifras del cociente con su coma fija.
-    expect(checkOpenDivision(spec, encodeOpenDivision("075", ["28", "20", "20", "0"]))).toMatchObject({ correct: true, quotient: 0.75 });
-    expect(checkOpenDivision(spec, encodeOpenDivision("075", ["20", "0"]))).toMatchObject({ correct: true });
+    // La coma la pone el alumno: sin ella, o en otro sitio, el cociente no vale.
+    expect(divisionWorkResponse(spec)).toBe("C0,75;0,30,28,20,20,0");
+    const misplaced = checkDivisionWork(spec, "C07,5;0,30,28,20,20,0")!;
+    expect(misplaced).toMatchObject({ firstError: null, commaCorrect: false, correct: false, quotient: 7.5 });
+    expect(checkDivisionWork(spec, "C075;0,30,28,20,20,0")).toMatchObject({ commaCorrect: false, quotient: 75 });
+    // Galera abierta: también con o sin las filas del 0 de las unidades.
+    expect(checkOpenDivision(spec, encodeOpenDivision("0,75", ["0", "30", "28", "20", "20", "0"]))).toMatchObject({ correct: true, quotient: 0.75 });
+    expect(checkOpenDivision(spec, encodeOpenDivision("0,75", ["28", "20", "20", "0"]))).toMatchObject({ correct: true });
+    expect(checkOpenDivision(spec, encodeOpenDivision(",75", ["20", "0"]))).toMatchObject({ correct: true });
+    expect(checkOpenDivision(spec, encodeOpenDivision("075", ["20", "0"]))).toMatchObject({ quotientCorrect: false, quotient: 75 });
+    // Un divisor con coma pero cociente entero no lleva coma.
+    expect(checkDivisionWork({ op: "divide", a: 4.8, b: 0.15 }, divisionWorkResponse({ op: "divide", a: 4.8, b: 0.15 }))).toMatchObject({ correct: true });
   });
 
   test("errores típicos: coma olvidada, divisor sin ajustar y cero omitido", () => {

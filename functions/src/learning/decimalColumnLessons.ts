@@ -279,7 +279,7 @@ export const DECIMAL_DIVISION_LESSONS: Lesson[] = [
         title: "Dividendo con coma: la coma sube al cociente",
         paragraphs: [
           "En 38,25 ÷ 5 se divide como siempre: 38 ÷ 5 = 7 y sobran 3. Al bajar el 2, que son décimas, se pone la coma en el cociente: 32 ÷ 5 = 6, sobran 2; bajas el 5 y 25 ÷ 5 = 5. Resultado: 7,65.",
-          "Si el divisor no cabe en la parte entera, el cociente empieza por 0,: en 1,2 ÷ 4, 1 no alcanza, se toman 12 décimas y 12 ÷ 4 = 3 décimas, 0,3.",
+          "Si el divisor no cabe en la parte entera, se escribe 0 en el cociente: en 1,2 ÷ 4, el 4 no cabe en 1, así que va un 0; al bajar el 2 se pone la coma y 12 décimas ÷ 4 = 3 décimas. Resultado: 0,3.",
         ],
         formula: "38,25 ÷ 5 = 7,65;  1,2 ÷ 4 = 0,3",
       },

@@ -47,9 +47,9 @@ type Spec = ArithmeticSpec | MultiplySpec | DivisionSpec;
 /** Resultado escrito en la hoja (en la galera, el cociente con su coma). */
 function resultOf(spec: Spec, response: string): string {
   if (spec.op === "divide") {
-    const digits = /^L(\d+);/.exec(response)?.[1];
-    if (!digits) return "";
-    return String(quotientValue(divisionTrace(spec), digits)).replace(".", ",");
+    const written = /^L(\d+(?:,\d+)?|,\d+);/.exec(response)?.[1];
+    if (!written) return "";
+    return String(quotientValue(written)).replace(".", ",");
   }
   return response;
 }

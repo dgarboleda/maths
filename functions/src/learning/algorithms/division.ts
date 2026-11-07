@@ -64,10 +64,8 @@ export interface DivisionTrace {
   remainder: number;
   /** El cociente como se escribe: «0,75». */
   quotientText: string;
-  /** Delante de la primera cifra del cociente cuando empieza en la parte
-   *  decimal («0,» o «0,0»); vacío si no. */
-  quotientPrefix: string;
-  /** Paso tras cuya cifra va la coma del cociente (null: no hay o va en el prefijo). */
+  /** Paso tras cuya cifra va la coma del cociente (null: sin decimales). Con
+   *  decimales, el cociente siempre empieza en las unidades (0,…). */
   commaAfter: number | null;
   steps: DivisionStep[];
 }
@@ -124,9 +122,13 @@ export function divisionTrace(spec: DivisionSpec, layout: DivisionLayout = "comp
   const decimalMode = isDecimalDivision(spec);
   /** Nombre de la posición de la cifra j del dividendo (desde la izquierda). */
   const place = (j: number) => placeName(intLength - 1 - j);
-  // Primer dividendo parcial: las menos cifras de la izquierda en las que cabe el divisor.
+  // Primer dividendo parcial: las menos cifras de la izquierda en las que cabe
+  // el divisor. Con decimales no se cruza la coma: si el divisor no cabe en la
+  // parte entera, el cociente empieza con un 0 en las unidades (0,…), y la coma
+  // siempre queda entre dos cifras del cociente.
+  const limit = decimalMode && decimals ? intLength : digits.length;
   let k = 1;
-  while (k < digits.length && Number(digits.slice(0, k).join("")) < b) k++;
+  while (k < limit && Number(digits.slice(0, k).join("")) < b) k++;
   let part = Number(digits.slice(0, k).join(""));
   let end = k - 1;
   const steps: DivisionStep[] = [];
@@ -137,12 +139,14 @@ export function divisionTrace(spec: DivisionSpec, layout: DivisionLayout = "comp
     const down = end + 1 < digits.length ? digits[end + 1] : null;
     const index = steps.length;
     const parts: string[] = [];
-    if (index === 0 && k > 1)
+    if (index === 0 && k > 1 && digit > 0)
       parts.push(`${digits.slice(0, k - 1).join("")} es menor que ${b}: tomas ${part}.`);
     if (digit === 0)
       parts.push(
         index === 0
-          ? `${part} es menor que ${b}: el cociente es 0.`
+          ? decimalMode && decimals
+            ? `En la parte entera, ${part} es menor que ${b}: escribes 0 en el cociente, que empieza por 0 unidades.`
+            : `${part} es menor que ${b}: el cociente es 0.`
           : `${part} es menor que ${b}: cabe 0 veces. Escribes 0 en el cociente; sin ese 0, las demás cifras cambiarían de lugar. ${
               layout === "completa" ? `0 × ${b} = 0 debajo y sigue quedando ${part}.` : `Sigue quedando ${part}.`
             }`,
@@ -153,8 +157,6 @@ export function divisionTrace(spec: DivisionSpec, layout: DivisionLayout = "comp
           ? `${b} cabe ${digit} ${digit === 1 ? "vez" : "veces"} en ${part}: escribes ${digit} en el cociente, ${digit} × ${b} = ${product} debajo, y restas ${part} − ${product} = ${rest}.`
           : `${b} cabe ${digit} ${digit === 1 ? "vez" : "veces"} en ${part}: escribes ${digit} en el cociente y, como ${digit} × ${b} = ${product}, de memoria ${part} − ${product} = ${rest}; solo escribes el ${rest}.`,
       );
-    if (index === 0 && decimalMode && end >= intLength)
-      parts.unshift(`En la parte entera no cabe ${b}: llegas hasta las ${place(end)}, así que el cociente empieza con «${quotientStart(end, intLength)}».`);
     if (down !== null) {
       const next = end + 1;
       if (next >= digits.length - padded)
@@ -193,13 +195,9 @@ export function divisionTrace(spec: DivisionSpec, layout: DivisionLayout = "comp
   const quotient = Number((q / 10 ** decimals).toFixed(decimals));
   const m = steps.length;
   const qDigits = steps.map((s) => s.digit).join("");
-  const quotientPrefix = decimals && m <= decimals ? `0,${"0".repeat(decimals - m)}` : "";
-  const commaAfter = decimals && m > decimals ? m - decimals - 1 : null;
-  const quotientText = quotientPrefix
-    ? quotientPrefix + qDigits
-    : commaAfter !== null
-      ? `${fmt(Number(qDigits.slice(0, commaAfter + 1)))},${qDigits.slice(commaAfter + 1)}`
-      : fmt(q);
+  const commaAfter = decimals ? m - decimals - 1 : null;
+  const quotientText =
+    commaAfter !== null ? `${fmt(Number(qDigits.slice(0, commaAfter + 1)))},${qDigits.slice(commaAfter + 1)}` : fmt(q);
   return {
     spec,
     layout,
@@ -213,20 +211,24 @@ export function divisionTrace(spec: DivisionSpec, layout: DivisionLayout = "comp
     quotient,
     remainder,
     quotientText,
-    quotientPrefix,
     commaAfter,
     steps,
   };
 }
 
-/** Cómo empieza un cociente cuya primera cifra cae en la parte decimal. */
-function quotientStart(end: number, intLength: number): string {
-  return `0,${"0".repeat(end - intLength)}`;
+/** Valor de un cociente escrito con la coma donde la puso el alumno («0,75», «,75» o «075»). */
+export function quotientValue(text: string): number {
+  const [int = "", frac = ""] = text.split(",");
+  return Number(`${int || "0"}.${frac || "0"}`);
 }
 
-/** Valor de las cifras del cociente escritas (sin coma) en una galera. */
-export function quotientValue(trace: DivisionTrace, digits: string): number {
-  return Number((Number(digits) / 10 ** trace.decimals).toFixed(trace.decimals));
+/** Cifras decimales de un cociente escrito («0,75» → 2; sin coma → 0). */
+const writtenDecimals = (text: string) => text.split(",")[1]?.length ?? 0;
+
+/** El cociente como lo escribe el alumno en la galera: cifras y coma, sin espacios. */
+export function quotientWork(trace: DivisionTrace): string {
+  const digits = trace.steps.map((s) => s.digit).join("");
+  return trace.commaAfter === null ? digits : `${digits.slice(0, trace.commaAfter + 1)},${digits.slice(trace.commaAfter + 1)}`;
 }
 
 /** El dividendo como se escribe en la galera, con la coma («4,80»). */
@@ -270,7 +272,7 @@ export function divisionHints(spec: DivisionSpec, layout: DivisionLayout = "comp
     t.steps[0].why,
     digits.length > 1
       ? `El cociente empieza por ${start}…: solo falta la última cifra. Cada cifra que bajas da una cifra del cociente, aunque sea 0.`
-      : `El cociente tiene una sola cifra${t.quotientPrefix ? ` después de ${t.quotientPrefix}` : ""}. ${t.steps[0].why}`,
+      : `El cociente tiene una sola cifra. ${t.steps[0].why}`,
   ];
 }
 
@@ -360,7 +362,8 @@ export function divisionFields(trace: DivisionTrace): DivisionField[] {
 }
 
 /** Respuesta de la galera: «C» o «A» (disposición), las cifras del cociente
- *  y, separadas por comas, las filas en el orden en que se escriben. */
+ *  con la coma donde la puso el alumno («0,75») y, tras «;» y separadas por
+ *  comas, las filas en el orden en que se escriben. */
 export function encodeDivisionWork(layout: DivisionLayout, quotient: string, rows: string[]): string {
   return `${layout === "completa" ? "C" : "A"}${quotient};${rows.join(",")}`;
 }
@@ -372,16 +375,19 @@ export interface DivisionWorkCheck {
   remainder: number | null;
   /** Primera casilla incorrecta, en el orden en que se escribe. */
   firstError: DivisionField | null;
+  /** La coma del cociente está donde va (o no hay, si no lleva decimales). */
+  commaCorrect: boolean;
   correct: boolean;
 }
 
 /** Revisa todo el procedimiento; null si la respuesta no es de la galera. */
 export function checkDivisionWork(spec: DivisionSpec, response: string): DivisionWorkCheck | null {
-  const match = /^([CA])(\d+);(\d*(?:,\d*)*)$/.exec(response.trim());
+  const match = /^([CA])(\d+(?:,\d+)?);(\d*(?:,\d*)*)$/.exec(response.trim());
   if (!match) return null;
   const layout: DivisionLayout = match[1] === "C" ? "completa" : "abreviada";
-  const fields = divisionFields(divisionTrace(spec, layout));
-  const quotientDigits = match[2];
+  const trace = divisionTrace(spec, layout);
+  const fields = divisionFields(trace);
+  const quotientDigits = match[2].replace(",", "");
   const rows = match[3].split(",");
   const rowFields = fields.filter((f) => f.kind !== "q");
   if (quotientDigits.length !== fields.length - rowFields.length || rows.length !== rowFields.length) return null;
@@ -391,13 +397,15 @@ export function checkDivisionWork(spec: DivisionSpec, response: string): Divisio
     return row === "" ? Number.NaN : Number(row);
   };
   const firstError = fields.find((f) => value(f) !== f.expected) ?? null;
+  const commaCorrect = writtenDecimals(match[2]) === trace.decimals;
   const last = rows.at(-1) ?? "";
   return {
     layout,
-    quotient: quotientValue(divisionTrace(spec, layout), quotientDigits),
+    quotient: quotientValue(match[2]),
     remainder: last === "" ? null : Number(last),
     firstError,
-    correct: firstError === null,
+    commaCorrect,
+    correct: firstError === null && commaCorrect,
   };
 }
 
@@ -465,10 +473,11 @@ export function divisionAnswerText(spec: DivisionSpec): string {
 
 /** El procedimiento completo y correcto, como lo envía la galera. */
 export function divisionWorkResponse(spec: DivisionSpec, layout: DivisionLayout = "completa"): string {
-  const fields = divisionFields(divisionTrace(spec, layout));
+  const trace = divisionTrace(spec, layout);
+  const fields = divisionFields(trace);
   return encodeDivisionWork(
     layout,
-    fields.filter((f) => f.kind === "q").map((f) => f.text).join(""),
+    quotientWork(trace),
     fields.filter((f) => f.kind !== "q").map((f) => f.text),
   );
 }
@@ -503,7 +512,12 @@ export function divisionRowVariants(spec: DivisionSpec): DivisionRow[][] {
         rows.push({ text: String(s.rest) + tail, step: s.index, kind: "r" });
       }
       const variant = rows.map((r) => ({ value: Number(r.text), step: r.step, kind: r.kind }));
-      if (!variants.some((v) => JSON.stringify(v) === JSON.stringify(variant))) variants.push(variant);
+      // Con decimales, el 0 de las unidades del cociente no exige filas: se
+      // puede empezar directamente con el número que forma la cifra bajada.
+      const steps = divisionTrace(spec, layout).steps;
+      const withoutLead = steps[0].digit === 0 && steps.length > 1 ? variant.filter((r) => r.step > 0) : null;
+      for (const v of withoutLead ? [variant, withoutLead] : [variant])
+        if (!variants.some((o) => JSON.stringify(o) === JSON.stringify(v))) variants.push(v);
     }
   return variants;
 }
@@ -529,11 +543,10 @@ export function encodeOpenDivision(quotient: string, rows: string[]): string {
  * es el resto).
  */
 export function checkOpenDivision(spec: DivisionSpec, response: string): OpenDivisionCheck | null {
-  const m = /^L(\d+);(\d+(?:,\d+)*)$/.exec(response.trim());
+  const m = /^L(\d+(?:,\d+)?|,\d+);(\d+(?:,\d+)*)$/.exec(response.trim());
   if (!m) return null;
-  const trace = divisionTrace(spec);
-  const { quotient } = trace;
-  const given = quotientValue(trace, m[1]);
+  const { quotient } = divisionTrace(spec);
+  const given = quotientValue(m[1]);
   const rows = m[2].split(",").map(Number);
   const variants = divisionRowVariants(spec);
   let best = { prefix: -1, variant: variants[0] };

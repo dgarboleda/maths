@@ -34,6 +34,77 @@ export const Comma = () => (
   <span aria-hidden="true" className="pointer-events-none absolute -right-2 bottom-0 text-3xl font-bold text-slate-100">,</span>
 );
 
+/**
+ * Fila de huecos bajo el resultado de una cuadrícula en columnas: el alumno
+ * toca dónde va la coma. El hueco k deja k cifras a su derecha. No dice qué
+ * posición es (decenas, décimas…) para no dar la respuesta.
+ */
+export function CommaSlotRow({
+  order,
+  cells,
+  active,
+  onPick,
+  disabled,
+  wrong,
+}: {
+  /** Columnas de la cuadrícula de izquierda a derecha (la más alta primero). */
+  order: number[];
+  /** Casillas del resultado: hay huecos entre ellas (1…cells−1). */
+  cells: number;
+  active: number | null;
+  onPick: (k: number) => void;
+  disabled?: boolean;
+  wrong?: boolean;
+}) {
+  return (
+    <>
+      <span aria-hidden="true" />
+      {order.map((i) => (
+        <span key={`coma${i}`} className="relative h-9">
+          {i >= 1 && i < cells && (
+            <button
+              type="button"
+              aria-label={`Poner la coma con ${i} ${i === 1 ? "cifra" : "cifras"} a su derecha`}
+              aria-pressed={active === i}
+              disabled={disabled}
+              onClick={() => onPick(i)}
+              className={`absolute -right-3.5 top-0 z-10 flex h-9 w-6 items-start justify-center rounded-md border text-2xl font-bold leading-6 focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:cursor-default ${
+                active === i
+                  ? wrong
+                    ? "border-amber-400 bg-amber-950/60 text-amber-200"
+                    : "border-cyan-300 bg-cyan-950/60 text-cyan-100"
+                  : "border-dashed border-slate-600 text-slate-500 hover:text-slate-200"
+              }`}
+            >
+              ,
+            </button>
+          )}
+        </span>
+      ))}
+    </>
+  );
+}
+
+/** Cifras de una respuesta escrita con coma, por columna (0 = la de la
+ *  derecha), y cuántas quedan tras la coma (null si no hay coma). */
+export function writtenColumns(response: string): { digits: string[]; comma: number | null } {
+  const clean = response.replace(/[^\d,.]/g, "");
+  if (!clean) return { digits: [], comma: null };
+  const [int = "", frac] = clean.split(/[,.]/);
+  return { digits: (int + (frac ?? "")).split("").reverse(), comma: frac === undefined ? null : frac.length };
+}
+
+/** Texto de las cifras escritas (por columna) con la coma en el hueco elegido. */
+export function columnsText(digits: string[], comma: number | null): string {
+  const highest = digits.reduce((h, d, i) => (d ? i : h), -1);
+  if (highest < 0) return "";
+  const k = comma ?? 0;
+  const text = (from: number, to: number) => digits.slice(from, to).reverse().join("");
+  if (!k) return text(0, highest + 1).replace(/^0+(?=\d)/, "");
+  const int = highest >= k ? text(k, highest + 1).replace(/^0+(?=\d)/, "") : "0";
+  return `${int},${text(0, k).padStart(k, "0")}`;
+}
+
 // ── Estrategia de resta (preferencia del alumno en este navegador) ──────
 
 export { makePreference } from "./preferences";
@@ -152,8 +223,14 @@ function Grid({
   inputRefs,
   idPrefix,
   disabled,
+  resultComma,
+  slots,
 }: {
   trace: ColumnTrace;
+  /** Coma del resultado: undefined, la de la operación; null, ninguna; k, con k cifras a la derecha. */
+  resultComma?: number | null;
+  /** Huecos para que el alumno ponga la coma bajo el resultado. */
+  slots?: { active: number | null; onPick: (k: number) => void; wrong?: boolean };
   marks: Marks[];
   /** Una celda por columna del resultado, de unidades hacia la izquierda. */
   result: Cell[];
@@ -179,6 +256,8 @@ function Grid({
   const name = (i: number) => placeName(i - scale);
   const color = (i: number) => placeColor(i - scale);
   const comma = (i: number) => (scale > 0 && i === scale ? <Comma /> : null);
+  const ownComma = (i: number) =>
+    resultComma === undefined ? comma(i) : resultComma && i === resultComma ? <Comma /> : null;
   const say = (n: number) => String(n).replace(".", ",");
   const symbol = trace.spec.op === "add" ? "+" : "−";
   const cell = "flex h-11 w-8 items-center justify-center text-2xl font-bold tabular-nums sm:h-12 sm:w-12 sm:text-3xl";
@@ -275,12 +354,12 @@ function Grid({
             return (
               <span key={`r${i}`} className={`${cell} relative rounded-lg border ${ring} ${color(i)} ${c.ghost ? "opacity-50" : ""}`}>
                 {c.value ?? ""}
-                {comma(i)}
+                {ownComma(i)}
               </span>
             );
           return (
             <span key={`r${i}`} className="relative">
-            {comma(i)}
+            {ownComma(i)}
             <input
               id={`${idPrefix}-r${i}`}
               ref={(el) => {
@@ -302,6 +381,7 @@ function Grid({
             </span>
           );
         })}
+        {slots && <CommaSlotRow order={order} cells={result.length} active={slots.active} onPick={slots.onPick} disabled={disabled} wrong={slots.wrong} />}
       </div>
     </div>
   );
@@ -449,10 +529,13 @@ export function ColumnSheet({
   onComplete,
   hintLevel = 0,
   wrongColumn = null,
+  commaWrong = false,
   disabled,
 }: {
   spec: ArithmeticSpec;
   strategy: SubtractStrategy;
+  /** Tras un intento fallido: las cifras están bien, pero la coma no. */
+  commaWrong?: boolean;
   mode: "guided" | "free";
   response: string;
   onChange: (response: string) => void;
@@ -471,33 +554,45 @@ export function ColumnSheet({
   const { scale } = trace;
   const operandWidth = trace.topDigits.length;
   const cells = mode === "guided" ? trace.width : operandWidth + (spec.op === "add" ? 1 : 0);
-  const [digits, setDigits] = useState<string[]>(() => {
-    const given = response ? columnDigits(response, scale) : [];
-    return Array.from({ length: cells }, (_, i) => given[i] ?? "");
-  });
+  // La coma del resultado la pone el alumno (hueco k: k cifras a su derecha).
+  const initial = useMemo(() => writtenColumns(response), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [digits, setDigits] = useState<string[]>(() => Array.from({ length: cells }, (_, i) => initial.digits[i] ?? ""));
+  const [commaAt, setCommaAt] = useState<number | null>(scale ? initial.comma : null);
+  const [commaOk, setCommaOk] = useState(false);
+  const [commaMiss, setCommaMiss] = useState<number | null>(null);
   const [notes, setNotes] = useState<string[]>(() => Array(cells).fill(""));
   const [miss, setMiss] = useState<{ column: number; value: string } | null>(null);
   const [lastWhy, setLastWhy] = useState<string>("");
 
   const active = mode === "guided" ? digits.findIndex((d, i) => Number(d) !== trace.steps[i].digit || d === "") : -1;
+  // Guiado: al terminar la parte decimal, el alumno coloca la coma antes de seguir.
+  const askingComma = mode === "guided" && scale > 0 && !commaOk && active === scale;
   const done = mode === "guided" && active === -1;
 
-  const emit = (next: string[]) => {
+  const emit = (next: string[], comma = mode === "guided" ? (scale || null) : commaAt) => {
     // Solo se ignoran las casillas vacías de la izquierda: una casilla vacía
     // entre cifras (o en las unidades) deja la respuesta incompleta, para no
     // correr cifras de columna (9, 6 y 4 sin unidades no son 964).
     const highest = next.reduce((h, d, i) => (d ? i : h), -1);
     const gap = next.slice(0, highest + 1).some((d) => !d);
-    let text: string;
-    if (gap) text = "";
-    else if (!scale) text = [...next].reverse().join("").replace(/^0+(?=\d)/, "");
-    else {
-      const int = next.slice(scale).reverse().join("").replace(/^0+(?=\d)/, "");
-      const frac = next.slice(0, scale).reverse().join("");
-      text = int || frac ? `${int || "0"},${frac}` : "";
-    }
+    const text = gap ? "" : columnsText(next, comma);
     onChange(text);
     return text;
+  };
+
+  const pickComma = (k: number) => {
+    if (mode === "guided") {
+      if (k === scale) {
+        setCommaOk(true);
+        setCommaMiss(null);
+        setLastWhy(`La coma del resultado va debajo de las comas de los números: deja ${scale} ${scale === 1 ? "cifra decimal" : "cifras decimales"} a su derecha.`);
+        requestAnimationFrame(() => focus(scale));
+      } else setCommaMiss(k);
+      return;
+    }
+    const next = commaAt === k ? null : k;
+    setCommaAt(next);
+    emit(digits, next);
   };
 
   const focus = (i: number) => refs.current[i]?.focus();
@@ -550,6 +645,7 @@ export function ColumnSheet({
     if (mode === "guided") {
       if (i < active || done)
         return { kind: "digit", value: trace.steps[i].digit, state: "ok" };
+      if (i === active && askingComma) return { kind: "digit", value: null };
       if (i === active)
         return miss?.column === i
           ? { kind: "input", value: miss.value, state: "wrong" }
@@ -577,10 +673,23 @@ export function ColumnSheet({
         inputRefs={refs}
         idPrefix={id}
         disabled={disabled}
+        resultComma={mode === "guided" ? (commaOk ? scale : null) : commaAt}
+        slots={
+          scale > 0 && (mode === "free" || askingComma)
+            ? { active: mode === "guided" ? commaMiss : commaAt, onPick: pickComma, wrong: mode === "guided" ? commaMiss !== null : commaWrong }
+            : undefined
+        }
       />
       <div aria-live="polite" className="text-sm leading-relaxed">
         {mode === "guided" ? (
-          miss !== null ? (
+          askingComma ? (
+            <p className={`rounded-xl p-3 ${commaMiss !== null ? "bg-amber-950/40 text-amber-100" : "bg-cyan-950/40 text-cyan-100"}`}>
+              {commaMiss === null && lastWhy && <span className="block text-slate-300">{lastWhy}</span>}
+              {commaMiss !== null
+                ? "Ahí no: la coma del resultado va justo debajo de las comas de los dos números."
+                : "Terminaste la parte decimal. ¿Dónde va la coma del resultado? Toca su lugar debajo de las casillas."}
+            </p>
+          ) : miss !== null ? (
             <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">Revisa esa cifra. {trace.steps[miss.column].ask}</p>
           ) : !done ? (
             <p className="rounded-xl bg-cyan-950/40 p-3 text-cyan-100">
@@ -592,13 +701,18 @@ export function ColumnSheet({
           )
         ) : hasGap ? (
           <p className="text-xs text-amber-200">Completa las casillas vacías entre las cifras: cada cifra va en su columna.</p>
+        ) : commaWrong ? (
+          <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">
+            Las cifras están bien: revisa la coma. Va justo debajo de las comas de los dos números.
+          </p>
         ) : wrongColumn !== null ? (
           <p className="rounded-xl bg-amber-950/40 p-3 text-amber-100">
             Revisa la columna de las {placeName(wrongColumn - scale)}: es la primera cifra que no coincide.
           </p>
         ) : (
           <p className="text-xs text-slate-400">
-            Escribe el resultado desde las unidades (a la derecha). Arriba puedes anotar llevadas o préstamos.
+            Escribe el resultado desde la derecha. Arriba puedes anotar llevadas o préstamos.
+            {scale ? " Después toca, debajo de las casillas, dónde va la coma." : ""}
           </p>
         )}
       </div>

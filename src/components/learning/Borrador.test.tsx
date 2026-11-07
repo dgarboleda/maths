@@ -70,7 +70,7 @@ describe("Borrador de cálculo", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Multiplicar" }));
     numbers("2,50", "0,4");
     expect(screen.getByRole("group", { name: /2,50 por 0,4 en columnas/ })).toHaveTextContent("2,50");
-    expect(screen.getAllByText(/cuántas cifras decimales lleva/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/dónde va la coma/i).length).toBeGreaterThan(0);
   });
 
   test("avisa de cuentas que no se pueden escribir", async () => {

@@ -96,7 +96,11 @@ describe("Operaciones en columnas", () => {
         expect(columnTrace({ op: "subtract", a: Math.max(a, b), b: Math.min(a, b) }, s).result).toBeCloseTo(Math.abs(a - b), 9);
     }
     // Alinear por la derecha en lugar de por la coma.
-    expect(columnBugs({ op: "add", a: 3.5, b: 1.25 })).toEqual([expect.objectContaining({ id: "coma-desalineada", value: 1.6 })]);
+    expect(columnBugs({ op: "add", a: 3.5, b: 1.25 })).toEqual([
+      expect.objectContaining({ id: "coma-desalineada", value: 1.6 }),
+      // Cifras bien, pero sin la coma del resultado (la pone el alumno).
+      expect.objectContaining({ id: "coma-olvidada", value: 475 }),
+    ]);
     const q = getLesson("suma-resta-columnas")!.practice.find((item) => item.task === 5)!;
     expect(isAnswerCorrect(q, "1566,75")).toBe(true);
     expect(isAnswerCorrect(q, "1566.75")).toBe(true);
