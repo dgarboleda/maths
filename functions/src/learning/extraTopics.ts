@@ -792,7 +792,7 @@ export const QUADRATIC_LESSONS: Lesson[] = [
     ],
     examples: [
       ex("Resuelve x² − 5x + 6 = 0.", [
-        ["Buscamos p y q: suma 5, producto 6", "La suma es −b = −(−5) = 5 y el producto es c = 6: 2 + 3 = 5 y 2 · 3 = 6, así que son 2 y 3."],
+        ["Buscamos p y q: suma 5, producto 6", "La suma es −b = −(−5) = 5 y el producto es c = 6. Como 2 + 3 = 5 y 2 · 3 = 6, son 2 y 3."],
         ["(x − 2)(x − 3) = 0", "Factorizamos."],
         ["x = 2 o x = 3", "Producto nulo. Comprobación: 4 − 10 + 6 = 0 y 9 − 15 + 6 = 0."],
       ], "Las soluciones son 2 y 3."),
