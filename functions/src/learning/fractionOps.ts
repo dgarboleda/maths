@@ -9,6 +9,12 @@ const fr = (num: number, den: number) => {
   const g = gcd(num, den);
   return den / g === 1 ? `${num / g}` : `${num / g}/${den / g}`;
 };
+/** «a/b = forma irreducible», o que ya lo es: evita escribir «5/6 = 5/6». */
+const thenSimplified = (num: number, den: number) => {
+  const raw = `${num}/${den}`;
+  const simple = fr(num, den);
+  return simple === raw ? `${raw}, que ya no se puede simplificar` : `${raw} = ${simple}`;
+};
 
 export const FRACTION_OPERATION_LESSONS: Lesson[] = [
   defineLesson({
@@ -102,7 +108,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
           "q1",
           `Calcula ${a}/${b} + ${cc}/${d}.`,
           sum,
-          [`Denominador común: ${L}.`, `${a}/${b} = ${(a * L) / b}/${L}; ${cc}/${d} = ${(cc * L) / d}/${L}.`, `Suma: ${(a * L) / b + (cc * L) / d}/${L} = ${fr((a * L) / b + (cc * L) / d, L)}.`],
+          [`Denominador común: ${L}.`, `${a}/${b} = ${(a * L) / b}/${L}; ${cc}/${d} = ${(cc * L) / d}/${L}.`, `Suma: ${thenSimplified((a * L) / b + (cc * L) / d, L)}.`],
           ["Las partes tienen tamaños distintos.", `Usa ${L} como denominador común.`, `Suma ${(a * L) / b}/${L} y ${(cc * L) / d}/${L}.`],
           { errors: [{ value: (a + cc) / (b + d), feedback: "Sumaste numeradores y denominadores. Expresa las fracciones con un denominador común." }] },
         ),
@@ -269,7 +275,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
           "q1",
           `Calcula ${a}/${b} × ${cc}/${d}.`,
           (a * cc) / (b * d),
-          [`${a}/${b} × ${cc}/${d} significa tomar ${a}/${b} de ${cc}/${d}.`, `Numerador por numerador y denominador por denominador: (${a} × ${cc})/(${b} × ${d}) = ${a * cc}/${b * d}.`, `Simplificamos: ${a * cc}/${b * d} = ${fr(a * cc, b * d)}.`],
+          [`${a}/${b} × ${cc}/${d} significa tomar ${a}/${b} de ${cc}/${d}.`, `Numerador por numerador y denominador por denominador: (${a} × ${cc})/(${b} × ${d}) = ${a * cc}/${b * d}.`, fr(a * cc, b * d) === `${a * cc}/${b * d}` ? `${a * cc}/${b * d} ya no se puede simplificar.` : `Simplificamos: ${thenSimplified(a * cc, b * d)}.`],
           ["Multiplica numeradores entre sí y denominadores entre sí.", `${a} × ${cc} y ${b} × ${d}.`, "Simplifica si puedes."],
           { errors: [{ value: (a * d + cc * b) / (b * d), feedback: "Eso es la suma. En el producto se multiplican numeradores y denominadores." }] },
         ),
@@ -285,7 +291,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
           "q3",
           `Calcula ${p}/${q} ÷ ${r}/${s}.`,
           (p * s) / (q * r),
-          [`Dividir entre ${r}/${s} es multiplicar por su inverso, ${s}/${r}.`, `${p}/${q} × ${s}/${r} = ${p * s}/${q * r} = ${fr(p * s, q * r)}.`, `Responde a la pregunta: ¿cuántas veces cabe ${r}/${s} en ${p}/${q}?`],
+          [`Dividir entre ${r}/${s} es multiplicar por su inverso, ${s}/${r}.`, `${p}/${q} × ${s}/${r} = ${thenSimplified(p * s, q * r)}.`, `Responde a la pregunta: ¿cuántas veces cabe ${r}/${s} en ${p}/${q}?`],
           ["Multiplica por el inverso del divisor.", `${p}/${q} × ${s}/${r}.`, "Simplifica."],
           { errors: [{ value: (p * r) / (q * s), feedback: "Multiplicaste sin invertir el divisor." }] },
         ),

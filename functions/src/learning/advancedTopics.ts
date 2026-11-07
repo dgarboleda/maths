@@ -9,6 +9,16 @@ import type { Lesson } from "./types";
 const fmt = (x: number) => x.toLocaleString("es", { maximumFractionDigits: 6 });
 /** Redondea a 6 decimales para evitar restos de coma flotante (1,1² × 1000). */
 const r6 = (x: number) => Math.round(x * 1e6) / 1e6;
+const gcdOf = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcdOf(b, a % b));
+/** «n/d», su forma irreducible si cambia, y el decimal: exacto con «=» o
+ *  redondeado con «≈» (un periódico cortado no se escribe con «=»). */
+const ratioText = (num: number, den: number) => {
+  const g = gcdOf(num, den);
+  const simple = g > 1 ? ` = ${num / g}/${den / g}` : "";
+  const x = num / den;
+  const decimal = Math.abs(r6(x) - x) < 1e-9 ? `= ${fmt(r6(x))}` : `≈ ${x.toLocaleString("es", { maximumFractionDigits: 2 })}`;
+  return `${num}/${den}${simple} ${decimal}`;
+};
 const sg = (x: number) => (x < 0 ? `−${fmt(-x)}` : fmt(x));
 const pt = (x: number, y: number) => `(${sg(x)}, ${sg(y)})`;
 const soles = (x: number) => `S/ ${fmt(x)}`;
@@ -1018,7 +1028,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
           "q1",
           `En una encuesta (${table}), ¿cuál es P(vóley | 5.°)? Escríbela como decimal o fracción.`,
           pv5,
-          [`Estudiantes de 5.°: ${f5} + ${v5} = ${f5 + v5}.`, `P = ${v5}/${f5 + v5} = ${fmt(pv5)}.`],
+          [`Estudiantes de 5.°: ${f5} + ${v5} = ${f5 + v5}.`, `P = ${ratioText(v5, f5 + v5)}.`],
           ["El grupo conocido es el de 5.°.", "¿Cuántos de 5.° prefieren vóley?", "Divide entre el total de 5.°."],
           { errors: [{ value: r6(v5 / total), feedback: `Dividiste entre toda la encuesta (${total}); se calcula solo dentro de 5.°.` }] },
         ),
@@ -1053,7 +1063,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
           "q5",
           `De ${[200, 500, 100, 400, 300, 1000][v]} personas, ${infected} tienen un virus. La prueba da positivo en ${truePos} de los que lo tienen y en ${falsePos} de los que no. Si alguien da positivo, ¿qué probabilidad hay de que tenga el virus? Escríbela como fracción o decimal.`,
           truePos / (truePos + falsePos),
-          [`Positivos: ${truePos} + ${falsePos} = ${truePos + falsePos}.`, `Con virus entre los positivos: ${truePos}/${truePos + falsePos} = ${fmt(truePos / (truePos + falsePos))}.`],
+          [`Positivos: ${truePos} + ${falsePos} = ${truePos + falsePos}.`, `Con virus entre los positivos: ${ratioText(truePos, truePos + falsePos)}.`],
           ["El grupo conocido es el de los positivos.", "Cuenta todos los positivos.", "¿Cuántos de ellos tienen el virus?"],
           {
             intent: "transfer",

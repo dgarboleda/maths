@@ -5,6 +5,10 @@ import type { Lesson } from "./types";
 const fmt = (x: number) => x.toLocaleString("es", { maximumFractionDigits: 6 });
 /** Redondea a 6 decimales para evitar restos de coma flotante (0,1 × 3). */
 const r6 = (x: number) => Math.round(x * 1e6) / 1e6;
+/** «= x» si el resultado es exacto; «≈ x» con dos decimales si no lo es
+ *  (un periódico cortado no se escribe con «=»). */
+const eqOrApprox = (x: number) =>
+  Math.abs(r6(x) - x) < 1e-9 ? `= ${fmt(r6(x))}` : `≈ ${x.toLocaleString("es", { maximumFractionDigits: 2 })}`;
 const sg = (x: number) => (x < 0 ? `−${-x}` : `${x}`);
 const sup = (k: number) =>
   String(k)
@@ -177,7 +181,7 @@ export const NUMBER_EXTRA_LESSONS: Lesson[] = [
       "app",
       "La ciudad consume 3,6 × 10⁹ W·h al año y una placa solar produce 4,5 × 10⁵ W·h al año. ¿Cuántas placas harían falta para cubrir todo el consumo?",
       8000,
-      ["3,6 × 10⁹ ÷ 4,5 × 10⁵ = (3,6 ÷ 4,5) × 10⁴.", "0,8 × 10⁴ = 8 × 10³ = 8000 placas."],
+      ["(3,6 × 10⁹) ÷ (4,5 × 10⁵) = (3,6 ÷ 4,5) × 10⁹⁻⁵ = 0,8 × 10⁴.", "0,8 × 10⁴ = 8 × 10³ = 8000 placas: el primer factor debe quedar entre 1 y 10."],
       ["Divide los factores y resta los exponentes.", "3,6 ÷ 4,5 = 0,8.", "Ajusta 0,8 × 10⁴."],
       {
         intent: "transfer",
@@ -344,7 +348,7 @@ export const DECIMAL_LESSONS: Lesson[] = [
           "q6",
           `¿Cuántos envases completos de ${fmt(size)} L se llenan con ${total} L?`,
           Math.floor(r6(total / size)),
-          [`${total} ÷ ${fmt(size)} = ${fmt(r6(total / size))}.`, `Envases completos: ${Math.floor(r6(total / size))}; el resto no llena otro.`],
+          [`${total} ÷ ${fmt(size)} ${eqOrApprox(total / size)}.`, `Envases completos: ${Math.floor(r6(total / size))}; el resto no llena otro.`],
           ["Divide el total entre la capacidad.", "Convierte el divisor en entero.", "Solo cuentan los envases llenos."],
           {
             intent: "transfer",
