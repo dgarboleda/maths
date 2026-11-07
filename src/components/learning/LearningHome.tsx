@@ -175,6 +175,15 @@ export function LearningHome({
         )}
 
         {view === "practice" && (
+          <Link href={`/jugar/${childId}/practicar/ruta-rescate`} className="block rounded-3xl border border-amber-300/30 bg-gradient-to-r from-orange-950 to-slate-900 p-6 transition hover:border-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
+            <span className="text-xs font-bold uppercase tracking-widest text-amber-200">Minijuego · rutas y estrategia</span>
+            <h2 className="mt-2 text-2xl font-bold text-white">🚙 Ruta de Rescate</h2>
+            <p className="mt-2 text-sm text-slate-300">Programa un vehículo, rescata exploradores y encuentra el camino de vuelta.</p>
+            <span className="mt-4 inline-block font-bold text-cyan-200">Iniciar rescate →</span>
+          </Link>
+        )}
+
+        {view === "practice" && (
           <Link href={`/jugar/${childId}/practicar/estacion-proporcion`} className="block rounded-3xl border border-fuchsia-300/30 bg-gradient-to-r from-indigo-950 to-slate-900 p-6 transition hover:border-fuchsia-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-300">
             <span className="text-xs font-bold uppercase tracking-widest text-fuchsia-200">Minijuego · proporciones y estrategia</span>
             <h2 className="mt-2 text-2xl font-bold text-white">🚀 Estación Proporción</h2>

@@ -1,0 +1,17 @@
+.hero { position: relative; min-height: 280px; display: flex; align-items: center; overflow: hidden; background: linear-gradient(90deg, rgba(34, 20, 21, .97), rgba(34, 20, 21, .72) 48%, rgba(34, 20, 21, .15)), url('/games/ruta-rescate/valle.webp') center/cover, #78350f; }
+.panel { background: radial-gradient(circle at top right, #60412b, #1d2936 36%, #0f172a 80%); }
+.mission { transition: transform .18s ease, border-color .18s ease; }
+.mission:not(:disabled):hover { transform: translateY(-3px); border-color: #fde68a; }
+.board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; max-width: 450px; margin: auto; padding: 9px; border: 2px solid #fbbf24; border-radius: 18px; background: #604b33; box-shadow: 0 12px 32px #02061788; }
+.cell { position: relative; display: grid; place-items: center; aspect-ratio: 1; min-width: 0; border: 1px solid #d6d3a166; border-radius: 8px; background: #699b66; }
+.rock { background: #7b766e; }
+.base { background: #dfb773; }
+.tile { font-size: clamp(.9rem, 4vw, 1.8rem); white-space: nowrap; }
+.vehicle { position: absolute; display: flex; align-items: center; justify-content: center; inset: 14%; border: 2px solid white; border-radius: 50%; background: #1d4263; box-shadow: 0 3px 8px #0009; font-size: clamp(.8rem, 3vw, 1.4rem); animation: arrive .2s ease-out; }
+.vehicle b { color: #fff; font-size: 1.1rem; }
+.program { max-height: 240px; overflow-y: auto; }
+.edit { min-width: 32px; min-height: 32px; border-radius: 6px; background: #334155; font-weight: 700; }
+.edit:disabled { opacity: .35; }
+.edit:focus-visible { outline: 2px solid #fde68a; }
+@keyframes arrive { from { transform: scale(.8); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .mission { transition: none; } .vehicle { animation: none; } }

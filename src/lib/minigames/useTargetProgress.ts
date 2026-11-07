@@ -8,7 +8,7 @@ import { EMPTY_PROGRESS, mergeProgress, mergeSameDevice, normalizeProgress, type
 type SyncStatus = 'local' | 'conectando' | 'sincronizado' | 'pendiente' | 'error';
 
 /** Cada dispositivo conserva sus propios contadores; nunca pisa los de otro. */
-export function useTargetProgress(childId: string, game: 'target-masters' | 'fraction-fighters' | 'codebreaker' | 'geocraft' | 'estacion-proporcion' = 'target-masters') {
+export function useTargetProgress(childId: string, game: 'target-masters' | 'fraction-fighters' | 'codebreaker' | 'geocraft' | 'estacion-proporcion' | 'ruta-rescate' = 'target-masters') {
   const prefix = `${game}-v1-`;
   const { parentId, user } = useAuth();
   const [progress, setProgress] = useState<TargetProgress>(EMPTY_PROGRESS);
