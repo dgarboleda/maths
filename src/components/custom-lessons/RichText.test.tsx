@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { InlineText, RichText, parseBlocks, parseInline } from "./RichText";
+import { InlineText, RichText, isLessonImageUrl, parseBlocks, parseInline } from "./RichText";
 
 describe("parseInline", () => {
   it("reconoce negrita y cursiva", () => {
@@ -62,5 +62,23 @@ describe("InlineText", () => {
     const { container } = render(<p><InlineText text="√(16) y 2^3" /></p>);
     expect(container.querySelector(".math-sqrt")).not.toBeNull();
     expect(container.querySelector(".math-sup")).not.toBeNull();
+  });
+});
+
+describe("imágenes", () => {
+  const ok = "https://firebasestorage.googleapis.com/v0/b/demo.appspot.com/o/parents%2Fp1%2Flevel-assets%2Fa1.webp?alt=media&token=t";
+  it("solo admite imágenes de la biblioteca de la familia", () => {
+    expect(isLessonImageUrl(ok)).toBe(true);
+    expect(isLessonImageUrl("http://127.0.0.1:9199/v0/b/demo/o/parents%2Fp1%2Flevel-assets%2Fa1.png?alt=media")).toBe(true);
+    for (const bad of ["https://evil.example/x.png", "http://firebasestorage.googleapis.com/v0/b/demo/o/parents%2Fp1%2Flevel-assets%2Fa1.webp", "https://firebasestorage.googleapis.com/v0/b/demo/o/otra%2Fa1.webp", "javascript:alert(1)"]) expect(isLessonImageUrl(bad)).toBe(false);
+  });
+  it("pinta la imagen con su texto alternativo y deja como texto las demás", () => {
+    expect(parseBlocks(`Mira:\n![Una pizza en 4 trozos](${ok})\n![x](https://evil.example/x.png)`)).toEqual([
+      { kind: "paragraph", lines: ["Mira:"] },
+      { kind: "image", alt: "Una pizza en 4 trozos", src: ok },
+      { kind: "paragraph", lines: ["![x](https://evil.example/x.png)"] },
+    ]);
+    render(<RichText text={`![Una pizza en 4 trozos](${ok})`} />);
+    expect(screen.getByRole("img", { name: "Una pizza en 4 trozos" })).toHaveAttribute("src", ok);
   });
 });

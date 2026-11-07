@@ -257,9 +257,22 @@ service cloud.firestore {
       // nivel y no justifica ese costo. Un hijo la lee para poder jugar
       // (useCustomCurriculum se hidrata también en /jugar/{childId}/**);
       // solo el padre la edita.
+      //
+      // Clases que crea la familia (functions/src/customLessons): el
+      // documento completo lleva respuestas, explicaciones y pistas, así que
+      // solo lo lee la familia. Los alumnos leen la proyección
+      // `customLessonsPublic`, sin respuestas, que existe solo mientras la
+      // clase está publicada; `audience` lleva los hijos asignados o "*".
+      // Ambas las escriben las funciones (validan y versionan en el servidor).
       match /customLessons/{lessonId} {
-        allow read: if isParent(parentId) || (isChild(parentId, request.auth.token.get("childId", "")) && resource.data.published == true);
-        allow write: if isParent(parentId);
+        allow read: if isParent(parentId);
+        allow write: if false;
+      }
+      match /customLessonsPublic/{lessonId} {
+        allow read: if isParent(parentId)
+          || (isAnyChildOf(parentId)
+            && (request.auth.token.childId in resource.data.audience || '*' in resource.data.audience));
+        allow write: if false;
       }
 
       match /curriculumModules/{moduleId} {

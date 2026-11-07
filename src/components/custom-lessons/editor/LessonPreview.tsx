@@ -1,8 +1,8 @@
 import { MathText } from "@/components/MathText";
-import type { CustomLesson } from "../../../../functions/src/customLessons/schema";
+import { isNumeric, type CustomLesson } from "../../../../functions/src/customLessons/schema";
 import { InlineText, RichText } from "../RichText";
 
-/** La clase tal como la verá el alumno. */
+/** La clase tal como la verá el alumno, con la solución, la pista y los comentarios marcados. */
 export function LessonPreview({ lesson }: { lesson: CustomLesson }) {
   return (
     <details className="rounded-lg border border-slate-600 p-3">
@@ -12,11 +12,16 @@ export function LessonPreview({ lesson }: { lesson: CustomLesson }) {
         {lesson.questions.map((q, i) => (
           <div key={q.id} className="space-y-1">
             <p className="font-bold">{i + 1}. <InlineText text={q.prompt} /></p>
-            <ul className="flex flex-wrap gap-2">
-              {q.options.map((option, n) => (
-                <li key={n} className={`rounded border px-2 py-1 ${n === q.answer ? "border-emerald-400" : "border-slate-500"}`}><MathText text={option} /></li>
-              ))}
-            </ul>
+            {isNumeric(q) ? (
+              <p className="text-sm">Escribe un número · solución <span className="rounded border border-emerald-400 px-2"><MathText text={q.value || "—"} /></span>{q.tolerance ? ` (±${q.tolerance})` : ""}</p>
+            ) : (
+              <ul className="flex flex-wrap gap-2">
+                {q.options.map((option, n) => (
+                  <li key={n} title={q.optionFeedback?.[n] || undefined} className={`rounded border px-2 py-1 ${n === q.answer ? "border-emerald-400" : "border-slate-500"}`}><MathText text={option} /></li>
+                ))}
+              </ul>
+            )}
+            {q.hint && <p className="text-sm text-cyan-200">Pista: <InlineText text={q.hint} /></p>}
             {q.explanation && <p className="text-sm text-slate-300"><InlineText text={q.explanation} /></p>}
           </div>
         ))}

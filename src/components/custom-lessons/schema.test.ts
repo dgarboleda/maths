@@ -1,8 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { describeCustomLessonErrors, lessonVersion, nextContentVersion, validateCustomLesson, type CustomLesson } from "../../../functions/src/customLessons/schema";
+import { describeCustomLessonErrors, isPublicLesson, lessonVersion, nextContentVersion, numericMatches, parseNumber, prerequisiteMet, publicLesson, sanitizeLesson, validateCustomLesson, visibleTo, type ChoiceQuestion, type CustomLesson, type NumericQuestion } from "../../../functions/src/customLessons/schema";
 
-const lesson: CustomLesson = { title: "Sumas", topic: "Números", content: "Sumar une cantidades.", game: "breakout", published: true, updatedAt: 1, questions: [{ id: "q1", prompt: "¿Cuánto es 2 + 2?", answer: 3, options: ["1", "2", "3", "4", "5"], explanation: "2 + 2 = 4" }] };
-const q = lesson.questions[0];
+const q: ChoiceQuestion = { id: "q1", prompt: "¿Cuánto es 2 + 2?", answer: 3, options: ["1", "2", "3", "4", "5"], explanation: "2 + 2 = 4" };
+const lesson: CustomLesson = { title: "Sumas", topic: "Números", content: "Sumar une cantidades.", game: "breakout", published: true, updatedAt: 1, questions: [q] };
+const n: NumericQuestion = { id: "n1", kind: "numeric", prompt: "Simplifica 6/8", value: "3/4", explanation: "Divide entre 2.", hint: "Busca un divisor común." };
 const variants: unknown[] = [
   lesson,
   { ...lesson, game: "write", questions: [{ ...q, answer: 1, options: ["3", "4"] }] },
@@ -20,6 +21,14 @@ const variants: unknown[] = [
   { ...lesson, contentVersion: 5, order: 2 },
   { ...lesson, order: 1.5 },
   { ...lesson, questions: [{ ...q, explanation: 3 }] },
+  { ...lesson, game: "write", questions: [n] },
+  { ...lesson, questions: [n] },
+  { ...lesson, game: "write", questions: [{ ...n, value: "abc" }] },
+  { ...lesson, questions: [{ ...q, optionFeedback: ["", "", "", "", ""] }] },
+  { ...lesson, questions: [{ ...q, optionFeedback: [""] }] },
+  { ...lesson, assignedTo: ["c1", "c1"] },
+  { ...lesson, availableFrom: 10, dueAt: 5 },
+  { ...lesson, requires: "otra/clase" },
   null,
 ];
 
@@ -39,6 +48,61 @@ describe("validación de clases personalizadas", () => {
     expect(errors).toContainEqual(expect.objectContaining({ question: 1, field: "answer" }));
     expect(errors.some((e) => e.question === 0)).toBe(false);
   });
+  test("las preguntas numéricas solo se juegan sin minijuego y necesitan un número", () => {
+    expect(validateCustomLesson({ ...lesson, game: "write", questions: [n] })).toBe(true);
+    expect(describeCustomLessonErrors({ ...lesson, questions: [n] })).toContainEqual(expect.objectContaining({ question: 0, field: "value" }));
+    expect(describeCustomLessonErrors({ ...lesson, game: "write", questions: [{ ...n, value: "tres" }] })).toContainEqual(expect.objectContaining({ field: "value" }));
+  });
+  test("un borrador admite preguntas incompletas pero no tipos ni tamaños inválidos", () => {
+    const draft = { ...lesson, published: false, questions: [{ ...q, prompt: "", options: ["", ""], answer: -1 }, { ...n, value: "" }] };
+    expect(describeCustomLessonErrors(draft, { draft: true })).toEqual([]);
+    expect(describeCustomLessonErrors({ ...draft, title: "" }, { draft: true })).toContainEqual(expect.objectContaining({ field: "title" }));
+    expect(describeCustomLessonErrors({ ...draft, content: "x".repeat(10001) }, { draft: true })).toContainEqual(expect.objectContaining({ field: "content" }));
+    expect(describeCustomLessonErrors({ ...draft, questions: [{ ...q, options: "a" }] }, { draft: true })).toContainEqual(expect.objectContaining({ field: "options" }));
+  });
+});
+
+describe("respuestas numéricas", () => {
+  test("lee enteros, decimales con coma o punto, fracciones y números mixtos", () => {
+    expect(parseNumber("12")).toBe(12);
+    expect(parseNumber(" 0,75 ")).toBe(0.75);
+    expect(parseNumber("−2.5")).toBe(-2.5);
+    expect(parseNumber("-3/4")).toBe(-0.75);
+    expect(parseNumber("1 1/2")).toBe(1.5);
+    for (const bad of ["", "abc", "1/0", "1,2,3", "3/"]) expect(parseNumber(bad)).toBeNull();
+  });
+  test("acepta formas equivalentes y el margen", () => {
+    for (const ok of ["3/4", "6/8", "0,75", "0.75"]) expect(numericMatches(n, ok)).toBe(true);
+    expect(numericMatches(n, "0,7")).toBe(false);
+    expect(numericMatches({ value: "3,14", tolerance: 0.01 }, "3,15")).toBe(true);
+    expect(numericMatches({ value: "3,14", tolerance: 0.01 }, "3,16")).toBe(false);
+  });
+});
+
+describe("versión para alumnos", () => {
+  test("no lleva respuestas, explicaciones, pistas ni comentarios", () => {
+    const full: CustomLesson = { ...lesson, game: "write", order: 4, contentVersion: 9, assignedTo: ["c1"], questions: [{ ...q, optionFeedback: ["a", "b", "c", "", "e"], hint: "pista" }, n] };
+    const shown = publicLesson(full);
+    const text = JSON.stringify(shown);
+    for (const secret of ['"answer"', "explanation", "hint", "optionFeedback", '"value"', "pista"]) expect(text).not.toContain(secret);
+    expect(shown).toMatchObject({ version: 9, order: 4, audience: ["c1"], questions: [{ id: "q1", kind: "choice", options: q.options }, { id: "n1", kind: "numeric" }] });
+    expect(isPublicLesson(shown)).toBe(true);
+    expect(publicLesson(lesson).audience).toEqual(["*"]);
+  });
+  test("visibilidad por alumno y fecha, y clase previa", () => {
+    const shown = { ...publicLesson({ ...lesson, assignedTo: ["c1"], availableFrom: 100 }), version: 7 };
+    expect(visibleTo(shown, "c1", 100)).toBe(true);
+    expect(visibleTo(shown, "c1", 99)).toBe(false);
+    expect(visibleTo(shown, "c2", 200)).toBe(false);
+    expect(prerequisiteMet(shown, undefined, "c2", 200)).toBe(true);
+    expect(prerequisiteMet(undefined, undefined, "c1", 200)).toBe(true);
+    expect(prerequisiteMet(shown, { completed: true, lessonVersion: 6 }, "c1", 200)).toBe(false);
+    expect(prerequisiteMet(shown, { completed: true, lessonVersion: 7 }, "c1", 200)).toBe(true);
+  });
+  test("sanitizar descarta campos desconocidos", () => {
+    const dirty = { ...lesson, extra: "x", questions: [{ ...q, extra: 1 }] } as unknown as CustomLesson;
+    expect(JSON.stringify(sanitizeLesson(dirty))).not.toContain("extra");
+  });
 });
 
 describe("versión de contenido", () => {
@@ -48,10 +112,13 @@ describe("versión de contenido", () => {
   });
   test("corregir textos conserva la versión y cambiar preguntas la renueva", () => {
     expect(nextContentVersion(null, lesson, 100)).toBe(100);
-    expect(nextContentVersion(lesson, { questions: [{ ...q, prompt: "otro", explanation: "otra" }] }, 100)).toBe(1);
+    expect(nextContentVersion(lesson, { questions: [{ ...q, prompt: "otro", explanation: "otra", hint: "nueva", optionFeedback: ["a", "", "", "", ""] }] }, 100)).toBe(1);
     expect(nextContentVersion({ ...lesson, contentVersion: 42 }, lesson, 100)).toBe(42);
     expect(nextContentVersion(lesson, { questions: [{ ...q, answer: 2 }] }, 100)).toBe(100);
     expect(nextContentVersion(lesson, { questions: [{ ...q, options: ["1", "2", "3", "4", "6"] }] }, 100)).toBe(100);
     expect(nextContentVersion(lesson, { questions: [q, { ...q, id: "q2" }] }, 100)).toBe(100);
+    const numeric = { ...lesson, questions: [n] };
+    expect(nextContentVersion(numeric, { questions: [{ ...n, prompt: "otro" }] }, 100)).toBe(1);
+    expect(nextContentVersion(numeric, { questions: [{ ...n, value: "0,75" }] }, 100)).toBe(100);
   });
 });

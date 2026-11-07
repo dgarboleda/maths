@@ -13,6 +13,7 @@ import { MathText } from "@/components/MathText";
 export type Inline = { kind: "text" | "strong" | "em"; text: string };
 export type Block =
   | { kind: "heading"; level: 1 | 2 | 3; text: string }
+  | { kind: "image"; alt: string; src: string }
   | { kind: "ul" | "ol"; items: string[] }
   | { kind: "paragraph"; lines: string[] };
 
@@ -42,6 +43,21 @@ export function parseInline(text: string): Inline[] {
 }
 
 const HEADING = /^(#{1,3})\s+(.+)$/;
+const IMAGE = /^!\[([^\]]{0,200})\]\((\S+)\)$/;
+const STORAGE_HOSTS = new Set(["firebasestorage.googleapis.com", "127.0.0.1:9199", "localhost:9199"]);
+
+/**
+ * Solo imágenes de la biblioteca de la familia en Firebase Storage
+ * (`parents/{id}/level-assets/…`): una URL cualquiera permitiría rastrear al
+ * alumno o mostrar contenido ajeno.
+ */
+export function isLessonImageUrl(src: string): boolean {
+  try {
+    const url = new URL(src);
+    const secure = url.protocol === "https:" || (url.protocol === "http:" && url.host !== "firebasestorage.googleapis.com");
+    return secure && STORAGE_HOSTS.has(url.host) && /^\/v0\/b\/[^/]+\/o\/parents%2F[^/%]+%2Flevel-assets%2F[^/]+$/.test(url.pathname);
+  } catch { return false; }
+}
 const UL = /^[-*]\s+(.+)$/;
 const OL = /^\d+[.)]\s+(.+)$/;
 
@@ -55,6 +71,8 @@ export function parseBlocks(text: string): Block[] {
       if (last && last.kind !== "heading") blocks.push({ kind: "paragraph", lines: [] });
       continue;
     }
+    const image = IMAGE.exec(line);
+    if (image && isLessonImageUrl(image[2])) { blocks.push({ kind: "image", alt: image[1], src: image[2] }); continue; }
     const heading = HEADING.exec(line);
     const ul = UL.exec(line);
     const ol = OL.exec(line);
@@ -95,6 +113,8 @@ export function RichText({ text }: { text: string }) {
           const Tag = (["h2", "h3", "h4"] as const)[block.level - 1];
           return <Tag key={i} className={headingClass[block.level - 1]}><InlineText text={block.text} /></Tag>;
         }
+        // eslint-disable-next-line @next/next/no-img-element -- URL de Storage ya validada, sin optimizador de imágenes.
+        if (block.kind === "image") return <img key={i} src={block.src} alt={block.alt} loading="lazy" className="max-h-80 max-w-full rounded-lg" />;
         if (block.kind === "paragraph")
           return <p key={i}>{block.lines.map((line, n) => <Fragment key={n}>{n > 0 && <br />}<InlineText text={line} /></Fragment>)}</p>;
         const List = block.kind;
