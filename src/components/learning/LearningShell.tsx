@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import styles from "./learning.module.css";
 import { LearningHelpProvider } from "./LearningHelp";
+import { CalculatorProvider } from "./Calculator";
 import { StarCounter } from "./StarCounter";
 import { navigationHelp, type ScreenHelp } from "@/lib/learning/screenHelp";
 
@@ -51,6 +52,7 @@ export function LearningShell({
   ];
   return (
     <LearningHelpProvider childId={childId} help={help ?? navigationHelp(pathname)} onOpen={onHelpOpen} disabled={helpDisabled}>
+    <CalculatorProvider childId={childId}>
     <main
       id="contenido"
       tabIndex={-1}
@@ -113,6 +115,7 @@ export function LearningShell({
         </div>
       </div>
     </main>
+    </CalculatorProvider>
     </LearningHelpProvider>
   );
 }

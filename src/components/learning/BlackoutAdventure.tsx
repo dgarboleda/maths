@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Borrador } from "./Borrador";
+import { OpenCalculatorButton } from "./Calculator";
 import { Activity, Radio, Wrench, Zap } from "lucide-react";
 import {
   useLearningAction,
@@ -266,8 +266,8 @@ function AdventureGame({
                   </div>
                 ))}
               </fieldset>
-              {/* Los valores se eligen con los deslizadores: el borrador solo sirve para calcular. */}
-              <Borrador disabled={mutation.blocked} />
+              {/* Los valores se eligen con los deslizadores: la calculadora solo sirve para calcular. */}
+              <OpenCalculatorButton disabled={mutation.blocked} />
               <p
                 className={`rounded-xl p-3 text-sm font-bold ${planned > 120 ? "bg-amber-950 text-amber-100" : "bg-slate-950 text-slate-200"}`}
               >

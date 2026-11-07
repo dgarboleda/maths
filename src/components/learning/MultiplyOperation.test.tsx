@@ -19,16 +19,16 @@ describe("Hoja de multiplicación", () => {
     expect(onComplete).toHaveBeenCalledWith("282");
   });
 
-  test("guiada con decimales: tras las cifras se elige cuántos decimales lleva el producto", () => {
+  test("guiada con decimales: tras las cifras, el alumno toca dónde va la coma del producto", () => {
     const onComplete = vi.fn();
     render(<MultiplySheet spec={{ op: "multiply", a: 2.4, b: 0.3 }} mode="guided" response="" onChange={() => {}} onComplete={onComplete} />);
     fireEvent.change(screen.getByLabelText("Producto: unidades"), { target: { value: "2" } });
     fireEvent.change(screen.getByLabelText("Producto: decenas"), { target: { value: "7" } });
-    expect(screen.getByText(/¿Cuántas cifras decimales lleva el producto\? Cuenta las de los dos factores/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: "1" }));
+    expect(screen.getByText(/¿Dónde va la coma del producto\? Cuenta las cifras decimales de los dos factores/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 1 cifra a su derecha" }));
     expect(screen.getByText(/cuenta las cifras decimales de 2,4 y de 0,3/)).toBeInTheDocument();
     expect(onComplete).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("radio", { name: "2" }));
+    fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 2 cifras a su derecha" }));
     expect(onComplete).toHaveBeenCalledWith("0,72");
   });
 
@@ -55,9 +55,14 @@ describe("Hoja de multiplicación", () => {
     fireEvent.change(screen.getByLabelText("Producto: unidades"), { target: { value: "0" } });
     fireEvent.change(screen.getByLabelText("Producto: decenas"), { target: { value: "0" } });
     fireEvent.change(screen.getByLabelText("Producto: centenas"), { target: { value: "5" } });
-    expect(onChange).toHaveBeenLastCalledWith("");
-    fireEvent.click(screen.getByRole("radio", { name: "3" }));
+    expect(onChange).toHaveBeenLastCalledWith("500");
+    // La coma se escribe en la casilla: en una vacía, a su derecha.
+    fireEvent.change(screen.getByLabelText("Producto: unidades de millar"), { target: { value: "," } });
     expect(onChange).toHaveBeenLastCalledWith("0,500");
+    // En una casilla llena, la coma va a su izquierda (y la cifra no cambia).
+    fireEvent.change(screen.getByLabelText("Producto: decenas"), { target: { value: "," } });
+    expect(onChange).toHaveBeenLastCalledWith("5,00");
+    expect(screen.getByLabelText("Producto: decenas")).toHaveValue("0");
     expect(await axe(container)).toHaveNoViolations();
   });
 
@@ -89,7 +94,6 @@ describe("Galera con decimales", () => {
   test("la coma, los ceros añadidos y el prefijo 0, se ven en el desarrollo", async () => {
     const { container, unmount } = render(<DivisionDemo spec={{ op: "divide", a: 3, b: 4, places: 2 }} layout="completa" initialStep={Infinity} />);
     expect(screen.getAllByText("cero añadido", { exact: false })).toHaveLength(2);
-    expect(screen.getByText("0,")).toBeInTheDocument();
     expect(screen.getByText("0,75")).toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
     unmount();
@@ -97,7 +101,7 @@ describe("Galera con decimales", () => {
     expect(screen.getByText(/4,8 ÷ 0,15 = 480 ÷ 15/)).toBeInTheDocument();
   });
 
-  test("galera abierta: la coma del cociente está fija y una casilla vacía deja la respuesta incompleta", () => {
+  test("galera abierta: el alumno pone la coma y una casilla vacía deja la respuesta incompleta", () => {
     const onChange = vi.fn();
     render(<DivisionSheet spec={{ op: "divide", a: 3, b: 4, places: 2 }} layout="completa" mode="open" response="" onChange={onChange} />);
     const q = (i: number, value: string) => fireEvent.change(screen.getByLabelText(`Cociente: cifra ${i}`), { target: { value } });
@@ -109,5 +113,45 @@ describe("Galera con decimales", () => {
     expect(onChange).toHaveBeenLastCalledWith("");
     q(2, "7");
     expect(onChange).toHaveBeenLastCalledWith("L075;20,0");
+    // No hay huecos ni botones: «,» en una casilla llena pone la coma detrás de ella.
+    expect(screen.queryByRole("button", { name: /coma/ })).toBeNull();
+    q(1, ",");
+    expect(onChange).toHaveBeenLastCalledWith("L0,75;20,0");
+    expect(screen.getByLabelText("Cociente: cifra 1")).toHaveValue("0");
+    // Otra vez en el mismo sitio la quita.
+    q(1, ",");
+    expect(onChange).toHaveBeenLastCalledWith("L075;20,0");
+  });
+
+  test("galera guiada: al bajar la primera cifra decimal, el alumno marca la coma del cociente", () => {
+    const onComplete = vi.fn();
+    render(<DivisionSheet spec={{ op: "divide", a: 12.6, b: 3 }} layout="abreviada" mode="guided" response="" onChange={() => {}} onComplete={onComplete} />);
+    // 12 ÷ 3: cociente 4, resta 0 y baja el 6 (décimas).
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 1"), { target: { value: "4" } });
+    fireEvent.change(screen.getByLabelText("Resta del paso 1: casilla 2 de 2"), { target: { value: "6" } });
+    expect(screen.queryByLabelText("Resta del paso 1: casilla 2 de 2")).toBeNull();
+    expect(screen.getByText(/Acabas de bajar el 6, la primera cifra decimal/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Cociente: cifra 2")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Poner la coma después de la cifra 1 del cociente" }));
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 2"), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText("Resta del paso 2: casilla 2 de 2"), { target: { value: "0" } });
+    expect(onComplete).toHaveBeenCalledWith("A4,2;6,0");
+  });
+
+  test("galera libre: sin la coma, el procedimiento no está completo y se avisa al revisar", () => {
+    const onChange = vi.fn();
+    const response = "C42;12,06,6,0";
+    const { unmount } = render(
+      <DivisionSheet spec={{ op: "divide", a: 12.6, b: 3 }} layout="completa" mode="free" response={response} failedResponse={response} onChange={onChange} />,
+    );
+    expect(screen.getByText(/Las cifras están bien: revisa la coma del cociente/)).toBeInTheDocument();
+    // «,» en una casilla llena del cociente: la coma va detrás de ella.
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 1"), { target: { value: "," } });
+    expect(onChange).toHaveBeenLastCalledWith("C4,2;12,06,6,0");
+    expect(screen.getByLabelText("Cociente: cifra 1")).toHaveAttribute("inputmode", "decimal");
+    unmount();
+    // Una división natural no pide coma: teclado solo de cifras.
+    render(<DivisionSheet spec={{ op: "divide", a: 756, b: 3 }} layout="completa" mode="free" response="" onChange={() => {}} />);
+    expect(screen.getByLabelText("Cociente: cifra 1")).toHaveAttribute("inputmode", "numeric");
   });
 });

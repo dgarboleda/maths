@@ -265,6 +265,10 @@ export function errorFeedback(question: Question, response: string): string {
   if (question.column?.op === "divide") {
     const work = checkDivisionWork(question.column, response);
     if (work?.firstError) return divisionWorkFeedback(question.column, work.firstError, work.layout);
+    if (work && !work.commaCorrect)
+      return divisionTrace(question.column).decimals
+        ? "Las cifras del cociente están bien; revisa la coma: se pone en el cociente justo al bajar la primera cifra decimal del dividendo."
+        : "Las cifras del cociente están bien, pero este cociente no lleva coma: todas sus cifras salen de la parte entera.";
     const open = checkOpenDivision(question.column, response);
     if (open && !open.quotientCorrect)
       return "El cociente no es correcto. Comprueba con la multiplicación: cociente × divisor + resto tiene que dar el dividendo.";

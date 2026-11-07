@@ -12,7 +12,10 @@
  * - 5: decimales en las operaciones escritas: multiplicación en columnas,
  *   división con cociente, dividendo o divisor decimal y formas con
  *   decimales en suma y resta (cambian bancos de clases existentes).
+ * - 6: la coma la pone el alumno (resultado de suma, resta y multiplicación
+ *   y cociente de la galera); con decimales, la galera empieza por las
+ *   unidades (0,…) y la respuesta guarda la coma («C0,75;…»).
  *
  * Módulo propio para que el navegador lo importe sin cargar el catálogo.
  */
-export const CONTENT_VERSION = 5;
+export const CONTENT_VERSION = 6;

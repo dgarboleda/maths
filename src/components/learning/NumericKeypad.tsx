@@ -30,7 +30,7 @@ const useKeyboardChoice = makePreference<"propio" | "telefono">("maths:teclado",
 const KeypadContext = createContext(false);
 
 /** inputMode de una casilla de hoja: «none» si el teclado propio está activo. */
-export function useSheetInputMode(fallback: "numeric" | "text" = "numeric"): "none" | "numeric" | "text" {
+export function useSheetInputMode<T extends "numeric" | "decimal" | "text" = "numeric">(fallback: T = "numeric" as T): "none" | T {
   return useContext(KeypadContext) ? "none" : fallback;
 }
 
@@ -59,7 +59,20 @@ function navigate(container: HTMLElement, input: HTMLInputElement, key: "ArrowLe
   next?.focus();
 }
 
-export function NumericKeypadArea({ sign = false, children }: { sign?: boolean; children: React.ReactNode }) {
+export function NumericKeypadArea({
+  sign = false,
+  comma = false,
+  bottom = "calc(5rem + env(safe-area-inset-bottom))",
+  children,
+}: {
+  sign?: boolean;
+  /** Tecla «,» para poner la coma desde la casilla (operaciones con decimales). */
+  comma?: boolean;
+  /** Distancia del teclado al borde inferior de lo que se desplaza: por
+   *  defecto deja sitio a la navegación inferior de la página. */
+  bottom?: string;
+  children: React.ReactNode;
+}) {
   const coarse = useCoarsePointer();
   const [choice, setChoice] = useKeyboardChoice();
   const active = coarse && choice === "propio";
@@ -107,7 +120,7 @@ export function NumericKeypadArea({ sign = false, children }: { sign?: boolean; 
             role="group"
             aria-label="Teclado numérico"
             className="sticky z-30 mt-3 rounded-2xl border border-slate-700 bg-slate-950/95 p-2 shadow-lg backdrop-blur"
-            style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+            style={{ bottom }}
           >
             <div className="grid grid-cols-6 gap-1.5">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map((d) => (
@@ -120,6 +133,11 @@ export function NumericKeypadArea({ sign = false, children }: { sign?: boolean; 
                 <button type="button" aria-label="Escribir signo menos" className={keyClass}
                   onPointerDown={(e) => e.preventDefault()} onClick={() => press("−")}>
                   −
+                </button>
+              ) : comma ? (
+                <button type="button" aria-label="Escribir coma" className={keyClass}
+                  onPointerDown={(e) => e.preventDefault()} onClick={() => press(",")}>
+                  ,
                 </button>
               ) : (
                 <span aria-hidden="true" />
