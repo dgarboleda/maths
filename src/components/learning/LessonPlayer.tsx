@@ -56,9 +56,8 @@ import {
   type ArcadeSession,
 } from "@/lib/minigames/lessonExercise";
 
-// El tutor visual se descarga solo cuando el alumno lo abre: así la clase no
-// paga su peso (material, guion y reproductor) si no se usa. Solo en el
-// navegador: recuerda la escena en localStorage y reproduce audio.
+// El tutor solo se descarga en las clases que lo incluyen y en el navegador:
+// recuerda la escena en localStorage y reproduce audio.
 const VisualTutor = dynamic(
   () => import("./VisualTutor").then((module) => module.VisualTutor),
   { ssr: false, loading: () => <p role="status">Preparando el tutor visual…</p> },
@@ -70,30 +69,6 @@ const LessonArcade = dynamic(
 
 type RequestedStage = "practice" | "review" | null;
 
-function VisualTutorLauncher({ lessonId }: { lessonId: string }) {
-  const [open, setOpen] = useState(false);
-  if (open) return <VisualTutor lessonId={lessonId} autoStart />;
-  return (
-    <section
-      aria-labelledby={`abrir-tutor-${lessonId}`}
-      className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-400/40 bg-slate-950 p-4"
-    >
-      <div className="min-w-0 flex-1 basis-56 space-y-1">
-        <h4 id={`abrir-tutor-${lessonId}`} className="font-bold text-white">
-          Tutor visual con voz
-        </h4>
-        <p className="text-sm text-slate-400">Mueve el material mientras una voz te guía. No cuenta como comprobación ni suma estrellas.</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="min-h-11 rounded-lg border border-cyan-300 bg-cyan-300 px-4 font-semibold text-slate-950"
-      >
-        Practicar con el tutor
-      </button>
-    </section>
-  );
-}
 /** `lesson` llega del servidor: el navegador no carga el catálogo completo. */
 export function LessonPlayer({
   childId,
@@ -253,7 +228,7 @@ export function LessonPlayer({
                   </p>
                   <LearningVisual key={lesson.visual} kind={lesson.visual} />
                   {progress.index === 0 && hasVisualTutor(lesson.id) && (
-                    <VisualTutorLauncher key={lesson.id} lessonId={lesson.id} />
+                    <VisualTutor key={lesson.id} lessonId={lesson.id} autoStart />
                   )}
                   <button
                     disabled={mutation.blocked}

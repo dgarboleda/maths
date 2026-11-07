@@ -19,7 +19,6 @@ test("tutor visual de multiplicación: voz real, manipulación sin arrastre y si
 
   await page.goto(`/jugar/${childId}/aprende/${lesson.id}`);
   await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
-  await page.getByRole("button", { name: "Practicar con el tutor" }).click();
   await expect(page.getByRole("heading", { name: lesson.sections[0].title, exact: true })).toBeVisible();
   const tutor = page.getByRole("region", { name: "Instala los paneles" });
   await expect(tutor).toBeVisible();
@@ -31,9 +30,7 @@ test("tutor visual de multiplicación: voz real, manipulación sin arrastre y si
     if (r.url().includes(":5002/") || /firestore.*(Write|commit)/i.test(r.url())) backend.push(r.url());
   });
 
-  // Abrir el tutor es el gesto que arranca la voz: se descarga y suena sola,
-  // y el foco pasa al tutor.
-  await expect(tutor.getByRole("heading", { name: "Instala los paneles" })).toBeFocused();
+  // El tutor aparece y presenta la escena al entrar en la clase.
   await expect(tutor.getByRole("button", { name: "Pausar voz" })).toBeVisible();
   await page.waitForFunction(() => (document.querySelector("audio")?.currentTime ?? 0) > 0.2);
   await tutor.getByRole("button", { name: "Pausar voz" }).click();
@@ -70,7 +67,6 @@ test("tutor visual de multiplicación: voz real, manipulación sin arrastre y si
   // Al volver a la clase se retoma la escena.
   // La clase recuerda su etapa; el tutor, su escena y la voz silenciada.
   await page.reload();
-  await page.getByRole("button", { name: "Practicar con el tutor" }).click();
   await expect(page.getByText("Retomas donde lo dejaste.")).toBeVisible();
   await expect(page.getByText(/escena 3 de 3/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Activar voz" })).toHaveAttribute("aria-pressed", "true");
@@ -100,7 +96,6 @@ for (const [lessonId, title] of OTROS_TUTORES)
     const childId = await entrarAlEspacio(page, nombre, pin);
     await page.goto(`/jugar/${childId}/aprende/${lessonId}`);
     await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
-    await page.getByRole("button", { name: "Practicar con el tutor" }).click();
     const tutor = page.getByRole("region", { name: title });
     await expect(tutor).toBeVisible();
     if (lessonId === "suma-resta-columnas")

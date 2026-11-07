@@ -167,11 +167,25 @@ describe("tutor visual en la clase", () => {
     expect(lastClip()).toBe("/audio/tutor/grupos-1-pista.mp3");
   });
 
-  it("abierto por el alumno, presenta la escena con voz y recibe el foco", () => {
+  it("al iniciar automáticamente, presenta la escena con voz", () => {
     render(<VisualTutor lessonId="multiplicacion-grupos" autoStart />);
     expect(lastClip()).toBe("/audio/tutor/grupos-1-intro.mp3");
     expect(play).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("heading", { name: "Instala los paneles" })).toHaveFocus();
+  });
+
+  it("respeta la voz silenciada al iniciar automáticamente", () => {
+    localStorage.setItem("maths:tutor-voz", "off");
+    render(<VisualTutor lessonId="multiplicacion-grupos" autoStart />);
+    expect(play).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Activar voz" })).toBeInTheDocument();
+  });
+
+  it("permite iniciar la voz si el navegador bloquea la reproducción automática", async () => {
+    play.mockRejectedValueOnce(new DOMException("Bloqueado", "NotAllowedError"));
+    render(<VisualTutor lessonId="multiplicacion-grupos" autoStart />);
+    expect(await screen.findByText("Pulsa Escuchar para iniciar la voz.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Escuchar" }));
+    expect(play).toHaveBeenCalledTimes(2);
   });
 
   it("se resuelve solo con el teclado", async () => {

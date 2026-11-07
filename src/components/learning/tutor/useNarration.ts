@@ -7,13 +7,12 @@ import { clipUrl } from "./content";
 /** Voz del tutor activada o silenciada; se recuerda en este navegador. */
 export const useTutorVoice = makePreference("maths:tutor-voz", ["on", "off"] as const, "on");
 
-export type NarrationStatus = "idle" | "playing" | "paused" | "unavailable";
+export type NarrationStatus = "idle" | "playing" | "paused" | "blocked" | "unavailable";
 
 /**
  * Narración con audios pregrabados. Un único <audio>: cada clip nuevo
- * sustituye al anterior, así nunca se superponen dos voces. Nada suena hasta
- * que el alumno actúa (las políticas de reproducción automática lo exigen y
- * evita sorprender a quien no espera sonido). Si un clip no carga, el texto
+ * sustituye al anterior, así nunca se superponen dos voces. El navegador puede
+ * bloquear la reproducción automática hasta que el alumno actúe. Si un clip no carga, el texto
  * en pantalla sigue siendo la referencia.
  */
 export function useNarration() {
@@ -30,7 +29,7 @@ export function useNarration() {
         pending.catch((error: unknown) => {
           // Pausar antes de que empiece no es un fallo del audio.
           if (error instanceof DOMException && error.name === "AbortError") return;
-          setStatus("unavailable");
+          setStatus(error instanceof DOMException && error.name === "NotAllowedError" ? "blocked" : "unavailable");
         });
     } catch {
       setStatus("unavailable");
