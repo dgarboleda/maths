@@ -25,7 +25,7 @@ export const MULTIPLICATION_LESSONS: Lesson[] = [
     objective:
       "Interpretar la multiplicación como grupos iguales y como filas y columnas, usar que el orden de los factores no cambia el producto y separar un factor para calcular.",
     purpose:
-      "La ciudad instala paneles solares en filas iguales, llena cajas y ordena sillas. Contar uno por uno es lento: con grupos iguales se cuenta mucho más rápido y sin errores.",
+      "Al organizar paneles en filas iguales o llenar cajas con la misma cantidad de objetos, multiplicar permite calcular el total sin contarlos uno por uno.",
     prerequisites: [],
     legacyModuleIds: [],
     visual: "equal-groups",

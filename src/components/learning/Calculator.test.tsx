@@ -4,8 +4,8 @@ import { axe } from "jest-axe";
 import { CalculatorProvider, OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
 
 /** Una pantalla que espera números (la respuesta o los valores de un plan). */
-function Screen({ labels, onUse, enabled = true }: { labels: string[]; onUse: (v: string, i: number) => void; enabled?: boolean }) {
-  useCalculatorTarget(labels, onUse, enabled);
+function Screen({ labels, onUse, enabled = true, integerOnly = false }: { labels: string[]; onUse: (v: string, i: number) => void; enabled?: boolean; integerOnly?: boolean }) {
+  useCalculatorTarget(labels, onUse, enabled, integerOnly);
   return <OpenCalculatorButton />;
 }
 
@@ -169,4 +169,82 @@ describe("Calculadora global", () => {
     numbers("3", "4");
     expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(3);
   });
+});
+
+describe("fracciones y divisibilidad", () => {
+  test("calcula fracciones exactas, muestra pasos y las pasa a la respuesta", async () => {
+    sessionStorage.clear();
+    const onUse = vi.fn();
+    renderCalculator({ labels: ["tu respuesta"], onUse });
+    await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    fireEvent.change(screen.getByLabelText("Primera fracción o número"), { target: { value: "1/2" } });
+    fireEvent.change(screen.getByLabelText("Segunda fracción o número"), { target: { value: "1/3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
+    expect(screen.getByText(/Denominador común: MCM/)).toHaveTextContent("6");
+    expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("5/6");
+    fireEvent.click(screen.getByRole("button", { name: "Usar 5/6 en tu respuesta" }));
+    expect(onUse).toHaveBeenCalledWith("5/6", 0);
+  });
+  test("MCM, encadenamiento y cambios no dejan un resultado anterior activo", async () => {
+    sessionStorage.clear();
+    renderCalculator();
+    await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    fireEvent.change(screen.getByLabelText("Operación", { exact: true }), { target: { value: "mcm" } });
+    fireEvent.change(screen.getByLabelText("Primer entero"), { target: { value: "12" } });
+    fireEvent.change(screen.getByLabelText("Segundo entero"), { target: { value: "18" } });
+    fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
+    expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("36");
+    fireEvent.click(screen.getByRole("button", { name: "Usar como primer número" }));
+    expect(screen.getByLabelText("Primer entero")).toHaveValue("36");
+    expect(screen.getByText("Calcula para usar el resultado.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Segundo entero"), { target: { value: "0" } });
+    fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
+    expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("0");
+  });
+});
+
+
+test("no envía una fracción a una actividad que solo admite enteros", async () => {
+  sessionStorage.clear();
+  const onUse = vi.fn();
+  renderCalculator({ labels: ["Cajas"], onUse, integerOnly: true });
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  fireEvent.change(screen.getByLabelText("Primera fracción o número"), { target: { value: "1/2" } });
+  fireEvent.change(screen.getByLabelText("Segunda fracción o número"), { target: { value: "1/3" } });
+  fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
+  expect(screen.getByRole("button", { name: "Usar 5/6 en Cajas" })).toBeDisabled();
+  expect(screen.getByText(/solo admite números enteros/)).toBeVisible();
+  expect(onUse).not.toHaveBeenCalled();
+});
+
+test("conserva la cuenta exacta en la misma pestaña", async () => {
+  sessionStorage.clear();
+  const first = renderCalculator();
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  fireEvent.change(screen.getByLabelText("Primera fracción o número"), { target: { value: "1/2" } });
+  fireEvent.change(screen.getByLabelText("Segunda fracción o número"), { target: { value: "1/3" } });
+  fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
+  first.unmount();
+  renderCalculator();
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("5/6");
+});
+
+test("mantiene copiable un resultado fuera del rango aceptado por la actividad", async () => {
+  sessionStorage.clear();
+  renderCalculator({ labels: ["tu respuesta"], onUse: vi.fn() });
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  fireEvent.change(screen.getByLabelText("Operación", { exact: true }), { target: { value: "multiply" } });
+  fireEvent.change(screen.getByLabelText("Primera fracción o número"), { target: { value: "9999999" } });
+  fireEvent.change(screen.getByLabelText("Segunda fracción o número"), { target: { value: "9999999" } });
+  fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
+  expect(screen.getByRole("button", { name: /Usar 99999980000001/ })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /Copiar/ })).toBeEnabled();
+  expect(screen.getByText(/fuera del rango/)).toBeVisible();
 });

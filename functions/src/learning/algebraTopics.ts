@@ -213,7 +213,7 @@ export const FACTORING_LESSONS: Lesson[] = [
     objective:
       "Simplificar fracciones algebraicas factorizando, indicar los valores que anulan el denominador y sumar y multiplicar fracciones algebraicas sencillas.",
     purpose:
-      "Las fórmulas de velocidad, tiempo de trabajo o precio por persona suelen tener letras en el denominador. Simplificarlas evita errores y muestra para qué valores no tienen sentido.",
+      "Algunas fórmulas de velocidad, tiempo de trabajo o precio por persona incluyen una variable en el denominador. Simplificarlas ayuda a calcular y a identificar los valores que no están permitidos.",
     prerequisites: ["factorizacion", "fracciones-suma-resta"],
     legacyModuleIds: [],
     visual: "trinomial",

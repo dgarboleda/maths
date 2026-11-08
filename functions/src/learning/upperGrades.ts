@@ -227,7 +227,7 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
     objective:
       "Distinguir el crecimiento lineal (sumar una cantidad fija) del exponencial (multiplicar por un factor fijo), calcular valores de y = a · bⁿ y modelar aumentos y descuentos porcentuales repetidos.",
     purpose:
-      "Poblaciones, ahorros con interés compuesto, la depreciación de un auto o un rumor que se propaga crecen o decrecen multiplicando, no sumando.",
+      "Un modelo exponencial describe una cantidad que se multiplica por el mismo factor en intervalos iguales. Puede servir, por ejemplo, para estudiar un ahorro con interés compuesto o una depreciación porcentual constante.",
     prerequisites: ["potencias-raices", "porcentajes-aplicados", "funciones-lineales"],
     legacyModuleIds: ["algebra-d9", "aritmetica-potencias"],
     visual: "exponential",
@@ -439,7 +439,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
     objective:
       "Definir seno, coseno y tangente de un ángulo agudo como razones entre los lados de un triángulo rectángulo y usarlas para calcular alturas, distancias e inclinaciones.",
     purpose:
-      "Con un ángulo y una distancia se puede medir la altura de un edificio, un cerro o un poste sin subir a ellos.",
+      "Si observas desde el nivel de la base y conoces el ángulo de elevación y la distancia horizontal, puedes calcular la altura de un edificio o un poste sin subir a él.",
     prerequisites: ["pitagoras", "semejanza"],
     legacyModuleIds: ["geometria-d9", "geometria-d10"],
     visual: "trig",
@@ -850,7 +850,7 @@ export const COUNTING_LESSONS: Lesson[] = [
     objective:
       "Contar casos con el principio multiplicativo, distinguir cuándo importa el orden y calcular ordenaciones y elecciones sencillas para hallar probabilidades.",
     purpose:
-      "Saber cuántas contraseñas, menús o equipos son posibles sin tener que escribirlos uno por uno.",
+      "Las técnicas de conteo permiten calcular cuántas contraseñas, menús o equipos son posibles sin enumerarlos uno por uno.",
     prerequisites: ["probabilidad-simple", "potencias-raices"],
     legacyModuleIds: ["medicion-d10", "medicion-d9"],
     visual: "counting",

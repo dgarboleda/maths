@@ -8,8 +8,8 @@ import styles from "./calculator.module.css";
 /* Calculadora en columnas: una herramienta de todo el espacio del alumno.
  * Un botón flotante abre un panel lateral donde se escriben cuentas con su
  * desarrollo (columnas, multiplicación y galera), se encadenan resultados y
- * se copia el resultado final. No corrige ni cuenta como ayuda: es el papel
- * de al lado. Una pantalla que espera un número (una respuesta, los valores
+ * se copia el resultado final. También calcula fracciones y divisibilidad
+ * con sus pasos. Una pantalla que espera un número (una respuesta, los valores
  * de un plan) lo anuncia con `useCalculatorTarget` y el panel ofrece pasarle
  * el resultado. */
 
@@ -19,6 +19,8 @@ const CalculatorPanel = lazy(() => import("./CalculatorPanel").then((module) => 
 export interface CalculatorTarget {
   /** Nombre de cada destino («tu respuesta», «Baldosas»…). */
   labels: string[];
+  /** Algunos destinos, como las decisiones de aventuras, solo admiten enteros. */
+  integerOnly?: boolean;
   onUse: (value: string, index: number) => void;
 }
 
@@ -80,7 +82,7 @@ export function CalculatorProvider({ childId, children }: { childId: string; chi
  * el resultado final. `onUse` puede cambiar en cada render sin volver a
  * registrar el destino.
  */
-export function useCalculatorTarget(labels: string[], onUse: (value: string, index: number) => void, enabled = true) {
+export function useCalculatorTarget(labels: string[], onUse: (value: string, index: number) => void, enabled = true, integerOnly = false) {
   const context = useContext(Context);
   const latest = useRef(onUse);
   useEffect(() => {
@@ -89,8 +91,8 @@ export function useCalculatorTarget(labels: string[], onUse: (value: string, ind
   const key = labels.join("\u0000");
   useEffect(() => {
     if (!context || !enabled) return;
-    return context.register({ labels: key.split("\u0000"), onUse: (value, index) => latest.current(value, index) });
-  }, [context, enabled, key]);
+    return context.register({ labels: key.split("\u0000"), integerOnly, onUse: (value, index) => latest.current(value, index) });
+  }, [context, enabled, integerOnly, key]);
 }
 
 /** Acceso a la calculadora junto a una pregunta (además del botón flotante). */

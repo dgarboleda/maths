@@ -61,6 +61,7 @@ En HTTPS, el navegador puede instalar Math Quest desde su menú de instalación;
 - `/jugar/{childId}`: espacio educativo con programa y aventura incluidos, sin evaluación obligatoria ni niveles preparados por la familia.
 - `/jugar/{childId}/aprende`: 12 lecciones en tres unidades; `/aprende/{lessonId}`: clase, ejemplos, práctica, comprobación y aplicación. `/practicar` permite entrar a la práctica de un tema.
 - `/jugar/{childId}/aventura`: El apagón, con decisiones de distribución de energía y consecuencias persistentes. `/mapa` mantiene los mundos y actividades adicionales de la familia.
+- La calculadora del espacio del alumno conserva la hoja de cuentas escritas y añade operaciones exactas con fracciones, decimales, MCM y MCD, con pasos y opción de copiar el resultado.
 - Functions evalúa y registra la nueva evidencia educativa, con operaciones idempotentes y revisiones para evitar sobrescrituras entre pestañas. Pedir ayuda conserva la recompensa y se distingue de la resolución autónoma.
 - `/panel/progreso`: estados educativos y repasos, separados del histórico de otras actividades. La ruta `/ciudad-central-legacy` se conserva para regresión.
 - Las estrellas se actualizan en Functions: libro mayor y agregado se confirman juntos, con operaciones idempotentes y migración/reconciliación del histórico. Las reglas impiden que el hijo escriba directamente ambos documentos.
