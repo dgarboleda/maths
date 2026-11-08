@@ -316,7 +316,7 @@ describe("Servicio educativo y reglas reales", () => {
         ...base,
         expectedRevision: 1,
         operationId: crypto.randomUUID(),
-        action: { kind: "dispatch", allocation: [90, 20, 10] },
+        action: { kind: "dispatch", allocation: [100, 45, 35] },
       };
       const result = await call<{ progress: AdventureState; stars: number }>(
         family.app,
@@ -375,7 +375,7 @@ describe("Servicio educativo y reglas reales", () => {
           ...base,
           expectedRevision: 1,
           operationId: crypto.randomUUID(),
-          action: { kind: "dispatch", allocation: [90, 20, 10] },
+          action: { kind: "dispatch", allocation: [100, 45, 35] },
         }),
       ).rejects.toMatchObject({ code: "functions/invalid-argument" });
       const result = await call<{ progress: AdventureState; stars: number }>(
@@ -385,7 +385,7 @@ describe("Servicio educativo y reglas reales", () => {
           ...base,
           expectedRevision: 1,
           operationId: crypto.randomUUID(),
-          action: { kind: "dispatch", allocation: [10, 4] },
+          action: { kind: "dispatch", allocation: [11, 4] },
         },
       );
       expect(result.progress.completedAt).toBeGreaterThan(0);
@@ -401,7 +401,7 @@ describe("Servicio educativo y reglas reales", () => {
           "ascensor-carga",
         ),
       );
-      expect(saved.data()?.allocation).toEqual([10, 4]);
+      expect(saved.data()?.allocation).toEqual([11, 4]);
     } finally {
       await deleteApp(family.app);
     }

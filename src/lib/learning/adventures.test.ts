@@ -11,13 +11,13 @@ import {
 const NOW = 1_700_000_000_000;
 /** Un plan correcto por aventura, calculado a mano. */
 const SOLUTIONS: Record<string, number[]> = {
-  apagon: [90, 20, 10],
+  apagon: [100, 45, 35],
   "camara-fria": [-24, -18, 3],
-  "receta-festival": [500, 750, 5, 2],
-  "ascensor-carga": [10, 4],
-  "jardin-baldosas": [8, 36],
-  "huerto-escolar": [10, 8],
-  "torneo-lanzamientos": [8, 8, 10],
+  "receta-festival": [700, 1050, 7, 3],
+  "ascensor-carga": [11, 4],
+  "jardin-baldosas": [11, 48],
+  "huerto-escolar": [12, 10],
+  "torneo-lanzamientos": [8, 8, 9],
 };
 const play = (id: string, allocation: number[]) =>
   applyAdventureAction(
@@ -62,18 +62,19 @@ describe("Aventuras por unidad", () => {
   test("cada error frecuente recibe una pista propia", () => {
     expect(play("camara-fria", [-24, -15, 3]).feedback).toMatch(/por encima de −18/);
     expect(play("camara-fria", [-28, -18, 4]).feedback).toMatch(/Restar un negativo suma/);
-    expect(play("receta-festival", [206, 750, 5, 2]).feedback).toMatch(/no crecen sumando/);
-    expect(play("receta-festival", [500, 750, 5, 3]).feedback).toMatch(/sobra/);
+    expect(play("receta-festival", [210, 1050, 7, 3]).feedback).toMatch(/no crecen sumando/);
+    expect(play("receta-festival", [700, 1050, 7, 4]).feedback).toMatch(/sobra/);
     expect(play("ascensor-carga", [12, 4]).feedback).toMatch(/Sobrecarga/);
     expect(play("ascensor-carga", [8, 5]).feedback).toMatch(/solo hay tiempo para 4/);
-    expect(play("jardin-baldosas", [8, 32]).feedback).toMatch(/esquinas/);
-    expect(play("jardin-baldosas", [7, 32]).feedback).toMatch(/menos de 50/);
-    expect(play("jardin-baldosas", [10, 44]).feedback).toMatch(/solo tiene 40/);
-    expect(play("huerto-escolar", [20, 16]).feedback).toMatch(/dos lados/);
-    expect(play("huerto-escolar", [12, 6]).completedAt).toBe(NOW);
-    expect(play("huerto-escolar", [8, 10]).feedback).toMatch(/camino de riego/);
-    expect(play("torneo-lanzamientos", [8, 8, 8]).feedback).toMatch(/de 3 lanzamientos/);
-    expect(play("torneo-lanzamientos", [9, 9, 8]).feedback).toMatch(/moda es 9/);
+    expect(play("jardin-baldosas", [11, 44]).feedback).toMatch(/esquinas/);
+    expect(play("jardin-baldosas", [10, 44]).feedback).toMatch(/menos de 110/);
+    expect(play("jardin-baldosas", [12, 52]).feedback).toMatch(/solo tiene 48/);
+    expect(play("huerto-escolar", [24, 20]).feedback).toMatch(/dos lados/);
+    expect(play("huerto-escolar", [13, 9]).completedAt).toBe(NOW);
+    expect(play("huerto-escolar", [10, 12]).feedback).toMatch(/camino de riego/);
+    expect(play("torneo-lanzamientos", [7, 7, 7]).feedback).toMatch(/de 3 lanzamientos/);
+    expect(play("torneo-lanzamientos", [7, 8, 10]).feedback).toMatch(/rango es 6/);
+    expect(play("torneo-lanzamientos", [9, 9, 7]).feedback).toMatch(/empate/);
   });
 
   test("el plan debe tener una entrada por decisión y respetar los rangos", () => {

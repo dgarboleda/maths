@@ -171,7 +171,7 @@ test("El apagón responde a decisiones, se guarda y funciona en una cuenta sin n
   await page.getByRole("link", { name: /El apagón/ }).click();
   await expect(page).toHaveURL(new RegExp(`/jugar/${childId}/aventura/apagon$`));
   await page.getByRole("button", { name: /Inspeccionar la central/ }).click();
-  await expect(page.getByText(/Reserva disponible: 120/)).toBeVisible();
+  await expect(page.getByText(/Reserva disponible: 180/)).toBeVisible();
   const configure = async (values: number[]) => {
     for (const [i, name] of ["Hospital", "Radio", "Taller"].entries()) {
       const slider = page.getByRole("slider", { name, exact: true });
@@ -181,11 +181,11 @@ test("El apagón responde a decisiones, se guarda y funciona en una cuenta sin n
     }
     await page.getByRole("button", { name: "Probar la distribución" }).click();
   };
-  await configure([100, 30, 10]);
+  await configure([120, 50, 20]);
   await expect(
     page.getByRole("status").filter({ hasText: /corta el suministro/ }),
   ).toBeVisible();
-  await configure([90, 20, 10]);
+  await configure([100, 45, 35]);
   await expect(
     page.getByRole("heading", { name: "La ciudad vuelve a responder" }),
   ).toBeVisible();
@@ -215,15 +215,15 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
   await expect(page.getByRole("heading", { name: "Aventuras", exact: true })).toBeVisible();
   await page.getByRole("link", { name: /El jardín de baldosas/ }).click();
   await page.getByRole("button", { name: "Investigar la situación" }).click();
-  await expect(page.getByRole("status").filter({ hasText: /al menos 50 m²/ })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /al menos 110 m²/ })).toBeVisible();
   const plan = async (lado: string, baldosas: string) => {
     await page.getByLabel("Lado del jardín (m)").fill(lado);
     await page.getByLabel("Baldosas", { exact: true }).fill(baldosas);
     await page.getByRole("button", { name: "Probar el plan" }).click();
   };
-  await plan("8", "32");
+  await plan("11", "44");
   await expect(page.getByRole("status").filter({ hasText: /esquinas/ })).toBeVisible();
-  await plan("8", "36");
+  await plan("11", "48");
   await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
