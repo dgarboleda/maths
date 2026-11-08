@@ -6,6 +6,7 @@ import { call, createFamily, deleteApp, anonymousApp } from "./familyFixture";
 
 const lessonInput = {
   title: "Sumas", topic: "Números", content: "Sumar une cantidades.", game: "write", published: false, updatedAt: 1,
+  visuals: [{ id: "v1", kind: "custom-number-line", title: "La recta", description: "Explora", min: -5, max: 5, initial: 0 }],
   questions: [
     { id: "q1", kind: "choice", prompt: "¿Cuánto es 2 + 2?", answer: 1, options: ["3", "4"], explanation: "2 + 2 = 4", hint: "Cuenta con los dedos.", optionFeedback: ["Te falta uno.", ""] },
     { id: "n1", kind: "numeric", prompt: "Simplifica 6/8", value: "3/4", explanation: "Divide entre 2." },
@@ -33,6 +34,7 @@ test("la familia guarda por Functions y el alumno nunca recibe las respuestas", 
     await expect(call(other.app, "saveCustomLesson", { parentId, lessonId: null, lesson: lessonInput, mode: "draft", expectedUpdatedAt: null })).rejects.toMatchObject({ code: "functions/permission-denied" });
     await expect(call(family.app, "saveCustomLesson", { parentId, lessonId: null, lesson: { ...lessonInput, questions: [{ ...lessonInput.questions[0], options: ["4", "4"] }] }, mode: "publish", expectedUpdatedAt: null })).rejects.toMatchObject({ code: "functions/invalid-argument" });
 
+    await expect(call(family.app, "saveCustomLesson", { parentId, lessonId: null, lesson: { ...lessonInput, visuals: [{ ...lessonInput.visuals[0], max: 500 }] }, mode: "publish", expectedUpdatedAt: null })).rejects.toMatchObject({ code: "functions/invalid-argument" });
     const draft = await call<Saved>(family.app, "saveCustomLesson", { parentId, lessonId: null, lesson: { ...lessonInput, extra: "x" }, mode: "draft", expectedUpdatedAt: null });
     expect((await fs.getDoc(privateRef(draft.id))).data()).not.toHaveProperty("extra");
     expect((await fs.getDoc(fs.doc(family.db, "parents", parentId, "customLessonsPublic", draft.id))).exists()).toBe(false);
@@ -45,6 +47,7 @@ test("la familia guarda por Functions y el alumno nunca recibe las respuestas", 
     apps.push(child.app);
     await expect(fs.getDoc(fs.doc(child.db, "parents", parentId, "customLessons", draft.id))).rejects.toMatchObject({ code: "permission-denied" });
     const shown = await fs.getDoc(fs.doc(child.db, "parents", parentId, "customLessonsPublic", draft.id));
+    expect(shown.data()?.visuals).toEqual(lessonInput.visuals);
     const text = JSON.stringify(shown.data());
     for (const secret of ['"answer"', "explanation", "hint", "optionFeedback", "3/4", "Te falta"]) expect(text).not.toContain(secret);
     expect((await fs.getDocs(fs.query(fs.collection(child.db, "parents", parentId, "customLessonsPublic"), fs.where("audience", "array-contains", "*")))).size).toBe(1);

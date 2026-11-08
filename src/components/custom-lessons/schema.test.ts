@@ -122,3 +122,22 @@ describe("versión de contenido", () => {
     expect(nextContentVersion(numeric, { questions: [{ ...n, value: "0,75" }] }, 100)).toBe(100);
   });
 });
+
+test("valida y publica recursos interactivos sin revelar respuestas", () => {
+  const visual = { id: "v1", kind: "custom-number-line" as const, title: "Explora", description: "Mueve el punto", min: -5, max: 7, initial: 2 };
+  const withVisual = { ...lesson, visuals: [visual] };
+  expect(validateCustomLesson(withVisual)).toBe(true);
+  expect(sanitizeLesson(withVisual).visuals).toEqual([visual]);
+  const shown = publicLesson(sanitizeLesson(withVisual));
+  expect(shown.visuals).toEqual([visual]);
+  expect(JSON.stringify(shown)).not.toContain('"answer"');
+  expect(isPublicLesson(shown)).toBe(true);
+  expect(nextContentVersion(lesson, withVisual, 99)).toBe(lessonVersion(lesson));
+  for (const invalid of [
+    { ...visual, min: 8 }, { ...visual, initial: 9 }, { ...visual, min: -100, max: 100 },
+    { ...visual, kind: "codigo-arbitrario" }, { ...visual, initial: 1.5 },
+  ]) expect(describeCustomLessonErrors({ ...lesson, visuals: [invalid] })).toContainEqual(expect.objectContaining({ field: "visuals" }));
+  expect(describeCustomLessonErrors({ ...lesson, visuals: [visual, visual] })).toContainEqual(expect.objectContaining({ field: "visuals" }));
+  expect(describeCustomLessonErrors({ ...lesson, visuals: Array.from({ length: 9 }, (_, i) => ({ ...visual, id: `v${i}` })) })).toContainEqual(expect.objectContaining({ field: "visuals" }));
+  expect(isPublicLesson({ ...shown, visuals: [{ ...visual, max: 1000 }] })).toBe(false);
+});

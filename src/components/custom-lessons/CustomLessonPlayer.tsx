@@ -6,6 +6,7 @@ import { LearningShell } from "@/components/learning/LearningShell";
 import { LessonArcade } from "@/components/learning/LessonArcade";
 import { MathText } from "@/components/MathText";
 import { InlineText, RichText } from "./RichText";
+import { InteractiveVisual } from "./InteractiveVisual";
 import type { PublicQuestion } from "../../../functions/src/customLessons/schema";
 import { hasNextOpen, type Feedback } from "./player/sessionState";
 import { useCustomLessonSession } from "./player/useCustomLessonSession";
@@ -67,6 +68,7 @@ export function CustomLessonPlayer({ childId, lessonId }: { childId: string; les
       <>
         {state.notice && <p role="status" className="text-amber-200">{state.notice}</p>}
         <RichText text={lesson.content} />
+        {lesson.visuals?.map((visual) => <InteractiveVisual key={visual.id} visual={visual} />)}
         <button className={buttonClass} onClick={start}>Empezar preguntas</button>
       </>
     );
