@@ -11,7 +11,7 @@ export const INVERSE_LESSONS: Lesson[] = [
     objective:
       "Reconocer relaciones de proporcionalidad inversa, usar su producto constante y distinguirlas de la proporcionalidad directa.",
     purpose:
-      "Cuantas más bombas trabajan, menos tiempo tarda en llenarse el depósito. Para planificar equipos hay que saber cómo cambia el tiempo.",
+      "Si varias bombas iguales funcionan a caudal constante, añadir bombas reduce el tiempo necesario para llenar el mismo depósito. La proporcionalidad inversa permite calcular ese tiempo.",
     prerequisites: ["proporcionalidad"],
     legacyModuleIds: ["algebra-d5", "algebra-d9"],
     visual: "inverse",

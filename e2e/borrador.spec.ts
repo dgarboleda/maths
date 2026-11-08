@@ -34,6 +34,34 @@ test("calculadora global en una aventura: la cuenta se hace en columnas y el res
   await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
 });
 
+test("la calculadora opera fracciones y MCM sin enviar fracciones a un plan entero", async ({ page }) => {
+  await registrarPadre(page);
+  const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
+  const childId = await entrarAlEspacio(page, nombre, pin);
+  await page.goto(`/jugar/${childId}/aventura/jardin-baldosas`);
+  await page.getByRole("button", { name: "Investigar la situación" }).click();
+  await page.getByLabel("Lado del jardín (m)").fill("11");
+  await page.getByRole("button", { name: "Calculadora", exact: true }).click();
+  await page.getByRole("button", { name: "Fracciones y MCM" }).click();
+  await page.getByLabel("Primera fracción o número").fill("1/2");
+  await page.getByLabel("Segunda fracción o número").fill("1/3");
+  await page.getByRole("button", { name: "Calcular", exact: true }).click();
+  await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 5/6");
+  await expect(page.getByRole("button", { name: "Usar 5/6" })).toBeDisabled();
+  await expect(page.getByText(/solo admite números enteros/)).toBeVisible();
+  await page.getByRole("combobox", { name: "Operación", exact: true }).selectOption("mcm");
+  await page.getByLabel("Primer entero").fill("12");
+  await page.getByLabel("Segundo entero").fill("16");
+  await page.getByRole("button", { name: "Calcular", exact: true }).click();
+  await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 48");
+  expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
+  await page.getByLabel("Copiar en").selectOption({ label: "Baldosas" });
+  await page.getByRole("button", { name: "Usar 48", exact: true }).click();
+  await expect(page.getByLabel("Baldosas", { exact: true })).toHaveValue("48");
+  await page.getByRole("button", { name: "Probar el plan" }).click();
+  await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
+});
+
 test("teclado numérico propio en móvil: escribe en la hoja sin abrir el del sistema", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "móvil", "solo en pantalla táctil");
   test.setTimeout(180_000);

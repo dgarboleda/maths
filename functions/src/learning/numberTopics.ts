@@ -71,7 +71,7 @@ export const NUMBER_THEORY_LESSONS: Lesson[] = [
         title: "Divisor y múltiplo: dos caras de la misma división",
         paragraphs: [
           "Si una división es exacta (resto 0), el divisor es divisor del dividendo y el dividendo es múltiplo del divisor. Como 24 ÷ 6 = 4 sin resto, 6 es divisor de 24 y 24 es múltiplo de 6.",
-          "Los divisores de un número son pocos y nunca mayores que él. Los múltiplos son infinitos: se obtienen multiplicando por 1, 2, 3, 4… sin fin.",
+          "Los divisores positivos de un número natural mayor que 0 son finitos y no superan ese número. Sus múltiplos son infinitos: se obtienen multiplicando por 1, 2, 3, 4… sin fin.",
         ],
         formula: "24 = 6 × 4 → 6 divide a 24 y 24 es múltiplo de 6",
       },
@@ -278,7 +278,7 @@ export const NUMBER_THEORY_LESSONS: Lesson[] = [
     objective:
       "Distinguir números primos y compuestos, encontrar los primos menores que 100 con la criba de Eratóstenes y descomponer un número en producto de factores primos.",
     purpose:
-      "Los primos son las piezas con las que se arma cualquier número natural multiplicando. Conocer esas piezas es lo que hace funcionar la tabla del MCD y del MCM y la simplificación de fracciones y raíces.",
+      "Todo número natural mayor que 1 puede escribirse como producto de números primos. Conocer esos factores ayuda a calcular el MCD y el MCM y a simplificar fracciones y raíces.",
     prerequisites: ["divisibilidad"],
     legacyModuleIds: [],
     visual: "sieve",
@@ -1363,7 +1363,7 @@ export const COMPOUND_RULE_LESSONS: Lesson[] = [
     title: "Regla de tres compuesta",
     objective: "Resolver problemas con tres o más magnitudes proporcionales decidiendo, para cada una, si su relación con la incógnita es directa o inversa.",
     purpose:
-      "Cuántos obreros hacen falta para terminar una obra en menos días, o cuánto alimento consumen más animales durante más tiempo: en la vida real casi nunca cambia una sola magnitud.",
+      "Si el trabajo total y el ritmo por persona se mantienen, la regla de tres compuesta permite calcular cuántos trabajadores se necesitan cuando cambian los días y las horas de trabajo.",
     prerequisites: ["proporcionalidad", "proporcionalidad-inversa"],
     legacyModuleIds: [],
     visual: "inverse",

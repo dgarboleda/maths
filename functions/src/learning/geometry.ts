@@ -223,7 +223,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
     objective:
       "Calcular la longitud de la circunferencia y el área del círculo, e interpretar π como la razón entre la longitud y el diámetro.",
     purpose:
-      "Los depósitos y las turbinas son circulares. Para cercarlos o cubrirlos hay que medir su borde y su superficie.",
+      "Si la base de un depósito es circular, la longitud de la circunferencia permite medir su borde y el área del círculo indica cuánto material hace falta para cubrirla.",
     prerequisites: ["perimetro-area"],
     legacyModuleIds: ["geometria-d4", "geometria-d6"],
     visual: "circle",

@@ -584,7 +584,7 @@ export const QUADRATIC_FUNCTION_LESSONS: Lesson[] = [
     objective:
       "Interpretar la forma y = a(x − h)² + k, ubicar el vértice de una parábola, decidir si es un máximo o un mínimo y usarlo para optimizar áreas, ingresos y alturas.",
     purpose:
-      "El área más grande con una cerca, el precio que da más ingresos o la altura máxima de una pelota se encuentran en el vértice de una parábola.",
+      "Algunos problemas de áreas, ingresos o trayectorias se modelan con una función cuadrática. Su vértice permite encontrar un máximo o mínimo cuando pertenece al dominio de la situación.",
     prerequisites: ["ecuaciones-cuadraticas", "funciones-lineales"],
     legacyModuleIds: ["algebra-d10"],
     visual: "vertex",

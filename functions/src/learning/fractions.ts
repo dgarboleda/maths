@@ -320,7 +320,7 @@ export const FRACTION_LESSONS: Lesson[] = [
     objective:
       "Construir fracciones equivalentes y comparar cantidades usando una unidad común.",
     purpose:
-      "Dos sensores muestran reservas con escalas diferentes. Necesitas saber si indican la misma cantidad antes de cambiar una batería.",
+      "Dos sensores miden una misma reserva, pero expresan sus lecturas con denominadores diferentes. Comparar fracciones de una misma unidad permite comprobar si coinciden.",
     prerequisites: ["fracciones-unidad"],
     legacyModuleIds: ["aritmetica-fracciones-equivalentes"],
     visual: "equivalence",

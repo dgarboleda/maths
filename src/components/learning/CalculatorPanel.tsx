@@ -14,13 +14,14 @@ import {
   type CalculatorOp,
   type CalculatorSpec,
 } from "@/lib/learning/calculator";
-import { divisionTrace, isDecimalDivision } from "@/lib/learning/core";
+import { divisionTrace, isDecimalDivision, parseNumber } from "@/lib/learning/core";
 import { primaryButton, secondaryButton } from "./LearningShell";
 import { ColumnSheet, OptionPicker, useSubtractStrategy } from "./ColumnOperation";
 import { DivisionSheet } from "./DivisionOperation";
 import { MultiplySheet } from "./MultiplyOperation";
 import { NumericKeypadArea } from "./NumericKeypad";
 import type { CalculatorTarget } from "./Calculator";
+import { ExactCalculator } from "./ExactCalculator";
 import styles from "./calculator.module.css";
 
 /* El panel de la calculadora: una cadena de cuentas terminadas, la cuenta
@@ -59,6 +60,8 @@ export function CalculatorPanel({
   storageKey: string;
 }) {
   const [initial] = useState(() => load(storageKey));
+  const [mode, setMode] = useState<"written" | "exact">("written");
+  const [exactResult, setExactResult] = useState("");
   const [chain, setChain] = useState<CalculatorEntry[]>(initial?.chain ?? []);
   const [op, setOp] = useState<CalculatorOp>(initial?.op ?? "add");
   const [a, setA] = useState(initial?.a ?? "");
@@ -105,10 +108,12 @@ export function CalculatorPanel({
   };
   const result = spec ? calculatorResult(spec, work) : "";
   const last = chain.at(-1);
-  const final = result || last?.result || "";
+  const final = mode === "written" ? result || last?.result || "" : exactResult;
   const copyNotice = copied?.value === final ? copied.text : null;
   // Si la pantalla cambia de destinos, se vuelve al primero.
   const index = target && targetIndex < target.labels.length ? targetIndex : 0;
+  const needsInteger = Boolean(target?.integerOnly && final && !/^[+-]?\d+(?:[,.]0+)?$/.test(final));
+  const incompatibleTarget = Boolean(target && final && (needsInteger || parseNumber(final) === null));
 
   /** Guarda la cuenta en la cadena y empieza otra con su resultado. */
   const continueWith = () => {
@@ -144,8 +149,8 @@ export function CalculatorPanel({
     }
   };
   const useInTarget = () => {
-    if (!target || !final) return;
-    target.onUse(final, index);
+    if (!target || !final || incompatibleTarget) return;
+    target.onUse(target.integerOnly ? final.replace(/[,.]0+$/, "") : final, index);
     onClose();
   };
 
@@ -175,9 +180,13 @@ export function CalculatorPanel({
         </button>
       </header>
       <div className={`${styles.body} space-y-4`}>
-        <p className="text-xs text-slate-400">
-          Haz tus cuentas con su desarrollo y encadena los resultados. No se corrigen ni cuentan como ayuda.
-        </p>
+        <p className="text-xs text-slate-400">Usa la hoja para escribir una cuenta o calcula fracciones, MCM y MCD con sus pasos.</p>
+        <div role="group" aria-label="Tipo de calculadora" className="flex flex-wrap gap-2">
+          <button type="button" aria-pressed={mode === "written"} className={mode === "written" ? primaryButton : secondaryButton} onClick={() => setMode("written")}>Cuentas escritas</button>
+          <button type="button" aria-pressed={mode === "exact"} className={mode === "exact" ? primaryButton : secondaryButton} onClick={() => setMode("exact")}>Fracciones y MCM</button>
+        </div>
+        <div hidden={mode !== "exact"}><ExactCalculator storageKey={`${storageKey}:exacta`} onResult={setExactResult} /></div>
+        <div hidden={mode !== "written"} className="space-y-4">
 
         {chain.length > 0 && (
           <section aria-labelledby={`${id}-chain`} className="space-y-2">
@@ -249,6 +258,7 @@ export function CalculatorPanel({
             </>
           )}
         </section>
+        </div>
       </div>
 
       <footer className={`${styles.footer} space-y-2`}>
@@ -258,7 +268,7 @@ export function CalculatorPanel({
               Resultado final: <strong className="font-mono text-lg text-cyan-100">{final}</strong>
             </>
           ) : (
-            "Escribe el resultado en la hoja para usarlo."
+            mode === "written" ? "Escribe el resultado en la hoja para usarlo." : "Calcula para usar el resultado."
           )}
         </p>
         <div className="flex flex-wrap items-end gap-2">
@@ -277,17 +287,18 @@ export function CalculatorPanel({
             </label>
           )}
           {target && (
-            <button type="button" className={primaryButton} disabled={!final} onClick={useInTarget}>
+            <button type="button" className={primaryButton} disabled={!final || incompatibleTarget} onClick={useInTarget}>
               {final ? `Usar ${final}${target.labels.length > 1 ? "" : ` en ${target.labels[0]}`}` : "Usar el resultado"}
             </button>
           )}
-          {(chain.length > 0 || spec) && (
+          {mode === "written" && (chain.length > 0 || spec) && (
             <button type="button" className={`${secondaryButton} ml-auto`} onClick={reset}>
               <RotateCcw size={16} aria-hidden="true" />
               Empezar de nuevo
             </button>
           )}
         </div>
+        {incompatibleTarget && <p className="text-xs text-amber-200">{needsInteger ? "Esta actividad solo admite números enteros." : "Este resultado está fuera del rango que admite la actividad."} Puedes copiar el resultado o usar otro cálculo.</p>}
         <p className="sr-only" aria-live="polite">{copyNotice}</p>
         {copyNotice && <p aria-hidden="true" className="text-xs text-slate-400">{copyNotice}</p>}
       </footer>

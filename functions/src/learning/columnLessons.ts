@@ -259,7 +259,7 @@ export const COLUMN_LESSONS: Lesson[] = [
     objective:
       "Dividir números de varias cifras entre divisores de una y dos cifras con la división larga, sin olvidar los ceros del cociente y comprobando con el resto.",
     purpose:
-      "La planta reparte su producción en cajas, camiones y turnos iguales. Para saber cuánto toca a cada uno y cuánto sobra hay que dividir números grandes con un procedimiento seguro.",
+      "Una planta necesita repartir su producción en cajas con la misma cantidad de productos. La división permite calcular cuántas cajas completas se pueden llenar y cuántos productos sobran.",
     prerequisites: [],
     legacyModuleIds: ["aritmetica-division-larga"],
     visual: "long-division",
@@ -491,7 +491,7 @@ export const FACTOR_LESSONS: Lesson[] = [
     objective:
       "Calcular el MCD y el MCM de dos o tres números con la tabla de factores primos y decidir cuál de los dos resuelve un problema.",
     purpose:
-      "Los buses de la ciudad coinciden en el paradero cada cierto tiempo y las telas se cortan en trozos iguales sin desperdicio. Para saber cuándo y cuánto hay que encontrar múltiplos y divisores comunes.",
+      "Si dos autobuses salen juntos y regresan al mismo paradero cada 12 y 18 minutos, el MCM indica que volverán a coincidir a los 36 minutos. Si se cortan telas de 12 y 18 metros en los trozos iguales más largos posibles, sin que sobre tela, el MCD indica que cada trozo medirá 6 metros.",
     prerequisites: ["numeros-primos"],
     legacyModuleIds: ["aritmetica-mcd-mcm"],
     visual: "factor-table",

@@ -97,6 +97,7 @@ function AdventureGame({
     adventure.inputs.map((input) => input.label),
     (value, i) => change(i, value),
     state.inspected && !mutation.blocked,
+    true,
   );
   const nudge = (i: number, delta: number) => {
     const input = adventure.inputs[i],

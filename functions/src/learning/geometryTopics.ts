@@ -26,7 +26,7 @@ export const METRIC_LESSONS: Lesson[] = [
     objective:
       "Convertir unidades de longitud, masa y capacidad del sistema métrico multiplicando o dividiendo por potencias de 10, y elegir la unidad adecuada para cada medida.",
     purpose:
-      "Las recetas piden gramos, las etiquetas indican mililitros y los mapas, kilómetros. Convertir bien evita comprar de menos, equivocarse en una dosis o en un presupuesto.",
+      "Las recetas usan unidades de masa y capacidad, y los mapas usan unidades de longitud. Convertir dentro de cada magnitud permite comparar cantidades y calcular cuánto se necesita.",
     prerequisites: ["operaciones-decimales"],
     legacyModuleIds: [],
     visual: "metric",
@@ -650,7 +650,7 @@ export const AREA_LESSONS: Lesson[] = [
     title: "Área de paralelogramos, trapecios y polígonos regulares",
     objective: "Calcular el área de paralelogramos, rombos, trapecios y polígonos regulares relacionándola con el área del rectángulo y del triángulo.",
     purpose:
-      "Los terrenos, techos y baldosas rara vez son rectángulos. Descomponer una figura en partes conocidas permite calcular su área y presupuestar materiales.",
+      "Los terrenos, techos y baldosas pueden tener distintas formas. Descomponer una figura en partes conocidas permite calcular su área y presupuestar materiales.",
     prerequisites: ["perimetro-area"],
     legacyModuleIds: [],
     visual: "area",
