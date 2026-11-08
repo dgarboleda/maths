@@ -80,7 +80,7 @@ test("presupuesto de producción: login, clase, aventura, nivel y editor con ses
       const adventureRoute = `/jugar/${childId}/aventura/apagon`;
       await page.goto(new URL(adventureRoute, baseURL).href);
       await page.getByRole("button", { name: /Inspeccionar la central/ }).click();
-      await expect(page.getByText(/Reserva disponible: 120/)).toBeVisible();
+      await expect(page.getByText(/Reserva disponible: 180/)).toBeVisible();
       await audit("aventura", adventureRoute);
     }
     if (toca("juego") || toca("editor")) {

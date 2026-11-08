@@ -12,21 +12,21 @@ test("calculadora global en una aventura: la cuenta se hace en columnas y el res
   await page.goto(`/jugar/${childId}/aventura`);
   await page.getByRole("link", { name: /El jardín de baldosas/ }).click();
   await page.getByRole("button", { name: "Investigar la situación" }).click();
-  await page.getByLabel("Lado del jardín (m)").fill("8");
+  await page.getByLabel("Lado del jardín (m)").fill("11");
 
-  // 4 lados de 8 baldosas y 4 esquinas: 32 + 4 en la calculadora (botón flotante).
+  // 4 lados de 11 baldosas y 4 esquinas: 44 + 4 en la calculadora (botón flotante).
   await page.getByRole("button", { name: "Calculadora", exact: true }).click();
-  await page.getByLabel("Primer número").fill("32");
+  await page.getByLabel("Primer número").fill("44");
   await page.getByLabel("Segundo número").fill("4");
   await page.getByRole("button", { name: "Escribir la cuenta" }).click();
-  await escribirColumnas(page, "36");
+  await escribirColumnas(page, "48");
   await page.getByLabel("Copiar en").selectOption({ label: "Baldosas" });
   expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath("calculadora-panel.png"), fullPage: false });
-  await page.getByRole("button", { name: "Usar 36", exact: true }).click();
+  await page.getByRole("button", { name: "Usar 48", exact: true }).click();
   // Al usar el resultado, el panel se cierra y el valor queda en el plan.
   await expect(page.getByRole("complementary", { name: "Calculadora" })).toBeHidden();
-  await expect(page.getByLabel("Baldosas", { exact: true })).toHaveValue("36");
+  await expect(page.getByLabel("Baldosas", { exact: true })).toHaveValue("48");
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("borrador-aventura.png"), fullPage: true });
