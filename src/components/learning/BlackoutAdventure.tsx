@@ -22,22 +22,22 @@ const buildings = [
   {
     name: "Hospital",
     icon: Activity,
-    need: 90,
-    clue: "Requiere 3/4 de la reserva original para mantener sus equipos.",
+    need: 100,
+    clue: "Requiere 5/9 de la reserva original para mantener sus equipos.",
     position: "left-[4%] top-[18%]",
   },
   {
     name: "Radio",
     icon: Radio,
-    need: 20,
-    clue: "Requiere 1/6 de la reserva original para coordinar la ayuda.",
+    need: 45,
+    clue: "Requiere 1/4 de la reserva original para coordinar la ayuda.",
     position: "right-[4%] top-[18%]",
   },
   {
     name: "Taller",
     icon: Wrench,
-    need: 10,
-    clue: "Necesita al menos 10 unidades. Puede utilizar lo que quede después de los otros edificios.",
+    need: 35,
+    clue: "Necesita al menos 35 unidades. Puede utilizar lo que quede después de los otros edificios.",
     position: "right-[8%] bottom-[10%]",
   },
 ] as const;
@@ -90,7 +90,7 @@ function AdventureGame({
   ]);
   const planned = allocation.reduce((sum, value) => sum + value, 0);
   const tested = state.allocation.reduce((sum, value) => sum + value, 0);
-  const connected = state.attempts > 0 && tested <= 120;
+  const connected = state.attempts > 0 && tested <= 180;
   const lit = buildings.map(
     (building, i) => connected && state.allocation[i] >= building.need,
   );
@@ -189,7 +189,7 @@ function AdventureGame({
             <Zap size={28} aria-hidden="true" />
             <span className="font-bold">
               {state.inspected
-                ? "Central · 120 unidades"
+                ? "Central · 180 unidades"
                 : "Inspeccionar la central"}
             </span>
             <span className="text-xs">
@@ -251,7 +251,7 @@ function AdventureGame({
                       id={`supply-${i}`}
                       type="range"
                       min={0}
-                      max={120}
+                      max={180}
                       step={5}
                       value={allocation[i]}
                       onChange={(event) => {
@@ -269,12 +269,12 @@ function AdventureGame({
               {/* Los valores se eligen con los deslizadores: la calculadora solo sirve para calcular. */}
               <OpenCalculatorButton disabled={mutation.blocked} />
               <p
-                className={`rounded-xl p-3 text-sm font-bold ${planned > 120 ? "bg-amber-950 text-amber-100" : "bg-slate-950 text-slate-200"}`}
+                className={`rounded-xl p-3 text-sm font-bold ${planned > 180 ? "bg-amber-950 text-amber-100" : "bg-slate-950 text-slate-200"}`}
               >
-                Plan: {planned} de 120 unidades ·{" "}
-                {planned > 120
-                  ? `sobrecarga de ${planned - 120}`
-                  : `quedan ${120 - planned} por asignar`}
+                Plan: {planned} de 180 unidades ·{" "}
+                {planned > 180
+                  ? `sobrecarga de ${planned - 180}`
+                  : `quedan ${180 - planned} por asignar`}
               </p>
               <button
                 type="button"
@@ -305,8 +305,8 @@ function AdventureGame({
           </h2>
           <p className="text-slate-200">
             La radio coordina a los equipos, el hospital mantiene sus servicios
-            y el taller comienza la reparación. Usaste una referencia común: 3/4
-            de 120 = 90 y 1/6 de 120 = 20. Quedaron 10 para el taller.
+            y el taller comienza la reparación. Usaste una referencia común: 5/9
+            de 180 = 100 y 1/4 de 180 = 45. Quedaron 35 para el taller.
           </p>
           <p className="text-sm text-emerald-200">
             Misión completada · 10 estrellas una sola vez. Aprender con ayuda

@@ -44,7 +44,7 @@ export function LearningMap({ childId }: { childId: string }) {
           {LEARNING_UNITS.map((unit, index) => {
             const lessons = LESSONS.filter((lesson) => lesson.unitId === unit.id);
             const completed = lessons.filter((lesson) => data.progress[lesson.id]?.completedAt).length;
-            const adventure = ADVENTURES.find((item) => item.unitId === unit.id);
+            const adventures = ADVENTURES.filter((item) => item.unitId === unit.id);
             return <li key={unit.id}>
               <section aria-labelledby={`map-${unit.id}`} className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/60">
                 <header className="flex items-center gap-4 border-b border-slate-700 bg-white/5 p-5">
@@ -67,9 +67,9 @@ export function LearningMap({ childId }: { childId: string }) {
                     </li>;
                   })}
                 </ol>
-                {adventure && <Link href={`${base}/aventura/${adventure.id}`} className="mx-5 mb-5 flex min-h-12 items-center gap-3 rounded-xl border border-violet-300/30 bg-violet-300/5 p-4 text-violet-200">
+                {adventures.map((adventure) => <Link key={adventure.id} href={`${base}/aventura/${adventure.id}`} className="mx-5 mb-5 flex min-h-12 items-center gap-3 rounded-xl border border-violet-300/30 bg-violet-300/5 p-4 text-violet-200">
                   <Compass size={22} aria-hidden="true" /><span><span className="block font-bold">Aventura: {adventure.title}</span><span className="text-sm">{data.adventures[adventure.id]?.completedAt ? "Aventura terminada · volver a explorar" : "Aplica las ideas de esta ruta"}</span></span>
-                </Link>}
+                </Link>)}
               </section>
             </li>;
           })}

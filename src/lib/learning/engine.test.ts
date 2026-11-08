@@ -229,31 +229,31 @@ describe("El apagón", () => {
     const inspected = applyAdventureAction(undefined, { kind: "inspect" }, NOW);
     const overloaded = applyAdventureAction(
       inspected,
-      { kind: "dispatch", allocation: [100, 30, 10] },
+      { kind: "dispatch", allocation: [120, 50, 20] },
       NOW,
     );
     expect(overloaded.feedback).toMatch(/corta el suministro/);
     expect(overloaded.completedAt).toBeNull();
     const wrongBase = applyAdventureAction(
       inspected,
-      { kind: "dispatch", allocation: [90, 5, 25] },
+      { kind: "dispatch", allocation: [100, 5, 25] },
       NOW,
     );
     expect(wrongBase.feedback).toMatch(/reserva original/);
     const success = applyAdventureAction(
       wrongBase,
-      { kind: "dispatch", allocation: [90, 20, 10] },
+      { kind: "dispatch", allocation: [100, 45, 35] },
       NOW,
     );
     expect(success.completedAt).toBe(NOW);
     expect(success.attempts).toBe(2);
-    expect(success.feedback).toMatch(/conserva las 120/);
+    expect(success.feedback).toMatch(/conserva las 180/);
   });
   test("no se puede conectar antes de inspeccionar ni usar suministros inválidos", () => {
     expect(() =>
       applyAdventureAction(
         undefined,
-        { kind: "dispatch", allocation: [90, 20, 10] },
+        { kind: "dispatch", allocation: [100, 45, 35] },
         NOW,
       ),
     ).toThrow(/Inspecciona/);
