@@ -17,8 +17,14 @@ it('inclina al alterar un solo lado y resuelve con operaciones equivalentes', ()
   fireEvent.click(screen.getByRole('button', { name: 'Quitar pesas a la derecha' }));
   fireEvent.click(screen.getByRole('button', { name: 'Comprobar solución' }));
   expect(screen.getByText(/La caja vale 4/)).toBeInTheDocument();
-  expect(mock.save.mock.calls.at(-1)?.[0]({ unlocked: 1, stars: {}, daily: '' })).toMatchObject({ unlocked: 2, stars: { 1: 2 } });
+  expect(mock.save.mock.calls.at(-1)?.[0]({ unlocked: 1, stars: {}, daily: '' })).toMatchObject({ unlocked: 2, stars: { 1: 1 } });
   expect(screen.getByRole('button', { name: /Siguiente experimento/ })).toHaveFocus();
+});
+it('pierde la estrella de equilibrio aunque rehaga la balanza a tiempo', () => {
+  start(3); amount(2); fireEvent.click(screen.getByRole('button', { name: 'Quitar cajas a la izquierda' }));
+  amount(8); fireEvent.click(screen.getByRole('button', { name: 'Quitar pesas a la derecha' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Comprobar solución' }));
+  expect(screen.getByText(/Ganaste 1 de 3 estrellas/)).toBeInTheDocument();
 });
 it('resuelve con una acción sobre ambos lados y obtiene tres estrellas', () => {
   start(1); amount(3); fireEvent.click(screen.getByRole('button', { name: '− 💎 Pesas' })); fireEvent.click(screen.getByRole('button', { name: 'Comprobar solución' }));
