@@ -175,6 +175,15 @@ export function LearningHome({
         )}
 
         {view === "practice" && (
+          <Link href={`/jugar/${childId}/practicar/laboratorio-equilibrio`} className="block rounded-3xl border border-violet-300/30 bg-gradient-to-r from-violet-950 to-slate-900 p-6 transition hover:border-violet-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-300">
+            <span className="text-xs font-bold uppercase tracking-widest text-violet-200">Minijuego · álgebra y lógica</span>
+            <h2 className="mt-2 text-2xl font-bold text-white">⚖️ Laboratorio de Equilibrio</h2>
+            <p className="mt-2 text-sm text-slate-300">Experimenta con balanzas y descubre el valor de cajas misteriosas.</p>
+            <span className="mt-4 inline-block font-bold text-cyan-200">Entrar al laboratorio →</span>
+          </Link>
+        )}
+
+        {view === "practice" && (
           <Link href={`/jugar/${childId}/practicar/ruta-rescate`} className="block rounded-3xl border border-amber-300/30 bg-gradient-to-r from-orange-950 to-slate-900 p-6 transition hover:border-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
             <span className="text-xs font-bold uppercase tracking-widest text-amber-200">Minijuego · rutas y estrategia</span>
             <h2 className="mt-2 text-2xl font-bold text-white">🚙 Ruta de Rescate</h2>

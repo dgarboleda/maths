@@ -1,0 +1,15 @@
+.hero { position: relative; min-height: 280px; display: flex; align-items: center; overflow: hidden; background: linear-gradient(90deg, rgba(28, 18, 54, .97), rgba(28, 18, 54, .72) 48%, rgba(28, 18, 54, .15)), url('/games/laboratorio-equilibrio/laboratorio.webp') center/cover, #3b245b; }
+.panel { background: radial-gradient(circle at top right, #513a74, #20223e 38%, #0f172a 80%); }
+.mission { transition: transform .18s ease, border-color .18s ease; }
+.mission:not(:disabled):hover { transform: translateY(-3px); border-color: #ddd6fe; }
+.scale { height: 210px; position: relative; overflow: hidden; border-radius: 18px; background: radial-gradient(circle at 50% 20%, #7c5ba1, #261e4d 75%); }
+.beam { position: absolute; top: 65px; left: 12%; width: 76%; height: 10px; border-radius: 10px; background: #fcd34d; transform-origin: center; transition: transform .5s ease; z-index: 2; }
+.pan { position: absolute; top: 8px; width: 42%; min-height: 87px; display: grid; align-items: end; border-bottom: 9px solid #fbbf24; border-radius: 0 0 18px 18px; }
+.pan::before, .pan::after { content: ''; position: absolute; width: 2px; height: 63px; background: #fcd34d; top: 0; }
+.pan::before { left: 0; } .pan::after { right: 0; }
+.leftPan { left: 0; } .rightPan { right: 0; }
+.contents { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 2px; font-size: 1.25rem; color: white; }
+.pivot { position: absolute; top: 56px; left: calc(50% - 10px); width: 20px; height: 20px; border-radius: 50%; background: #fde68a; z-index: 3; }
+.stand { position: absolute; left: calc(50% - 6px); top: 68px; width: 12px; height: 119px; background: linear-gradient(#fcd34d, #b45309); }
+.stand::after { content: ''; position: absolute; bottom: -3px; left: -39px; width: 90px; height: 12px; border-radius: 12px; background: #fbbf24; }
+@media (prefers-reduced-motion: reduce) { .mission, .beam { transition: none; } }
