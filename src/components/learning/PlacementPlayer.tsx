@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { QuestionFigureSlot } from "./QuestionFigureSlot";
 import { MathText } from "@/components/MathText";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Compass, SkipForward } from "lucide-react";
@@ -141,6 +142,7 @@ function PlacementQuestion({
       }}
     >
       <p className="text-lg font-semibold leading-relaxed text-white"><MathText text={question.prompt} /></p>
+      <QuestionFigureSlot question={question} />
       {question.choices ? (
         <fieldset className="space-y-2" disabled={disabled}>
           <legend className="sr-only">Elige una respuesta</legend>

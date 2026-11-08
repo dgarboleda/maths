@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig } from "./figures";
 
 const fmt = (x: number) => x.toLocaleString("es", { maximumFractionDigits: 3 });
 const list = (xs: number[]) => xs.join(", ");
@@ -81,7 +82,7 @@ export const DATA_LESSONS: Lesson[] = [
       const missing = count * mean - sum(known);
       return [
         [
-          c(
+          fig(c(
               "q0",
               `Los consumos ${list(outlier)} tienen un valor muy alto. ¿Qué medida describe mejor el consumo típico?`,
               [
@@ -91,7 +92,7 @@ export const DATA_LESSONS: Lesson[] = [
               ],
               1,
               "La mediana resiste los valores extremos.",
-            ),
+            ), { kind: "dots", data: outlier, label: "consumos" }),
           c(
               "q0",
               "¿Qué significa que la media de consumo sea 8?",
@@ -115,31 +116,31 @@ export const DATA_LESSONS: Lesson[] = [
             "(10 + 12 + 14 + 20) ÷ 4 = 56 ÷ 4 = 14.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Calcula la media de ${list(data)}.`,
           sum(data) / data.length,
           [`La media reparte el total por igual entre todos los datos.`, `Suma: ${data.join(" + ")} = ${sum(data)}.`, `Hay ${data.length} datos: ${sum(data)} ÷ ${data.length} = ${fmt(sum(data) / data.length)}.`],
           ["Suma todos los datos.", `Divide entre la cantidad, ${data.length}.`, `${sum(data)} ÷ ${data.length}.`],
           { errors: [{ value: median(data), feedback: "Esa es la mediana. La media divide la suma entre la cantidad." }].filter((e) => e.value !== sum(data) / data.length) },
-        ),
-        n(
+        ), { kind: "dots", data }),
+        fig(n(
           "q2",
           `Completa: ordenados, los datos ${list(even)} son ${list(sorted(even))}; la mediana es (${sorted(even)[1]} + ${sorted(even)[2]}) ÷ 2 = __.`,
           median(even),
           [`Con 4 datos ordenados no hay un único valor central: hay dos, el 2.° y el 3.°.`, `La mediana es su media: ${sorted(even)[1]} + ${sorted(even)[2]} = ${sorted(even)[1] + sorted(even)[2]}.`, `${sorted(even)[1] + sorted(even)[2]} ÷ 2 = ${fmt(median(even))}.`],
           ["Con cantidad par, se toman los dos centrales.", "Súmalos.", "Divide entre 2."],
           { step: true, errors: [{ value: (even[1] + even[2]) / 2, feedback: "Usaste los centrales sin ordenar los datos." }].filter((e) => e.value !== median(even)) },
-        ),
-        n(
+        ), { kind: "dots", data: even }),
+        fig(n(
           "q3",
           `¿Cuál es el rango de ${list(data)}?`,
           Math.max(...data) - Math.min(...data),
           [`El rango mide la dispersión total: mayor menos menor.`, `Mayor: ${Math.max(...data)}; menor: ${Math.min(...data)}.`, `Rango: ${Math.max(...data)} − ${Math.min(...data)} = ${Math.max(...data) - Math.min(...data)}.`],
           ["Busca el mayor y el menor.", "Réstalos.", `${Math.max(...data)} − ${Math.min(...data)}.`],
           { errors: [{ value: data[data.length - 1] - data[0], feedback: "Restaste el último y el primero sin buscar el mayor y el menor." }].filter((e) => e.value !== Math.max(...data) - Math.min(...data)) },
-        ),
-        c(
+        ), { kind: "dots", data }),
+        fig(c(
           "q4",
           `Alguien dice que la mediana de ${list(even)} es (${even[1]} + ${even[2]}) ÷ 2. ¿Qué falla?`,
           [
@@ -149,8 +150,8 @@ export const DATA_LESSONS: Lesson[] = [
           ],
           1,
           "La mediana es el centro de los datos ordenados.",
-        ),
-        n(
+        ), { kind: "dots", data: even }),
+        fig(n(
           "q5",
           `Los consumos de ${outlier.length} casas son ${list(outlier)}. ¿Cuál es la mediana?`,
           median(outlier),
@@ -160,7 +161,7 @@ export const DATA_LESSONS: Lesson[] = [
             intent: "transfer",
             errors: [{ value: sum(outlier) / outlier.length, feedback: "Esa es la media, que el valor extremo eleva mucho." }],
           },
-        ),
+        ), { kind: "dots", data: outlier, label: "consumos" }),
         n(
           "q6",
           `${count} sensores tienen una media de ${mean} unidades. Se conocen ${count - 1} lecturas: ${list(known)}. ¿Cuánto marca el sensor que falta?`,
@@ -174,7 +175,7 @@ export const DATA_LESSONS: Lesson[] = [
         ),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Dos barrios tienen consumos semanales: A = 10, 11, 9, 10, 10 y B = 2, 18, 10, 4, 16. Ambos tienen media 10. ¿Cuál es la diferencia entre sus rangos?",
       14,
@@ -187,7 +188,7 @@ export const DATA_LESSONS: Lesson[] = [
           { value: 16, feedback: "Ese es el rango de B. Se pide la diferencia entre ambos rangos." },
         ],
       },
-    ),
+    ), { kind: "table", caption: "Consumo semanal", head: ["Barrio", "Consumos"], rows: [["A", "10, 11, 9, 10, 10"], ["B", "2, 18, 10, 4, 16"]], rowHeads: true }),
     outcome: "Puedes resumir los consumos de la ciudad eligiendo la medida que mejor los representa.",
     commonErrors: [
       "Buscar la mediana sin ordenar los datos.",
@@ -284,7 +285,7 @@ export const DATA_LESSONS: Lesson[] = [
               2,
               "Los resultados anteriores no cambian la probabilidad de un lanzamiento independiente.",
             ),
-          c(
+          fig(c(
             "q0",
             "Una caja tiene 1 fusible rojo y 9 azules. Alguien dice que P(rojo) = 1/2 porque «sale rojo o no sale». ¿Qué falla?",
             [
@@ -294,24 +295,24 @@ export const DATA_LESSONS: Lesson[] = [
             ],
             1,
             "Favorables ÷ posibles solo vale con resultados equiprobables: 1 fusible rojo de 10.",
-          ),
+          ), { kind: "bag", items: [{ color: "rojo", count: 1 }, { color: "azul", count: 9 }] }),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Una caja tiene ${red} fusibles rojos y ${blue} azules. Se saca uno al azar. ¿Cuál es la probabilidad de que sea rojo?`,
           red / (red + blue),
           [`Cada fusible tiene la misma posibilidad de salir: hay ${red} + ${blue} = ${red + blue} casos posibles.`, `Favorables: los ${red} fusibles rojos.`, `P(rojo) = favorables ÷ posibles = ${red}/${red + blue}.`],
           ["Cuenta todos los fusibles.", "Cuenta los rojos.", `${red}/${red + blue}.`],
           { errors: [{ value: red / blue, feedback: "Dividiste rojos entre azules. Los casos posibles son todos los fusibles." }] },
-        ),
-        n(
+        ), { kind: "bag", items: [{ color: "rojo", count: red }, { color: "azul", count: blue }] }),
+        fig(n(
           "q2",
           `Completa: si P(rojo) = ${red}/${red + blue}, entonces P(no rojo) = 1 − ${red}/${red + blue} = __.`,
           blue / (red + blue),
           [`«No rojo» es el complemento de «rojo»: sus probabilidades suman 1.`, `1 = ${red + blue}/${red + blue}, así que 1 − ${red}/${red + blue} = ${blue}/${red + blue}.`, `Comprobación: hay ${blue} fusibles que no son rojos de ${red + blue}.`],
           ["Las probabilidades de rojo y no rojo suman 1.", `Escribe 1 como ${red + blue}/${red + blue}.`, "Resta."],
           { step: true, errors: [{ value: red / (red + blue), feedback: "Esa es la probabilidad de rojo. Se pide la contraria." }] },
-        ),
+        ), { kind: "bag", items: [{ color: "rojo", count: red }, { color: "azul", count: blue }] }),
         n(
           "q3",
           `Se lanza un dado de seis caras. ¿Cuál es la probabilidad de obtener un número ${label}?`,
@@ -320,7 +321,7 @@ export const DATA_LESSONS: Lesson[] = [
           ["Escribe los resultados posibles: 1 a 6.", "Marca los que cumplen la condición.", "Divide favorables entre 6."],
           { errors: [{ value: (6 - favDie) / 6, feedback: "Contaste los casos que no cumplen la condición." }].filter((e) => e.value !== favDie / 6) },
         ),
-        c(
+        fig(c(
           "q4",
           `Alguien dice que P(rojo) = ${red}/${blue} porque hay ${red} rojos y ${blue} azules. ¿Qué falla?`,
           [
@@ -330,7 +331,7 @@ export const DATA_LESSONS: Lesson[] = [
           ],
           1,
           "Una razón parte-parte no es una probabilidad: hay que dividir entre el total.",
-        ),
+        ), { kind: "bag", items: [{ color: "rojo", count: red }, { color: "azul", count: blue }] }),
         n(
           "q5",
           `De ${total} sensores, ${broken} están averiados. Se elige uno al azar. ¿Cuál es la probabilidad de que funcione? Escríbela en porcentaje (el número antes de %).`,
@@ -343,7 +344,7 @@ export const DATA_LESSONS: Lesson[] = [
             errors: [{ value: (broken / total) * 100, feedback: "Esa es la probabilidad de que esté averiado." }],
           },
         ),
-        n(
+        fig(n(
           "q6",
           `Una bolsa tiene ${r2} ${r2 === 1 ? "ficha roja" : "fichas rojas"}, ${b2} ${b2 === 1 ? "azul" : "azules"} y ${g2} ${g2 === 1 ? "verde" : "verdes"}. ¿Cuántas fichas verdes hay que añadir para que la probabilidad de sacar verde sea 1/2?`,
           r2 + b2 - g2,
@@ -354,10 +355,10 @@ export const DATA_LESSONS: Lesson[] = [
             unit: "fichas",
             errors: [{ value: (r2 + b2 + g2) / 2 - g2, feedback: "Al añadir fichas, el total también cambia: compara verdes con no verdes." }].filter((e) => e.value !== r2 + b2 - g2),
           },
-        ),
+        ), { kind: "bag", items: [{ color: "rojo", count: r2 }, { color: "azul", count: b2 }, { color: "verde", count: g2 }] }),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Un lote tiene 50 baterías: 35 buenas, 10 con carga baja y 5 defectuosas. Se elige una al azar. ¿Qué probabilidad hay de que se pueda usar (buena o con carga baja)? Escríbela en decimal.",
       0.9,
@@ -370,7 +371,7 @@ export const DATA_LESSONS: Lesson[] = [
           { value: 0.1, feedback: "Esa es la probabilidad de defectuosa." },
         ],
       },
-    ),
+    ), { kind: "table", head: ["Estado", "Baterías"], rows: [["Buenas", 35], ["Carga baja", 10], ["Defectuosas", 5]], rowHeads: true }),
     outcome: "Puedes estimar con números qué tan probable es encontrar un componente averiado.",
     commonErrors: [
       "Dividir favorables entre desfavorables.",
@@ -446,7 +447,7 @@ export const DATA_LESSONS: Lesson[] = [
       const both = Math.round(pa * pb * 1000) / 1000;
       return [
         [
-          c(
+          fig(c(
               "q0",
               "¿Por qué al lanzar dos dados hay 36 resultados posibles?",
               [
@@ -456,7 +457,7 @@ export const DATA_LESSONS: Lesson[] = [
               ],
               0,
               "En un experimento de dos etapas se combinan todos los resultados: 6 × 6.",
-            ),
+            ), { kind: "dice-grid" }),
           c(
               "q0",
               "¿Por qué P(cara y cara) = 1/2 × 1/2?",
@@ -480,14 +481,14 @@ export const DATA_LESSONS: Lesson[] = [
             "Principio multiplicativo: 2 × 6 = 12 resultados igual de probables.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Se lanzan dos dados. ¿Cuál es la probabilidad de que la suma sea ${target}?`,
           ways / 36,
           [`Con dos dados hay 6 × 6 = 36 resultados igual de probables.`, `En la tabla de doble entrada, ${ways} casillas suman ${target}.`, `P = ${ways}/36 ≈ ${fmt(ways / 36)}.`],
           ["Haz una tabla de 6 × 6.", `Marca las casillas que suman ${target}.`, `Divide entre 36.`],
           { errors: [{ value: 1 / 11, feedback: "Las 11 sumas posibles no son igual de probables: cuenta casillas en la tabla de 36." }] },
-        ),
+        ), { kind: "dice-grid" }),
         n(
           "q2",
           `Completa: dos sucesos independientes tienen probabilidades ${fmt(pa)} y ${fmt(pb)}; P(ambos) = ${fmt(pa)} × ${fmt(pb)} = __.`,
@@ -496,14 +497,14 @@ export const DATA_LESSONS: Lesson[] = [
           ["«Ambos» con sucesos independientes: se multiplica.", `${fmt(pa)} × ${fmt(pb)}.`, `${fmt(both)}.`],
           { step: true, errors: [{ value: pa + pb, feedback: "Sumaste; para que ocurran ambos se multiplica." }] },
         ),
-        n(
+        fig(n(
           "q3",
           `Una bolsa tiene ${rr} fichas rojas y ${bb} azules. Se sacan dos sin devolver. ¿Cuál es la probabilidad de que ambas sean rojas?`,
           (rr / (rr + bb)) * ((rr - 1) / (rr + bb - 1)),
           [`Primera extracción: ${rr} rojas de ${rr + bb}, P = ${rr}/${rr + bb}.`, `Sin devolverla quedan ${rr - 1} rojas de ${rr + bb - 1}: P = ${rr - 1}/${rr + bb - 1}.`, `P = ${rr}/${rr + bb} × ${rr - 1}/${rr + bb - 1} = ${fmt((rr / (rr + bb)) * ((rr - 1) / (rr + bb - 1)))}.`],
           ["Sin devolver, cambian las fichas en la segunda extracción.", "Queda una roja menos y una ficha menos.", "Multiplica las dos probabilidades."],
           { errors: [{ value: (rr / (rr + bb)) ** 2, feedback: "Eso sería con reemplazo. Sin devolver, la segunda probabilidad cambia." }] },
-        ),
+        ), { kind: "bag", items: [{ color: "rojo", count: rr }, { color: "azul", count: bb }] }),
         [
           c(
             "q4",
@@ -516,7 +517,7 @@ export const DATA_LESSONS: Lesson[] = [
             2,
             "Para «al menos uno», conviene restar de 1 la probabilidad de ninguno.",
           ),
-          c(
+          fig(c(
             "q4",
             "Una bolsa tiene 2 fichas rojas y 3 azules. Se sacan dos sin devolver y alguien calcula P(dos rojas) = 2/5 × 2/5. ¿Qué falla?",
             [
@@ -526,7 +527,7 @@ export const DATA_LESSONS: Lesson[] = [
             ],
             1,
             "Sin reemplazo, la segunda etapa cambia: 2/5 × 1/4 = 2/20 = 1/10.",
-          ),
+          ), { kind: "bag", items: [{ color: "rojo", count: 2 }, { color: "azul", count: 3 }] }),
           c(
             "q4",
             "Dos semáforos independientes están en verde con probabilidad 0,5 cada uno. Alguien dice que P(los dos en verde) = 0,5 + 0,5 = 1. ¿Qué falla?",
@@ -539,14 +540,14 @@ export const DATA_LESSONS: Lesson[] = [
             "Si los sucesos son independientes, P(A y B) = P(A) × P(B).",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q5",
           `Dos semáforos independientes están en verde con probabilidades ${fmt(pa)} y ${fmt(pb)}. ¿Cuál es la probabilidad de encontrar los dos en verde?`,
           both,
           [`P = ${fmt(pa)} × ${fmt(pb)} = ${fmt(both)}.`],
           ["Deben ocurrir ambos.", "Son independientes.", "Multiplica."],
           { intent: "transfer", errors: [{ value: pa + pb, feedback: "Sumar no sirve para «ambos»: se multiplica." }] },
-        ),
+        ), { kind: "tree", first: [{ label: "1.° verde", p: fmt(pa) }, { label: "1.° no", p: fmt(1 - pa) }], second: [[{ label: "2.° verde", p: fmt(pb) }, { label: "2.° no", p: fmt(1 - pb) }], [{ label: "2.° verde", p: fmt(pb) }, { label: "2.° no", p: fmt(1 - pb) }]] }),
         n(
           "q6",
           `Una central falla un día con probabilidad ${fmt(fail)}, de forma independiente cada día. ¿Cuál es la probabilidad de que falle al menos una vez en ${tries} días?`,
@@ -560,7 +561,7 @@ export const DATA_LESSONS: Lesson[] = [
         ),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Un mensaje de emergencia se envía por dos redes independientes. La red A falla con probabilidad 0,2 y la B con 0,3. ¿Cuál es la probabilidad de que el mensaje llegue por al menos una red?",
       0.94,
@@ -573,7 +574,7 @@ export const DATA_LESSONS: Lesson[] = [
           { value: 0.06, feedback: "Esa es la probabilidad de que fallen las dos." },
         ],
       },
-    ),
+    ), { kind: "tree", first: [{ label: "A falla", p: "0,2" }, { label: "A llega", p: "0,8" }], second: [[{ label: "B falla", p: "0,3" }, { label: "B llega", p: "0,7" }], [{ label: "B falla", p: "0,3" }, { label: "B llega", p: "0,7" }]] }),
     outcome: "Puedes estimar la fiabilidad de sistemas con varias partes que pueden fallar.",
     commonErrors: [
       "Sumar probabilidades cuando deben ocurrir ambos sucesos.",

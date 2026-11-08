@@ -9,6 +9,7 @@ export * from "../../../functions/src/learning/adventures";
 export * from "../../../functions/src/learning/units";
 export * from "../../../functions/src/learning/lessonIndex";
 export * from "../../../functions/src/learning/version";
+export * from "../../../functions/src/learning/figures";
 export * from "../../../functions/src/learning/peru";
 export * from "../../../functions/src/learning/diagnosis";
 export * from "../../../functions/src/learning/calibration";

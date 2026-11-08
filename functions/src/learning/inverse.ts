@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig } from "./figures";
 
 export const INVERSE_LESSONS: Lesson[] = [
   defineLesson({
@@ -80,7 +81,7 @@ export const INVERSE_LESSONS: Lesson[] = [
               1,
               "Si x se multiplica por k, y se divide entre k: su producto no cambia.",
             ),
-          c(
+          fig(c(
               "q0",
               `Si ${w1} bombas llenan un depósito en ${t1} horas, ¿cuánto tardan ${w1 * 2} bombas iguales?`,
               [
@@ -90,7 +91,7 @@ export const INVERSE_LESSONS: Lesson[] = [
               ],
               2,
               "El doble de bombas hace el mismo trabajo en la mitad de tiempo.",
-            ),
+            ), { kind: "table", head: ["Bombas", "Horas"], rows: [[w1, t1], [w1 * 2, "?"]] }),
           c(
             "q0",
             "¿Cuál de estas tablas muestra una proporcionalidad inversa?",
@@ -103,7 +104,7 @@ export const INVERSE_LESSONS: Lesson[] = [
             "En 12, 6, 4 el producto x · y siempre vale 12: al duplicar x, y se reduce a la mitad.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `${w1} técnicos terminan una reparación en ${t1} días. Al mismo ritmo, ¿cuántos días tardan ${w2} técnicos?`,
           k / w2,
@@ -113,7 +114,7 @@ export const INVERSE_LESSONS: Lesson[] = [
             unit: "días",
             errors: [{ value: (t1 * w2) / w1, feedback: "Aplicaste una proporción directa. Con más técnicos, el tiempo disminuye." }],
           },
-        ),
+        ), { kind: "table", head: ["Técnicos", "Días"], rows: [[w1, t1], [w2, "?"]] }),
         n(
           "q2",
           `Completa la constante: si ${w1} técnicos tardan ${t1} días, x · y = ${w1} × ${t1} = __.`,
@@ -122,7 +123,7 @@ export const INVERSE_LESSONS: Lesson[] = [
           ["Multiplica ambas cantidades.", `${w1} × ${t1}.`, `${k}.`],
           { step: true, errors: [{ value: t1 / w1, feedback: "En una relación inversa se conserva el producto, no el cociente." }] },
         ),
-        n(
+        fig(n(
           "q3",
           `Un tren a ${s1} km/h tarda ${h1} horas en un trayecto. ¿Cuántas horas tarda a ${s2} km/h?`,
           (s1 * h1) / s2,
@@ -132,8 +133,8 @@ export const INVERSE_LESSONS: Lesson[] = [
             unit: "h",
             errors: [{ value: (h1 * s2) / s1, feedback: "Aplicaste una proporción directa: a más velocidad el tiempo disminuye." }],
           },
-        ),
-        c(
+        ), { kind: "table", head: ["Velocidad (km/h)", "Horas"], rows: [[s1, h1], [s2, "?"]] }),
+        fig(c(
           "q4",
           `Una tabla indica x = 1, 2, 4 e y = ${4 * k}, ${2 * k}, ${k}. ¿Qué relación muestra?`,
           [
@@ -143,7 +144,7 @@ export const INVERSE_LESSONS: Lesson[] = [
           ],
           1,
           "El producto x · y es constante: es una proporcionalidad inversa.",
-        ),
+        ), { kind: "table", head: ["x", "1", "2", "4"], rows: [["y", 4 * k, 2 * k, k]], rowHeads: true }),
         n(
           "q5",
           `Un premio de ${prize} créditos se reparte en partes iguales entre ${p1} equipos. Si fueran ${p2} equipos, ¿cuánto recibiría cada uno?`,
@@ -156,7 +157,7 @@ export const INVERSE_LESSONS: Lesson[] = [
             errors: [{ value: ((prize / p1) * p2) / p1, feedback: "Escalaste como si fuera directa. El total fijo se reparte entre más o menos equipos." }],
           },
         ),
-        n(
+        fig(n(
           "q6",
           `${g1} grifos iguales llenan un tanque en ${m1} minutos. ¿Cuántos grifos hacen falta para llenarlo en ${m2} minutos?`,
           (g1 * m1) / m2,
@@ -167,7 +168,7 @@ export const INVERSE_LESSONS: Lesson[] = [
             unit: "grifos",
             errors: [{ value: (g1 * m2) / m1, feedback: "Para tardar menos hacen falta más grifos, no menos." }],
           },
-        ),
+        ), { kind: "table", head: ["Grifos", "Minutos"], rows: [[g1, m1], ["?", m2]] }),
       ];
     },
     application: n(

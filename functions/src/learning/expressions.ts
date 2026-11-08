@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig } from "./figures";
 
 const sg = (x: number) => (x < 0 ? `−${-x}` : `${x}`);
 const p = (x: number) => (x < 0 ? `(−${-x})` : `${x}`);
@@ -788,7 +789,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       const slope2 = (y2 - y1) / (t2 - t1);
       return [
         v % 2 === 0
-          ? c(
+          ? fig(c(
               "q0",
               `En y = ${cx(m)}${t(b)}, ¿qué representa el ${sg(m)}?`,
               [
@@ -798,8 +799,8 @@ export const EXPRESSION_LESSONS: Lesson[] = [
               ],
               1,
               "La pendiente es el cambio de y por cada unidad de x.",
-            )
-          : c(
+            ), { kind: "graph", fn: { type: "linear", m, b }, x: [-1, 5], y: [Math.min(0, b - m, b + 5 * m) - 2, Math.max(0, b - m, b + 5 * m) + 2], label: `y = ${cx(m)}${t(b)}` })
+          : fig(c(
               "q0",
               `En y = ${cx(m)}${t(b)}, ¿qué representa el ${sg(b)}?`,
               [
@@ -809,15 +810,15 @@ export const EXPRESSION_LESSONS: Lesson[] = [
               ],
               0,
               "Con x = 0, el término mx vale 0 y queda y = b.",
-            ),
-        n(
+            ), { kind: "graph", fn: { type: "linear", m, b }, x: [-1, 5], y: [Math.min(0, b - m, b + 5 * m) - 2, Math.max(0, b - m, b + 5 * m) + 2], label: `y = ${cx(m)}${t(b)}` }),
+        fig(n(
           "q1",
           `Tabla: x = 0, 1, 2, 3; y = ${b}, ${b + m}, ${b + 2 * m}, ${b + 3 * m}. ¿Cuál es la pendiente?`,
           m,
           [`x aumenta de 1 en 1, así que la pendiente es lo que cambia y en cada paso.`, `Diferencias entre valores de y: ${sg(m)} en cada paso.`, `m = ${sg(m)}: ${m > 0 ? "y aumenta" : "y disminuye"} ${Math.abs(m)} por cada unidad de x.`],
           ["Mira cuánto cambia y de una fila a la siguiente.", `${b + m} − ${b}.`, `m = ${sg(m)}.`],
           { errors: [{ value: b, feedback: "Ese es el valor inicial. La pendiente es el cambio entre filas." }, ...(m < 0 ? [{ value: -m, feedback: "y disminuye: la pendiente es negativa." }] : [])] },
-        ),
+        ), { kind: "table", head: ["x", "0", "1", "2", "3"], rows: [["y", b, b + m, b + 2 * m, b + 3 * m]], rowHeads: true }),
         n(
           "q2",
           `Completa: si y = ${cx(m)}${t(b)}, para x = ${xk}, y = ${sg(m)} × ${xk}${t(b)} = __.`,
@@ -826,14 +827,14 @@ export const EXPRESSION_LESSONS: Lesson[] = [
           ["Sustituye x.", "Multiplica antes de sumar.", `${m} × ${xk} = ${sg(m * xk)}.`],
           { step: true, errors: [{ value: m * (xk + b), feedback: "Multiplica primero y suma después el valor inicial." }].filter((e) => e.value !== m * xk + b) },
         ),
-        n(
+        fig(n(
           "q3",
           `Una función lineal pasa por (${x1}, ${sg(m * x1 + b)}) y (${x2}, ${sg(m * x2 + b)}). ¿Cuál es su pendiente?`,
           m,
           [`La pendiente compara cuánto cambia y con cuánto cambia x: m = (y₂ − y₁) ÷ (x₂ − x₁).`, `Cambio de y: ${sg(m * x2 + b)} − ${p(m * x1 + b)} = ${sg(m * (x2 - x1))}. Cambio de x: ${x2} − ${x1} = ${x2 - x1}.`, `m = ${sg(m * (x2 - x1))} ÷ ${x2 - x1} = ${sg(m)}.`],
           ["La pendiente es el cambio de y dividido entre el cambio de x.", `Cambio de y: ${sg(m * x2 + b)} − ${p(m * x1 + b)}.`, `Divide entre ${x2 - x1}.`],
           { errors: [{ value: m * (x2 - x1), feedback: `Falta dividir entre el cambio de x, ${x2 - x1}.` }] },
-        ),
+        ), { kind: "table", head: ["x", "y"], rows: [[x1, sg(m * x1 + b)], [x2, sg(m * x2 + b)]] }),
         [
           c(
             "q4",
@@ -881,7 +882,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
             errors: [{ value: rate * mins, feedback: `Faltan los ${fill} L que había al inicio.` }],
           },
         ),
-        n(
+        fig(n(
           "q6",
           `A los ${t1} minutos un depósito tiene ${y1} L y a los ${t2} minutos, ${y2} L, con un ritmo constante. ¿Cuántos litros tenía al inicio?`,
           y1 - slope2 * t1,
@@ -895,7 +896,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
               { value: slope2, feedback: "Ese es el ritmo por minuto. Se pide el valor inicial." },
             ],
           },
-        ),
+        ), { kind: "table", head: ["Minutos", "Litros"], rows: [[0, "?"], [t1, y1], [t2, y2]] }),
       ];
     },
     application: n(

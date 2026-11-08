@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig } from "./figures";
 
 export const PROPORTIONALITY_LESSONS: Lesson[] = [
   defineLesson({
@@ -707,7 +708,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
               1,
               "En y = kx, dividir y entre x distinto de cero devuelve siempre k.",
             ),
-          c(
+          fig(c(
               "q0",
               `En una relación y = ${k}x, ¿qué ocurre con y si x se triplica?`,
               [
@@ -717,7 +718,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
               ],
               1,
               `${k} × (3x) = 3 × (${k}x): si x se multiplica por 3, y también.`,
-            ),
+            ), { kind: "graph", fn: { type: "linear", m: k, b: 0 }, x: [0, 6], y: [0, 6 * k], label: `y = ${k}x` }),
           c(
             "q0",
             "Un taxi cobra 5 soles fijos más 2 soles por kilómetro. ¿Es el precio proporcional a los kilómetros?",
@@ -730,7 +731,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             "5 km cuestan 15 soles y 10 km cuestan 25: duplicar los kilómetros no duplica el precio.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Cada sensor consume ${k} unidades y no hay consumo fijo. ¿Cuánto consumen ${x} sensores?`,
           k * x,
@@ -745,7 +746,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
               { value: k + x, feedback: "Sumaste. Cada sensor añade su consumo: hay que multiplicar." },
             ],
           },
-        ),
+        ), { kind: "table", head: ["Sensores", "Consumo"], rows: [[1, k], [x, "?"]] }),
         n(
           "q2",
           `Completa el factor: si ${x} sensores consumen ${k * x}, entonces y = __ × x.`,
@@ -796,7 +797,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
               0,
               "El término fijo hace que y/x cambie; duplicar x no duplica el consumo total.",
             )
-          : c(
+          : fig(c(
               "q4",
               `Una tabla indica: 2 sensores → ${2 * k + extra} unidades; 4 sensores → ${4 * k + extra}. ¿Es proporcional?`,
               [
@@ -806,8 +807,8 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
               ],
               1,
               `y/x cambia de ${((2 * k + extra) / 2).toLocaleString("es")} a ${((4 * k + extra) / 4).toLocaleString("es")}: no hay una constante k.`,
-            ),
-        n(
+            ), { kind: "table", head: ["Sensores", "Consumo"], rows: [[2, 2 * k + extra], [4, 4 * k + extra]] }),
+        fig(n(
           "q5",
           `La red tiene ${x} lámparas que consumen ${k * x} unidades. Todas consumen lo mismo y no hay pérdidas fijas. ¿Cuánto consumirán ${next} lámparas?`,
           next * k,
@@ -821,8 +822,8 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
             `Multiplica ${k} por ${next}.`,
           ],
           { intent: "transfer" },
-        ),
-        n(
+        ), { kind: "table", head: ["Lámparas", "Consumo"], rows: [[x, k * x], [next, "?"]] }),
+        fig(n(
           "q6",
           `En una red proporcional, ${x1} sensores consumen ${y1} unidades. ¿Cuántos sensores consumen ${y2} unidades?`,
           y2 / rate,
@@ -842,7 +843,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
               { value: y2 * rate, feedback: `Multiplicaste por la constante. Si ${y2} = ${rate} × x, x se obtiene dividiendo.` },
             ],
           },
-        ),
+        ), { kind: "table", head: ["Sensores", "Consumo"], rows: [[x1, y1], ["?", y2]] }),
       ];
     },
     application: n(

@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig } from "./figures";
 
 export const FRACTION_LESSONS: Lesson[] = [
   defineLesson({
@@ -137,7 +138,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         litres = [5, 3, 4, 2, 6, 3][v];
       return [
         v % 2 === 0
-          ? c(
+          ? fig(c(
               "q0",
               `Un medidor marca ${num}/${den}. ¿Qué representa el ${den}?`,
               [
@@ -147,8 +148,8 @@ export const FRACTION_LESSONS: Lesson[] = [
               ],
               1,
               `El denominador ${den} indica en cuántas partes iguales se divide una unidad.`,
-            )
-          : c(
+            ), { kind: "fraction-bar", bars: [{ parts: den, shaded: num }] })
+          : fig(c(
               "q0",
               `Un medidor marca ${num}/${den}. ¿Qué representa el ${num}?`,
               [
@@ -158,8 +159,8 @@ export const FRACTION_LESSONS: Lesson[] = [
               ],
               2,
               `El numerador ${num} cuenta las partes de tamaño 1/${den} que se toman.`,
-            ),
-        n(
+            ), { kind: "fraction-bar", bars: [{ parts: den, shaded: num }] }),
+        fig(n(
           "q1",
           `Una barra tiene ${den} partes iguales y ${num} están marcadas. Escribe la fracción marcada.`,
           num / den,
@@ -182,8 +183,8 @@ export const FRACTION_LESSONS: Lesson[] = [
               },
             ],
           },
-        ),
-        n(
+        ), { kind: "fraction-bar", bars: [{ parts: den, shaded: num }] }),
+        fig(n(
           "q2",
           `Completa: si una unidad se divide en ${den} partes iguales, cada parte es 1/__.`,
           den,
@@ -194,7 +195,7 @@ export const FRACTION_LESSONS: Lesson[] = [
             `El denominador es ${den}.`,
           ],
           { step: true },
-        ),
+        ), { kind: "fraction-bar", bars: [{ parts: den, shaded: 1 }] }),
         n(
           "q3",
           `¿Cuántas unidades completas representan ${den * units}/${den}?`,
@@ -228,7 +229,7 @@ export const FRACTION_LESSONS: Lesson[] = [
           2,
           `${den + num}/${den} = ${den}/${den} + ${num}/${den} = 1 + ${num}/${den}.`,
         ),
-        n(
+        fig(n(
           "q5",
           `Una ruta está dividida en ${den} tramos iguales. Ya reparaste ${num}. ¿Qué fracción de la ruta falta reparar?`,
           (den - num) / den,
@@ -250,8 +251,8 @@ export const FRACTION_LESSONS: Lesson[] = [
               },
             ],
           },
-        ),
-        n(
+        ), { kind: "fraction-bar", bars: [{ parts: den, shaded: num, label: "Tramos reparados" }] }),
+        fig(n(
           "q6",
           `Un depósito lleno hasta ${num}/${den} de su capacidad contiene ${num * litres} litros. ¿Cuál es su capacidad total?`,
           den * litres,
@@ -278,7 +279,7 @@ export const FRACTION_LESSONS: Lesson[] = [
               },
             ],
           },
-        ),
+        ), { kind: "fraction-bar", bars: [{ parts: den, shaded: num, label: `${num * litres} litros` }] }),
       ];
     },
     application: n(

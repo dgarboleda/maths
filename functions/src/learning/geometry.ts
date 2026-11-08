@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig } from "./figures";
 
 const PI = 3.14;
 /** Redondea a milésimas para evitar restos de coma flotante (3,14 × 10). */
@@ -91,7 +92,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               1,
               "Cubrir una superficie es una pregunta de área.",
             ),
-          c(
+          fig(c(
               "q0",
               `Un rectángulo de ${b} m por ${h} m tiene ${b * h} m² de área. ¿Por qué no tiene ${b * h} m de perímetro?`,
               [
@@ -101,7 +102,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               ],
               0,
               "Área y perímetro miden magnitudes distintas.",
-            ),
+            ), { kind: "polygon", shape: "rectangle", base: `${b} m`, height: `${h} m` }),
           c(
             "q0",
             "Para colocar una cinta de luces por todo el borde de una terraza, ¿qué se calcula?",
@@ -114,30 +115,30 @@ export const GEOMETRY_LESSONS: Lesson[] = [
             "Recorrer un borde es una pregunta de perímetro: se mide en metros.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Calcula el área de un rectángulo de ${b} cm por ${h} cm.`,
           b * h,
           [`El área cuenta cuántos cuadrados de 1 cm de lado cubren el rectángulo.`, `Hay ${h} filas de ${b} cuadrados: ${b} × ${h} = ${b * h}.`, `El área es ${b * h} cm²: se mide en unidades cuadradas.`],
           ["El área cuenta los cuadrados que cubren la figura.", `${b} columnas de ${h} cuadrados.`, `${b} × ${h}.`],
           { unit: "cm²", errors: [{ value: 2 * (b + h), feedback: "Calculaste el perímetro. El área es base × altura." }] },
-        ),
-        n(
+        ), { kind: "polygon", shape: "rectangle", base: `${b} cm`, height: `${h} cm` }),
+        fig(n(
           "q2",
           `Completa el perímetro de ese rectángulo: 2 × (${b} + ${h}) = __ cm.`,
           2 * (b + h),
           [`El perímetro recorre el borde: dos lados de ${b} cm y dos de ${h} cm.`, `${b} + ${h} = ${b + h} es medio contorno; 2 × ${b + h} = ${2 * (b + h)} cm.`, `Comprobación: ${b} + ${h} + ${b} + ${h} = ${2 * (b + h)} cm, una longitud, no un área.`],
           ["Suma dentro del paréntesis.", "Hay dos lados de cada medida.", `2 × ${b + h}.`],
           { step: true, unit: "cm", errors: [{ value: b + h, feedback: "Sumaste solo dos lados. El rectángulo tiene cuatro." }] },
-        ),
-        n(
+        ), { kind: "polygon", shape: "rectangle", base: `${b} cm`, height: `${h} cm` }),
+        fig(n(
           "q3",
           `Un triángulo tiene base ${tb} cm y altura ${th} cm. ¿Cuál es su área?`,
           (tb * th) / 2,
           [`Un triángulo ocupa la mitad del rectángulo de la misma base y altura.`, `Rectángulo: ${tb} × ${th} = ${tb * th} cm².`, `Triángulo: ${tb * th} ÷ 2 = ${fmt((tb * th) / 2)} cm².`],
           ["El triángulo es la mitad de un rectángulo.", `${tb} × ${th}.`, "Divide entre 2."],
           { unit: "cm²", errors: [{ value: tb * th, feedback: "Esa es el área del rectángulo completo. El triángulo ocupa la mitad." }] },
-        ),
+        ), { kind: "polygon", shape: "triangle", base: `${tb} cm`, height: `${th} cm` }),
         v % 2 === 0
           ? c(
               "q4",
@@ -161,7 +162,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               2,
               "Figuras con el mismo perímetro pueden encerrar áreas muy distintas.",
             ),
-        n(
+        fig(n(
           "q5",
           `Un terreno cuadrado de ${side} m de lado se cerca dejando una puerta de ${side - fence} m. ¿Cuántos metros de cerca hacen falta?`,
           4 * side - (side - fence),
@@ -175,8 +176,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               { value: 4 * side, feedback: "Ese es el perímetro completo: falta descontar la puerta." },
             ],
           },
-        ),
-        n(
+        ), { kind: "polygon", shape: "square", base: `${side} m` }),
+        fig(n(
           "q6",
           `Una plaza tiene forma de L: es un rectángulo de ${W} m por ${H} m al que le falta una esquina de ${w} m por ${hh} m. ¿Qué área tiene?`,
           W * H - w * hh,
@@ -190,10 +191,10 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               { value: 2 * (W + H), feedback: "Calculaste un perímetro. Se pide la superficie." },
             ],
           },
-        ),
+        ), { kind: "polygon", shape: "l-shape", base: `${W} m`, height: `${H} m`, notch: [`${w} m`, `${hh} m`] }),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Un techo rectangular de 9 m por 6 m se cubre con placas solares, salvo una claraboya de 2 m por 1,5 m. Cada placa ocupa 1,5 m². ¿Cuántas placas caben como máximo?",
       34,
@@ -207,7 +208,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
           { value: 51, feedback: "Esos son metros cuadrados útiles; cada placa ocupa 1,5 m²." },
         ],
       },
-    ),
+    ), { kind: "polygon", shape: "rectangle", base: "9 m", height: "6 m" }),
     outcome: "Puedes calcular cercas y superficies a cubrir sin confundir longitudes y áreas.",
     commonErrors: [
       "Confundir área y perímetro.",
@@ -272,7 +273,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
     diagnostic: [
       n("d-1", "¿Cuánto es 3,14 × 10?", 31.4, ["Multiplicar por 10 desplaza la coma una posición a la derecha.", "3,14 × 10 = 31,4. Comprobación: 31,4 ÷ 10 = 3,14."], ["Multiplicar por 10.", "Desplaza la coma una posición.", "31,4."]),
       n("d-2", "¿Cuánto es 7²?", 49, ["7² es multiplicar 7 por sí mismo.", "7 × 7 = 49."], ["Un número al cuadrado es por sí mismo.", "7 × 7.", "49."]),
-      c("d-3", "Si el diámetro mide 8 cm, ¿cuánto mide el radio?", ["16 cm", "4 cm", "8 cm"], 1, "El radio es la mitad del diámetro."),
+      fig(c("d-3", "Si el diámetro mide 8 cm, ¿cuánto mide el radio?", ["16 cm", "4 cm", "8 cm"], 1, "El radio es la mitad del diámetro."), { kind: "circle", diameter: "8 cm" }),
     ],
     questions(v) {
       const r = [5, 3, 10, 4, 6, 7][v],
@@ -316,7 +317,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
             "En una vuelta la rueda avanza la longitud de su borde: L = π × d ≈ 3,14 × 50 = 157 cm.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Calcula la longitud de una circunferencia de radio ${r} cm (usa π ≈ 3,14).`,
           r3(2 * PI * r),
@@ -329,24 +330,24 @@ export const GEOMETRY_LESSONS: Lesson[] = [
               { value: r3(PI * r * r), feedback: "Calculaste el área. La longitud es 2πr." },
             ],
           },
-        ),
-        n(
+        ), { kind: "circle", radius: `${r} cm` }),
+        fig(n(
           "q2",
           `Completa el área de un círculo de radio ${rr} cm: A = 3,14 × ${rr}² = 3,14 × __.`,
           rr * rr,
           [`El área del círculo usa el radio al cuadrado: A = π × r².`, `${rr}² = ${rr} × ${rr} = ${rr * rr}; no es 2 × ${rr} = ${2 * rr}.`, `Después: A = 3,14 × ${rr * rr} = ${fmt(PI * rr * rr)} cm².`],
           ["Eleva el radio al cuadrado.", `${rr} × ${rr}.`, `${rr * rr}.`],
           { step: true, errors: [{ value: 2 * rr, feedback: "Elevar al cuadrado es multiplicar por sí mismo, no por 2." }] },
-        ),
-        n(
+        ), { kind: "circle", radius: `${rr} cm` }),
+        fig(n(
           "q3",
           `Un círculo tiene ${d} cm de diámetro. ¿Cuál es su área? (π ≈ 3,14)`,
           r3(PI * (d / 2) ** 2),
           [`r = ${d} ÷ 2 = ${d / 2} cm.`, `A = 3,14 × ${d / 2}² = 3,14 × ${(d / 2) ** 2} = ${fmt(PI * (d / 2) ** 2)} cm².`],
           ["El área usa el radio.", `r = ${d / 2}.`, `3,14 × ${(d / 2) ** 2}.`],
           { unit: "cm²", errors: [{ value: r3(PI * d * d), feedback: "Usaste el diámetro en lugar del radio." }] },
-        ),
-        c(
+        ), { kind: "circle", diameter: `${d} cm` }),
+        fig(c(
           "q4",
           `Alguien calcula el área de un círculo de radio ${r} como 3,14 × ${2 * r}. ¿Qué falla?`,
           [
@@ -356,8 +357,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
           ],
           2,
           "Longitud: πd. Área: πr².",
-        ),
-        n(
+        ), { kind: "circle", radius: `${r}` }),
+        fig(n(
           "q5",
           `Una rueda de ${String(wheel).replace(".", ",")} m de radio da ${laps} vueltas. ¿Cuántos metros recorre? (π ≈ 3,14)`,
           r3(2 * PI * wheel * laps),
@@ -368,8 +369,8 @@ export const GEOMETRY_LESSONS: Lesson[] = [
             unit: "m",
             errors: [{ value: r3(PI * wheel * laps), feedback: "Usaste πr; una vuelta mide 2πr." }],
           },
-        ),
-        n(
+        ), { kind: "circle", radius: `${String(wheel).replace(".", ",")} m` }),
+        fig(n(
           "q6",
           `Un estanque circular de ${outer} m de radio tiene en el centro una isla circular de ${inner} m de radio. ¿Qué superficie de agua hay? (π ≈ 3,14)`,
           r3(PI * (outer * outer - inner * inner)),
@@ -380,10 +381,10 @@ export const GEOMETRY_LESSONS: Lesson[] = [
             unit: "m²",
             errors: [{ value: r3(PI * (outer - inner) ** 2), feedback: `Restaste los radios antes de elevar: ${outer}² − ${inner}² no es (${outer} − ${inner})².` }],
           },
-        ),
+        ), { kind: "circle", radius: `${outer} m`, inner: `${inner} m` }),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Una turbina circular de 2 m de radio se protege con una malla en el borde y una tapa que cubre su superficie. La malla cuesta 5 créditos por metro y la tapa 3 por m². ¿Cuánto cuesta todo? (π ≈ 3,14)",
       100.48,
@@ -397,7 +398,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
           { value: 37.68, feedback: "Ese es solo el costo de la tapa. Falta la malla del borde." },
         ],
       },
-    ),
+    ), { kind: "circle", radius: "2 m" }),
     outcome: "Puedes medir bordes y superficies circulares de turbinas y depósitos.",
     commonErrors: [
       "Usar el diámetro en la fórmula del área.",
@@ -460,7 +461,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
     ],
     diagnostic: [
       n("d-1", "¿Cuánto es 5 × 4 × 3?", 60, ["Se multiplica de dos en dos: 5 × 4 = 20.", "20 × 3 = 60. El orden de los factores no cambia el producto."], ["Multiplica de dos en dos.", "5 × 4 = 20.", "60."]),
-      n("d-2", "Área de un círculo de radio 3 (π ≈ 3,14).", 28.26, ["El área del círculo es π × r²: con r = 3, r² = 3 × 3 = 9.", "3,14 × 9 = 28,26."], ["A = πr².", "3² = 9.", "3,14 × 9."]),
+      fig(n("d-2", "Área de un círculo de radio 3 (π ≈ 3,14).", 28.26, ["El área del círculo es π × r²: con r = 3, r² = 3 × 3 = 9.", "3,14 × 9 = 28,26."], ["A = πr².", "3² = 9.", "3,14 × 9."]), { kind: "circle", radius: "3" }),
       c("d-3", "¿Qué unidad mide un volumen?", ["cm", "cm²", "cm³"], 2, "Los volúmenes se miden en unidades cúbicas."),
     ],
     questions(v) {
@@ -504,14 +505,14 @@ export const GEOMETRY_LESSONS: Lesson[] = [
             "1 L = 1 dm³ y en un cubo de 1 m de lado caben 10 × 10 × 10 = 1000 cubos de 1 dm.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Calcula el volumen de un prisma de ${l} cm × ${w} cm × ${h} cm.`,
           l * w * h,
           [`Base: ${l} × ${w} = ${l * w} cm².`, `V = ${l * w} × ${h} = ${l * w * h} cm³.`],
           ["Calcula el área de la base.", "Multiplica por la altura.", `${l} × ${w} × ${h}.`],
           { unit: "cm³", errors: [{ value: 2 * (l * w + l * h + w * h), feedback: "Calculaste la superficie exterior, no el volumen." }] },
-        ),
+        ), { kind: "solid", shape: "prism", length: `${l} cm`, width: `${w} cm`, height: `${h} cm` }),
         n(
           "q2",
           `Completa: ${String(m3).replace(".", ",")} m³ = __ litros.`,
@@ -520,15 +521,15 @@ export const GEOMETRY_LESSONS: Lesson[] = [
           ["1 m³ = 1000 L.", "Multiplica por 1000.", `${fmt(m3 * 1000)}.`],
           { step: true, unit: "L", errors: [{ value: m3 * 100, feedback: "1 m³ son 10 × 10 × 10 = 1000 dm³, no 100." }] },
         ),
-        n(
+        fig(n(
           "q3",
           `Un cilindro tiene radio ${cr} m y altura ${ch} m. ¿Cuál es su volumen? (π ≈ 3,14)`,
           r3(PI * cr * cr * ch),
           [`Base: 3,14 × ${cr * cr} = ${fmt(PI * cr * cr)} m².`, `V = ${fmt(PI * cr * cr)} × ${ch} = ${fmt(PI * cr * cr * ch)} m³.`],
           ["La base es un círculo.", "Calcula πr².", `Multiplica por ${ch}.`],
           { unit: "m³", errors: [{ value: r3(2 * PI * cr * ch), feedback: "Usaste la longitud de la circunferencia (2πr) en lugar del área de la base." }] },
-        ),
-        c(
+        ), { kind: "solid", shape: "cylinder", radius: `${cr} m`, height: `${ch} m` }),
+        fig(c(
           "q4",
           `Un depósito mide ${l} dm × ${w} dm × ${h} cm. Alguien multiplica ${l} × ${w} × ${h}. ¿Qué falla?`,
           [
@@ -538,16 +539,16 @@ export const GEOMETRY_LESSONS: Lesson[] = [
           ],
           1,
           "Todas las medidas deben estar en la misma unidad.",
-        ),
-        n(
+        ), { kind: "solid", shape: "prism", length: `${l} dm`, width: `${w} dm`, height: `${h} cm` }),
+        fig(n(
           "q5",
           `Un depósito rectangular mide ${l} dm × ${w} dm × ${h} dm. ¿Cuántos litros caben?`,
           l * w * h,
           [`V = ${l} × ${w} × ${h} = ${l * w * h} dm³.`, `1 dm³ = 1 L: caben ${l * w * h} L.`],
           ["Calcula el volumen en dm³.", "1 dm³ = 1 L.", `${l} × ${w} × ${h}.`],
           { intent: "transfer", unit: "L", errors: [{ value: l * w * h * 1000, feedback: "1 dm³ ya es 1 L: no hace falta multiplicar por 1000." }] },
-        ),
-        n(
+        ), { kind: "solid", shape: "prism", length: `${l} dm`, width: `${w} dm`, height: `${h} dm` }),
+        fig(n(
           "q6",
           `Un depósito rectangular tiene base de ${String(tl).replace(".", ",")} m × ${String(tw).replace(".", ",")} m. ¿Qué altura de agua hay cuando contiene ${target} m³?`,
           r3(target / (tl * tw)),
@@ -558,10 +559,10 @@ export const GEOMETRY_LESSONS: Lesson[] = [
             unit: "m",
             errors: [{ value: r3(target * tl * tw), feedback: "Multiplicaste; para hallar la altura se divide el volumen entre el área de la base." }],
           },
-        ),
+        ), { kind: "solid", shape: "prism", length: `${String(tl).replace(".", ",")} m`, width: `${String(tw).replace(".", ",")} m`, height: "?" }),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Un tanque cilíndrico de 1 m de radio y 2 m de altura está lleno. Su agua se pasa a bidones de 20 L. ¿Cuántos bidones se llenan completos? (π ≈ 3,14)",
       314,
@@ -575,7 +576,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
           { value: 628, feedback: "Usaste bidones de 10 L o duplicaste: cada bidón tiene 20 L." },
         ],
       },
-    ),
+    ), { kind: "solid", shape: "cylinder", radius: "1 m", height: "2 m" }),
     outcome: "Puedes calcular cuánta agua cabe en los depósitos y expresarla en litros.",
     commonErrors: [
       "Confundir volumen con superficie exterior.",
@@ -682,31 +683,31 @@ export const GEOMETRY_LESSONS: Lesson[] = [
             "El teorema solo se aplica a triángulos rectángulos; con estos lados, a² + b² ≠ c².",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Los catetos de un triángulo rectángulo miden ${a} cm y ${b} cm. ¿Cuánto mide la hipotenusa?`,
           cc,
           [`${a}² + ${b}² = ${a * a} + ${b * b} = ${cc * cc}.`, `√${cc * cc} = ${cc} cm.`],
           ["Eleva cada cateto al cuadrado.", "Suma los cuadrados.", "Calcula la raíz."],
           { unit: "cm", errors: [{ value: a + b, feedback: "Sumaste los catetos. Se suman sus cuadrados y después se calcula la raíz." }, { value: cc * cc, feedback: "Falta calcular la raíz cuadrada." }] },
-        ),
-        n(
+        ), { kind: "triangle", shape: "right", sides: [`${a} cm`, "?", `${b} cm`] }),
+        fig(n(
           "q2",
           `Completa: ${a}² + ${b}² = __.`,
           cc * cc,
           [`Primero se eleva cada número al cuadrado: ${a}² = ${a * a} y ${b}² = ${b * b}.`, `Después se suman: ${a * a} + ${b * b} = ${cc * cc}.`, `No es (${a} + ${b})² = ${(a + b) ** 2}: se suman los cuadrados, no los lados.`],
           ["Calcula cada cuadrado.", `${a}² = ${a * a}.`, `${a * a} + ${b * b}.`],
           { step: true, errors: [{ value: (a + b) ** 2, feedback: "Elevaste la suma; hay que sumar los cuadrados." }] },
-        ),
-        n(
+        ), { kind: "triangle", shape: "right", sides: [`${a}`, "c", `${b}`] }),
+        fig(n(
           "q3",
           `La hipotenusa mide ${kc} m y un cateto ${ka} m. ¿Cuánto mide el otro cateto?`,
           Math.sqrt(kc * kc - ka * ka),
           [`${kc}² − ${ka}² = ${kc * kc} − ${ka * ka} = ${kc * kc - ka * ka}.`, `√${kc * kc - ka * ka} = ${Math.sqrt(kc * kc - ka * ka)} m.`],
           ["La hipotenusa es el lado mayor.", "Resta los cuadrados.", "Calcula la raíz."],
           { unit: "m", errors: [{ value: Math.sqrt(kc * kc + ka * ka), feedback: "Sumaste los cuadrados: si conoces la hipotenusa, hay que restar." }] },
-        ),
-        c(
+        ), { kind: "triangle", shape: "right", sides: [`${ka} m`, `${kc} m`, "?"] }),
+        fig(c(
           "q4",
           `¿Es rectángulo un triángulo de lados ${s1}, ${s2} y ${s3}?`,
           isRight
@@ -714,16 +715,16 @@ export const GEOMETRY_LESSONS: Lesson[] = [
             : [[`Sí: ${s1} + ${s2} > ${s3}`, "Eso solo indica que el triángulo existe."], `No: ${s1}² + ${s2}² = ${s1 * s1 + s2 * s2} ≠ ${s3 * s3} = ${s3}²`, ["No se puede saber sin medir los ángulos", "El recíproco del teorema permite saberlo con los lados."]],
           isRight ? 0 : 1,
           "Un triángulo es rectángulo si el cuadrado del lado mayor es la suma de los otros dos cuadrados.",
-        ),
-        n(
+        ), { kind: "triangle", shape: "scalene", sides: [`${s3}`, `${s2}`, `${s1}`] }),
+        fig(n(
           "q5",
           `Un cable va desde lo alto de un poste de ${a} m hasta un punto del suelo a ${b} m de la base. ¿Cuánto mide el cable?`,
           cc,
           [`Catetos ${a} y ${b} → ${a * a} + ${b * b} = ${cc * cc}.`, `Cable: √${cc * cc} = ${cc} m.`],
           ["El poste y el suelo forman un ángulo recto.", "El cable es la hipotenusa.", "Usa c² = a² + b²."],
           { intent: "transfer", unit: "m", errors: [{ value: a + b, feedback: "El cable no es la suma de las distancias: es la hipotenusa." }] },
-        ),
-        n(
+        ), { kind: "triangle", shape: "right", sides: [`${b} m`, "?", `${a} m`] }),
+        fig(n(
           "q6",
           `En un mapa con cuadrícula, la radio está en (0, 0) y el hospital en (${px}, ${py}). ¿Qué distancia en línea recta los separa?`,
           Math.sqrt(px * px + py * py),
@@ -733,10 +734,10 @@ export const GEOMETRY_LESSONS: Lesson[] = [
             intent: "transfer",
             errors: [{ value: px + py, feedback: "Esa es la distancia siguiendo la cuadrícula. En línea recta es la hipotenusa." }],
           },
-        ),
+        ), { kind: "plane", points: [{ name: "R", x: 0, y: 0 }, { name: "H", x: px, y: py }], segments: [["R", "H"]], legs: { from: "R", to: "H" } }),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Una pantalla rectangular mide 48 cm de ancho y 36 cm de alto. Se anuncia por su diagonal en pulgadas (1 pulgada ≈ 2,5 cm). ¿Cuántas pulgadas mide?",
       24,
@@ -750,7 +751,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
           { value: 33.6, feedback: "Sumaste ancho y alto: la diagonal es la hipotenusa." },
         ],
       },
-    ),
+    ), { kind: "triangle", shape: "right", sides: ["48 cm", "?", "36 cm"] }),
     outcome: "Puedes calcular cables, rampas y distancias en línea recta.",
     commonErrors: [
       "Sumar los lados en lugar de sus cuadrados.",
