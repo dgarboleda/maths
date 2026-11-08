@@ -1,3 +1,5 @@
+import { validLessonVisuals, type LessonVisual } from "./visuals";
+
 /**
  * Clases creadas por una familia. El documento completo
  * (`parents/{p}/customLessons/{id}`) solo lo lee la familia: lleva las
@@ -44,6 +46,8 @@ export type CustomQuestion = ChoiceQuestion | NumericQuestion;
 
 export interface CustomLesson {
   title: string; topic: string; content: string; game: CustomGame; questions: CustomQuestion[]; published: boolean; updatedAt: number;
+  /** Recursos interactivos opcionales, anteriores a las preguntas. */
+  visuals?: LessonVisual[];
   /** Versión con la que se guarda el progreso. Solo cambia si cambian las preguntas, sus opciones o la respuesta correcta. */
   contentVersion?: number;
   /** Posición dentro de su tema. */
@@ -89,7 +93,7 @@ export function numericMatches(question: Pick<NumericQuestion, "value" | "tolera
   return Math.abs(expected - value) <= (question.tolerance ?? 0) + 1e-9;
 }
 
-export type ErrorField = "topic" | "title" | "content" | "questions" | "prompt" | "options" | "answer" | "explanation" | "id" | "hint" | "feedback" | "value" | "tolerance" | "assignedTo" | "availableFrom" | "dueAt" | "requires";
+export type ErrorField = "visuals" | "topic" | "title" | "content" | "questions" | "prompt" | "options" | "answer" | "explanation" | "id" | "hint" | "feedback" | "value" | "tolerance" | "assignedTo" | "availableFrom" | "dueAt" | "requires";
 export interface LessonError { question?: number; field: ErrorField; message: string }
 
 /**
@@ -110,6 +114,7 @@ export function describeCustomLessonErrors(value: unknown, { draft = false }: { 
   text(v.title, LIMITS.title, "title", "el título");
   if (draft && typeof v.title === "string" && !v.title.trim()) errors.push({ field: "title", message: "Escribe al menos el título para guardar el borrador." });
   text(v.content, LIMITS.content, "content", "el contenido de la clase");
+  if (v.visuals !== undefined && !validLessonVisuals(v.visuals)) errors.push({ field: "visuals", message: "Revisa los recursos interactivos: tipos, rangos y títulos deben ser válidos (máximo 8)." });
   const minigame = v.game !== "write";
   if (!CUSTOM_GAMES.includes(v.game as CustomGame)) errors.push({ field: "questions", message: "Elige un minijuego válido." });
   if (typeof v.published !== "boolean" || !Number.isSafeInteger(v.updatedAt)) errors.push({ field: "questions", message: "La clase no tiene un formato válido." });
@@ -190,6 +195,7 @@ export function sanitizeLesson(v: CustomLesson): CustomLesson {
       return { ...base, kind: "choice", options: q.options.map((o) => o.trim()), answer: q.answer, ...feedback };
     }),
   };
+  if (v.visuals?.length) lesson.visuals = v.visuals.map(({ id, kind, title, description, min, max, initial }) => ({ id, kind, title, description, ...(kind === "custom-number-line" ? { min, max, initial } : {}) }));
   if (v.contentVersion !== undefined) lesson.contentVersion = v.contentVersion;
   if (v.order !== undefined) lesson.order = v.order;
   if (v.assignedTo?.length) lesson.assignedTo = [...v.assignedTo];
@@ -208,6 +214,7 @@ export type PublicQuestion =
 export interface PublicLesson {
   title: string; topic: string; content: string; game: CustomGame; order: number; version: number; updatedAt: number;
   audience: string[]; questions: PublicQuestion[];
+  visuals?: LessonVisual[];
   availableFrom?: number; dueAt?: number; requires?: string;
 }
 export const ALL_CHILDREN = "*";
@@ -219,6 +226,7 @@ export function publicLesson(lesson: CustomLesson): PublicLesson {
     audience: lesson.assignedTo?.length ? [...lesson.assignedTo] : [ALL_CHILDREN],
     questions: lesson.questions.map((q) => isNumeric(q) ? { id: q.id, kind: "numeric", prompt: q.prompt } : { id: q.id, kind: "choice", prompt: q.prompt, options: [...q.options] }),
   };
+  if (lesson.visuals?.length) out.visuals = lesson.visuals.map((visual) => ({ ...visual }));
   if (lesson.availableFrom !== undefined) out.availableFrom = lesson.availableFrom;
   if (lesson.dueAt !== undefined) out.dueAt = lesson.dueAt;
   if (lesson.requires !== undefined) out.requires = lesson.requires;
@@ -228,6 +236,7 @@ export function publicLesson(lesson: CustomLesson): PublicLesson {
 export function isPublicLesson(value: unknown): value is PublicLesson {
   const v = value as Partial<PublicLesson> | null;
   return !!v && typeof v.title === "string" && typeof v.topic === "string" && typeof v.content === "string" && CUSTOM_GAMES.includes(v.game as CustomGame)
+    && (v.visuals === undefined || validLessonVisuals(v.visuals))
     && Number.isSafeInteger(v.version) && Number.isSafeInteger(v.order) && Array.isArray(v.audience) && Array.isArray(v.questions)
     && v.questions.every((q) => !!q && typeof q.id === "string" && typeof q.prompt === "string" && (q.kind === "numeric" || (q.kind === "choice" && Array.isArray(q.options))));
 }

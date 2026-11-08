@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { MathText } from "@/components/MathText";
 import { isNumeric, type CustomLesson } from "../../../../functions/src/customLessons/schema";
 import { InlineText, RichText } from "../RichText";
+import { InteractiveVisual } from "../InteractiveVisual";
 
 /** La clase tal como la verá el alumno, con la solución, la pista y los comentarios marcados. */
 export function LessonPreview({ lesson }: { lesson: CustomLesson }) {
+  const [open, setOpen] = useState(false);
   return (
-    <details className="rounded-lg border border-slate-600 p-3">
+    <details onToggle={(event) => setOpen(event.currentTarget.open)} className="rounded-lg border border-slate-600 p-3">
       <summary className="cursor-pointer">Vista previa (como la verá el alumno)</summary>
-      <div className="mt-3 space-y-4">
+      {open && <div className="mt-3 space-y-4">
         <RichText text={lesson.content} />
+        {lesson.visuals?.map((visual) => <InteractiveVisual key={visual.id} visual={visual} />)}
         {lesson.questions.map((q, i) => (
           <div key={q.id} className="space-y-1">
             <p className="font-bold">{i + 1}. <InlineText text={q.prompt} /></p>
@@ -25,7 +29,7 @@ export function LessonPreview({ lesson }: { lesson: CustomLesson }) {
             {q.explanation && <p className="text-sm text-slate-300"><InlineText text={q.explanation} /></p>}
           </div>
         ))}
-      </div>
+      </div>}
     </details>
   );
 }

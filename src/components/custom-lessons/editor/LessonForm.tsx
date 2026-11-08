@@ -4,6 +4,7 @@ import { CUSTOM_GAMES, LIMITS, type CustomGame, type CustomLesson, type CustomQu
 import { AssignmentFields } from "./AssignmentFields";
 import { ImagePicker } from "./ImagePicker";
 import { LessonPreview } from "./LessonPreview";
+import { VisualEditor } from "./VisualEditor";
 import { QuestionEditor } from "./QuestionEditor";
 import { blankNumeric, blankQuestion, blankTrueFalse, moveItem, newQuestionId, type SaveMode } from "./lessonDraft";
 import type { Student } from "./lessonStats";
@@ -87,6 +88,8 @@ export function LessonForm({ parentId, draft, savedPublished, isNew, dirty, busy
         {parentId && <ImagePicker parentId={parentId} onInsert={(md) => onChange((d) => ({ ...d, content: `${d.content.replace(/\s*$/, "")}${d.content.trim() ? "\n\n" : ""}${md}\n` }))} />}
         <FieldError message={fieldError("content")} />
       </div>
+      <VisualEditor visuals={draft.visuals ?? []} onChange={(visuals) => set({ visuals })} />
+      <FieldError message={fieldError("visuals")} />
       <div>
         <label htmlFor="lesson-game" className="block">Minijuego</label>
         <select id="lesson-game" className={inputClass} value={draft.game} onChange={(e) => set({ game: e.target.value as CustomGame })}>

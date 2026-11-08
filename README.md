@@ -55,6 +55,7 @@ En HTTPS, el navegador puede instalar Math Quest desde su menú de instalación;
 ## Funcionamiento y datos
 
 - `/panel`: perfiles, progreso, recompensas y ajustes de la familia.
+- `/panel/clases`: clases familiares con texto, imágenes, preguntas y hasta ocho recursos interactivos. Se pueden buscar los modelos de las clases integradas, probarlos antes de publicar y configurar el rango de una recta numérica; los demás modelos conservan sus controles y valores iniciales originales.
 - `/panel/editor`: niveles y mundo; `/panel/curriculum`: módulos personalizados.
 - `/entrar/{parentId}#k={clave}`: acceso desde otro dispositivo con la clave que genera Ajustes. Functions verifica clave y PIN (HMAC con el secreto `PIN_PEPPER`), persiste los fallos/bloqueos y emite una sesión limitada al hijo.
 - `/jugar/{childId}`: espacio educativo con programa y aventura incluidos, sin evaluación obligatoria ni niveles preparados por la familia.
@@ -68,6 +69,8 @@ En HTTPS, el navegador puede instalar Math Quest desde su menú de instalación;
 - Los respaldos JSON exportan mundo, niveles, módulos y fichas de imágenes. **No incluyen los bytes de Storage ni el progreso familiar**. La restauración fusiona datos por etapas y no es una transacción global. Conserva también una copia de las imágenes para una recuperación completa.
 
 ## Despliegue
+
+Las clases con recursos interactivos requieren que Functions y el frontend estén actualizados: despliega primero Functions para que el servidor valide y conserve los recursos al guardar.
 
 Necesitas acceso al proyecto Firebase (Auth, Firestore, Storage aprovisionado y Functions) y al Worker Cloudflare. No se crean cuentas ni se activa facturación desde estos scripts.
 
