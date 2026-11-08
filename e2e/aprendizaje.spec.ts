@@ -230,12 +230,25 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
   const results = await new AxeBuilder({ page }).include("main").analyze();
   expect(results.violations).toEqual([]);
   await page.getByRole("link", { name: "Elegir otra aventura" }).click();
-  await expect(page.getByText("1 de 7 misiones completadas")).toBeVisible();
+  await expect(page.getByText("1 de 19 misiones completadas")).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+});
+
+test("una nueva aventura muestra un esquema que responde al plan", async ({ page }) => {
+  const childId = await learner(page);
+  await page.goto(`/jugar/${childId}/aventura/feria-energia`);
+  await page.getByRole("button", { name: "Investigar la situación" }).click();
+  await page.getByLabel("Generadores pequeños", { exact: true }).fill("6");
+  await page.getByLabel("Generadores grandes", { exact: true }).fill("4");
+  await expect(page.getByText("Producción: 2 × 6 + 5 × 4 = 32 kW")).toBeVisible();
+  await page.getByRole("button", { name: "Probar el plan" }).click();
+  await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
 });
 
 test("los gráficos dinámicos de la clase responden, son accesibles y caben en pantalla", async ({

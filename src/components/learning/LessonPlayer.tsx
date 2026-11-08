@@ -846,7 +846,7 @@ function LessonSummary({
   disabled: boolean;
 }) {
   const next = LESSON_INDEX[LESSON_INDEX.findIndex((item) => item.id === lesson.id) + 1];
-  const adventure = ADVENTURES.find((item) => item.lessonIds.at(-1) === lesson.id);
+  const adventures = ADVENTURES.filter((item) => item.lessonIds.at(-1) === lesson.id);
   const result =
     progress.lastReview &&
     progress.lastReview.at >= (progress.lastCheck?.at ?? 0)
@@ -944,15 +944,16 @@ function LessonSummary({
         )}
       </div>
       <div className="flex flex-wrap gap-3 border-t border-slate-700 pt-5">
-        {adventure && (
+        {adventures.map((adventure) => (
           <Link
             className={primaryButton}
+            key={adventure.id}
             href={`/jugar/${childId}/aventura/${adventure.id}`}
           >
             Jugar {adventure.title}
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
-        )}
+        ))}
         {next && (
           <Link
             className={primaryButton}

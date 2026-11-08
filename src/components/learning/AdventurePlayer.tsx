@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AdventureVisual } from "./AdventureVisual";
 import { OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
 import { useState } from "react";
 import { CheckCircle2, Circle, Minus, Plus, Search, Zap } from "lucide-react";
@@ -238,6 +239,7 @@ function AdventureGame({
                   </div>
                 ))}
               </fieldset>
+              <AdventureVisual adventure={adventure} values={values} />
               <OpenCalculatorButton disabled={mutation.blocked} />
               {invalid && (
                 <p role="alert" className="text-sm text-amber-200">

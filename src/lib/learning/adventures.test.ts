@@ -18,6 +18,18 @@ const SOLUTIONS: Record<string, number[]> = {
   "jardin-baldosas": [11, 48],
   "huerto-escolar": [12, 10],
   "torneo-lanzamientos": [8, 8, 9],
+  "convoy-suministros": [36, 42],
+  "mezcla-emergencia": [17, 17],
+  "mercado-barrio": [144, 3],
+  "rescate-montana": [12, 10],
+  "feria-energia": [6, 4],
+  "ruta-dron": [6, 4],
+  "deposito-agua": [12, 8000],
+  "puente-valle": [10, 5],
+  "tombola-solidaria": [6, 14],
+  "alerta-meteorologica": [5, 75],
+  "ahorro-observatorio": [1100, 1210],
+  "trayectoria-cohete": [4, 16],
 };
 const play = (id: string, allocation: number[]) =>
   applyAdventureAction(
@@ -28,10 +40,10 @@ const play = (id: string, allocation: number[]) =>
   );
 
 describe("Aventuras por unidad", () => {
-  test("una aventura por unidad, con ids propios y clases existentes", () => {
+  test("cada unidad tiene aventuras con ids propios y clases existentes", () => {
     expect(new Set(ADVENTURES.map((a) => a.id)).size).toBe(ADVENTURES.length);
     for (const unit of LEARNING_UNITS)
-      expect(ADVENTURES.filter((a) => a.unitId === unit.id), unit.id).toHaveLength(1);
+      expect(ADVENTURES.filter((a) => a.unitId === unit.id), unit.id).not.toHaveLength(0);
     for (const adventure of ADVENTURES) {
       // El id comparte la callable con clases y repasos: no puede chocar.
       expect(getLesson(adventure.id)).toBeUndefined();
@@ -69,12 +81,31 @@ describe("Aventuras por unidad", () => {
     expect(play("jardin-baldosas", [11, 44]).feedback).toMatch(/esquinas/);
     expect(play("jardin-baldosas", [10, 44]).feedback).toMatch(/menos de 110/);
     expect(play("jardin-baldosas", [12, 52]).feedback).toMatch(/solo tiene 48/);
+    expect(getAdventure("jardin-baldosas")!.evaluate([11, 50]).goals[2]).toBe(false);
+    expect(play("jardin-baldosas", [11, 50]).feedback).toMatch(/Elegiste 50/);
     expect(play("huerto-escolar", [24, 20]).feedback).toMatch(/dos lados/);
     expect(play("huerto-escolar", [13, 9]).completedAt).toBe(NOW);
     expect(play("huerto-escolar", [10, 12]).feedback).toMatch(/camino de riego/);
     expect(play("torneo-lanzamientos", [7, 7, 7]).feedback).toMatch(/de 3 lanzamientos/);
     expect(play("torneo-lanzamientos", [7, 8, 10]).feedback).toMatch(/rango es 6/);
     expect(play("torneo-lanzamientos", [9, 9, 7]).feedback).toMatch(/empate/);
+  });
+
+  test("las nuevas misiones se recomiendan tras una clase de su unidad", () => {
+    for (const adventure of ADVENTURES.slice(7)) {
+      const lastLesson = getLesson(adventure.lessonIds.at(-1)!);
+      expect(lastLesson?.unitId, adventure.id).toBe(adventure.unitId);
+    }
+    expect(getAdventure("deposito-agua")!.lessonIds.at(-1)).toBe("volumen");
+  });
+
+  test("las nuevas misiones distinguen errores de razonamiento", () => {
+    expect(play("convoy-suministros", [72, 78]).completedAt).toBeFalsy();
+    expect(play("mercado-barrio", [140, 3]).completedAt).toBeFalsy();
+    expect(play("feria-energia", [5, 5]).completedAt).toBeFalsy();
+    expect(play("tombola-solidaria", [6, 13]).completedAt).toBeFalsy();
+    expect(play("alerta-meteorologica", [5, 30]).completedAt).toBeFalsy();
+    expect(play("trayectoria-cohete", [4, 12]).completedAt).toBeFalsy();
   });
 
   test("el plan debe tener una entrada por decisión y respetar los rangos", () => {

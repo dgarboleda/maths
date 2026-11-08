@@ -10,7 +10,7 @@ import {
   LearningShell,
 } from "./LearningShell";
 
-/** Una aventura por unidad: problemas abiertos para aplicar lo aprendido. */
+/** Aventuras por unidad: problemas abiertos para aplicar lo aprendido. */
 export function AdventureIndex({ childId }: { childId: string }) {
   const data = useLearningData(childId);
   if (data.loading) return <LearningLoading />;
@@ -30,7 +30,7 @@ export function AdventureIndex({ childId }: { childId: string }) {
       eyebrow={`${done} de ${ADVENTURES.length} misiones completadas`}
     >
       <p className="mb-6 max-w-3xl leading-relaxed text-slate-300">
-        Cada unidad tiene una misión en Ciudad Central. No hay una única
+        Explora las misiones de cada unidad en Ciudad Central. No hay una única
         respuesta escrita: decides un plan, lo pruebas y la ciudad te dice qué
         condición falta. Cada misión completada da 10 estrellas una vez.
       </p>

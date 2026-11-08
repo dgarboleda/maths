@@ -1,3 +1,4 @@
+import { MORE_ADVENTURES } from "./moreAdventures";
 import type { UnitId } from "./types";
 
 /** Una decisión que el estudiante ajusta antes de probar su plan. */
@@ -261,16 +262,21 @@ const baldosas: AdventureDef = {
   evaluate([lado, baldosas]) {
     const area = lado * lado,
       need = 4 * lado + 4,
-      goals = [area >= 110, baldosas === need, need <= 48];
+      goals = [area >= 110, baldosas === need, baldosas <= 48];
     if (!goals[0])
       return {
         goals,
         feedback: `Con lado ${lado}, el césped mide ${lado}² = ${area} m², menos de 110. Busca el menor lado cuyo cuadrado llegue a 110.`,
       };
-    if (!goals[2])
+    if (need > 48)
       return {
         goals,
         feedback: `Un jardín de lado ${lado} necesita 4 × ${lado} + 4 = ${need} baldosas y el almacén solo tiene 48.`,
+      };
+    if (!goals[2])
+      return {
+        goals,
+        feedback: `Elegiste ${baldosas} baldosas, pero el almacén solo tiene 48.`,
       };
     if (!goals[1])
       return {
@@ -389,7 +395,7 @@ const torneo: AdventureDef = {
   lessonIds: ["media-mediana-moda"],
 };
 
-export const ADVENTURES: AdventureDef[] = [apagon, camara, receta, ascensor, baldosas, huerto, torneo];
+export const ADVENTURES: AdventureDef[] = [apagon, camara, receta, ascensor, baldosas, huerto, torneo, ...MORE_ADVENTURES];
 
 export function getAdventure(id: string) {
   return ADVENTURES.find((adventure) => adventure.id === id);
