@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, columnar, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig } from "./figures";
 
 const fmt = (x: number) => x.toLocaleString("es", { maximumFractionDigits: 6 });
 /** Redondea a 6 decimales para evitar restos de coma flotante (0,1 × 3). */
@@ -436,7 +437,7 @@ export const ANGLE_LESSONS: Lesson[] = [
       ], "Los ángulos miden 35°, 145°, 35° y 145°. Si el ángulo fuera parte de una esquina recta, su complementario sería 90° − 35° = 55°."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto es 180 − 65?", 115, ["Restamos por partes: 180 − 60 = 120.", "120 − 5 = 115. Comprobación: 115 + 65 = 180."], ["Resta por partes.", "180 − 60 = 120.", "120 − 5 = 115."]),
+      fig(n("d-1", "¿Cuánto es 180 − 65?", 115, ["Restamos por partes: 180 − 60 = 120.", "120 − 5 = 115. Comprobación: 115 + 65 = 180."], ["Resta por partes.", "180 − 60 = 120.", "120 − 5 = 115."]), { kind: "angles", around: 180, parts: [{ deg: 65, label: "65°" }, { deg: 115, label: "?" }] }),
       c("d-2", "¿Cuánto mide un ángulo recto?", ["45°", "90°", "180°"], 1, "Un ángulo recto mide 90°."),
       n("d-3", "¿Cuánto es (5 − 2) × 180?", 540, ["El paréntesis va primero: 5 − 2 = 3.", "3 × 180 = 540: tres veces 180."], ["Paréntesis primero.", "3 × 180.", "540."]),
     ],
@@ -482,31 +483,31 @@ export const ANGLE_LESSONS: Lesson[] = [
             "(4 − 2) × 180° = 360°: el cuadrilátero se divide en dos triángulos.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Un triángulo tiene ángulos de ${t1}° y ${t2}°. ¿Cuánto mide el tercero?`,
           180 - t1 - t2,
           [`Los tres ángulos de un triángulo suman 180°.`, `Sumamos los conocidos: ${t1}° + ${t2}° = ${t1 + t2}°.`, `El tercero es lo que falta: 180° − ${t1 + t2}° = ${180 - t1 - t2}°.`],
           ["Los tres ángulos suman 180°.", "Suma los dos conocidos.", "Resta de 180."],
           { unit: "°", errors: [{ value: 360 - t1 - t2, feedback: "Los ángulos de un triángulo suman 180°, no 360°." }] },
-        ),
-        n(
+        ), t1 === 90 ? { kind: "triangle", shape: "right", angles: ["90°", `${t2}°`, "?"] } : Math.max(t1, t2) > 90 ? { kind: "triangle", shape: "obtuse", angles: [`${Math.min(t1, t2)}°`, `${Math.max(t1, t2)}°`, "?"] } : { kind: "triangle", shape: "scalene", angles: [`${t1}°`, `${t2}°`, "?"] }),
+        fig(n(
           "q2",
           `Completa: el suplementario de ${given}° mide 180° − ${given}° = __°.`,
           180 - given,
           [`Dos ángulos suplementarios suman 180°: juntos forman una línea recta.`, `180° − ${given}° = ${180 - given}°.`, `Comprobación: ${given}° + ${180 - given}° = 180°.`],
           ["Suplementarios suman 180°.", `Resta ${given} de 180.`, `${180 - given}.`],
           { step: true, unit: "°", errors: [{ value: 90 - given, feedback: "Eso sería el complementario (suma 90°)." }].filter((e) => e.value > 0) },
-        ),
-        n(
+        ), { kind: "angles", around: 180, parts: [{ deg: given, label: `${given}°` }, { deg: 180 - given, label: "?" }] }),
+        fig(n(
           "q3",
           `¿Cuánto suman los ángulos interiores de un polígono de ${sides} lados?`,
           (sides - 2) * 180,
           [`Desde un vértice, las diagonales dividen un polígono de ${sides} lados en ${sides} − 2 = ${sides - 2} triángulos.`, `Cada triángulo aporta 180°.`, `(${sides} − 2) × 180° = ${(sides - 2) * 180}°.`],
           ["Divide el polígono en triángulos desde un vértice.", `Salen ${sides} − 2 triángulos.`, "Multiplica por 180."],
           { unit: "°", errors: [{ value: sides * 180, feedback: `Desde un vértice salen ${sides - 2} triángulos, no ${sides}.` }] },
-        ),
-        c(
+        ), { kind: "regular", sides }),
+        fig(c(
           "q4",
           `Dos rectas se cruzan y un ángulo mide ${given}°. Un compañero dice que el opuesto por el vértice mide ${180 - given}°. ¿Qué falla?`,
           [
@@ -516,23 +517,23 @@ export const ANGLE_LESSONS: Lesson[] = [
           ],
           2,
           "Los opuestos por el vértice son iguales; los vecinos son suplementarios.",
-        ),
-        n(
+        ), { kind: "angles", around: 360, parts: [{ deg: given, label: `${given}°` }, { deg: 180 - given, label: "" }, { deg: given, label: "?" }, { deg: 180 - given, label: "" }] }),
+        fig(n(
           "q5",
           `Una rampa forma ${ramp}° con el suelo horizontal. ¿Qué ángulo forma con una pared vertical que la toca?`,
           90 - ramp,
           [`Suelo y pared forman 90°: la rampa forma con ellos un triángulo rectángulo.`, `90 − ${ramp} = ${90 - ramp}°.`],
           ["Suelo y pared son perpendiculares.", "Los otros dos ángulos del triángulo rectángulo son complementarios.", `90 − ${ramp}.`],
           { intent: "transfer", unit: "°", errors: [{ value: 180 - ramp, feedback: "Ese sería el suplementario; aquí los dos ángulos completan el ángulo recto." }] },
-        ),
-        n(
+        ), { kind: "angles", around: 90, parts: [{ deg: ramp, label: `${ramp}°` }, { deg: 90 - ramp, label: "?" }] }),
+        fig(n(
           "q6",
           `¿Cuánto mide cada ángulo interior de un polígono regular de ${reg} lados?`,
           ((reg - 2) * 180) / reg,
           [`Suma: (${reg} − 2) × 180 = ${(reg - 2) * 180}°.`, `Cada uno: ${(reg - 2) * 180} ÷ ${reg} = ${fmt(((reg - 2) * 180) / reg)}°.`],
           ["Calcula primero la suma de los ángulos.", "En un polígono regular todos son iguales.", `Divide entre ${reg}.`],
           { intent: "transfer", unit: "°", errors: [{ value: (reg - 2) * 180, feedback: "Esa es la suma de todos los ángulos. Divide entre el número de ángulos." }, { value: 360 / reg, feedback: "Ese es el ángulo exterior (o central), no el interior." }] },
-        ),
+        ), { kind: "regular", sides: reg }),
       ];
     },
     application: n(
@@ -661,22 +662,22 @@ export const SIMILARITY_LESSONS: Lesson[] = [
             "Para ser semejantes, todas las longitudes deben multiplicarse por el mismo factor k.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Un triángulo tiene lados de ${a} cm y ${b} cm. En otro semejante, el lado que corresponde a ${a} cm mide ${a2} cm. ¿Cuánto mide el que corresponde a ${b} cm?`,
           r6(b * ratio),
           [`k = ${a2} ÷ ${a} = ${fmt(ratio)}.`, `${b} × ${fmt(ratio)} = ${fmt(r6(b * ratio))} cm.`],
           ["Busca el factor entre lados correspondientes.", `${a2} ÷ ${a}.`, `Multiplica ${b} por ese factor.`],
           { unit: "cm", errors: [{ value: b + (a2 - a), feedback: "Sumaste la diferencia. En figuras semejantes las longitudes se multiplican por un factor." }] },
-        ),
-        n(
+        ), { kind: "similar", shape: "scalene", small: [`${a} cm`, `${b} cm`, null], big: [`${a2} cm`, "?", null] }),
+        fig(n(
           "q2",
           `Completa: la razón de semejanza es ${a2} ÷ ${a} = __.`,
           ratio,
           [`La razón de semejanza compara un lado de la copia con su correspondiente en el original.`, `${a2} ÷ ${a} = ${fmt(ratio)}.`, `Todas las longitudes de la copia son ${fmt(ratio)} veces las del original.`],
           ["Divide la medida nueva entre la original.", `${a2} ÷ ${a}.`, `${fmt(ratio)}.`],
           { step: true, errors: [{ value: a / a2, feedback: "Invertiste la división: nueva ÷ original." }] },
-        ),
+        ), { kind: "similar", shape: "scalene", small: [`${a} cm`, null, null], big: [`${a2} cm`, null, null] }),
         n(
           "q3",
           `En un plano a escala 1:${scale}, un muro mide ${fmt(cm)} cm. ¿Cuántos metros mide en la realidad?`,
@@ -696,14 +697,14 @@ export const SIMILARITY_LESSONS: Lesson[] = [
           1,
           "La semejanza exige un factor multiplicativo común.",
         ),
-        n(
+        fig(n(
           "q5",
           `Un poste de ${fmt(post)} m da una sombra de ${fmt(shadow)} m. A la misma hora, un edificio da una sombra de ${bshadow} m. ¿Qué altura tiene el edificio?`,
           r6((post * bshadow) / shadow),
           [`k = ${bshadow} ÷ ${fmt(shadow)} = ${fmt(r6(bshadow / shadow))}.`, `Altura = ${fmt(post)} × ${fmt(r6(bshadow / shadow))} = ${fmt(r6((post * bshadow) / shadow))} m.`],
           ["Objeto y sombra forman triángulos semejantes.", "Compara las sombras.", "Aplica el mismo factor a la altura."],
           { intent: "transfer", unit: "m", errors: [{ value: r6(bshadow + (post - shadow)), feedback: "La relación es multiplicativa, no una diferencia fija." }] },
-        ),
+        ), { kind: "similar", shape: "right", small: [`${fmt(shadow)} m`, null, `${fmt(post)} m`], big: [`${bshadow} m`, null, "?"], names: ["poste", "edificio"] }),
         n(
           "q6",
           `Una pieza tiene ${area} cm² de área. Se fabrica otra semejante con todas las longitudes multiplicadas por ${k}. ¿Qué área tiene?`,

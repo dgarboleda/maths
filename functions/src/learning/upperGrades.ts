@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig } from "./figures";
 
 /* Clases para 3.° a 5.° de secundaria (ciclo VII del CNEB): sistemas,
  * crecimiento exponencial, trigonometría, dispersión, conteo y
@@ -486,7 +487,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
       ], "El edificio mide unos 18,3 m. Responder 16,8 m sería olvidar la altura de los ojos."),
     ],
     diagnostic: [
-      n("d-1", "Un triángulo rectángulo tiene catetos de 3 y 4. ¿Cuánto mide la hipotenusa?", 5, ["En un triángulo rectángulo, la hipotenusa cumple c² = a² + b².", "3² + 4² = 9 + 16 = 25, y √25 = 5."], ["Usa a² + b² = c².", "9 + 16 = 25.", "√25 = 5."]),
+      fig(n("d-1", "Un triángulo rectángulo tiene catetos de 3 y 4. ¿Cuánto mide la hipotenusa?", 5, ["En un triángulo rectángulo, la hipotenusa cumple c² = a² + b².", "3² + 4² = 9 + 16 = 25, y √25 = 5."], ["Usa a² + b² = c².", "9 + 16 = 25.", "√25 = 5."]), { kind: "triangle", shape: "right", sides: ["3", "?", "4"] }),
       n("d-2", "Escribe 12/16 como decimal.", 0.75, ["Primero se simplifica: 12/16 = 3/4, dividiendo ambos términos entre 4.", "3 ÷ 4 = 0,75."], ["Simplifica: 12/16 = 3/4.", "3 ÷ 4.", "0,75."]),
       c("d-3", "En un triángulo rectángulo, ¿cuál es el lado más largo?", ["Uno de los catetos", "La hipotenusa", "Depende del ángulo"], 1, "La hipotenusa, opuesta al ángulo recto, es siempre el lado mayor."),
     ],
@@ -509,7 +510,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
               0,
               "Los triángulos son semejantes: sus lados son proporcionales.",
             ),
-          c(
+          fig(c(
               "q0",
               `Un triángulo rectángulo tiene catetos ${opp} y ${adj}. Para el ángulo opuesto al cateto ${opp}, ¿qué representa ${opp}/${adj}?`,
               [
@@ -519,7 +520,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
               ],
               2,
               "tan α = opuesto ÷ adyacente.",
-            ),
+            ), { kind: "triangle", shape: "right", sides: [`${adj}`, null, `${opp}`], angles: [null, "α", null] }),
           c(
             "q0",
             "¿Por qué el seno de un ángulo agudo nunca es mayor que 1?",
@@ -532,7 +533,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
             "En sen α = opuesto ÷ hipotenusa, el numerador es un cateto, siempre menor que la hipotenusa.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `En un triángulo rectángulo, el cateto opuesto al ángulo α mide ${opp} y la hipotenusa ${hyp}. ¿Cuánto vale sen α? Puedes escribirlo como fracción o decimal.`,
           opp / hyp,
@@ -544,8 +545,8 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
               { value: hyp / opp, feedback: "La razón está invertida: el seno es opuesto ÷ hipotenusa." },
             ],
           },
-        ),
-        n(
+        ), { kind: "triangle", shape: "right", sides: [null, `${hyp}`, `${opp}`], angles: [null, "α", null] }),
+        fig(n(
           "q2",
           `Completa: si el cateto adyacente a α mide ${adj} y la hipotenusa ${hyp}, cos α = ${adj} ÷ ${hyp} = __.`,
           adj / hyp,
@@ -558,16 +559,16 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
               { value: opp / hyp, feedback: "Ese es el seno: opuesto ÷ hipotenusa." },
             ],
           },
-        ),
-        n(
+        ), { kind: "triangle", shape: "right", sides: [`${adj}`, `${hyp}`, null], angles: [null, "α", null] }),
+        fig(n(
           "q3",
           `Una rampa avanza ${d} m en horizontal y su inclinación cumple tan α = ${fmt(t)}. ¿Cuántos metros sube?`,
           r6(d * t),
           [`tan α = altura ÷ ${d}.`, `altura = ${d} · ${fmt(t)} = ${fmt(r6(d * t))} m.`],
           ["La subida es el cateto opuesto; el avance, el adyacente.", "tan α = opuesto ÷ adyacente.", "Despeja el opuesto multiplicando."],
           { unit: "m", errors: [{ value: r6(d / t), feedback: "Dividiste; con la tangente, opuesto = adyacente × tan α." }] },
-        ),
-        c(
+        ), { kind: "triangle", shape: "right", sides: [`${d} m`, null, "?"], angles: [null, "α", null] }),
+        fig(c(
           "q4",
           `Alguien escribe sen α = ${hyp}/${opp} para el ángulo opuesto al cateto ${opp}. ¿Qué falla?`,
           [
@@ -577,8 +578,8 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
           ],
           1,
           "La hipotenusa es el lado mayor, así que va en el denominador del seno.",
-        ),
-        n(
+        ), { kind: "triangle", shape: "right", sides: [`${adj}`, `${hyp}`, `${opp}`], angles: [null, "α", null] }),
+        fig(n(
           "q5",
           `Desde ${dd} m de la base de un poste, su punta se ve con un ángulo α tal que tan α = ${fmt(tt)}. ¿Qué altura tiene el poste?`,
           r6(dd * tt),
@@ -592,8 +593,8 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
               { value: dd, feedback: "Esa es la distancia; la altura es el cateto opuesto." },
             ].filter((e) => e.value !== r6(dd * tt)),
           },
-        ),
-        n(
+        ), { kind: "triangle", shape: "right", sides: [`${dd} m`, null, "?"], angles: [null, "α", null] }),
+        fig(n(
           "q6",
           `Una escalera apoyada en una pared forma con el suelo un ángulo α tal que sen α = ${fmt(s)}. Si llega a ${fmt(h)} m de altura, ¿cuánto mide la escalera?`,
           ladder,
@@ -604,7 +605,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
             unit: "m",
             errors: [{ value: r6(h * s), feedback: "Multiplicaste; si sen α = altura ÷ escalera, la escalera = altura ÷ sen α." }],
           },
-        ),
+        ), { kind: "triangle", shape: "right", sides: [null, "?", `${fmt(h)} m`], angles: [null, "α", null] }),
       ];
     },
     application: n(
@@ -687,7 +688,7 @@ export const SPREAD_LESSONS: Lesson[] = [
       ], "La sección A es más homogénea."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuál es la mediana de 3; 5; 8; 10?", 6.5, ["Con 4 datos ordenados hay dos centrales: 5 y 8.", "La mediana es su media: (5 + 8) ÷ 2 = 13 ÷ 2 = 6,5."], ["Con cuatro datos hay dos centrales.", "5 y 8.", "Promédialos."]),
+      fig(n("d-1", "¿Cuál es la mediana de 3; 5; 8; 10?", 6.5, ["Con 4 datos ordenados hay dos centrales: 5 y 8.", "La mediana es su media: (5 + 8) ÷ 2 = 13 ÷ 2 = 6,5."], ["Con cuatro datos hay dos centrales.", "5 y 8.", "Promédialos."]), { kind: "dots", data: [3, 5, 8, 10] }),
       n("d-2", "¿Cuánto es 19 − 4?", 15, ["Restar 4 a 19: de 19 a 15 se retroceden 4.", "19 − 4 = 15. Comprobación: 15 + 4 = 19."], ["Resta.", "19 − 4.", "15."]),
       c("d-3", "¿Qué mide el rango de un conjunto de datos?", ["El valor más repetido", "La diferencia entre el mayor y el menor", "El valor central"], 1, "Rango = máximo − mínimo."),
     ],
@@ -743,7 +744,7 @@ export const SPREAD_LESSONS: Lesson[] = [
             "Entre Q1 y Q3 está el 50% central de los datos; el RIC es 18 − 10 = 8.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Datos ordenados: ${list(data)}. ¿Cuál es el rango intercuartílico (Q3 − Q1)?`,
           iqr,
@@ -755,15 +756,15 @@ export const SPREAD_LESSONS: Lesson[] = [
               { value: data[5] - data[2], feedback: "Q1 y Q3 son medianas de cada mitad: promedia los dos datos centrales de cada una." },
             ].filter((e) => e.value !== iqr),
           },
-        ),
-        n(
+        ), { kind: "dots", data }),
+        fig(n(
           "q2",
           `Completa: en ${list(data)}, la mitad inferior es ${list(data.slice(0, 4))}, así que Q1 = (${data[1]} + ${data[2]}) ÷ 2 = __.`,
           q1,
           [`Q1 es la mediana de la mitad inferior: ${data.slice(0, 4).join("; ")}.`, `Con 4 datos, la mediana es la media de los dos centrales: ${data[1]} y ${data[2]}.`, `(${data[1]} + ${data[2]}) ÷ 2 = ${fmt(q1)}.`],
           ["Suma los dos datos centrales de la mitad inferior.", `${data[1]} + ${data[2]} = ${data[1] + data[2]}.`, "Divide entre 2."],
           { step: true, errors: [{ value: data[1] + data[2], feedback: "Falta dividir la suma entre 2." }] },
-        ),
+        ), { kind: "dots", data }),
         n(
           "q3",
           `Datos sin ordenar: ${list(mixed)}. ¿Cuál es el rango?`,
@@ -776,7 +777,7 @@ export const SPREAD_LESSONS: Lesson[] = [
             ].filter((e) => e.value !== range),
           },
         ),
-        c(
+        fig(c(
           "q4",
           `Alguien calcula la mediana de ${list(mixed)} promediando los dos datos que están en el centro de la lista: ${mixed[3]} y ${mixed[4]}. ¿Qué falla?`,
           [
@@ -786,8 +787,8 @@ export const SPREAD_LESSONS: Lesson[] = [
           ],
           2,
           `Ordenados, los centrales son ${data[3]} y ${data[4]}: la mediana es ${fmt(median(data))}.`,
-        ),
-        n(
+        ), { kind: "dots", data: mixed }),
+        fig(n(
           "q5",
           `En un diagrama de caja de tiempos de llegada al colegio (en minutos), Q1 = ${b1} y Q3 = ${b3}. Un tiempo se considera atípico si supera Q3 + 1,5 · RIC. ¿A partir de cuántos minutos un tiempo es atípico?`,
           fence,
@@ -801,7 +802,7 @@ export const SPREAD_LESSONS: Lesson[] = [
               { value: b3 * 2.5, feedback: "Se usa 1,5 veces el RIC, no 1,5 veces Q3." },
             ].filter((e) => e.value !== fence),
           },
-        ),
+        ), { kind: "table", head: ["Cuartil", "Minutos"], rows: [["Q1", b1], ["Q3", b3]], rowHeads: true }),
         n(
           "q6",
           `Los puntajes de ocho jugadores, ordenados, son ${list(data.slice(0, 7))} y uno más, el mayor. Si el rango es ${range}, ¿cuál es el puntaje mayor?`,
@@ -818,7 +819,7 @@ export const SPREAD_LESSONS: Lesson[] = [
         ),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "En un concurso de lectura, la sección A leyó (libros por estudiante) 2; 3; 3; 4; 4; 5; 5; 6 y la sección B 0; 1; 3; 4; 4; 6; 8; 10. Ambas tienen mediana 4. ¿Cuánto mayor es el RIC de B que el de A?",
       3,
@@ -831,7 +832,7 @@ export const SPREAD_LESSONS: Lesson[] = [
           { value: 5, feedback: "Ese es el RIC de B; falta restarle el de A." },
         ],
       },
-    ),
+    ), { kind: "table", caption: "Libros por estudiante", head: ["Sección", "Datos ordenados"], rows: [["A", "2; 3; 3; 4; 4; 5; 5; 6"], ["B", "0; 1; 3; 4; 4; 6; 8; 10"]], rowHeads: true }),
     outcome: "Puedes comparar grupos de datos mirando su centro y cuánto se separan.",
     commonErrors: [
       "Calcular cuartiles sin ordenar los datos.",
@@ -1131,7 +1132,7 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
             "(x, y) → (x + 5, y − 2): todos los puntos se desplazan igual.",
           ),
         ][v % 3],
-        n(
+        fig(n(
           "q1",
           `Traslada A${pt(x, y)} con el vector ${pt(a, b)}. ¿Cuál es la coordenada y de A′?`,
           y + b,
@@ -1143,8 +1144,8 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
               { value: x + a, feedback: "Esa es la coordenada x de A′." },
             ].filter((e) => e.value !== y + b),
           },
-        ),
-        n(
+        ), { kind: "plane", points: [{ name: "A", x, y }], vectors: [{ dx: a, dy: b }] }),
+        fig(n(
           "q2",
           `Completa: al reflejar P${pt(x, y)} respecto al eje x, P′ = (${sg(x)}, __).`,
           -y,
@@ -1157,8 +1158,8 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
               { value: -x, feedback: "La x se mantiene; cambia la y." },
             ].filter((e) => e.value !== -y),
           },
-        ),
-        n(
+        ), { kind: "plane", points: [{ name: "P", x, y }], axis: "x" }),
+        fig(n(
           "q3",
           `Rota Q${pt(x, y)} 90° en sentido antihorario alrededor del origen. ¿Cuál es la coordenada x de Q′?`,
           -y,
@@ -1170,8 +1171,8 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
               { value: -x, feedback: "Eso corresponde a una rotación de 180° o a una reflexión, no a 90°." },
             ].filter((e) => e.value !== -y),
           },
-        ),
-        c(
+        ), { kind: "plane", points: [{ name: "Q", x, y }] }),
+        fig(c(
           "q4",
           `Alguien rota ${pt(x, y)} 180° alrededor del origen y obtiene ${pt(-x, y)}. ¿Qué falla?`,
           [
@@ -1181,8 +1182,8 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
           ],
           2,
           "Rotación de 180°: (x, y) → (−x, −y).",
-        ),
-        n(
+        ), { kind: "plane", points: [{ name: "P", x, y }] }),
+        fig(n(
           "q5",
           `En un videojuego, un personaje está en ${pt(x, y)} y se mueve ${moveX(a)} y ${moveY(b)}. ¿Cuál es su nueva coordenada x?`,
           x + a,
@@ -1195,8 +1196,8 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
               { value: y + b, feedback: "Esa es la nueva coordenada y." },
             ]).filter((e) => e.value !== x + a),
           },
-        ),
-        n(
+        ), { kind: "plane", points: [{ name: "J", x, y }] }),
+        fig(n(
           "q6",
           `Tras trasladar un punto con el vector ${pt(a, b)} quedó en ${pt(x + a, y + b)}. ¿Cuál era su coordenada x original?`,
           x,
@@ -1209,10 +1210,10 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
               { value: y, feedback: "Esa es la coordenada y original." },
             ].filter((e) => e.value !== x),
           },
-        ),
+        ), { kind: "plane", points: [{ name: "A′", x: x + a, y: y + b }], vectors: [{ dx: a, dy: b }] }),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Un logotipo tiene un vértice en (3, 1). Se refleja respecto al eje y y luego se traslada con el vector (2, 5). ¿Cuál es la coordenada x final del vértice?",
       -1,
@@ -1225,7 +1226,7 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
           { value: 6, feedback: "Esa es la coordenada y final." },
         ],
       },
-    ),
+    ), { kind: "plane", points: [{ name: "V", x: 3, y: 1 }], axis: "y" }),
     outcome: "Puedes describir con coordenadas cómo se mueve, se refleja o gira una figura.",
     commonErrors: [
       "Cambiar el signo de la coordenada equivocada al reflejar.",

@@ -45,6 +45,7 @@ import {
   secondaryButton,
 } from "./LearningShell";
 import { LearningVisual } from "./LearningVisual";
+import { QuestionFigureSlot } from "./QuestionFigureSlot";
 import { hasVisualTutor } from "./tutor/lessons";
 import { OperationDemo, OperationExample, OperationWorkspace, useOperationHelp } from "./Operation";
 import { OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
@@ -485,6 +486,7 @@ export function QuestionActivity({
         <legend className="mb-4 text-xl font-bold leading-relaxed text-white">
           <MathText text={question.prompt} />
         </legend>
+        <QuestionFigureSlot question={question} />
         {question.choices ? (
           <div className="space-y-2">
             {question.choices.map((option) => (

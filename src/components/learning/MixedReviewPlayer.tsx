@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { QuestionFigureSlot } from "./QuestionFigureSlot";
 import { MathText } from "@/components/MathText";
 import { useEffect, useRef } from "react";
 import { ArrowRight, BookOpen, Check, X } from "lucide-react";
@@ -232,6 +233,7 @@ function MixedSummary({ state }: { state: MixedReviewState }) {
                 </span>
               </p>
               <p className="mt-2 font-semibold text-white"><MathText text={question.prompt} /></p>
+              <QuestionFigureSlot question={question} />
               {!correct && evidence?.response && (
                 <p className="mt-2 text-sm text-amber-100">
                   <MathText text={errorFeedback(question, evidence.response)} />

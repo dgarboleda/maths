@@ -1,5 +1,6 @@
 /** Dominio educativo compartido por Functions y Next. Sin Firebase ni React. */
 import type { ColumnSpec } from "./algorithms/operations";
+import type { Figure } from "./figures";
 export type Stage =
   | "diagnostic"
   | "class"
@@ -42,6 +43,9 @@ export interface Question {
    *  respuesta sigue siendo el número final: los errores de procedimiento
    *  se reconocen por su resultado (ver `algorithms/columns.ts`). */
   column?: ColumnSpec;
+  /** Figura de apoyo (triángulo, tabla, gráfico…) con los datos del
+   *  enunciado y la incógnita rotulada «?» (ver `figures.ts`). */
+  figure?: Figure;
 }
 export interface Example {
   prompt: string;

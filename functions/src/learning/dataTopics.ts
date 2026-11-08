@@ -2,6 +2,7 @@ import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import { dec, frac } from "./topicHelpers";
 import type { Lesson } from "./types";
+import { fig, type Figure } from "./figures";
 
 /** Tablas de frecuencias y gráficos estadísticos (ver `numberTopics.ts`). */
 
@@ -9,6 +10,22 @@ const siblings = (k: number) => (k === 1 ? "hermano" : "hermanos");
 /** «0 (4), 1 (10), …»: valores con su frecuencia absoluta. */
 const table = (counts: number[]) =>
   `En una encuesta sobre el número de hermanos, cada valor apareció estas veces → ${counts.map((f, k) => `${k} ${siblings(k)} (${f})`).join(", ")}.`;
+/** La misma encuesta como tabla de frecuencias absolutas. */
+const siblingsTable = (counts: number[]): Figure => ({
+  kind: "table",
+  caption: "Número de hermanos",
+  head: ["Hermanos", "Estudiantes (fᵢ)"],
+  rows: counts.map((f, k) => [k, f]),
+});
+/** Gráfico circular de un sector y el resto. */
+const pie = (label: string, value: number, text: string, rest: number, restText?: string): Figure => ({
+  kind: "chart",
+  type: "pie",
+  data: [
+    { label, value, text },
+    { label: "Resto", value: rest, ...(restText ? { text: restText } : {}) },
+  ],
+});
 
 export const STATISTICS_LESSONS: Lesson[] = [
   defineLesson({
@@ -86,14 +103,14 @@ export const STATISTICS_LESSONS: Lesson[] = [
       const kErr = [2, 2, 2, 1, 2, 1][v];
       const [N6, p6] = [[40, 35], [60, 25], [80, 15], [50, 22], [120, 30], [200, 12]][v];
       const concept = [
-        c(
+        fig(c(
           "q0",
           `En una tabla de frecuencias con ${total} datos, ¿cuánto suman las frecuencias relativas?`,
           [[`${total}`, `${total} es la suma de las frecuencias absolutas.`], "1, porque juntas forman el total", ["100", "100 es la suma de los porcentajes; las frecuencias relativas suman 1."]],
           1,
           `Cada frecuencia relativa es fᵢ ÷ ${total}; al sumarlas se obtiene ${total} ÷ ${total} = 1.`,
-        ),
-        c(
+        ), siblingsTable(counts)),
+        fig(c(
           "q0",
           `Si ${counts[1]} de ${total} estudiantes tienen 1 hermano, ¿qué indica la frecuencia relativa ${counts[1]}/${total}?`,
           [
@@ -103,8 +120,8 @@ export const STATISTICS_LESSONS: Lesson[] = [
           ],
           2,
           `${counts[1]}/${total} = ${dec(counts[1] / total)}: el ${dec((counts[1] / total) * 100)} % de los estudiantes.`,
-        ),
-        c(
+        ), siblingsTable(counts)),
+        fig(c(
           "q0",
           `¿Por qué la última frecuencia acumulada de una tabla con ${total} datos siempre vale ${total}?`,
           [
@@ -114,37 +131,37 @@ export const STATISTICS_LESSONS: Lesson[] = [
           ],
           0,
           `Al llegar al último valor ya se sumaron todas las filas: ${counts.join(" + ")} = ${total}.`,
-        ),
+        ), siblingsTable(counts)),
       ][v % 3];
       const h1 = counts[k1] / total;
       const h3 = counts[k3] / total;
       return [
         concept,
-        n(
+        fig(n(
           "q1",
           `${table(counts)} ¿Cuál es la frecuencia relativa de ${k1} ${siblings(k1)}? Responde con un decimal.`,
           h1,
           [`El total es ${counts.join(" + ")} = ${total}.`, `La frecuencia relativa es ${counts[k1]} ÷ ${total} = ${dec(h1)}, es decir, el ${dec(h1 * 100)} % de los estudiantes.`],
           ["Primero calcula el total de datos.", `El total es ${total}.`, `Divide ${counts[k1]} entre ${total}.`],
           { errors: [{ value: counts[k1], feedback: "Esa es la frecuencia absoluta; la relativa la divide entre el total." }] },
-        ),
-        n(
+        ), siblingsTable(counts)),
+        fig(n(
           "q2",
           `${table(counts)} Primer paso para cualquier frecuencia relativa → ¿cuántos estudiantes respondieron en total?`,
           total,
           ["El total es la suma de todas las frecuencias absolutas.", `${counts.join(" + ")} = ${total} estudiantes.`],
           ["Suma las frecuencias de todos los valores.", `${counts[0]} + ${counts[1]} = ${counts[0] + counts[1]}…`, `Sigue sumando hasta ${counts.length} valores.`],
           { step: true, errors: [{ value: counts.length, feedback: "Contaste los valores distintos; hay que sumar cuántos estudiantes respondió cada uno." }] },
-        ),
-        n(
+        ), siblingsTable(counts)),
+        fig(n(
           "q3",
           `${table(counts)} ¿Qué porcentaje de los estudiantes tiene ${k3} ${siblings(k3)}?`,
           r100(h3 * 100),
           [`La frecuencia relativa es ${counts[k3]} ÷ ${total} = ${dec(h3)}.`, `${dec(h3)} × 100 = ${dec(h3 * 100)} %.`],
           ["Calcula primero la frecuencia relativa.", `${counts[k3]} ÷ ${total}.`, "Multiplica por 100."],
           { unit: "%", errors: [{ value: counts[k3], feedback: "Esa es la frecuencia absoluta: falta compararla con el total." }].filter((e) => e.value !== r100(h3 * 100)) },
-        ),
-        c(
+        ), siblingsTable(counts)),
+        fig(c(
           "q4",
           `${table(counts)} Alguien dice que la frecuencia acumulada de ${kErr} ${siblings(kErr)} es ${counts[kErr]}. ¿Qué error cometió?`,
           [
@@ -154,15 +171,15 @@ export const STATISTICS_LESSONS: Lesson[] = [
           ],
           2,
           `F(${kErr}) = ${counts.slice(0, kErr + 1).join(" + ")} = ${acc(kErr)}.`,
-        ),
-        n(
+        ), siblingsTable(counts)),
+        fig(n(
           "q5",
           `${table(counts)} ¿Cuántos estudiantes tienen ${kAcc} ${siblings(kAcc)} o menos?`,
           acc(kAcc),
           [`Se suman las frecuencias desde 0 hasta ${kAcc} → ${counts.slice(0, kAcc + 1).join(" + ")}.`, `${counts.slice(0, kAcc + 1).join(" + ")} = ${acc(kAcc)} estudiantes: es la frecuencia acumulada.`],
           ["«O menos» incluye todos los valores hasta ese.", `Suma las frecuencias de 0 a ${kAcc}.`, `${counts.slice(0, kAcc + 1).join(" + ")}.`],
           { intent: "transfer", errors: [{ value: counts[kAcc], feedback: `Contaste solo los que tienen exactamente ${kAcc}; faltan los que tienen menos.` }] },
-        ),
+        ), siblingsTable(counts)),
         n(
           "q6",
           `En otra encuesta a ${N6} personas, el ${p6} % eligió la opción A. ¿Cuántas personas eligieron A?`,
@@ -180,14 +197,14 @@ export const STATISTICS_LESSONS: Lesson[] = [
       "Usar la frecuencia acumulada con datos que no tienen orden.",
       "No comprobar que las frecuencias suman el total.",
     ],
-    application: n(
+    application: fig(n(
       "aplicacion",
       "En un aula, la frecuencia relativa de quienes llegan en bus es 0,45 y la de quienes caminan es 0,35; el resto llega en bicicleta. Si 6 estudiantes llegan en bicicleta, ¿cuántos estudiantes hay en el aula?",
       30,
       ["Las frecuencias relativas suman 1, así que la de bicicleta es 1 − 0,45 − 0,35 = 0,2.", "6 estudiantes son 0,2 del total, así que el total es 6 ÷ 0,2 = 30 estudiantes."],
       ["Las frecuencias relativas suman 1.", "Calcula la de bicicleta.", "6 es esa parte del total."],
       { intent: "transfer", unit: "estudiantes" },
-    ),
+    ), { kind: "table", head: ["Medio", "Frecuencia relativa"], rows: [["Bus", "0,45"], ["Caminando", "0,35"], ["Bicicleta", "?"]], rowHeads: true }),
   }),
 
   defineLesson({
@@ -254,7 +271,7 @@ export const STATISTICS_LESSONS: Lesson[] = [
       ),
     ],
     diagnostic: [
-      n("d-1", "¿Qué parte de 360° son 90°? Responde con una fracción.", 1 / 4, ["90° caben 4 veces en la vuelta completa, porque 90 × 4 = 360.", "Por eso 90° son 1/4 de 360°."], ["¿Cuántas veces cabe 90 en 360?", "Cabe 4 veces.", "Es un cuarto."]),
+      fig(n("d-1", "¿Qué parte de 360° son 90°? Responde con una fracción.", 1 / 4, ["90° caben 4 veces en la vuelta completa, porque 90 × 4 = 360.", "Por eso 90° son 1/4 de 360°."], ["¿Cuántas veces cabe 90 en 360?", "Cabe 4 veces.", "Es un cuarto."]), pie("Sector", 90, "90°", 270)),
       n("d-2", "¿Cuánto es 0,3 × 360?", 108, ["0,3 × 360 es el 30 % de 360.", "360 × 3 ÷ 10 = 108."], ["Multiplica 360 por 3.", "1080.", "Divide entre 10."]),
       c("d-3", "En una tabla, 8 de 32 estudiantes eligen rojo. ¿Qué porcentaje es?", ["8 %", "25 %", "32 %"], 1, "8/32 = 1/4, que es el 25 %."),
     ],
@@ -308,23 +325,23 @@ export const STATISTICS_LESSONS: Lesson[] = [
       const ang6 = [90, 72, 54, 126, 180, 36][v];
       return [
         concept,
-        n(
+        fig(n(
           "q1",
           `En una encuesta a ${N1} personas, ${f1} eligieron la opción A. ¿Cuántos grados mide su sector en un gráfico circular?`,
           ang1,
           [`La frecuencia relativa es ${f1} ÷ ${N1} = ${dec(f1 / N1)}.`, `El ángulo es ${dec(f1 / N1)} × 360 = ${dec(ang1)}°.`],
           ["Calcula qué parte del total eligió A.", `${f1} ÷ ${N1}.`, "Multiplica por 360°."],
           { unit: "°", errors: [{ value: (f1 / N1) * 100, feedback: "Ese es el porcentaje; el ángulo es esa parte de 360°." }] },
-        ),
-        n(
+        ), pie("A", f1, `${f1} personas`, N1 - f1, `${N1 - f1} personas`)),
+        fig(n(
           "q2",
           `En una encuesta a ${N2} personas, ${f2} eligieron la opción B. Primer paso para dibujar su sector → ¿cuál es su frecuencia relativa? Responde con un decimal.`,
           f2 / N2,
           [`La frecuencia relativa compara la parte con el total → ${f2} ÷ ${N2}.`, `${f2} ÷ ${N2} = ${dec(f2 / N2)}; el sector medirá ${dec(f2 / N2)} × 360 = ${dec((f2 / N2) * 360)}°.`],
           ["Divide la frecuencia entre el total.", `${f2} ÷ ${N2}.`, "Escribe el resultado como decimal."],
           { step: true, errors: [{ value: (f2 / N2) * 100, feedback: "Ese es el porcentaje; la frecuencia relativa es un número entre 0 y 1." }] },
-        ),
-        n(
+        ), pie("B", f2, `${f2} personas`, N2 - f2, `${N2 - f2} personas`)),
+        fig(n(
           "q3",
           `En un pictograma, cada ícono representa ${k3} libros. La fila de marzo tiene ${c3} íconos y medio. ¿Cuántos libros se leyeron en marzo?`,
           (c3 + 0.5) * k3,
@@ -337,7 +354,7 @@ export const STATISTICS_LESSONS: Lesson[] = [
               { value: c3 + 0.5, feedback: "Contaste íconos: hay que multiplicar por lo que vale cada uno." },
             ],
           },
-        ),
+        ), { kind: "chart", type: "picto", title: "Libros leídos", data: [{ label: "Marzo", value: c3 + 0.5 }], unit: `${k3} libros` }),
         c(
           "q4",
           `Un gráfico circular tiene sectores de ${s1}°, ${s2}° y ${s3}°. ¿Qué error tiene?`,
@@ -349,22 +366,22 @@ export const STATISTICS_LESSONS: Lesson[] = [
           1,
           "Los sectores representan el total de los datos, así que sus ángulos suman exactamente una vuelta, 360°.",
         ),
-        n(
+        fig(n(
           "q5",
           `En un gráfico circular sobre ${N5} estudiantes, el sector de ${cat5} mide ${ang5}°. ¿Cuántos estudiantes eligieron ${cat5}?`,
           (ang5 / 360) * N5,
           [`El sector es ${ang5}/360 = ${frac(ang5, 360)} del círculo.`, `${frac(ang5, 360)} × ${N5} = ${dec((ang5 / 360) * N5)} estudiantes.`],
           ["Calcula qué parte del círculo es el sector.", `${ang5}/360.`, `Toma esa parte de ${N5}.`],
           { intent: "transfer", unit: "estudiantes", errors: [{ value: ang5, feedback: "Ese es el ángulo; hay que pasarlo a cantidad de estudiantes." }] },
-        ),
-        n(
+        ), pie(cat5, ang5, `${ang5}°`, 360 - ang5, `${360 - ang5}°`)),
+        fig(n(
           "q6",
           `Un sector de un gráfico circular mide ${ang6}°. ¿Qué porcentaje del total representa?`,
           (ang6 / 360) * 100,
           [`El sector es ${ang6}/360 = ${frac(ang6, 360)} del círculo.`, `${frac(ang6, 360)} × 100 = ${dec((ang6 / 360) * 100)} %.`],
           ["Compara el ángulo con la vuelta completa.", `${ang6}/360.`, "Multiplica por 100."],
           { intent: "transfer", unit: "%", errors: [{ value: ang6, feedback: "Ese es el ángulo, no el porcentaje: la vuelta completa son 360°, no 100." }] },
-        ),
+        ), pie("Sector", ang6, `${ang6}°`, 360 - ang6)),
       ];
     },
     outcome: "Puedes leer gráficos de barras, pictogramas y circulares, calcular el ángulo de un sector y elegir el gráfico adecuado.",
@@ -374,14 +391,14 @@ export const STATISTICS_LESSONS: Lesson[] = [
       "Confundir el porcentaje con el ángulo del sector.",
       "Dibujar sectores cuyos ángulos no suman 360°.",
     ],
-    application: n(
+    application: fig(n(
       "aplicacion",
       "En una votación del aula, un gráfico circular muestra «sí» con 162°, «no» con 126° y el resto en blanco. Si votaron 40 estudiantes, ¿cuántos votaron en blanco?",
       8,
       ["En blanco → 360° − 162° − 126° = 72°.", "72/360 = 1/5, y 1/5 × 40 = 8 estudiantes."],
       ["Calcula el ángulo del sector en blanco.", "Los ángulos suman 360°.", "Pasa ese ángulo a una parte de 40."],
       { intent: "transfer", unit: "estudiantes" },
-    ),
+    ), { kind: "chart", type: "pie", data: [{ label: "Sí", value: 162, text: "162°" }, { label: "No", value: 126, text: "126°" }, { label: "En blanco", value: 72, text: "?" }] }),
   }),
 ];
 

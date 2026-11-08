@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig, type Figure } from "./figures";
 
 /* Clases que completan el ciclo VII del CNEB donde el programa tenía huecos:
  * interés (cantidad, 4.°), progresiones (regularidad, 3.°) y distancia y punto
@@ -448,7 +449,7 @@ export const COORDINATE_LESSONS: Lesson[] = [
       ], "B = (7, −2)."),
     ],
     diagnostic: [
-      n("d-1", "Un triángulo rectángulo tiene catetos de 6 y 8. ¿Cuánto mide la hipotenusa?", 10, ["En un triángulo rectángulo, la hipotenusa cumple c² = a² + b².", "6² + 8² = 36 + 64 = 100, y √100 = 10."], ["Eleva cada cateto al cuadrado.", "Suma: 36 + 64.", "Saca la raíz cuadrada."]),
+      fig(n("d-1", "Un triángulo rectángulo tiene catetos de 6 y 8. ¿Cuánto mide la hipotenusa?", 10, ["En un triángulo rectángulo, la hipotenusa cumple c² = a² + b².", "6² + 8² = 36 + 64 = 100, y √100 = 10."], ["Eleva cada cateto al cuadrado.", "Suma: 36 + 64.", "Saca la raíz cuadrada."]), { kind: "triangle", shape: "right", sides: ["6", "?", "8"] }),
       n("d-2", "¿Cuánto es −2 − 5?", -7, ["Restar 5 es retroceder 5 en la recta, empezando en −2.", "−2 → −7: el resultado es −7, más lejos del cero."], ["Ubica −2 en la recta.", "Restar 5 es moverse 5 a la izquierda.", "−7."]),
       c("d-3", "¿En qué cuadrante está el punto (−2, 3)?", ["Segundo (II)", "Primero (I)", "Cuarto (IV)"], 0, "x negativa y y positiva: segundo cuadrante."),
     ],
@@ -464,7 +465,7 @@ export const COORDINATE_LESSONS: Lesson[] = [
         [m1, a1] = [[3, 1], [5, -2], [-1, 4], [0, 7], [-2, -6], [6, 9]][v];
       return [
         v % 2 === 0
-          ? c(
+          ? fig(c(
               "q0",
               `¿Por qué la distancia entre ${pt(ax, ay)} y ${pt(bx, by)} se calcula con el teorema de Pitágoras?`,
               [
@@ -474,8 +475,8 @@ export const COORDINATE_LESSONS: Lesson[] = [
               ],
               0,
               "Los desplazamientos horizontal y vertical forman un ángulo recto.",
-            )
-          : c(
+            ), { kind: "plane", points: [{ name: "A", x: ax, y: ay }, { name: "B", x: bx, y: by }], segments: [["A", "B"]], legs: { from: "A", to: "B" } })
+          : fig(c(
               "q0",
               `¿Qué es el punto medio del segmento que une ${pt(ax, ay)} y ${pt(bx, by)}?`,
               [
@@ -485,32 +486,32 @@ export const COORDINATE_LESSONS: Lesson[] = [
               ],
               1,
               "Está sobre el segmento y lo divide en dos partes iguales.",
-            ),
-        n(
+            ), { kind: "plane", points: [{ name: "A", x: ax, y: ay }, { name: "B", x: bx, y: by }], segments: [["A", "B"]] }),
+        fig(n(
           "q1",
           `¿Cuál es la distancia entre A${pt(ax, ay)} y B${pt(bx, by)}?`,
           dist,
           [`Δx = ${sg(dx)}, Δy = ${sg(dy)}.`, `d = √(${dx * dx} + ${dy * dy}) = √${dist * dist} = ${dist}.`],
           ["Calcula Δx y Δy.", "Eleva cada uno al cuadrado y súmalos.", "Saca la raíz cuadrada."],
           { errors: [{ value: Math.abs(dx) + Math.abs(dy), feedback: "Sumaste los catetos; la distancia en línea recta es la hipotenusa." }] },
-        ),
-        n(
+        ), { kind: "plane", points: [{ name: "A", x: ax, y: ay }, { name: "B", x: bx, y: by }], segments: [["A", "B"]], legs: { from: "A", to: "B" } }),
+        fig(n(
           "q2",
           `Completa: la coordenada x del punto medio entre ${pt(mx1, my1)} y ${pt(mx2, my2)} es (${sg(mx1)} + ${sg(mx2)}) ÷ 2 = __.`,
           (mx1 + mx2) / 2,
           [`El punto medio está a la misma distancia de los dos extremos: su x es el promedio de las dos x.`, `${sg(mx1)} + ${sg(mx2)} = ${sg(mx1 + mx2)}.`, `${sg(mx1 + mx2)} ÷ 2 = ${sg((mx1 + mx2) / 2)}.`],
           ["Suma las dos coordenadas x.", "Divide entre 2.", `${sg((mx1 + mx2) / 2)}.`],
           { step: true, errors: [{ value: (mx2 - mx1) / 2, feedback: "El punto medio promedia: se suman las coordenadas, no se restan." }] },
-        ),
-        n(
+        ), { kind: "plane", points: [{ name: "P", x: mx1, y: my1 }, { name: "Q", x: mx2, y: my2 }], segments: [["P", "Q"]] }),
+        fig(n(
           "q3",
           `¿Cuál es la coordenada y del punto medio entre ${pt(mx1, my1)} y ${pt(mx2, my2)}?`,
           (my1 + my2) / 2,
           [`La y del punto medio es el promedio de las dos y.`, `${sg(my1)} + ${sg(my2)} = ${sg(my1 + my2)}.`, `${sg(my1 + my2)} ÷ 2 = ${sg((my1 + my2) / 2)}.`],
           ["Usa las coordenadas y.", "Súmalas.", "Divide entre 2."],
           { errors: [{ value: my1 + my2, feedback: "Falta dividir entre 2: el punto medio es el promedio." }] },
-        ),
-        c(
+        ), { kind: "plane", points: [{ name: "P", x: mx1, y: my1 }, { name: "Q", x: mx2, y: my2 }], segments: [["P", "Q"]] }),
+        fig(c(
           "q4",
           `Para la distancia entre ${pt(ax, ay)} y ${pt(bx, by)}, Rosa calcula |Δx| + |Δy| = ${Math.abs(dx) + Math.abs(dy)}. ¿Qué falla?`,
           [
@@ -520,8 +521,8 @@ export const COORDINATE_LESSONS: Lesson[] = [
           ],
           1,
           "La distancia en línea recta es la hipotenusa del triángulo de catetos Δx y Δy.",
-        ),
-        n(
+        ), { kind: "plane", points: [{ name: "A", x: ax, y: ay }, { name: "B", x: bx, y: by }], segments: [["A", "B"]], legs: { from: "A", to: "B" } }),
+        fig(n(
           "q5",
           `En un mapa con cuadrícula de 1 km, la casa está en ${pt(hx, hy)} y el colegio en ${pt(sx, sy)}. ¿A cuántos km están en línea recta?`,
           mapDist,
@@ -532,7 +533,7 @@ export const COORDINATE_LESSONS: Lesson[] = [
             unit: "km",
             errors: [{ value: Math.abs(sx - hx) + Math.abs(sy - hy), feedback: "Eso es lo que se recorre por las calles de la cuadrícula; en línea recta es la hipotenusa." }],
           },
-        ),
+        ), { kind: "plane", points: [{ name: "Casa", x: hx, y: hy }, { name: "Colegio", x: sx, y: sy }], segments: [["Casa", "Colegio"]] }),
         n(
           "q6",
           `M es el punto medio de AB. Si la coordenada x de M es ${sg(m1)} y la de A es ${sg(a1)}, ¿cuál es la coordenada x de B?`,
@@ -546,7 +547,7 @@ export const COORDINATE_LESSONS: Lesson[] = [
         ),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Dos antenas están en (−3, 2) y (9, 7), en km. Se instala una tercera en el punto medio entre ellas. ¿A cuántos km queda de la primera antena?",
       6.5,
@@ -557,7 +558,7 @@ export const COORDINATE_LESSONS: Lesson[] = [
         unit: "km",
         errors: [{ value: 13, feedback: "Esa es la distancia entre las dos antenas; la tercera está en la mitad." }],
       },
-    ),
+    ), { kind: "plane", points: [{ name: "A", x: -3, y: 2 }, { name: "B", x: 9, y: 7 }], segments: [["A", "B"]] }),
     outcome: "Puedes medir distancias y hallar puntos medios con coordenadas, también cuando falta un extremo.",
     commonErrors: [
       "Sumar |Δx| + |Δy| en vez de usar el teorema de Pitágoras.",
@@ -646,7 +647,7 @@ export const QUADRATIC_FUNCTION_LESSONS: Lesson[] = [
         speed = [20, 30, 10, 40, 15, 25][v];
       return [
         v % 2 === 0
-          ? c(
+          ? fig(c(
               "q0",
               `En y = ${vertexForm(-1, vh, vk)}, ¿qué representa el ${sg(vk)}?`,
               [
@@ -656,8 +657,8 @@ export const QUADRATIC_FUNCTION_LESSONS: Lesson[] = [
               ],
               1,
               "En la forma vértice, k es la altura del vértice; con a < 0 es el máximo.",
-            )
-          : c(
+            ), { kind: "graph", fn: { type: "quadratic", a: -1, h: vh, k: vk }, x: [vh - 4, vh + 4], y: [vk - 10, vk + 2], label: `y = ${vertexForm(-1, vh, vk)}` })
+          : fig(c(
               "q0",
               `¿Por qué y = ${vertexForm(1, vh, vk)} nunca vale menos que ${sg(vk)}?`,
               [
@@ -667,7 +668,7 @@ export const QUADRATIC_FUNCTION_LESSONS: Lesson[] = [
               ],
               0,
               "(x − h)² ≥ 0, y vale 0 justo en x = h.",
-            ),
+            ), { kind: "graph", fn: { type: "quadratic", a: 1, h: vh, k: vk }, x: [vh - 4, vh + 4], y: [vk - 2, vk + 10], label: `y = ${vertexForm(1, vh, vk)}` }),
         n(
           "q1",
           `Si y = ${vertexForm(a, h, k)}, ¿cuánto vale y cuando x = ${sg(x)}?`,
@@ -809,7 +810,7 @@ export const SOLID_LESSONS: Lesson[] = [
       ], "Caben unos 113 040 litros."),
     ],
     diagnostic: [
-      n("d-1", "¿Cuál es el área de un círculo de radio 2? Usa π ≈ 3,14.", 12.56, ["El área del círculo es π × r²: con r = 2, r² = 2 × 2 = 4.", "3,14 · 4 = 12,56."], ["El área es π · r².", "2² = 4.", "3,14 · 4."]),
+      fig(n("d-1", "¿Cuál es el área de un círculo de radio 2? Usa π ≈ 3,14.", 12.56, ["El área del círculo es π × r²: con r = 2, r² = 2 × 2 = 4.", "3,14 · 4 = 12,56."], ["El área es π · r².", "2² = 4.", "3,14 · 4."]), { kind: "circle", radius: "2" }),
       n("d-2", "¿Cuánto es 2³ · 3?", 24, ["La potencia va primero: 2³ = 2 · 2 · 2 = 8.", "Después la multiplicación: 8 · 3 = 24."], ["2³ = 2 · 2 · 2.", "Es 8.", "Multiplica por 3."]),
       c("d-3", "¿Cuál de estos cuerpos tiene una base circular y termina en punta?", ["El cono", "El cilindro", "La esfera"], 0, "El cono tiene una base circular y un vértice."),
     ],
@@ -827,7 +828,7 @@ export const SOLID_LESSONS: Lesson[] = [
         iv = r6((PI * ir * ir * ih) / 3);
       return [
         v % 2 === 0
-          ? c(
+          ? fig(c(
               "q0",
               `¿Por qué un cono de radio ${cr} cm y altura ${ch} cm ocupa un tercio del cilindro de igual radio y altura?`,
               [
@@ -837,8 +838,8 @@ export const SOLID_LESSONS: Lesson[] = [
               ],
               0,
               "Se comprueba llenando el cilindro con tres conos de arena o agua.",
-            )
-          : c(
+            ), { kind: "solid", shape: "cone", radius: `${cr} cm`, height: `${ch} cm` })
+          : fig(c(
               "q0",
               `Si el radio de una esfera pasa de ${fmt(sr)} a ${fmt(2 * sr)} cm, ¿qué pasa con su volumen?`,
               [
@@ -848,32 +849,32 @@ export const SOLID_LESSONS: Lesson[] = [
               ],
               2,
               "V depende de r³: duplicar r multiplica el volumen por 2 · 2 · 2 = 8.",
-            ),
-        n(
+            ), { kind: "solid", shape: "sphere", radius: `${fmt(sr)} cm` }),
+        fig(n(
           "q1",
           `Una pirámide tiene base cuadrada de ${side} cm de lado y ${ph} cm de altura. ¿Cuál es su volumen?`,
           pyramid,
           [`Base: ${side}² = ${side * side} cm².`, `V = ${side * side} · ${ph} ÷ 3 = ${fmt(pyramid)}.`],
           ["Calcula el área de la base.", "Multiplica por la altura.", "Divide entre 3."],
           { unit: "cm³", errors: [{ value: side * side * ph, feedback: "Ese es el prisma de igual base y altura; la pirámide ocupa un tercio." }] },
-        ),
-        n(
+        ), { kind: "solid", shape: "pyramid", length: `${side} cm`, height: `${ph} cm` }),
+        fig(n(
           "q2",
           `Completa: un cono de radio ${cr} cm y altura ${ch} cm tiene V = 3,14 · ${cr}² · ${ch} ÷ 3 = __ cm³.`,
           cone,
           [`3,14 · ${cr * cr} = ${fmt(r6(PI * cr * cr))}.`, `· ${ch} = ${fmt(cylinder)}; ÷ 3 = ${fmt(cone)}.`],
           [`${cr}² = ${cr * cr}.`, "Multiplica por 3,14 y por la altura.", "Divide entre 3."],
           { step: true, unit: "cm³", errors: [{ value: cylinder, feedback: "Falta dividir entre 3: ese es el volumen del cilindro." }] },
-        ),
-        n(
+        ), { kind: "solid", shape: "cone", radius: `${cr} cm`, height: `${ch} cm` }),
+        fig(n(
           "q3",
           `¿Cuál es el volumen de una esfera de radio ${fmt(sr)} dm? Usa π ≈ 3,14.`,
           sphere,
           [`${fmt(sr)}³ = ${fmt(sr ** 3)}.`, `V = 4 · 3,14 · ${fmt(sr ** 3)} ÷ 3 = ${fmt(sphere)}.`],
           ["Eleva el radio al cubo.", "Multiplica por 4 y por 3,14.", "Divide entre 3."],
           { unit: "dm³", errors: [{ value: r6(4 * PI * sr ** 3), feedback: "Falta dividir entre 3: V = 4 · π · r³ ÷ 3." }] },
-        ),
-        c(
+        ), { kind: "solid", shape: "sphere", radius: `${fmt(sr)} dm` }),
+        fig(c(
           "q4",
           `Para el volumen de un cono de radio ${cr} cm y altura ${ch} cm, Pedro calcula 3,14 · ${cr}² · ${ch} = ${fmt(cylinder)} cm³. ¿Qué falla?`,
           [
@@ -883,8 +884,8 @@ export const SOLID_LESSONS: Lesson[] = [
           ],
           1,
           "Cono y pirámide: base por altura, dividido entre 3.",
-        ),
-        n(
+        ), { kind: "solid", shape: "cone", radius: `${cr} cm`, height: `${ch} cm` }),
+        fig(n(
           "q5",
           `Una tienda de campaña tiene forma de pirámide de base rectangular de ${fmt(ta)} m × ${fmt(tb)} m y ${fmt(th)} m de altura. ¿Qué volumen de aire contiene?`,
           tent,
@@ -895,8 +896,8 @@ export const SOLID_LESSONS: Lesson[] = [
             unit: "m³",
             errors: [{ value: r6(ta * tb * th), feedback: "Así sería una caja (prisma); la pirámide ocupa un tercio." }],
           },
-        ),
-        n(
+        ), { kind: "solid", shape: "pyramid", length: `${fmt(ta)} m`, width: `${fmt(tb)} m`, height: `${fmt(th)} m` }),
+        fig(n(
           "q6",
           `Un cono de ${ir} cm de radio tiene un volumen de ${fmt(iv)} cm³ (π ≈ 3,14). ¿Cuál es su altura?`,
           ih,
@@ -907,10 +908,10 @@ export const SOLID_LESSONS: Lesson[] = [
             unit: "cm",
             errors: [{ value: r6(iv / (PI * ir * ir)), feedback: "Falta multiplicar por 3: el volumen del cono es un tercio del cilindro." }],
           },
-        ),
+        ), { kind: "solid", shape: "cone", radius: `${ir} cm`, height: "?" }),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "Una bola de helado esférica de 3 cm de radio se derrite dentro de un cucurucho cónico de 3 cm de radio y 10 cm de altura. ¿Cuántos cm³ de helado se desbordan? Usa π ≈ 3,14.",
       18.84,
@@ -921,7 +922,7 @@ export const SOLID_LESSONS: Lesson[] = [
         unit: "cm³",
         errors: [{ value: 169.56, feedback: "Calculaste el cono sin dividir entre 3: su capacidad es 94,2 cm³, menor que la bola." }],
       },
-    ),
+    ), { kind: "solid", shape: "cone", radius: "3 cm", height: "10 cm" }),
     outcome: "Puedes calcular volúmenes de pirámides, conos y esferas y explicar de dónde salen sus fórmulas.",
     commonErrors: [
       "Olvidar dividir entre 3 en pirámides y conos.",
@@ -995,6 +996,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
       const [f4, v4, f5, v5] = [[12, 8, 6, 14], [10, 15, 5, 20], [9, 3, 6, 9], [16, 4, 5, 15], [7, 13, 14, 6], [21, 9, 10, 10]][v],
         total = f4 + v4 + f5 + v5,
         table = `4.°: ${f4} fútbol y ${v4} vóley; 5.°: ${f5} fútbol y ${v5} vóley`,
+        twoWay: Figure = { kind: "table", head: ["Grado", "Fútbol", "Vóley"], rows: [["4.°", f4, v4], ["5.°", f5, v5]], rowHeads: true },
         pv5 = v5 / (f5 + v5),
         pf4 = f4 / (f4 + v4),
         p5v = v5 / (v4 + v5),
@@ -1002,7 +1004,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
         [share, voley] = [[0.6, 25], [0.75, 40], [0.4, 35], [0.25, 48], [0.8, 30], [0.3, 30]][v];
       return [
         v % 2 === 0
-          ? c(
+          ? fig(c(
               "q0",
               `En una encuesta (${table}), ¿qué significa P(vóley | 5.°)?`,
               [
@@ -1012,8 +1014,8 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
               ],
               0,
               "Lo que va después de la barra es el grupo dentro del cual se calcula.",
-            )
-          : c(
+            ), twoWay)
+          : fig(c(
               "q0",
               `En una encuesta (${table}), ¿por qué P(5.° | vóley) y P(vóley | 5.°) suelen dar resultados distintos?`,
               [
@@ -1023,32 +1025,32 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
               ],
               1,
               "El grupo conocido cambia, y con él el denominador.",
-            ),
-        n(
+            ), twoWay),
+        fig(n(
           "q1",
           `En una encuesta (${table}), ¿cuál es P(vóley | 5.°)? Escríbela como decimal o fracción.`,
           pv5,
           [`Estudiantes de 5.°: ${f5} + ${v5} = ${f5 + v5}.`, `P = ${ratioText(v5, f5 + v5)}.`],
           ["El grupo conocido es el de 5.°.", "¿Cuántos de 5.° prefieren vóley?", "Divide entre el total de 5.°."],
           { errors: [{ value: r6(v5 / total), feedback: `Dividiste entre toda la encuesta (${total}); se calcula solo dentro de 5.°.` }] },
-        ),
-        n(
+        ), twoWay),
+        fig(n(
           "q2",
           `Completa: con los datos (${table}), P(fútbol | 4.°) = ${f4} ÷ (${f4} + ${v4}) = __.`,
           pf4,
           [`«Sabiendo que es de 4.°» limita el cálculo a ese grupo.`, `Total de 4.°: ${f4} + ${v4} = ${f4 + v4}.`, `De ellos prefieren fútbol ${f4}, así que ${f4} ÷ ${f4 + v4} = ${fmt(pf4)}.`],
           ["Suma los de 4.°.", "Divide los de 4.° que prefieren fútbol entre ese total.", `${fmt(pf4)}.`],
           { step: true, errors: [{ value: r6(f4 / total), feedback: `El denominador es el total de 4.° (${f4 + v4}), no el de la encuesta.` }] },
-        ),
-        n(
+        ), twoWay),
+        fig(n(
           "q3",
           `En una encuesta (${table}), ¿cuál es P(5.° | vóley)? Escríbela como fracción.`,
           p5v,
           [`Prefieren vóley: ${v4} + ${v5} = ${v4 + v5}.`, `De ellos son de 5.°: ${v5}. P = ${v5}/${v4 + v5}.`],
           ["El grupo conocido es el de vóley.", "¿Cuántos de ese grupo son de 5.°?", "Divide entre el total de vóley."],
           { errors: [{ value: pv5, feedback: "Esa es P(vóley | 5.°): dividiste entre los de 5.°, no entre los de vóley." }] },
-        ),
-        c(
+        ), twoWay),
+        fig(c(
           "q4",
           `Con los datos (${table}), un titular dice: «el ${fmt(pv5 * 100)}% de los de 5.° prefiere vóley, así que el ${fmt(pv5 * 100)}% de quienes prefieren vóley son de 5.°». ¿Qué falla?`,
           [
@@ -1058,8 +1060,8 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
           ],
           1,
           "Invertir la condición cambia el grupo de referencia.",
-        ),
-        n(
+        ), twoWay),
+        fig(n(
           "q5",
           `De ${[200, 500, 100, 400, 300, 1000][v]} personas, ${infected} tienen un virus. La prueba da positivo en ${truePos} de los que lo tienen y en ${falsePos} de los que no. Si alguien da positivo, ¿qué probabilidad hay de que tenga el virus? Escríbela como fracción o decimal.`,
           truePos / (truePos + falsePos),
@@ -1069,7 +1071,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
             intent: "transfer",
             errors: [{ value: truePos / infected, feedback: "Ese es el porcentaje de infectados que da positivo; se pide, entre los positivos, cuántos están infectados." }],
           },
-        ),
+        ), { kind: "table", head: ["Grupo", "Positivo", "Negativo"], rows: [["Con virus", truePos, infected - truePos], ["Sin virus", falsePos, [200, 500, 100, 400, 300, 1000][v] - infected - falsePos]], rowHeads: true }),
         n(
           "q6",
           `En una encuesta, ${voley} estudiantes prefieren vóley y P(5.° | vóley) = ${fmt(share * 100)}%. ¿Cuántos estudiantes son de 5.° y prefieren vóley?`,
@@ -1083,7 +1085,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
         ),
       ];
     },
-    application: n(
+    application: fig(n(
       "app",
       "En un colegio, el 60% de los estudiantes llega en bus y el 40% caminando. Llega tarde el 10% de los que van en bus y el 25% de los que caminan. Si un estudiante llegó tarde, ¿qué probabilidad hay de que haya ido en bus? Escríbela como decimal.",
       0.375,
@@ -1096,7 +1098,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
           { value: 0.6, feedback: "Esa es la proporción de todos los que van en bus; entre los que llegan tarde es otra." },
         ],
       },
-    ),
+    ), { kind: "tree", first: [{ label: "Bus", p: "0,6" }, { label: "Caminando", p: "0,4" }], second: [[{ label: "Tarde", p: "0,1" }, { label: "A tiempo", p: "0,9" }], [{ label: "Tarde", p: "0,25" }, { label: "A tiempo", p: "0,75" }]] }),
     outcome: "Puedes calcular probabilidades dentro de un grupo y evitar confundir P(A | B) con P(B | A).",
     commonErrors: [
       "Dividir entre el total de la encuesta en vez del total del grupo conocido.",

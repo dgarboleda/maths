@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
+import { fig } from "./figures";
 
 /** Escritura con el signo menos tipográfico. */
 const sg = (x: number) => (x < 0 ? `−${-x}` : `${x}`);
@@ -109,7 +110,7 @@ export const NUMBER_LESSONS: Lesson[] = [
               1,
               "El valor absoluto es la distancia al cero, que nunca es negativa.",
             ),
-        n(
+        fig(n(
           "q1",
           `Escribe el mayor de estos números: −${a}, −${b}, −${k}.`,
           -Math.min(a, b, k),
@@ -124,16 +125,16 @@ export const NUMBER_LESSONS: Lesson[] = [
               { value: Math.max(a, b, k), feedback: "Todos los números son negativos: la respuesta también debe serlo." },
             ],
           },
-        ),
-        n(
+        ), { kind: "number-line", min: -10, max: 2, points: [{ value: -a, label: `−${a}` }, { value: -b, label: `−${b}` }, { value: -k, label: `−${k}` }] }),
+        fig(n(
           "q2",
           `Completa: la distancia de −${a} al cero es |−${a}| = __.`,
           a,
           [`El valor absoluto mide la distancia al cero, sin importar el lado.`, `−${a} está ${a} unidades a la izquierda del cero: |−${a}| = ${a}.`, `Comprobación: ${a} también está a ${a} unidades, así que |${a}| = |−${a}|.`],
           ["El valor absoluto mide distancia.", "Una distancia no es negativa.", `|−${a}| = ${a}.`],
           { step: true, errors: [{ value: -a, feedback: "Una distancia nunca es negativa." }] },
-        ),
-        n(
+        ), { kind: "number-line", min: -10, max: 2, points: [{ value: -a, label: `−${a}` }] }),
+        fig(n(
           "q3",
           `¿Cuántas unidades hay entre −${a} y ${b} en la recta?`,
           a + b,
@@ -142,7 +143,7 @@ export const NUMBER_LESSONS: Lesson[] = [
           {
             errors: [{ value: Math.abs(b - a), feedback: `Restaste las cifras. Los números están a lados distintos del cero: las distancias se suman.` }],
           },
-        ),
+        ), { kind: "number-line", min: -10, max: 10, points: [{ value: -a, label: `−${a}` }, { value: b, label: `${b}` }] }),
         c(
           "q4",
           `¿Por qué −${Math.max(a, b)} < −${Math.min(a, b)}?`,
@@ -154,7 +155,7 @@ export const NUMBER_LESSONS: Lesson[] = [
           1,
           "En la recta, el número de la izquierda es el menor.",
         ),
-        n(
+        fig(n(
           "q5",
           `A las 6:00 un sensor marca −${a} °C y a mediodía ${b} °C. ¿Cuántos grados subió la temperatura?`,
           a + b,
@@ -165,8 +166,8 @@ export const NUMBER_LESSONS: Lesson[] = [
             unit: "°C",
             errors: [{ value: Math.abs(b - a), feedback: "Restaste las cifras sin considerar que una temperatura es negativa." }],
           },
-        ),
-        n(
+        ), { kind: "number-line", min: -10, max: 10, points: [{ value: -a, label: `−${a} °C` }, { value: b, label: `${b} °C` }] }),
+        fig(n(
           "q6",
           `¿Qué número está justo en el punto medio entre ${sg(m1)} y ${m2} en la recta?`,
           (m1 + m2) / 2,
@@ -185,7 +186,7 @@ export const NUMBER_LESSONS: Lesson[] = [
               { value: (m2 - m1) / 2, feedback: "Esa es la mitad de la distancia. Súmala al número de la izquierda para llegar al punto medio." },
             ],
           },
-        ),
+        ), { kind: "number-line", min: -13, max: 10, points: [{ value: m1, label: sg(m1) }, { value: m2, label: `${m2}` }] }),
       ];
     },
     application: n(

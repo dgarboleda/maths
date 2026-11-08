@@ -1,6 +1,7 @@
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n, type ChoiceLabel } from "./questions";
 import { dec, list } from "./topicHelpers";
+import { fig } from "./figures";
 import type { Lesson } from "./types";
 
 /** Unidades de medida, clasificación de figuras, paralelas, áreas, superficie y Tales. */
@@ -316,7 +317,10 @@ export const FIGURE_LESSONS: Lesson[] = [
       ),
     ],
     diagnostic: [
-      n("d-1", "Dos ángulos de un triángulo miden 60° y 80°. ¿Cuántos grados mide el tercero?", 40, ["Los tres ángulos de un triángulo suman 180°.", "Restamos los dos conocidos → 180 − 60 − 80 = 40°."], ["Los ángulos de un triángulo suman 180°.", "Resta los que conoces.", "180 − 140."], { unit: "°" }),
+      fig(
+        n("d-1", "Dos ángulos de un triángulo miden 60° y 80°. ¿Cuántos grados mide el tercero?", 40, ["Los tres ángulos de un triángulo suman 180°.", "Restamos los dos conocidos → 180 − 60 − 80 = 40°."], ["Los ángulos de un triángulo suman 180°.", "Resta los que conoces.", "180 − 140."], { unit: "°" }),
+        { kind: "triangle", shape: "scalene", angles: ["60°", "80°", "?"] },
+      ),
       c("d-2", "¿Cómo se llama un ángulo de 90°?", ["Agudo", "Recto", "Obtuso"], 1, "Un ángulo de 90° es recto; los agudos miden menos y los obtusos más."),
       n("d-3", "¿Cuántos grados suman los ángulos de un cuadrilátero?", 360, ["Un cuadrilátero se divide en dos triángulos.", "2 × 180 = 360°."], ["Divide el cuadrilátero con una diagonal.", "Quedan dos triángulos.", "2 × 180."], { unit: "°" }),
     ],
@@ -325,12 +329,15 @@ export const FIGURE_LESSONS: Lesson[] = [
       const [o1, o2] = v === 1 ? [100, 95] : [120, 70];
       const side = v === 2 ? 6 : 9;
       const concept = [
-        c(
-          "q0",
-          `Un triángulo tiene lados de ${la} cm, ${la} cm y ${lb} cm. ¿Cómo se clasifica por sus lados?`,
-          [["Equilátero", `Tendría los tres lados iguales, y ${lb} es distinto de ${la}.`], "Isósceles", ["Escaleno", "Escaleno es con los tres lados distintos; aquí hay dos iguales."]],
-          1,
-          `Tiene dos lados iguales (${la} cm): es isósceles.`,
+        fig(
+          c(
+            "q0",
+            `Un triángulo tiene lados de ${la} cm, ${la} cm y ${lb} cm. ¿Cómo se clasifica por sus lados?`,
+            [["Equilátero", `Tendría los tres lados iguales, y ${lb} es distinto de ${la}.`], "Isósceles", ["Escaleno", "Escaleno es con los tres lados distintos; aquí hay dos iguales."]],
+            1,
+            `Tiene dos lados iguales (${la} cm): es isósceles.`,
+          ),
+          { kind: "triangle", shape: "isosceles", sides: [`${lb} cm`, `${la} cm`, `${la} cm`] },
         ),
         c(
           "q0",
@@ -364,7 +371,7 @@ export const FIGURE_LESSONS: Lesson[] = [
       const y6 = [35, 70, 45, 55, 65, 25][v];
       return [
         concept,
-        n(
+        fig(n(
           "q1",
           `Un triángulo isósceles tiene un ángulo desigual de ${x1}°. ¿Cuántos grados mide cada uno de los otros dos?`,
           (180 - x1) / 2,
@@ -377,8 +384,8 @@ export const FIGURE_LESSONS: Lesson[] = [
               ...(180 - 2 * x1 > 0 ? [{ value: 180 - 2 * x1, feedback: `Tomaste ${x1}° como uno de los ángulos iguales; es el desigual.` }] : []),
             ],
           },
-        ),
-        n(
+        ), { kind: "triangle", shape: "isosceles", angles: ["?", "?", `${x1}°`], ticks: [1, 2] }),
+        fig(n(
           "q2",
           `En un paralelogramo, un ángulo mide ${x2}°. Primer paso → ¿cuánto mide un ángulo consecutivo (vecino) a él?`,
           180 - x2,
@@ -392,16 +399,16 @@ export const FIGURE_LESSONS: Lesson[] = [
               { value: 360 - x2, feedback: "Los cuatro ángulos suman 360°, pero dos consecutivos suman 180°." },
             ],
           },
-        ),
-        n(
+        ), { kind: "polygon", shape: "parallelogram", angles: [`${x2}°`, "?", null, null] }),
+        fig(n(
           "q3",
           `Un rombo tiene un perímetro de ${P3} cm. ¿Cuánto mide cada lado?`,
           P3 / 4,
           ["El rombo tiene sus cuatro lados iguales, así que el perímetro es cuatro veces el lado.", `Lado = ${P3} ÷ 4 = ${P3 / 4} cm.`],
           ["¿Cuántos lados iguales tiene un rombo?", "Cuatro.", `Divide ${P3} entre 4.`],
           { unit: "cm", errors: [{ value: P3 / 2, feedback: "Dividiste entre 2: el rombo tiene cuatro lados iguales." }] },
-        ),
-        c(
+        ), { kind: "polygon", shape: "rhombus", side: "?" }),
+        fig(c(
           "q4",
           `Alguien dice que un triángulo con ángulos de ${a4}°, ${b4}° y ${c4}° es acutángulo, porque dos de sus ángulos son agudos. ¿Qué opinas?`,
           [
@@ -411,23 +418,23 @@ export const FIGURE_LESSONS: Lesson[] = [
           ],
           1,
           `Se clasifica por su ángulo mayor: ${c4}° es mayor que 90°, así que es obtusángulo.`,
-        ),
-        n(
+        ), { kind: "triangle", shape: "obtuse", angles: [`${a4}°`, `${c4}°`, `${b4}°`] }),
+        fig(n(
           "q5",
           `Un techo tiene forma de triángulo isósceles. El ángulo de arriba, entre los dos lados iguales, mide ${x5}°. ¿Cuántos grados mide el ángulo que forma cada lado inclinado con la base?`,
           (180 - x5) / 2,
           [`Los ángulos de la base son iguales y suman 180 − ${x5} = ${180 - x5}.`, `Cada uno mide ${180 - x5} ÷ 2 = ${(180 - x5) / 2}°.`],
           ["Es un triángulo isósceles: los ángulos de la base son iguales.", `Resta ${x5}° a 180°.`, "Reparte entre los dos ángulos de la base."],
           { intent: "transfer", unit: "°", errors: [{ value: 180 - x5, feedback: "No repartiste entre los dos ángulos de la base." }] },
-        ),
-        n(
+        ), { kind: "triangle", shape: "isosceles", angles: ["?", null, `${x5}°`], ticks: [1, 2] }),
+        fig(n(
           "q6",
           `Un triángulo isósceles tiene dos ángulos iguales de ${y6}° cada uno. ¿Cuánto mide el tercer ángulo?`,
           180 - 2 * y6,
           [`Los dos ángulos iguales suman 2 × ${y6} = ${2 * y6}°.`, `El tercero mide 180 − ${2 * y6} = ${180 - 2 * y6}°.`],
           ["Los tres ángulos suman 180°.", `Los dos iguales suman 2 × ${y6}.`, `Resta esa suma a 180.`],
           { intent: "transfer", unit: "°", errors: [{ value: 180 - y6, feedback: "Restaste solo uno de los dos ángulos iguales." }] },
-        ),
+        ), { kind: "triangle", shape: "isosceles", angles: [`${y6}°`, `${y6}°`, "?"], ticks: [1, 2] }),
       ];
     },
     outcome: "Puedes clasificar triángulos y cuadriláteros y usar sus propiedades para calcular lados y ángulos.",
@@ -437,13 +444,16 @@ export const FIGURE_LESSONS: Lesson[] = [
       "Tomar el ángulo desigual de un isósceles como si fuera uno de los iguales.",
       "Confundir trapecio (un par de lados paralelos) con paralelogramo (dos pares).",
     ],
-    application: n(
-      "aplicacion",
-      "Una cometa tiene forma de cuadrilátero con dos ángulos opuestos iguales de 110° cada uno y otro ángulo de 60°. ¿Cuántos grados mide el cuarto ángulo?",
-      80,
-      ["Los ángulos de un cuadrilátero suman 360°.", "360 − 110 − 110 − 60 = 80°."],
-      ["¿Cuánto suman los ángulos de un cuadrilátero?", "Suman 360°.", "Resta los tres que conoces."],
-      { intent: "transfer", unit: "°" },
+    application: fig(
+      n(
+        "aplicacion",
+        "Una cometa tiene forma de cuadrilátero con dos ángulos opuestos iguales de 110° cada uno y otro ángulo de 60°. ¿Cuántos grados mide el cuarto ángulo?",
+        80,
+        ["Los ángulos de un cuadrilátero suman 360°.", "360 − 110 − 110 − 60 = 80°."],
+        ["¿Cuánto suman los ángulos de un cuadrilátero?", "Suman 360°.", "Resta los tres que conoces."],
+        { intent: "transfer", unit: "°" },
+      ),
+      { kind: "polygon", shape: "kite", angles: ["?", "110°", "60°", "110°"] },
     ),
   }),
 
@@ -513,14 +523,14 @@ export const FIGURE_LESSONS: Lesson[] = [
       ),
     ],
     diagnostic: [
-      n("d-1", "¿Cuánto mide el suplemento de un ángulo de 130°?", 50, ["Dos ángulos suplementarios suman entre los dos 180°.", "El suplemento de 130° es 180 − 130 = 50°."], ["El suplemento completa 180°.", "Resta 130 a 180.", "Es 50°."], { unit: "°" }),
+      fig(n("d-1", "¿Cuánto mide el suplemento de un ángulo de 130°?", 50, ["Dos ángulos suplementarios suman entre los dos 180°.", "El suplemento de 130° es 180 − 130 = 50°."], ["El suplemento completa 180°.", "Resta 130 a 180.", "Es 50°."], { unit: "°" }), { kind: "angles", around: 180, parts: [{ deg: 130, label: "130°" }, { deg: 50, label: "?" }] }),
       c("d-2", "¿Cómo son dos ángulos opuestos por el vértice?", ["Iguales", "Suplementarios", "Complementarios"], 0, "Los ángulos opuestos por el vértice son iguales."),
       n("d-3", "¿Cuántos grados mide cada ángulo que forman dos rectas perpendiculares?", 90, ["Dos perpendiculares forman cuatro ángulos iguales que suman 360°.", "360 ÷ 4 = 90°."], ["Son cuatro ángulos iguales.", "Juntos suman 360°.", "360 ÷ 4."], { unit: "°" }),
     ],
     questions(v) {
       const x = [65, 48, 72, 110, 55, 130][v];
       const concept = [
-        c(
+        fig(c(
           "q0",
           `Dos paralelas son cortadas por una secante. ¿Por qué un ángulo de ${x}° y su correspondiente miden lo mismo?`,
           [
@@ -530,8 +540,8 @@ export const FIGURE_LESSONS: Lesson[] = [
           ],
           2,
           `Al trasladar una paralela sobre la otra, el ángulo de ${x}° cae exactamente sobre su correspondiente.`,
-        ),
-        c(
+        ), { kind: "parallels", marks: [{ line: 0, pos: "tr", label: `${x}°` }, { line: 1, pos: "tr", label: "?" }] }),
+        fig(c(
           "q0",
           `Si dos rectas cortadas por una secante forman ángulos alternos internos de ${x}° y ${x + 5}°, ¿son paralelas?`,
           [
@@ -541,14 +551,14 @@ export const FIGURE_LESSONS: Lesson[] = [
           ],
           0,
           "Dos rectas son paralelas exactamente cuando una secante forma con ellas alternos internos iguales.",
-        ),
-        c(
+        ), { kind: "parallels", parallel: false, marks: [{ line: 0, pos: "br", label: `${x}°` }, { line: 1, pos: "tl", label: `${x + 5}°` }] }),
+        fig(c(
           "q0",
           `Entre dos paralelas, un ángulo conjugado interno mide ${x}°. ¿Cuánto suman él y su conjugado?`,
           [["360°", "360° es lo que suman los cuatro ángulos de un cruce."], [`${2 * x}°, porque son iguales`, "Los iguales son los alternos y los correspondientes; los conjugados son suplementarios."], "180°, porque están del mismo lado de la secante, entre las paralelas"],
           2,
           `Su conjugado mide 180° − ${x}° = ${180 - x}°.`,
-        ),
+        ), { kind: "parallels", marks: [{ line: 0, pos: "br", label: `${x}°` }, { line: 1, pos: "tr", label: "?" }] }),
       ][v % 3];
 
       const [a3, b3, c3] = [[2, 10, 70], [3, 5, 50], [4, 8, 72], [5, 10, 110], [2, 15, 55], [3, 12, 90]][v];
@@ -558,31 +568,31 @@ export const FIGURE_LESSONS: Lesson[] = [
       const x6 = (180 - p6 - q6) / 3;
       return [
         concept,
-        n(
+        fig(n(
           "q1",
           `Dos paralelas son cortadas por una secante. Un ángulo interno mide ${x}°. ¿Cuánto mide su conjugado interno?`,
           180 - x,
           ["Los conjugados internos están del mismo lado de la secante, entre las paralelas, y suman 180°.", `180 − ${x} = ${180 - x}°.`],
           ["Los conjugados internos son suplementarios.", "Suman 180°.", `Resta ${x} a 180.`],
           { unit: "°", errors: [{ value: x, feedback: "Ese valor tiene el alterno interno; el conjugado es el suplemento." }] },
-        ),
-        n(
+        ), { kind: "parallels", marks: [{ line: 0, pos: "br", label: `${x}°` }, { line: 1, pos: "tr", label: "?" }] }),
+        fig(n(
           "q2",
           `Una secante corta dos paralelas y uno de los ángulos internos mide ${x}°. Primer paso → ¿cuánto mide su alterno interno?`,
           x,
           ["Los alternos internos están entre las paralelas, a distinto lado de la secante.", `Son iguales, así que el alterno interno de ${x}° también mide ${x}°.`],
           ["Ubica el ángulo entre las paralelas, del otro lado de la secante.", "Los alternos internos son iguales.", `Mide lo mismo que ${x}°.`],
           { step: true, unit: "°", errors: [{ value: 180 - x, feedback: "Ese es el suplemento; los alternos internos son iguales." }] },
-        ),
-        n(
+        ), { kind: "parallels", marks: [{ line: 0, pos: "br", label: `${x}°` }, { line: 1, pos: "tl", label: "?" }] }),
+        fig(n(
           "q3",
           `Dos ángulos correspondientes entre paralelas miden (${a3}x + ${b3})° y ${c3}°. ¿Cuánto vale x?`,
           x3,
           [`Los correspondientes son iguales → ${a3}x + ${b3} = ${c3}.`, `${a3}x = ${c3 - b3}, así que x = ${c3 - b3} ÷ ${a3} = ${dec(x3)}.`],
           ["Los ángulos correspondientes son iguales.", `Plantea ${a3}x + ${b3} = ${c3}.`, `Resta ${b3} y divide entre ${a3}.`],
           { errors: [{ value: (180 - c3 - b3) / a3, feedback: "Los planteaste como suplementarios; los correspondientes son iguales." }].filter((e) => e.value !== x3 && e.value > 0) },
-        ),
-        c(
+        ), { kind: "parallels", marks: [{ line: 0, pos: "tr", label: `(${a3}x + ${b3})°` }, { line: 1, pos: "tr", label: `${c3}°` }] }),
+        fig(c(
           "q4",
           `Alguien dice que, entre dos paralelas, un ángulo de ${x}° y su conjugado interno miden lo mismo. ¿Qué error comete?`,
           [
@@ -592,7 +602,7 @@ export const FIGURE_LESSONS: Lesson[] = [
           ],
           2,
           `180° − ${x}° = ${180 - x}°.`,
-        ),
+        ), { kind: "parallels", marks: [{ line: 0, pos: "br", label: `${x}°` }, { line: 1, pos: "tr", label: "?" }] }),
         n(
           "q5",
           `Una reja tiene barrotes verticales paralelos y una barra diagonal que los cruza. En un barrote, la diagonal forma ${x5}° por arriba a la derecha. En el barrote siguiente, ¿cuánto mide el ángulo de abajo a la derecha?`,
@@ -601,14 +611,14 @@ export const FIGURE_LESSONS: Lesson[] = [
           ["En cada barrote se repiten los mismos ángulos.", `Arriba a la derecha mide ${x5}° en todos.`, "Abajo a la derecha es el suplemento."],
           { intent: "transfer", unit: "°", errors: [{ value: x5, feedback: "Ese es el ángulo de arriba; el de abajo es su vecino, que lo completa hasta 180°." }] },
         ),
-        n(
+        fig(n(
           "q6",
           `Entre dos paralelas, dos ángulos conjugados internos miden (x + ${p6})° y (2x + ${q6})°. ¿Cuánto vale x?`,
           x6,
           [`Los conjugados internos suman 180° → (x + ${p6}) + (2x + ${q6}) = 180.`, `3x + ${p6 + q6} = 180, así que 3x = ${180 - p6 - q6} y x vale ${dec(x6)}.`],
           ["Los conjugados internos suman 180°.", "Suma las dos expresiones y iguala a 180.", `3x + ${p6 + q6} = 180.`],
           { intent: "transfer", errors: [{ value: q6 - p6, feedback: "Los igualaste, pero los conjugados no son iguales: suman 180°." }].filter((e) => e.value > 0 && e.value !== x6) },
-        ),
+        ), { kind: "parallels", marks: [{ line: 0, pos: "br", label: `(x + ${p6})°` }, { line: 1, pos: "tr", label: `(2x + ${q6})°` }] }),
       ];
     },
     outcome: "Puedes reconocer los ángulos que forma una secante con dos paralelas y calcular cualquiera de ellos a partir de uno.",
@@ -697,8 +707,8 @@ export const AREA_LESSONS: Lesson[] = [
       ),
     ],
     diagnostic: [
-      n("d-1", "¿Cuál es el área de un rectángulo de 7 cm por 5 cm?", 35, ["El área de un rectángulo es base por altura.", "7 × 5 = 35 cm²."], ["Multiplica la base por la altura.", "7 × 5.", "Es 35."], { unit: "cm²" }),
-      n("d-2", "¿Cuál es el área de un triángulo de base 8 cm y altura 6 cm?", 24, ["El triángulo es la mitad de un rectángulo de la misma base y altura.", "8 × 6 ÷ 2 = 24 cm²."], ["Multiplica la base por la altura.", "8 × 6 = 48.", "Divide entre 2."], { unit: "cm²" }),
+      fig(n("d-1", "¿Cuál es el área de un rectángulo de 7 cm por 5 cm?", 35, ["El área de un rectángulo es base por altura.", "7 × 5 = 35 cm²."], ["Multiplica la base por la altura.", "7 × 5.", "Es 35."], { unit: "cm²" }), { kind: "polygon", shape: "rectangle", base: "7 cm", height: "5 cm" }),
+      fig(n("d-2", "¿Cuál es el área de un triángulo de base 8 cm y altura 6 cm?", 24, ["El triángulo es la mitad de un rectángulo de la misma base y altura.", "8 × 6 ÷ 2 = 24 cm²."], ["Multiplica la base por la altura.", "8 × 6 = 48.", "Divide entre 2."], { unit: "cm²" }), { kind: "polygon", shape: "triangle", base: "8 cm", height: "6 cm" }),
       c("d-3", "¿Qué es la altura de un triángulo?", ["Su lado más largo", "La distancia perpendicular de un vértice al lado opuesto", "La mitad de la base"], 1, "La altura es perpendicular a la base y llega al vértice opuesto."),
     ],
     questions(v) {
@@ -706,7 +716,7 @@ export const AREA_LESSONS: Lesson[] = [
       const [tB, tb] = v === 1 ? [9, 5] : [12, 8];
       const hs = v === 2 ? 4 : 10;
       const concept = [
-        c(
+        fig(c(
           "q0",
           `Un paralelogramo tiene base ${pb} cm, lado inclinado ${pl} cm y altura ${ph} cm. ¿Qué medidas se multiplican para obtener su área?`,
           [
@@ -716,8 +726,8 @@ export const AREA_LESSONS: Lesson[] = [
           ],
           0,
           `A = ${pb} × ${ph} = ${pb * ph} cm²: al reacomodarlo es un rectángulo de base ${pb} y altura ${ph}.`,
-        ),
-        c(
+        ), { kind: "polygon", shape: "parallelogram", base: `${pb} cm`, side: `${pl} cm`, height: `${ph} cm` }),
+        fig(c(
           "q0",
           `¿Por qué el área de un trapecio de bases ${tB} cm y ${tb} cm se divide entre 2?`,
           [
@@ -727,8 +737,8 @@ export const AREA_LESSONS: Lesson[] = [
           ],
           2,
           `El paralelogramo de dos trapecios tiene base ${tB + tb}; cada trapecio es la mitad.`,
-        ),
-        c(
+        ), { kind: "polygon", shape: "trapezoid", base: `${tB} cm`, top: `${tb} cm` }),
+        fig(c(
           "q0",
           `Un hexágono regular de ${hs} cm de lado se divide desde su centro. ¿En cuántos triángulos iguales queda y cuál es su altura?`,
           [
@@ -738,7 +748,7 @@ export const AREA_LESSONS: Lesson[] = [
           ],
           1,
           "Cada lado es la base de un triángulo cuyo vértice es el centro; la altura es la apotema. Por eso A = P × ap ÷ 2.",
-        ),
+        ), { kind: "regular", sides: 6, side: `${hs} cm` }),
       ][v % 3];
 
       const [B1, b1, h1] = [[10, 6, 5], [12, 8, 6], [9, 5, 4], [14, 10, 7], [11, 7, 3], [15, 9, 8]][v];
@@ -754,31 +764,31 @@ export const AREA_LESSONS: Lesson[] = [
       const sum6 = (2 * A6) / h6;
       return [
         concept,
-        n(
+        fig(n(
           "q1",
           `Un trapecio tiene bases de ${B1} cm y ${b1} cm y una altura de ${h1} cm. ¿Cuál es su área?`,
           A1,
           [`Sumamos las bases y multiplicamos por la altura → ${B1 + b1} × ${h1} = ${(B1 + b1) * h1}.`, `Dividimos entre 2 → ${(B1 + b1) * h1} ÷ 2 = ${dec(A1)} cm².`],
           ["Usa A = (B + b) × h ÷ 2.", `${B1} + ${b1} = ${B1 + b1}.`, `Multiplica por ${h1} y divide entre 2.`],
           { unit: "cm²", errors: [{ value: (B1 + b1) * h1, feedback: "Falta dividir entre 2: ese es el área del paralelogramo que forman dos trapecios." }] },
-        ),
-        n(
+        ), { kind: "polygon", shape: "trapezoid", base: `${B1} cm`, top: `${b1} cm`, height: `${h1} cm` }),
+        fig(n(
           "q2",
           `Para el área de un rombo de diagonales ${D2} cm y ${d2} cm, primero se multiplican las diagonales. ¿Cuánto da ese producto?`,
           D2 * d2,
           [`${D2} × ${d2} = ${D2 * d2}, que es el área del rectángulo que contiene al rombo.`, `El área del rombo es la mitad → ${D2 * d2} ÷ 2 = ${(D2 * d2) / 2} cm².`],
           ["Las diagonales forman los lados de un rectángulo que contiene al rombo.", `Multiplica ${D2} × ${d2}.`, "Después se dividiría entre 2."],
           { step: true, errors: [{ value: (D2 * d2) / 2, feedback: "Eso ya es el área del rombo; este paso pedía solo el producto de las diagonales." }] },
-        ),
-        n(
+        ), { kind: "polygon", shape: "rhombus", diagonals: [`${D2} cm`, `${d2} cm`] }),
+        fig(n(
           "q3",
           `Un ${name3} regular tiene ${s3} cm de lado y ${dec(ap3)} cm de apotema. ¿Cuál es su área?`,
           A3,
           [`El perímetro es ${n3} × ${s3} = ${P3} cm.`, `A = perímetro × apotema ÷ 2 → ${P3} × ${dec(ap3)} ÷ 2 = ${dec(A3)} cm².`],
           [`Un ${name3} tiene ${n3} lados.`, `Perímetro → ${n3} × ${s3}.`, "Multiplica por la apotema y divide entre 2."],
           { unit: "cm²", errors: [{ value: r2(P3 * ap3), feedback: "Falta dividir entre 2: cada triángulo es la mitad de un rectángulo." }] },
-        ),
-        c(
+        ), { kind: "regular", sides: n3, side: `${s3} cm`, apothem: `${dec(ap3)} cm` }),
+        fig(c(
           "q4",
           `Para un paralelogramo de base ${b4} cm, lado inclinado ${l4} cm y altura ${h4} cm, alguien calcula el área como ${b4} × ${l4} = ${b4 * l4} cm². ¿Qué error cometió?`,
           [
@@ -788,23 +798,23 @@ export const AREA_LESSONS: Lesson[] = [
           ],
           1,
           `La altura es la distancia perpendicular entre las bases, ${h4} cm, no el lado inclinado.`,
-        ),
-        n(
+        ), { kind: "polygon", shape: "parallelogram", base: `${b4} cm`, side: `${l4} cm`, height: `${h4} cm` }),
+        fig(n(
           "q5",
           `Un terreno tiene forma de trapecio: el frente mide ${b5} m, el fondo ${B5} m (paralelo al frente) y la distancia entre ambos es ${h5} m. Si el metro cuadrado cuesta ${p5} soles, ¿cuánto cuesta el terreno?`,
           A5 * p5,
           [`Área = (${B5} + ${b5}) × ${h5} ÷ 2 = ${A5} m².`, `Costo = ${A5} × ${p5} = ${dec(A5 * p5)} soles.`],
           ["Primero calcula el área del trapecio.", `(${B5} + ${b5}) × ${h5} ÷ 2.`, `Multiplica el área por ${p5}.`],
           { intent: "transfer", unit: "soles", errors: [{ value: (B5 + b5) * h5 * p5, feedback: "Olvidaste dividir entre 2 al calcular el área del trapecio." }] },
-        ),
-        n(
+        ), { kind: "polygon", shape: "trapezoid", base: `${B5} m`, top: `${b5} m`, height: `${h5} m` }),
+        fig(n(
           "q6",
           `Un trapecio tiene un área de ${A6} cm², una altura de ${h6} cm y una base de ${b6} cm. ¿Cuánto mide la otra base?`,
           sum6 - b6,
           [`(B + ${b6}) × ${h6} ÷ 2 = ${A6}, así que B + ${b6} = ${A6} × 2 ÷ ${h6} = ${dec(sum6)}.`, `La otra base mide ${dec(sum6)} − ${b6} = ${dec(sum6 - b6)} cm.`],
           ["Plantea la fórmula con la base desconocida.", `Multiplica ${A6} por 2 y divide entre ${h6}.`, `Resta la base conocida, ${b6}.`],
           { intent: "transfer", unit: "cm", errors: [{ value: sum6, feedback: "Esa es la suma de las dos bases; falta restar la base conocida." }] },
-        ),
+        ), { kind: "polygon", shape: "trapezoid", base: "?", top: `${b6} cm`, height: `${h6} cm` }),
       ];
     },
     outcome: "Puedes calcular el área de paralelogramos, rombos, trapecios y polígonos regulares, y despejar una medida desconocida.",
@@ -814,14 +824,14 @@ export const AREA_LESSONS: Lesson[] = [
       "Sumar las bases del trapecio y no multiplicar por la altura.",
       "Usar el lado en lugar de la apotema en un polígono regular.",
     ],
-    application: n(
+    application: fig(n(
       "aplicacion",
       "Una ventana tiene forma de hexágono regular de 30 cm de lado y 26 cm de apotema. ¿Cuántos centímetros cuadrados de vidrio se necesitan?",
       2340,
       ["El perímetro es 6 × 30 = 180 cm.", "A = 180 × 26 ÷ 2 = 2340 cm²."],
       ["Calcula el perímetro del hexágono.", "Usa A = P × ap ÷ 2.", "180 × 26 ÷ 2."],
       { intent: "transfer", unit: "cm²" },
-    ),
+    ), { kind: "regular", sides: 6, side: "30 cm", apothem: "26 cm" }),
   }),
 
   defineLesson({
@@ -887,8 +897,8 @@ export const AREA_LESSONS: Lesson[] = [
       ),
     ],
     diagnostic: [
-      n("d-1", "¿Cuál es el perímetro de un rectángulo de 6 cm por 4 cm?", 20, ["El perímetro suma los cuatro lados.", "2 × (6 + 4) = 20 cm."], ["Suma los cuatro lados.", "6 + 4 + 6 + 4.", "Es 20."], { unit: "cm" }),
-      n("d-2", "Con π ≈ 3,14, ¿cuál es la longitud de una circunferencia de 5 cm de radio?", 31.4, ["La longitud es 2πr.", "2 × 3,14 × 5 = 31,4 cm."], ["Usa L = 2πr.", "2 × 5 = 10.", "10 × 3,14."], { unit: "cm" }),
+      fig(n("d-1", "¿Cuál es el perímetro de un rectángulo de 6 cm por 4 cm?", 20, ["El perímetro suma los cuatro lados.", "2 × (6 + 4) = 20 cm."], ["Suma los cuatro lados.", "6 + 4 + 6 + 4.", "Es 20."], { unit: "cm" }), { kind: "polygon", shape: "rectangle", base: "6 cm", height: "4 cm" }),
+      fig(n("d-2", "Con π ≈ 3,14, ¿cuál es la longitud de una circunferencia de 5 cm de radio?", 31.4, ["La longitud es 2πr.", "2 × 3,14 × 5 = 31,4 cm."], ["Usa L = 2πr.", "2 × 5 = 10.", "10 × 3,14."], { unit: "cm" }), { kind: "circle", radius: "5 cm" }),
       c("d-3", "¿En qué unidad se mide un área?", ["cm", "cm²", "cm³"], 1, "El área se mide en unidades cuadradas; cm³ es para volumen y cm para longitud."),
     ],
     questions(v) {
@@ -896,7 +906,7 @@ export const AREA_LESSONS: Lesson[] = [
       const rr = v === 1 ? 3 : 5;
       const cube = v === 2 ? 3 : 4;
       const concept = [
-        c(
+        fig(c(
           "q0",
           `Para forrar con papel una caja de ${ba} × ${bb} × ${bc} cm, ¿qué hay que calcular?`,
           [
@@ -906,8 +916,8 @@ export const AREA_LESSONS: Lesson[] = [
           ],
           0,
           `El papel cubre las seis caras → 2 × (${ba * bb} + ${ba * bc} + ${bb * bc}) = ${2 * (ba * bb + ba * bc + bb * bc)} cm².`,
-        ),
-        c(
+        ), { kind: "solid", shape: "prism", length: `${ba} cm`, width: `${bb} cm`, height: `${bc} cm` }),
+        fig(c(
           "q0",
           `¿Por qué la cara lateral de un cilindro de ${rr} cm de radio es un rectángulo cuyo largo es 2π × ${rr}?`,
           [
@@ -917,8 +927,8 @@ export const AREA_LESSONS: Lesson[] = [
           ],
           2,
           "La cara lateral envuelve la base: su largo es la longitud de la circunferencia, 2πr.",
-        ),
-        c(
+        ), { kind: "solid", shape: "cylinder", radius: `${rr} cm` }),
+        fig(c(
           "q0",
           `Un cubo tiene ${cube} cm de arista. ¿Qué afirmación es correcta?`,
           [
@@ -928,7 +938,7 @@ export const AREA_LESSONS: Lesson[] = [
           ],
           1,
           `El cubo tiene 6 caras cuadradas de ${cube * cube} cm² y le caben ${cube ** 3} cubitos de 1 cm³.`,
-        ),
+        ), { kind: "solid", shape: "cube", length: `${cube} cm` }),
       ][v % 3];
 
       const [a1, b1, c1] = [[5, 4, 3], [6, 4, 2], [10, 5, 3], [8, 6, 4], [7, 3, 2], [9, 5, 4]][v];
@@ -946,7 +956,7 @@ export const AREA_LESSONS: Lesson[] = [
       const h6 = (T6 - a6 * a6) / (4 * a6);
       return [
         concept,
-        n(
+        fig(n(
           "q1",
           `Calcula el área total de una caja de ${a1} cm × ${b1} cm × ${c1} cm.`,
           A1,
@@ -959,24 +969,24 @@ export const AREA_LESSONS: Lesson[] = [
               { value: a1 * b1 * c1, feedback: "Ese es el volumen, no la superficie." },
             ],
           },
-        ),
-        n(
+        ), { kind: "solid", shape: "prism", length: `${a1} cm`, width: `${b1} cm`, height: `${c1} cm` }),
+        fig(n(
           "q2",
           `Un prisma recto tiene una base triangular de lados ${list(s2)} cm, y una altura de ${h2} cm. Primer paso → ¿cuál es su área lateral?`,
           P2 * h2,
           [`El perímetro de la base es ${s2.join(" + ")} = ${P2} cm.`, `Área lateral = perímetro × altura = ${P2} × ${h2} = ${P2 * h2} cm², el rectángulo que forman las caras laterales.`],
           ["Las caras laterales forman un rectángulo.", "Su largo es el perímetro de la base.", `Multiplica ${P2} por ${h2}.`],
           { step: true, unit: "cm²" },
-        ),
-        n(
+        ), { kind: "solid", shape: "triangular-prism", length: `lados ${list(s2)} cm`, height: `${h2} cm` }),
+        fig(n(
           "q3",
           `Un cilindro tiene ${r3} cm de radio y ${h3} cm de altura. Con π ≈ 3,14, ¿cuál es su área total?`,
           r2(lat3 + bases3),
           [`Área lateral ≈ 2 × 3,14 × ${r3} × ${h3} = ${dec(lat3)}; las dos bases ≈ 2 × 3,14 × ${r3 * r3} = ${dec(bases3)}.`, `Área total ≈ ${dec(lat3)} + ${dec(bases3)} = ${dec(r2(lat3 + bases3))} cm².`],
           ["Suma el área lateral y la de las dos bases.", "Área lateral → 2πrh.", "Cada base → πr²."],
           { unit: "cm²", errors: [{ value: lat3, feedback: "Falta sumar las dos bases." }] },
-        ),
-        c(
+        ), { kind: "solid", shape: "cylinder", radius: `${r3} cm`, height: `${h3} cm` }),
+        fig(c(
           "q4",
           `Para pintar una pared cilíndrica, sin tapas, de ${r4} m de radio y ${h4} m de altura, alguien calcula π × ${r4}² × ${h4}. ¿Qué error cometió?`,
           [
@@ -986,23 +996,23 @@ export const AREA_LESSONS: Lesson[] = [
           ],
           1,
           `La pintura cubre la superficie lateral: 2πrh ≈ 2 × 3,14 × ${r4} × ${h4} = ${dec(r2(2 * PI * r4 * h4))} m².`,
-        ),
-        n(
+        ), { kind: "solid", shape: "cylinder", radius: `${r4} m`, height: `${h4} m` }),
+        fig(n(
           "q5",
           `Se quiere pintar el interior de una piscina de ${l5} m de largo, ${w5} m de ancho y ${dec(d5)} m de profundidad: el fondo y las cuatro paredes. ¿Cuántos metros cuadrados hay que pintar?`,
           A5,
           [`Fondo → ${l5} × ${w5} = ${l5 * w5} m². Paredes → 2 × ${l5} × ${dec(d5)} + 2 × ${w5} × ${dec(d5)} = ${dec(walls5)} m².`, `Total → ${l5 * w5} + ${dec(walls5)} = ${dec(A5)} m².`],
           ["La piscina no tiene tapa: son el fondo y cuatro paredes.", "Hay dos paredes largas y dos cortas.", "Suma el fondo y las cuatro paredes."],
           { intent: "transfer", unit: "m²", errors: [{ value: r2(A5 + l5 * w5), feedback: "La piscina no tiene techo: no se pinta una tapa." }] },
-        ),
-        n(
+        ), { kind: "solid", shape: "prism", length: `${l5} m`, width: `${w5} m`, height: `${dec(d5)} m` }),
+        fig(n(
           "q6",
           `Una caja sin tapa tiene base cuadrada de ${a6} cm de lado, y el área de su exterior (fondo y cuatro caras) es ${T6} cm². ¿Cuál es su altura?`,
           h6,
           [`El fondo mide ${a6}² = ${a6 * a6} cm²; las cuatro caras suman ${T6} − ${a6 * a6} = ${T6 - a6 * a6} cm².`, `Cada cara mide ${a6} × h, así que 4 × ${a6} × h = ${T6 - a6 * a6} y h = ${T6 - a6 * a6} ÷ ${4 * a6} = ${dec(h6)} cm.`],
           ["Resta el área del fondo.", "Lo que queda son cuatro caras iguales.", `Cada cara es ${a6} por la altura.`],
           { intent: "transfer", unit: "cm" },
-        ),
+        ), { kind: "solid", shape: "prism", length: `${a6} cm`, width: `${a6} cm`, height: "?" }),
       ];
     },
     outcome: "Puedes calcular el área lateral y total de prismas y cilindros y distinguir cuándo se necesita la superficie y cuándo el volumen.",
@@ -1012,14 +1022,14 @@ export const AREA_LESSONS: Lesson[] = [
       "Usar el diámetro en lugar de la longitud de la circunferencia como largo de la cara lateral del cilindro.",
       "Contar una sola vez cada par de caras iguales de una caja.",
     ],
-    application: n(
+    application: fig(n(
       "aplicacion",
       "Una empresa fabrica latas de 3 cm de radio y 10 cm de altura. Con π ≈ 3,14, ¿cuántos centímetros cuadrados de lámina necesita para una lata con sus dos tapas?",
       244.92,
       ["Área lateral ≈ 2 × 3,14 × 3 × 10 = 188,4 cm².", "Tapas ≈ 2 × 3,14 × 9 = 56,52 cm². Total ≈ 188,4 + 56,52 = 244,92 cm²."],
       ["Calcula el área lateral con 2πrh.", "Calcula las dos tapas con 2πr².", "Suma las dos áreas."],
       { intent: "transfer", unit: "cm²" },
-    ),
+    ), { kind: "solid", shape: "cylinder", radius: "3 cm", height: "10 cm" }),
   }),
 ];
 
@@ -1143,14 +1153,14 @@ export const THALES_LESSONS: Lesson[] = [
       const tx = (tB * ta) / tA;
       return [
         concept,
-        n(
+        fig(n(
           "q1",
           `Tres paralelas cortan a dos rectas. En la primera se forman segmentos de ${a1} cm y ${b1} cm; en la segunda, el que corresponde al de ${a1} cm mide ${dec(c1)} cm. ¿Cuánto mide el otro?`,
           x1,
           [`Por el teorema de Tales, ${a1}/${b1} = ${dec(c1)}/x.`, `x = ${b1} × ${dec(c1)} ÷ ${a1} = ${dec(x1)} cm.`],
           ["Los segmentos son proporcionales en el mismo orden.", `Plantea ${a1}/${b1} = ${dec(c1)}/x.`, "Multiplica en cruz y despeja x."],
           { unit: "cm", errors: [{ value: (a1 * c1) / b1, feedback: `Invertiste la proporción: el segmento que buscas corresponde al de ${b1} cm.` }].filter((e) => Math.abs(e.value * 100 - Math.round(e.value * 100)) < 1e-9) },
-        ),
+        ), { kind: "thales", left: [`${a1} cm`, `${b1} cm`], right: [`${dec(c1)} cm`, "?"] }),
         n(
           "q2",
           `A la misma hora, un palo de ${dec(h2)} m da una sombra de ${dec(s2)} m. Primer paso → ¿cuántos metros de altura corresponden a cada metro de sombra?`,
@@ -1159,15 +1169,15 @@ export const THALES_LESSONS: Lesson[] = [
           ["Compara la altura con la sombra.", "Divide la altura entre la sombra.", `${dec(h2)} ÷ ${dec(s2)}.`],
           { step: true, errors: [{ value: s2 / h2, feedback: "Dividiste al revés: se pide altura por cada metro de sombra." }].filter((e) => Math.abs(e.value * 100 - Math.round(e.value * 100)) < 1e-9) },
         ),
-        n(
+        fig(n(
           "q3",
           `Un palo de ${dec(h3)} m da una sombra de ${dec(s3)} m y, a la misma hora, un edificio da una sombra de ${S3} m. ¿Cuánto mide el edificio?`,
           H3,
           [`La razón altura/sombra es la misma → ${dec(h3)}/${dec(s3)} = H/${S3}.`, `H = ${dec(h3)} × ${S3} ÷ ${dec(s3)} = ${dec(H3)} m.`],
           ["Las sombras a la misma hora son proporcionales a las alturas.", `Plantea ${dec(h3)}/${dec(s3)} = H/${S3}.`, "Despeja H."],
           { unit: "m", errors: [{ value: (s3 * S3) / h3, feedback: "Invertiste la proporción: la altura del palo va con la del edificio." }].filter((e) => Math.abs(e.value * 100 - Math.round(e.value * 100)) < 1e-9) },
-        ),
-        c(
+        ), { kind: "similar", shape: "right", small: [`${dec(s3)} m`, null, `${dec(h3)} m`], big: [`${S3} m`, null, "?"], names: ["palo", "edificio"] }),
+        fig(c(
           "q4",
           `Con segmentos de ${a1} y ${b1} en una recta, y de ${dec(c1)} y x en la otra, alguien plantea ${a1}/${b1} = x/${dec(c1)}. ¿Qué error cometió?`,
           [
@@ -1177,23 +1187,23 @@ export const THALES_LESSONS: Lesson[] = [
           ],
           1,
           `Los segmentos correspondientes van en la misma posición: x = ${b1} × ${dec(c1)} ÷ ${a1} = ${dec(x1)}.`,
-        ),
-        n(
+        ), { kind: "thales", left: [`${a1}`, `${b1}`], right: [`${dec(c1)}`, "x"] }),
+        fig(n(
           "q5",
           `Una rampa sube ${dec(rh)} m por cada ${rl} m de avance. Un tramo de la misma rampa avanza ${RL} m. ¿Cuánto sube?`,
           RH,
           [`Los triángulos que forma la rampa son semejantes → ${dec(rh)}/${rl} = h/${RL}.`, `h = ${dec(rh)} × ${RL} ÷ ${rl} = ${dec(RH)} m.`],
           ["La inclinación es la misma en toda la rampa.", `Plantea ${dec(rh)}/${rl} = h/${RL}.`, "Despeja h."],
           { intent: "transfer", unit: "m" },
-        ),
-        n(
+        ), { kind: "similar", shape: "right", small: [`${rl} m`, null, `${dec(rh)} m`], big: [`${RL} m`, null, "?"], names: ["tramo corto", "tramo largo"] }),
+        fig(n(
           "q6",
           `En un triángulo, una paralela a la base corta un lado a ${ta} cm del vértice. Ese lado mide ${tA} cm en total y la base mide ${tB} cm. ¿Cuánto mide el segmento paralelo?`,
           tx,
           [`El triángulo pequeño es semejante al grande, con razón ${ta}/${tA}.`, `El segmento paralelo mide ${tB} × ${ta} ÷ ${tA} = ${dec(tx)} cm.`],
           ["La paralela forma un triángulo pequeño semejante.", `La razón de semejanza es ${ta}/${tA}.`, `Multiplica la base, ${tB}, por esa razón.`],
           { intent: "transfer", unit: "cm", errors: [{ value: tB - (tA - ta), feedback: "Restaste longitudes: en la semejanza los lados se multiplican por la razón." }].filter((e) => e.value > 0 && e.value !== tx) },
-        ),
+        ), { kind: "similar", shape: "scalene", small: ["?", null, `${ta} cm`], big: [`${tB} cm`, null, `${tA} cm`], names: ["triángulo pequeño", "triángulo completo"] }),
       ];
     },
     outcome: "Puedes reconocer triángulos congruentes y calcular segmentos y alturas con el teorema de Tales.",
@@ -1203,13 +1213,13 @@ export const THALES_LESSONS: Lesson[] = [
       "Aplicar Tales con rectas que no son paralelas.",
       "Usar LAL cuando el ángulo conocido no está entre los dos lados.",
     ],
-    application: n(
+    application: fig(n(
       "aplicacion",
       "Una escalera de 5 m apoyada en una pared alcanza 4 m de altura. Un peldaño está a 2 m del pie de la escalera, medidos sobre ella. ¿A qué altura del suelo está ese peldaño?",
       1.6,
       ["La altura del peldaño y la de la pared son paralelas: forman triángulos en posición de Tales → 2/5 = h/4.", "h = 4 × 2 ÷ 5 = 1,6 m."],
       ["Las alturas son paralelas entre sí.", "Plantea 2/5 = h/4.", "Despeja h."],
       { intent: "transfer", unit: "m" },
-    ),
+    ), { kind: "similar", shape: "right", small: [null, "2 m", "?"], big: [null, "5 m", "4 m"], names: ["hasta el peldaño", "escalera completa"] }),
   }),
 ];
