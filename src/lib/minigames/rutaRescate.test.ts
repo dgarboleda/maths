@@ -8,7 +8,7 @@ const routes: Command[][] = [
   ['left','forward2','right','forward3','left','left','forward3','left','forward2'],
   ['forward','left','forward','right','forward2','left','left','forward3','left','forward'],
   ['forward','forward3','left','forward3','left','forward','forward3','left','forward3'],
-  ['forward','forward3','left','forward3','left','forward','forward3','left','forward3'],
+  ['forward','forward3','left','forward','forward3','left','forward','forward3','left','forward','forward3'],
 ];
 describe('rutas de rescate', () => {
   it.each(MISSIONS.map((mission, index) => ({ mission, index })))('permite ganar las tres estrellas en $mission.name', ({ mission, index }) => {
@@ -26,6 +26,10 @@ describe('rutas de rescate', () => {
     expect(simulate(MISSIONS[7], ['left','forward3']).message).toMatch(/primero al explorador 1/);
     expect(simulate(MISSIONS[0], ['right','forward']).message).toMatch(/borde/);
     expect(simulate(MISSIONS[0], ['forward','forward']).message).toMatch(/regreso a la base/);
+  });
+  it('ninguna ruta resuelve una misión posterior', () => {
+    routes.forEach((route, index) => MISSIONS.slice(index + 1).forEach((mission, offset) =>
+      expect(simulate(mission, route).success, `ruta ${index + 1} en misión ${index + offset + 2}`).toBe(false)));
   });
   it('impide las repeticiones antes de desbloquearlas', () => expect(simulate(MISSIONS[0], ['forward3']).message).toMatch(/posterior/));
 });
