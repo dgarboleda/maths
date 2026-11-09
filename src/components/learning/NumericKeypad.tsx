@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useRef, useState, useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowLeft, ArrowRight, Delete } from "lucide-react";
 import { makePreference } from "./preferences";
 
@@ -82,6 +82,8 @@ export function NumericKeypadArea({
   const [engaged, setEngaged] = useState(false);
   const area = useRef<HTMLDivElement>(null);
   const last = useRef<HTMLInputElement | null>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(hideTimer.current), []);
 
   const target = () => {
     const focused = document.activeElement;
@@ -114,21 +116,23 @@ export function NumericKeypadArea({
     <KeypadContext.Provider value={active}>
       <div
         ref={area}
-        onPointerDownCapture={(e) => {
+        onClickCapture={(e) => {
           if (hideWhenIdle && e.target instanceof Element && !e.target.closest("[data-numeric-keypad]") && !(e.target instanceof HTMLInputElement && e.target.inputMode === "none")) setEngaged(false);
         }}
         onFocusCapture={(e) => {
           if (e.target instanceof HTMLInputElement) {
             last.current = e.target;
-            if (hideWhenIdle) setEngaged(e.target.inputMode === "none");
-          } else if (hideWhenIdle && !(e.target instanceof Element && e.target.closest("[data-numeric-keypad]"))) setEngaged(false);
+            if (hideWhenIdle && e.target.inputMode === "none") { clearTimeout(hideTimer.current); setEngaged(true); }
+          }
         }}
         onBlurCapture={(e) => {
           if (!hideWhenIdle) return;
           const next = e.relatedTarget;
           if (next instanceof HTMLInputElement && next.inputMode === "none") return;
           if (next instanceof Element && next.closest("[data-numeric-keypad]")) return;
-          setEngaged(false);
+          // Espera al final del toque para no desplazar el control antes del clic.
+          clearTimeout(hideTimer.current);
+          hideTimer.current = setTimeout(() => setEngaged(false), 200);
         }}
       >
         {children}
