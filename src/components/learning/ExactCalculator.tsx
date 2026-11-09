@@ -13,7 +13,7 @@ interface Step { operation: string; result: string; left?: string; right?: strin
 interface FactorRow { divisor: string; cells: string[] }
 interface Saved {
   format: "manual-v1"; op: WorkOp; a: string; b: string; extra: string[]; expression: string;
-  steps: Step[]; factorRows: FactorRow[]; equivalents: string[]; result: string; confirmed: boolean; staleResult?: boolean;
+  steps: Step[]; factorRows: FactorRow[]; equivalents: string[]; reciprocals?: string[]; result: string; confirmed: boolean; staleResult?: boolean;
 }
 const emptyStep = (): Step => ({ operation: "", result: "" });
 const emptyFactorRow = (): FactorRow => ({ divisor: "", cells: [] });
@@ -36,11 +36,12 @@ function load(key: string): Saved {
     if (!Array.isArray(steps) || steps.length < 1 || steps.length > MAX_WORK_STEPS || steps.some((step) => !step || !shortText(step.operation, 256) || !shortText(step.result, 64) || (step.left !== undefined && !shortText(step.left, 64)) || (step.right !== undefined && !shortText(step.right, 64)) || (step.operator !== undefined && !["+", "−", "×", "÷"].includes(step.operator)))) return fallback;
     if (!Array.isArray(rows) || rows.length < 1 || rows.length > MAX_FACTOR_ROWS || rows.some((row) => !row || !shortText(row.divisor, 64) || !Array.isArray(row.cells) || row.cells.length > MAX_EXACT_VALUES || row.cells.some((cell) => !shortText(cell, 64)))) return fallback;
     const equivalents = Array.isArray(saved.equivalents) && saved.equivalents.length <= MAX_EXACT_VALUES && saved.equivalents.every((value) => shortText(value, 64)) ? saved.equivalents : [];
+    const reciprocals = Array.isArray(saved.reciprocals) && saved.reciprocals.length <= MAX_EXACT_VALUES - 1 && saved.reciprocals.every((value) => shortText(value, 64)) ? saved.reciprocals : [];
     const result = shortText(saved.result, 64) ? saved.result : "";
     const values = saved.op === "simplify" ? [saved.a] : [saved.a, saved.b, ...extra];
     const staleResult = saved.staleResult === true && result.trim() !== "";
     const confirmed = !staleResult && saved.confirmed === true && validManualNumber(result, saved.op === "mcm" || saved.op === "mcd") && !validateManualSetup(saved.op!, values, expression);
-    return { format: "manual-v1", op: saved.op!, a: saved.a, b: saved.b, extra, expression, steps, factorRows: rows, equivalents, result, confirmed, staleResult };
+    return { format: "manual-v1", op: saved.op!, a: saved.a, b: saved.b, extra, expression, steps, factorRows: rows, equivalents, reciprocals, result, confirmed, staleResult };
   } catch { return fallback; }
 }
 
@@ -90,11 +91,11 @@ function needsCommonDenominator(values: string[]): boolean {
 }
 
 /** Muestra el valor original como referencia; el alumno escribe la equivalencia. */
-function FractionReference({ value, index }: { value: string; index: number }) {
+function FractionReference({ value, index, name }: { value: string; index: number; name?: string }) {
   const slash = value.indexOf("/");
   const numerator = slash < 0 ? value : value.slice(0, slash);
   const denominator = slash < 0 ? "" : value.slice(slash + 1);
-  return <span role="img" aria-label={`Número ${index + 1}: ${value || "sin escribir"}`} className="block w-14 shrink-0 text-center font-mono text-xl font-bold">
+  return <span role="img" aria-label={`${name ?? `Número ${index + 1}`}: ${value || "sin escribir"}`} className="block w-14 shrink-0 text-center font-mono text-xl font-bold">
     <span title={numerator} className="block h-10 overflow-hidden text-ellipsis whitespace-nowrap leading-10 text-sky-300">{numerator || "?"}</span>
     <span aria-hidden="true" className="my-1 block h-0.5 bg-slate-200" />
     <span title={denominator} className="block h-10 overflow-hidden text-ellipsis whitespace-nowrap leading-10 text-emerald-300">{denominator || (value ? "1" : "?")}</span>
@@ -113,6 +114,7 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
   const [steps, setSteps] = useState(initial.steps);
   const [factorRows, setFactorRows] = useState(initial.factorRows);
   const [equivalents, setEquivalents] = useState(initial.equivalents);
+  const [reciprocals, setReciprocals] = useState(initial.reciprocals ?? []);
   const [result, setResult] = useState(initial.result);
   const [confirmed, setConfirmed] = useState(initial.confirmed);
   const [staleResult, setStaleResult] = useState(initial.staleResult ?? false);
@@ -130,8 +132,8 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
   const final = confirmed ? result.trim().replace(/[−–]/g, "-") : "";
   useEffect(() => { onResult(final); }, [final, onResult]);
   useEffect(() => {
-    try { writeCalculatorDraft(storageKey, JSON.stringify({ format: "manual-v1", op, a, b, extra, expression, steps, factorRows, equivalents, result, confirmed, staleResult } satisfies Saved)); } catch { /* la hoja sigue disponible sin almacenamiento */ }
-  }, [storageKey, op, a, b, extra, expression, steps, factorRows, equivalents, result, confirmed, staleResult]);
+    try { writeCalculatorDraft(storageKey, JSON.stringify({ format: "manual-v1", op, a, b, extra, expression, steps, factorRows, equivalents, reciprocals, result, confirmed, staleResult } satisfies Saved)); } catch { /* la hoja sigue disponible sin almacenamiento */ }
+  }, [storageKey, op, a, b, extra, expression, steps, factorRows, equivalents, reciprocals, result, confirmed, staleResult]);
   const invalidate = () => { setConfirmed(false); setProblem(null); setFeedback(null); onResult(""); };
   const invalidateEquation = () => { if (result.trim()) setStaleResult(true); invalidate(); };
   const updateResult = (value: string) => { setResult(value); setStaleResult(false); invalidate(); };
@@ -150,7 +152,7 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
     setProblem(null); setConfirmed(true); onResult(result.trim().replace(/[−–]/g, "-"));
   };
   const check = () => {
-    const report = checkManualWork(op, values, expression, steps, factorRows, result, equivalents);
+    const report = checkManualWork(op, values, expression, steps, factorRows, result, equivalents, reciprocals);
     setFeedback(report);
     if (report.ok) { setProblem(null); setStaleResult(false); setConfirmed(true); onResult(result.trim().replace(/[−–]/g, "-")); }
   };
@@ -171,7 +173,7 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
     });
     invalidate();
   };
-  const clear = () => { setA(""); setB(""); setExtra([]); setEquivalents([]); setExpression(""); setShowEquivalents(false); dismissedEquivalents.current = false; setShowSteps(false); setSteps([emptyStep()]); setFactorRows([emptyFactorRow()]); setResult(""); setStaleResult(false); invalidate(); };
+  const clear = () => { setA(""); setB(""); setExtra([]); setEquivalents([]); setReciprocals([]); setExpression(""); setShowEquivalents(false); dismissedEquivalents.current = false; setShowSteps(false); setSteps([emptyStep()]); setFactorRows([emptyFactorRow()]); setResult(""); setStaleResult(false); invalidate(); };
   return <section aria-labelledby="exact-calculator-title" className="space-y-4">
     <div><h3 id="exact-calculator-title" className="text-base font-bold text-white">Tu hoja de bloques</h3><p className="mt-1 text-sm leading-relaxed text-slate-300">Escribe la cuenta, desarrolla cada paso y coloca tu resultado. Puedes comprobar tu trabajo cuando quieras.</p></div>
     <div className="space-y-4 rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
@@ -200,7 +202,23 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
           </div>
         </div>
         <p className="text-xs text-slate-400">El resultado va en los bloques después del signo igual. Desliza el tablero si no cabe en la pantalla.</p>
-        {!unary && <div className="flex flex-wrap gap-2"><button type="button" className={secondaryButton} disabled={extra.length >= MAX_EXACT_VALUES - 2} onClick={() => { setExtra((old) => [...old, ""]); invalidateEquation(); }}>+ Añadir número</button>{extra.map((_, index) => <button key={index} type="button" className={secondaryButton} aria-label={`Quitar número ${index + 3}`} onClick={() => { setExtra((old) => old.filter((_, i) => i !== index)); setEquivalents((old) => old.filter((_, i) => i !== index + 2)); setFactorRows((old) => old.map((row) => ({ ...row, cells: row.cells.filter((_, column) => column !== index + 2) }))); invalidateEquation(); }}>Quitar {index + 3}</button>)}</div>}
+        {!unary && <div className="flex flex-wrap gap-2"><button type="button" className={secondaryButton} disabled={extra.length >= MAX_EXACT_VALUES - 2} onClick={() => { setExtra((old) => [...old, ""]); invalidateEquation(); }}>+ Añadir número</button>{extra.map((_, index) => <button key={index} type="button" className={secondaryButton} aria-label={`Quitar número ${index + 3}`} onClick={() => { setExtra((old) => old.filter((_, i) => i !== index)); setEquivalents((old) => old.filter((_, i) => i !== index + 2)); setReciprocals((old) => old.filter((_, i) => i !== index + 1)); setFactorRows((old) => old.map((row) => ({ ...row, cells: row.cells.filter((_, column) => column !== index + 2) }))); invalidateEquation(); }}>Quitar {index + 3}</button>)}</div>}
+        {op === "divide" && <section aria-label="Multiplicar por los inversos" className="space-y-3 rounded-xl border border-cyan-400/30 bg-slate-950/60 p-3">
+          <h4 className="font-bold text-cyan-100">Divide multiplicando por el inverso</h4>
+          <p className="text-sm text-slate-300">Conserva el primer número. Para cada divisor, escribe su inverso intercambiando el numerador y el denominador; después multiplica. Un entero puede escribirse con denominador 1; convierte un decimal en fracción antes de invertirlo.</p>
+          <div className={calculatorBoardClass} style={calculatorBoardStyle} role="region" aria-label="Multiplicación con inversos" tabIndex={0}>
+            <div className="mx-auto flex w-max items-center gap-2">
+              <FractionReference value={a} index={0} />
+              {values.slice(1).map((_, index) => <div key={index} className="flex items-center gap-2">
+                <span aria-hidden="true" className="text-2xl font-bold text-slate-100">×</span>
+                <div className="space-y-1"><span aria-hidden="true" className="block text-center text-xs text-cyan-100">Inverso {index + 1}</span><NumberBlocks compact label={`Inverso del divisor ${index + 1}`} value={reciprocals[index] ?? ""} onChange={(next) => { setReciprocals((old) => { const updated = [...old]; while (updated.length <= index) updated.push(""); updated[index] = next; return updated; }); invalidate(); }} /></div>
+              </div>)}
+              <span aria-hidden="true" className="text-2xl font-bold text-slate-100">=</span>
+              <FractionReference value={result} index={values.length} name="Resultado" />
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">El resultado se escribe en el tablero de la división. Al comprobar tu trabajo, también revisaremos los inversos que hayas escrito.</p>
+        </section>}
         {(op === "add" || op === "subtract") && <details open={showEquivalents} className="space-y-3">
           <summary onClick={(event) => { event.preventDefault(); dismissedEquivalents.current = showEquivalents; setShowEquivalents(!showEquivalents); }} className="cursor-pointer font-bold text-cyan-100">Preparar denominador común (opcional)</summary>
           <p className="text-sm text-slate-300">Si los denominadores son diferentes, escribe una fracción equivalente para cada número usando el mismo denominador. Puedes usar cualquier múltiplo común.</p>
@@ -216,7 +234,7 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
       </div> : <div className="space-y-3">
         <NumberBlocks label={unary ? "Fracción" : integer ? "Primer entero" : "Primera fracción o número"} value={a} integer={integer} onChange={(value) => { setA(value); considerEquivalents([value, b, ...extra]); invalidateEquation(); }} />
         {!unary && <NumberBlocks label={integer ? "Segundo entero" : "Segunda fracción o número"} value={b} integer={integer} onChange={(value) => { setB(value); considerEquivalents([a, value, ...extra]); invalidateEquation(); }} />}
-        {!unary && extra.map((value, index) => <div key={index} className="flex min-w-0 items-end gap-2"><div className="min-w-0 flex-1"><NumberBlocks label={integer ? `Entero ${index + 3}` : `Número ${index + 3}`} value={value} integer={integer} onChange={(next) => { setExtra((old) => old.map((v, i) => i === index ? next : v)); considerEquivalents([a, b, ...extra.map((v, i) => i === index ? next : v)]); invalidateEquation(); }} /></div><button type="button" aria-label={`Quitar número ${index + 3}`} className={`${secondaryButton} shrink-0`} onClick={() => { setExtra((old) => old.filter((_, i) => i !== index)); setEquivalents((old) => old.filter((_, i) => i !== index + 2)); setFactorRows((old) => old.map((row) => ({ ...row, cells: row.cells.filter((_, column) => column !== index + 2) }))); invalidateEquation(); }}>Quitar</button></div>)}
+        {!unary && extra.map((value, index) => <div key={index} className="flex min-w-0 items-end gap-2"><div className="min-w-0 flex-1"><NumberBlocks label={integer ? `Entero ${index + 3}` : `Número ${index + 3}`} value={value} integer={integer} onChange={(next) => { setExtra((old) => old.map((v, i) => i === index ? next : v)); considerEquivalents([a, b, ...extra.map((v, i) => i === index ? next : v)]); invalidateEquation(); }} /></div><button type="button" aria-label={`Quitar número ${index + 3}`} className={`${secondaryButton} shrink-0`} onClick={() => { setExtra((old) => old.filter((_, i) => i !== index)); setEquivalents((old) => old.filter((_, i) => i !== index + 2)); setReciprocals((old) => old.filter((_, i) => i !== index + 1)); setFactorRows((old) => old.map((row) => ({ ...row, cells: row.cells.filter((_, column) => column !== index + 2) }))); invalidateEquation(); }}>Quitar</button></div>)}
         {!unary && <button type="button" className={secondaryButton} disabled={extra.length >= MAX_EXACT_VALUES - 2} onClick={() => { setExtra((old) => [...old, ""]); invalidateEquation(); }}>+ Añadir número</button>}
         <p className="text-xs text-slate-400">Hasta {MAX_EXACT_VALUES} números. {integer ? "Escribe enteros." : "Deja el denominador vacío para escribir un entero o decimal."}</p>
       </div>}

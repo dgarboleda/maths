@@ -159,3 +159,33 @@ test("teclado numérico propio en móvil: escribe en la hoja sin abrir el del si
   await page.getByRole("group", { name: "Teclado numérico" }).getByRole("button", { name: "Escribir 7" }).tap();
   await expect(page.getByLabel("Cociente: cifra 2")).toHaveValue("7");
 });
+
+test("división de fracciones: escribe y comprueba el inverso en el tablero", async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
+  if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
+  await registrarPadre(page);
+  const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
+  const childId = await entrarAlEspacio(page, nombre, pin);
+  await page.goto(`/jugar/${childId}/aventura/jardin-baldosas`);
+  await page.getByRole("button", { name: "Investigar la situación" }).click();
+  await page.getByRole("button", { name: "Calculadora", exact: true }).click();
+  await page.getByRole("button", { name: "Fracciones y MCM" }).click();
+  await page.getByRole("combobox", { name: "Operación", exact: true }).selectOption("divide");
+  await page.getByLabel("Numerador o entero de Primera fracción o número").fill("1");
+  await page.getByLabel("Denominador de Primera fracción o número").fill("2");
+  await page.getByLabel("Numerador o entero de Segunda fracción o número").fill("3");
+  await page.getByLabel("Denominador de Segunda fracción o número").fill("4");
+  await page.getByLabel("Numerador o entero de Inverso del divisor 1").fill("3");
+  await page.getByLabel("Denominador de Inverso del divisor 1").fill("4");
+  await page.getByLabel("Numerador o entero de Mi resultado").fill("2");
+  await page.getByLabel("Denominador de Mi resultado").fill("3");
+  await page.getByRole("button", { name: "Comprobar mi trabajo" }).click();
+  await expect(page.getByText(/Revisa el inverso del divisor 1/)).toBeVisible();
+  await page.getByLabel("Numerador o entero de Inverso del divisor 1").fill("4");
+  await page.getByLabel("Denominador de Inverso del divisor 1").fill("3");
+  await page.getByRole("button", { name: "Comprobar mi trabajo" }).click();
+  await expect(page.getByText(/Los inversos escritos son correctos/)).toBeVisible();
+  await expect(page.getByLabel("Numerador o entero de Segunda fracción o número")).toHaveValue("3");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
+});
