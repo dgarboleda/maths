@@ -28,10 +28,11 @@ function checkFactors(op: "mcm" | "mcd", raw: string[], rows: ManualFactorRow[])
   const lastUsed = rows.reduce((last, row, index) => row.divisor.trim() || row.cells.some((cell) => cell.trim()) ? index : last, -1);
   const used = rows.slice(0, lastUsed + 1);
   const integers = raw.map((v) => BigInt(v.trim().replace(/[−–]/g, "-")));
-  if (integers.some((v) => v === BigInt(0))) return "La revisión de la tabla no admite el cero; el resultado se comprueba por separado.";
+  const hasZero = integers.some((v) => v === BigInt(0));
   const abs = (value: bigint) => value < BigInt(0) ? -value : value;
   const gcd = (a: bigint, b: bigint): bigint => b === BigInt(0) ? abs(a) : gcd(b, a % b);
   if (!used.length) {
+    if (op === "mcm" && hasZero) return null;
     if ((op === "mcd" && integers.reduce(gcd) === BigInt(1)) || (op === "mcm" && integers.every((value) => abs(value) === BigInt(1)))) return null;
     return "No hay filas de factores escritas para revisar.";
   }
@@ -43,19 +44,20 @@ function checkFactors(op: "mcm" | "mcd", raw: string[], rows: ManualFactorRow[])
     const prime = BigInt(row.divisor.trim());
     if (prime > BigInt(1000000)) return `El divisor de la fila ${n} es demasiado grande para comprobar si es primo.`;
     if (!isPrime(Number(prime))) return `Revisa el divisor de la fila ${n}: debe ser un número primo.`;
-    if (!previous.some((value) => value % prime === BigInt(0))) return `Revisa la fila ${n}: el divisor debe dividir al menos uno de sus números.`;
+    if (!previous.some((value) => value !== BigInt(0) && value % prime === BigInt(0))) return `Revisa la fila ${n}: el divisor debe dividir al menos uno de sus números.`;
     if (!previous.every((value) => value % prime === BigInt(0))) allCommon = false;
     const next = previous.map((value) => value % prime === BigInt(0) ? value / prime : value);
     if (next.some((value, column) => value !== BigInt(row.cells[column].trim().replace(/[−–]/g, "-")))) return `Revisa la fila ${n}: divide los números que se puedan y baja los demás sin cambiarlos.`;
     previous = next;
   }
+  if (hasZero && op === "mcm") return null;
   const spec: FactorSpec = { op, values: raw.map(Number) };
   if (validFactorSpec(spec)) {
     const encoded = `T0;${used.map((row) => `${row.divisor.trim()}:${row.cells.slice(0, raw.length).map((v) => v.trim()).join(".")}`).join("|")}`;
     const checked = checkFactorWork(spec, encoded);
     if (checked?.problem) return factorWorkFeedback(spec, checked);
   } else {
-    const commonDone = op === "mcd" && allCommon && previous.reduce(gcd) === BigInt(1);
+    const commonDone = op === "mcd" && (allCommon || hasZero) && previous.reduce(gcd) === BigInt(1);
     if (!commonDone && previous.some((value) => abs(value) !== BigInt(1))) return op === "mcd" ? "La tabla aún no termina: comprueba si quedan divisores comunes." : "La tabla aún no termina: continúa hasta que todos los números sean 1.";
   }
   return null;
@@ -96,17 +98,31 @@ export function checkManualWork(op: WorkOp, values: string[], expression: string
   if (op === "mcm" || op === "mcd") {
     const problem = checkFactors(op, values, rows);
     if (problem) { details.push(problem); procedureHasIssue = true; }
+    else if (op === "mcm" && values.some((value) => BigInt(value.trim().replace(/[−–]/g, "-")) === BigInt(0))) details.push("Si uno de los números es cero, el MCM es cero; no hace falta completar la descomposición.");
     else details.push(rows.some((row) => row.divisor.trim() || row.cells.some((cell) => cell.trim())) ? "La tabla de factores está bien formada y completa." : "No hace falta escribir filas de factores para estos números.");
   }
+  const knownValues = new Set<string>();
+  for (const source of [...values, ...equivalents, "0", "1"]) {
+    const value = calculateExpression(source);
+    if ("value" in value) knownValues.add(value.value);
+  }
+  let priorStep: string | null = null;
+  let uncertainLinks = false;
   for (const [index, step] of steps.entries()) {
     const structured = step.left !== undefined;
     const operation = structured ? `(${step.left ?? ""}) ${step.operator ?? "+"} (${step.right ?? ""})` : step.operation.trim();
-    if (!operation && !step.result.trim()) continue;
+    if (structured ? !step.left?.trim() && !step.right?.trim() && !step.result.trim() : !operation && !step.result.trim()) continue;
     if ((structured && (!step.left || !step.right)) || !operation || !step.result.trim()) { details.push(`Completa el paso ${index + 1} para poder revisarlo.`); procedureHasIssue = true; break; }
     const calculation = calculateExpression(operation);
     if ("problem" in calculation || !validManualNumber(step.result)) { details.push(`No pude interpretar el paso ${index + 1}. Revisa sus números y signos.`); procedureHasIssue = true; break; }
     if (!equal(step.result, calculation.value)) { details.push(`Revisa el resultado del paso ${index + 1} y la operación que escribiste.`); procedureHasIssue = true; break; }
-    details.push(`El cálculo del paso ${index + 1} es correcto.`);
+    const tokens = operation.match(/[+-]?(?:\d+\/[-+]?\d+|\d+(?:[.,]\d+)?)/g) ?? [];
+    const operands = tokens.map((token) => calculateExpression(token)).filter((value): value is { value: string; steps: string[] } => "value" in value).map((value) => value.value);
+    const linked = priorStep === null ? operands.some((value) => knownValues.has(value)) : operands.includes(priorStep);
+    if (!linked) { uncertainLinks = true; details.push(`No pude relacionar automáticamente el paso ${index + 1} con ${priorStep === null ? "la cuenta" : "el paso anterior"}; puede ser un cálculo intermedio válido.`); }
+    else details.push(`El cálculo del paso ${index + 1} es correcto.`);
+    priorStep = calculation.value;
+    knownValues.add(calculation.value);
   }
   if (!validManualNumber(result, op === "mcm" || op === "mcd")) return issue("Escribe un resultado válido para comprobarlo.", details);
   if (!equal(result, expected.value)) return issue("Revisa el resultado final.", [...details, hint(op)]);
@@ -118,6 +134,6 @@ export function checkManualWork(op: WorkOp, values: string[], expression: string
   }
   if (procedureHasIssue) return issue("El resultado final es correcto; revisa las indicaciones del procedimiento.", details);
   if (!details.length) details.push("No hay pasos escritos para revisar; solo se comprobó el resultado.");
-  else if (op !== "mcm" && op !== "mcd") details.push("Se revisó cada cálculo escrito; comprueba que los pasos representen la cuenta original.");
+  else if (op !== "mcm" && op !== "mcd" && priorStep !== null && !uncertainLinks) details.push("Se revisaron los cálculos y se reconocieron números entre los pasos; comprueba que las transformaciones representen la cuenta original.");
   return { ok: true, message: "El resultado final es correcto.", details };
 }
