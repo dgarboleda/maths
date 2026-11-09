@@ -1,8 +1,8 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { axe } from "jest-axe";
 import { getLesson } from "@/lib/learning/domain";
-import { OperationReasoning, operationMistake } from "./Operation";
+import { OperationReasoning, OperationWorkspace, operationMistake } from "./Operation";
 
 describe("Razonamiento de los repasos", () => {
   test("nombra dónde se separa la respuesta en columnas y en la galera", () => {
@@ -28,5 +28,26 @@ describe("Razonamiento de los repasos", () => {
     render(<OperationReasoning question={question} response={null} />);
     expect(screen.queryByRole("group", { name: /^División|en columnas$/ })).toBeNull();
     expect(screen.getByText(question.solution[0].replace(/\s+/g, " ").slice(0, 20), { exact: false })).toBeInTheDocument();
+  });
+});
+
+
+describe("Coma en ejercicios", () => {
+  test("permite quitar y recolocar la coma en una hoja de práctica sin perder cifras", () => {
+    const onChange = vi.fn();
+    render(<OperationWorkspace questionId="decimales" spec={{ op: "add", a: 3.5, b: 1.25 }} mode="free" response="" onChange={onChange} onComplete={() => {}} hintLevel={0} failedResponse={null} />);
+    const input = (place: string) => screen.getByLabelText(`Resultado: ${place}`);
+    fireEvent.change(input("centésimas"), { target: { value: "5" } });
+    fireEvent.change(input("décimas"), { target: { value: "7" } });
+    fireEvent.change(input("unidades"), { target: { value: "4" } });
+    fireEvent.keyDown(input("centésimas"), { key: "," });
+    expect(onChange).toHaveBeenLastCalledWith("47,5");
+    fireEvent.keyDown(input("décimas"), { key: "," });
+    expect(onChange).toHaveBeenLastCalledWith("475");
+    fireEvent.keyDown(input("décimas"), { key: "," });
+    expect(onChange).toHaveBeenLastCalledWith("4,75");
+    expect(input("unidades")).toHaveValue("4");
+    expect(input("décimas")).toHaveValue("7");
+    expect(input("centésimas")).toHaveValue("5");
   });
 });

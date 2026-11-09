@@ -220,7 +220,7 @@ function Galera({
           if (typedComma(e.target.value)) return f.kind === "q" ? onComma?.(f, c.value !== "") : undefined;
           onInput?.(f, i, e.target.value.replace(/\D/g, "").slice(-1));
         }}
-        onKeyDown={(e) => onKey?.(f, i, e)}
+        onKeyDown={(e) => { if ((e.key === "," || e.key === ".") && f.kind === "q" && onComma) { e.preventDefault(); onComma(f, c.value !== ""); } else onKey?.(f, i, e); }}
         onFocus={(e) => e.target.select()}
         className={`${cell} rounded-md border ${ring(c.state)} ${extra} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
       />
@@ -454,7 +454,7 @@ function StepDivisionSheet({
         setLastWhy("La coma va en el cociente justo cuando bajas la primera cifra decimal: lo que sigue son décimas, centésimas…");
         const following = fields.find((o) => !accepted(o));
         if (following) focusField(following);
-      } else setCommaMiss(i);
+      } else setCommaMiss((previous) => previous === i ? null : i);
       return;
     }
     placeComma(comma === i ? null : i);
@@ -464,11 +464,12 @@ function StepDivisionSheet({
     onChange(encode(work, at));
   };
   // «,» en el cociente (se escribe de izquierda a derecha): después de una
-  // casilla llena, o antes de una vacía. Escribirla donde ya está la quita.
+  // casilla llena, o antes de una vacía. Si ya está puesta, volver a escribirla la quita.
   const typeComma = (f: DivisionField, filled: boolean) => {
     if (mode !== "free" || !decimal) return;
+    if (comma !== null) { placeComma(null); return; }
     const at = filled ? f.step : f.step - 1;
-    if (at >= 0 && at < trace.steps.length - 1) placeComma(at === comma ? null : at);
+    if (at >= 0 && at < trace.steps.length - 1) placeComma(at);
   };
   const focusField = (f: DivisionField, i = f.kind === "q" ? 0 : Math.max(0, f.width - f.text.length)) =>
     requestAnimationFrame(() => refs.current.get(`${f.key}:${i}`)?.focus());
@@ -603,7 +604,7 @@ function StepDivisionSheet({
             Escribe todo el procedimiento: en cada paso, la cifra del cociente,
             {layout === "completa" ? " el producto debajo," : ""} lo que queda al restar con la cifra que bajas al lado.{" "}
             {decimal
-              ? "Pon la coma del cociente, si la lleva, escribiendo «,» en su casilla: va al bajar la primera cifra decimal (otra vez en el mismo sitio, la quitas)."
+              ? "Pon la coma del cociente, si la lleva, escribiendo «,» en su casilla: va al bajar la primera cifra decimal (si vuelves a pulsar la coma, la quitas)."
               : "La última fila es el resto."}
           </p>
         )}
@@ -727,6 +728,7 @@ function OpenDivisionSheet({
       placeholder={placeholder}
       disabled={disabled}
       onFocus={(e) => e.target.select()}
+      onKeyDown={(e) => { if ((e.key === "," || e.key === ".") && onComma) { e.preventDefault(); onComma(value !== ""); } }}
       onChange={(e) => {
         if (typedComma(e.target.value)) return onComma?.(value !== "");
         onValue(e.target.value.replace(/\D/g, "").slice(-1));
@@ -772,10 +774,11 @@ function OpenDivisionSheet({
                   // donde ya está, la quita.
                   decimal || onDecimalComma
                     ? (filled) => {
+                        if (decimal && state.comma !== null) { placeComma(null); return; }
                         const at = filled ? i : i - 1;
                         if (at < 0) return;
                         if (!decimal) onDecimalComma?.(state, at);
-                        else if (at < qCells - 1) placeComma(at === state.comma ? null : at);
+                        else if (at < qCells - 1) placeComma(at);
                       }
                     : undefined,
                 );
@@ -808,7 +811,7 @@ function OpenDivisionSheet({
           : failed?.mismatch
             ? `Revisa ${failed.mismatch.kind === "p" ? "el producto" : "la resta"} del paso ${failed.mismatch.step + 1}.`
             : `Escribe el cociente y, debajo del dividendo, cada resta con la cifra que bajas (puedes anotar también los productos). ${
-                decimal ? "Pon la coma del cociente, si la lleva, escribiendo «,» en su casilla." : "La última fila es el resto."
+                decimal ? "Pon la coma del cociente escribiendo «,» en su casilla; vuelve a pulsarla para quitarla." : "La última fila es el resto."
               }`}
       </p>
     </div>

@@ -40,6 +40,22 @@ describe("Galera de la división larga", () => {
     expect(container).toHaveTextContent(/Cociente 102 · resto 0/);
   });
 
+  test("guiada: una coma equivocada se puede desmarcar sin perder los pasos", () => {
+    render(<DivisionSheet spec={{ op: "divide", a: 123.4, b: 2 }} layout="abreviada" mode="guided" response="" onChange={() => {}} />);
+    fireEvent.change(quotient(1), { target: { value: "6" } });
+    row("Resta", 1, "03");
+    fireEvent.change(quotient(2), { target: { value: "1" } });
+    row("Resta", 2, "14");
+    const wrong = screen.getByRole("button", { name: "Poner la coma después de la cifra 1 del cociente" });
+    fireEvent.click(wrong);
+    expect(screen.getByText(/Ahí no/)).toBeVisible();
+    fireEvent.click(wrong);
+    expect(screen.queryByText(/Ahí no/)).toBeNull();
+    expect(screen.getByText(/Acabas de bajar/)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Poner la coma después de la cifra 2 del cociente" }));
+    expect(quotient(3)).toBeInTheDocument();
+  });
+
   test("libre: se escribe todo el procedimiento y se envía al completarlo", async () => {
     const onChange = vi.fn();
     const spec = { op: "divide" as const, a: 757, b: 3 };

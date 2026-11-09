@@ -27,6 +27,8 @@ describe("Hoja de multiplicación", () => {
     expect(screen.getByText(/¿Dónde va la coma del producto\? Cuenta las cifras decimales de los dos factores/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 1 cifra a su derecha" }));
     expect(screen.getByText(/cuenta las cifras decimales de 2,4 y de 0,3/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 1 cifra a su derecha" }));
+    expect(screen.queryByText(/cuenta las cifras decimales de 2,4 y de 0,3/)).toBeNull();
     expect(onComplete).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 2 cifras a su derecha" }));
     expect(onComplete).toHaveBeenCalledWith("0,72");
@@ -61,6 +63,8 @@ describe("Hoja de multiplicación", () => {
     expect(onChange).toHaveBeenLastCalledWith("0,500");
     // En una casilla llena, la coma va a su izquierda (y la cifra no cambia).
     fireEvent.change(screen.getByLabelText("Producto: decenas"), { target: { value: "," } });
+    expect(onChange).toHaveBeenLastCalledWith("500");
+    fireEvent.keyDown(screen.getByLabelText("Producto: decenas"), { key: "," });
     expect(onChange).toHaveBeenLastCalledWith("5,00");
     expect(screen.getByLabelText("Producto: decenas")).toHaveValue("0");
     expect(await axe(container)).toHaveNoViolations();
@@ -118,9 +122,11 @@ describe("Galera con decimales", () => {
     q(1, ",");
     expect(onChange).toHaveBeenLastCalledWith("L0,75;20,0");
     expect(screen.getByLabelText("Cociente: cifra 1")).toHaveValue("0");
-    // Otra vez en el mismo sitio la quita.
-    q(1, ",");
+    // Otra vez, incluso desde otra casilla, la quita sin borrar cifras.
+    q(3, ",");
     expect(onChange).toHaveBeenLastCalledWith("L075;20,0");
+    fireEvent.keyDown(screen.getByLabelText("Cociente: cifra 1"), { key: "," });
+    expect(onChange).toHaveBeenLastCalledWith("L0,75;20,0");
   });
 
   test("galera guiada: al bajar la primera cifra decimal, el alumno marca la coma del cociente", () => {

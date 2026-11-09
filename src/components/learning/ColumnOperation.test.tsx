@@ -72,11 +72,11 @@ describe("Hoja de columnas", () => {
     // En una casilla llena, la coma va a su izquierda.
     fireEvent.change(digit("décimas"), { target: { value: "," } });
     expect(onChange).toHaveBeenLastCalledWith("4,75");
-    // Escribirla en otro sitio la mueve; en el mismo sitio, la quita.
-    fireEvent.change(digit("centésimas"), { target: { value: "," } });
-    expect(onChange).toHaveBeenLastCalledWith("47,5");
+    // La siguiente pulsación la quita, incluso desde otra casilla.
     fireEvent.change(digit("centésimas"), { target: { value: "," } });
     expect(onChange).toHaveBeenLastCalledWith("475");
+    fireEvent.change(digit("centésimas"), { target: { value: "," } });
+    expect(onChange).toHaveBeenLastCalledWith("47,5");
     // El 0 que completa 3,5 → 3,50 se ve y se anuncia.
     expect(container).toHaveTextContent(/cero añadido 0/);
     expect(firstWrongColumn("4,65", 4.75, 2)).toBe(1);
@@ -91,6 +91,8 @@ describe("Hoja de columnas", () => {
     expect(screen.queryByLabelText("Resultado: unidades")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 1 cifra a su derecha" }));
     expect(screen.getByText(/Ahí no/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 1 cifra a su derecha" }));
+    expect(screen.queryByText(/Ahí no/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Poner la coma con 2 cifras a su derecha" }));
     fireEvent.change(digit("unidades"), { target: { value: "4" } });
     expect(onComplete).toHaveBeenCalledWith("4,75");
@@ -111,7 +113,9 @@ describe("Hoja de columnas", () => {
     fireEvent.change(digit("unidades"), { target: { value: "4" } });
     expect(onChange).toHaveBeenLastCalledWith("4,75");
     // En una casilla llena, la coma va a su izquierda y la cifra no cambia.
-    fireEvent.change(digit("centésimas"), { target: { value: "." } });
+    fireEvent.keyDown(digit("centésimas"), { key: "." });
+    expect(onChange).toHaveBeenLastCalledWith("475");
+    fireEvent.keyDown(digit("centésimas"), { key: "." });
     expect(onChange).toHaveBeenLastCalledWith("47,5");
     expect(digit("centésimas")).toHaveValue("5");
   });

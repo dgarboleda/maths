@@ -234,7 +234,7 @@ function Row({
                 if (typedComma(e.target.value)) return onComma?.(row.key, i, c.value !== "");
                 onInput?.(row.key, i, e.target.value.replace(/\D/g, "").slice(-1));
               }}
-              onKeyDown={(e) => onKey?.(row.key, i, e)}
+              onKeyDown={(e) => { if ((e.key === "," || e.key === ".") && onComma) { e.preventDefault(); onComma(row.key, i, c.value !== ""); } else onKey?.(row.key, i, e); }}
               onFocus={(e) => e.target.select()}
               className={`${cell} rounded-lg border ${calculator && !c.state ? "border-slate-600 bg-slate-800/90" : ring(c.state)} ${placeColor(i)} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
             />
@@ -444,7 +444,7 @@ export function MultiplySheet({
         setCommaMiss(null);
         setLastWhy(commaStep.why);
         finish();
-      } else setCommaMiss(k);
+      } else setCommaMiss((previous) => previous === k ? null : k);
       return;
     }
     placeComma(commaAt === k ? null : k);
@@ -457,9 +457,9 @@ export function MultiplySheet({
   // (de derecha a izquierda).
   const typeComma = (row: string, i: number, filled: boolean) => {
     if (mode !== "free" || !trace.scale || row !== resultKey) return;
+    if (commaAt !== null) { placeComma(null); return; }
     const k = filled ? i + 1 : i;
-    // Escribirla donde ya está la quita.
-    if (k >= 1 && k < columns) placeComma(k === commaAt ? null : k);
+    if (k >= 1 && k < columns) placeComma(k);
   };
 
   // Tras un intento fallido (fuera de las comprobaciones): qué revisar.
@@ -566,7 +566,7 @@ export function MultiplySheet({
           <p className="text-xs text-slate-400">
             Escribe el producto en la última fila, desde la derecha.
             {scratchRows ? " Arriba tienes filas de borrador para cada cifra de abajo." : ""}
-            {trace.scale ? " Pon la coma escribiendo «,» en la casilla donde va (otra vez en el mismo sitio, la quitas)." : ""}
+            {trace.scale ? " Pon la coma escribiendo «,» en la casilla donde va (si vuelves a pulsar la coma, la quitas)." : ""}
           </p>
         )}
       </div>
