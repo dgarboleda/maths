@@ -1,7 +1,8 @@
 "use client";
 
 import { useSheetInputMode } from "./NumericKeypad";
-import { useMemo, useRef, useState } from "react";
+import { calculatorBoardClass, calculatorBoardStyle } from "./calculatorBoard";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   checkDivisionWork,
@@ -353,6 +354,8 @@ function restore(response: string, fields: DivisionField[], layout: DivisionLayo
   return { work, comma: m[3] === undefined ? null : m[2].length - 1 };
 }
 
+export interface DivisionDraft { quotient: string[]; rows: string[][]; comma: number | null }
+
 export function DivisionSheet({
   spec,
   layout,
@@ -363,7 +366,10 @@ export function DivisionSheet({
   hintLevel = 0,
   failedResponse = null,
   disabled,
+  draft, onDraft, calculator = false,
 }: {
+  calculator?: boolean;
+  draft?: DivisionDraft; onDraft?: (draft: DivisionDraft) => void;
   spec: DivisionSpec;
   layout: DivisionLayout;
   /** guided y free muestran una fila por paso; open deja la galera en
@@ -378,7 +384,7 @@ export function DivisionSheet({
   disabled?: boolean;
 }) {
   if (mode === "open")
-    return <OpenDivisionSheet spec={spec} response={response} onChange={onChange} hintLevel={hintLevel} failedResponse={failedResponse} disabled={disabled} />;
+    return <OpenDivisionSheet spec={spec} response={response} onChange={onChange} hintLevel={hintLevel} failedResponse={failedResponse} disabled={disabled} draft={draft} onDraft={onDraft} calculator={calculator} />;
   return <StepDivisionSheet spec={spec} layout={layout} mode={mode} response={response} onChange={onChange} onComplete={onComplete} hintLevel={hintLevel} failedResponse={failedResponse} disabled={disabled} />;
 }
 
@@ -615,8 +621,10 @@ function OpenDivisionSheet({
   onChange,
   hintLevel = 0,
   failedResponse = null,
-  disabled,
+  disabled, draft, onDraft, calculator = false,
 }: {
+  calculator?: boolean;
+  draft?: DivisionDraft; onDraft?: (draft: DivisionDraft) => void;
   spec: DivisionSpec;
   response: string;
   onChange: (response: string) => void;
@@ -633,6 +641,12 @@ function OpenDivisionSheet({
   const decimal = isDecimalDivision(spec);
   const maxRows = 2 * n + 2;
   const [state, setState] = useState(() => {
+    if (draft && Array.isArray(draft.quotient) && Array.isArray(draft.rows)) {
+      const digit = (value: unknown) => typeof value === "string" && /^\d?$/.test(value) ? value : "";
+      const rows = draft.rows.filter(Array.isArray).slice(0, maxRows).map((row) => Array.from({ length: n }, (_, i) => digit(row[i])));
+      while (rows.length < 2) rows.push(Array(n).fill(""));
+      return { quotient: Array.from({ length: qCells }, (_, i) => digit(draft.quotient[i])), rows, comma: typeof draft.comma === "number" && draft.comma >= 0 && draft.comma < qCells ? draft.comma : null };
+    }
     const m = /^L(\d*)(?:,(\d+))?;(.*)$/.exec(response);
     const quotient = Array<string>(qCells).fill("");
     const rows: string[][] = [];
@@ -646,6 +660,7 @@ function OpenDivisionSheet({
     while (rows.length < 2) rows.push(Array(n).fill(""));
     return { quotient, rows, comma };
   });
+  useEffect(() => { onDraft?.(state); }, [state, onDraft]);
   const refs = useRef(new Map<string, HTMLInputElement | null>());
   const focus = (key: string) => requestAnimationFrame(() => refs.current.get(key)?.focus());
 
@@ -681,8 +696,9 @@ function OpenDivisionSheet({
   // Pistas: las primeras cifras del cociente, en tenue.
   const hinted = hintLevel >= 3 ? Math.max(1, trace.steps.length - 1) : hintLevel >= 2 ? 1 : 0;
   const offset = qCells - trace.steps.length;
-  const cell =
-    "flex h-10 w-7 items-center justify-center rounded-md border text-center text-xl font-bold tabular-nums placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300 sm:h-11 sm:w-10 sm:text-2xl";
+  const cell = calculator
+    ? "flex h-14 w-12 items-center justify-center rounded-lg border text-center text-3xl font-bold tabular-nums placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300"
+    : "flex h-10 w-7 items-center justify-center rounded-md border text-center text-xl font-bold tabular-nums placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300 sm:h-11 sm:w-10 sm:text-2xl";
   const placeComma = (at: number | null) => emit({ ...state, comma: at });
   const input = (
     key: string,
@@ -716,21 +732,21 @@ function OpenDivisionSheet({
   return (
     <div className="space-y-3">
       <ShiftNote trace={trace} />
-      <div className="overflow-x-auto" tabIndex={0} role="group" aria-label={`División ${say(trace.dividend)} entre ${say(trace.divisor)}`}>
+      <div className={calculator ? calculatorBoardClass : "overflow-x-auto"} style={calculator ? calculatorBoardStyle : undefined} tabIndex={0} role="group" aria-label={`División ${say(trace.dividend)} entre ${say(trace.divisor)}`}>
         <div className="mx-auto flex w-max items-start">
           <div className="grid gap-y-0.5" style={{ gridTemplateColumns: `repeat(${n}, auto)` }}>
             {trace.dividendDigits.map((_, j) => (
-              <DividendDigit key={`d${j}`} trace={trace} j={j} className="flex h-10 w-7 items-center justify-center text-xl font-bold sm:h-11 sm:w-10 sm:text-2xl" />
+              <DividendDigit key={`d${j}`} trace={trace} j={j} className={calculator ? "flex h-14 w-12 items-center justify-center text-3xl font-bold" : "flex h-10 w-7 items-center justify-center text-xl font-bold sm:h-11 sm:w-10 sm:text-2xl"} />
             ))}
             {state.rows.map((row, r) =>
               row.map((value, j) =>
-                input(`r${r}:${j}`, `Fila ${r + 1}: columna ${j + 1} de ${n}`, value, (d) => setCell(r, j, d), "border-slate-700 bg-slate-950 text-slate-100"),
+                input(`r${r}:${j}`, `Fila ${r + 1}: columna ${j + 1} de ${n}`, value, (d) => setCell(r, j, d), calculator ? "border-slate-600 bg-slate-800/90 text-slate-100" : "border-slate-700 bg-slate-950 text-slate-100"),
               ),
             )}
           </div>
           <div className="ml-1 border-l-2 border-slate-200 pl-2">
             <div className="border-b-2 border-slate-200 pb-0.5">
-              <span className="flex h-10 items-center px-1 text-xl font-bold text-slate-100 sm:h-11 sm:text-2xl">
+              <span className={calculator ? "flex h-14 items-center px-1 text-3xl font-bold text-slate-100" : "flex h-10 items-center px-1 text-xl font-bold text-slate-100 sm:h-11 sm:text-2xl"}>
                 <span className="sr-only">entre </span>
                 {trace.divisor}
               </span>
@@ -745,7 +761,7 @@ function OpenDivisionSheet({
                   `Cociente: cifra ${i + 1}`,
                   value,
                   (d) => setQ(i, d),
-                  failed && !failed.quotientCorrect ? "border-amber-400 bg-amber-950/50 text-cyan-100" : "border-slate-600 bg-slate-950 text-cyan-100",
+                  failed && !failed.quotientCorrect ? "border-amber-400 bg-amber-950/50 text-cyan-100" : calculator ? "border-slate-600 bg-slate-800/90 text-cyan-100" : "border-slate-600 bg-slate-950 text-cyan-100",
                   step >= 0 && step < hinted ? String(trace.steps[step].digit) : undefined,
                   // «,»: después de una casilla llena, o antes de una vacía;
                   // donde ya está, la quita.

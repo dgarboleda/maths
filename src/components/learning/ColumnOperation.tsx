@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { makePreference } from "./preferences";
+import { calculatorBoardClass, calculatorBoardStyle } from "./calculatorBoard";
 import { useSheetInputMode } from "./NumericKeypad";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
@@ -229,8 +230,10 @@ function Grid({
   resultComma,
   slots,
   onComma,
+  calculator = false,
 }: {
   trace: ColumnTrace;
+  calculator?: boolean;
   /** Se escribió «,» en la casilla `column` (con o sin cifra ya escrita). */
   onComma?: (column: number, filled: boolean) => void;
   /** Coma del resultado: undefined, la de la operación; null, ninguna; k, con k cifras a la derecha. */
@@ -267,12 +270,15 @@ function Grid({
     resultComma === undefined ? comma(i) : resultComma && i === resultComma ? <Comma /> : null;
   const say = (n: number) => String(n).replace(".", ",");
   const symbol = trace.spec.op === "add" ? "+" : "−";
-  const cell = "flex h-11 w-8 items-center justify-center text-2xl font-bold tabular-nums sm:h-12 sm:w-12 sm:text-3xl";
+  const cell = calculator
+    ? "flex h-14 w-12 items-center justify-center text-4xl font-bold tabular-nums sm:h-16 sm:w-14"
+    : "flex h-11 w-8 items-center justify-center text-2xl font-bold tabular-nums sm:h-12 sm:w-12 sm:text-3xl";
   return (
     // Enfocable: si no cabe (pantallas muy estrechas), se recorre con el teclado.
     <div
       data-arrow-nav=""
-      className="overflow-x-auto"
+      className={calculator ? calculatorBoardClass : "overflow-x-auto"}
+      style={calculator ? calculatorBoardStyle : undefined}
       tabIndex={0}
       role="group"
       aria-label={`${say(trace.spec.a)} ${trace.spec.op === "add" ? "más" : "menos"} ${say(trace.spec.b)} en columnas`}
@@ -284,7 +290,7 @@ function Grid({
         {/* Fila de marcas o notas */}
         <span aria-hidden="true" />
         {order.map((i) => (
-          <span key={`m${i}`} className="flex h-8 items-end justify-center text-base font-bold text-amber-200">
+          <span key={`m${i}`} className={`flex items-end justify-center text-base font-bold text-amber-200 ${calculator ? "h-12" : "h-8"}`}>
             {notes && onNote ? (
               <input
                 aria-label={`Nota para ${name(i)} (llevada o préstamo, opcional)`}
@@ -293,7 +299,7 @@ function Grid({
                 value={notes[i] ?? ""}
                 disabled={disabled}
                 onChange={(e) => onNote(i, e.target.value.replace(/\D/g, ""))}
-                className="h-7 w-7 rounded border border-dashed border-slate-600 bg-transparent text-center text-sm text-amber-200 focus:border-amber-300 focus:outline-none"
+                className={calculator ? "h-11 w-11 rounded-lg border border-slate-600 bg-slate-800/90 text-center text-xl text-amber-200 focus:border-amber-300 focus:outline-none" : "h-7 w-7 rounded border border-dashed border-slate-600 bg-transparent text-center text-sm text-amber-200 focus:border-amber-300 focus:outline-none"}
               />
             ) : (
               marks[i]?.above && (
@@ -356,7 +362,7 @@ function Grid({
                 ? "border-emerald-400/70 bg-emerald-950/30"
                 : c.state === "active"
                   ? "border-cyan-300 bg-cyan-950/40"
-                  : "border-slate-600 bg-slate-950";
+                  : calculator ? "border-slate-600 bg-slate-800/90" : "border-slate-600 bg-slate-950";
           if (c.kind === "digit")
             return (
               <span key={`r${i}`} className={`${cell} relative rounded-lg border ${ring} ${color(i)} ${c.ghost ? "opacity-50" : ""}`}>
@@ -530,6 +536,8 @@ export function firstWrongColumn(response: string, answer: number, scale = 0): n
   return null;
 }
 
+export interface ColumnDraft { digits: string[]; commaAt: number | null; notes: string[] }
+
 export function ColumnSheet({
   spec,
   strategy,
@@ -541,9 +549,14 @@ export function ColumnSheet({
   wrongColumn = null,
   commaWrong = false,
   disabled,
+  calculator = false,
+  draft, onDraft,
 }: {
+  draft?: ColumnDraft; onDraft?: (draft: ColumnDraft) => void;
   spec: ArithmeticSpec;
   strategy: SubtractStrategy;
+  /** Presentación amplia para el panel de calculadora. */
+  calculator?: boolean;
   /** Tras un intento fallido: las cifras están bien, pero la coma no. */
   commaWrong?: boolean;
   mode: "guided" | "free";
@@ -566,13 +579,14 @@ export function ColumnSheet({
   const cells = mode === "guided" ? trace.width : operandWidth + (spec.op === "add" ? 1 : 0);
   // La coma del resultado la pone el alumno (hueco k: k cifras a su derecha).
   const initial = useMemo(() => writtenColumns(response), []); // eslint-disable-line react-hooks/exhaustive-deps
-  const [digits, setDigits] = useState<string[]>(() => Array.from({ length: cells }, (_, i) => initial.digits[i] ?? ""));
-  const [commaAt, setCommaAt] = useState<number | null>(scale ? initial.comma : null);
+  const [digits, setDigits] = useState<string[]>(() => Array.from({ length: cells }, (_, i) => draft?.digits?.[i] ?? initial.digits[i] ?? ""));
+  const [commaAt, setCommaAt] = useState<number | null>(scale ? (draft?.commaAt ?? initial.comma) : null);
   const [commaOk, setCommaOk] = useState(false);
   const [commaMiss, setCommaMiss] = useState<number | null>(null);
-  const [notes, setNotes] = useState<string[]>(() => Array(cells).fill(""));
+  const [notes, setNotes] = useState<string[]>(() => Array.from({ length: cells }, (_, i) => draft?.notes?.[i] ?? ""));
   const [miss, setMiss] = useState<{ column: number; value: string } | null>(null);
   const [lastWhy, setLastWhy] = useState<string>("");
+  useEffect(() => { if (mode === "free") onDraft?.({ digits, commaAt, notes }); }, [mode, onDraft, digits, commaAt, notes]);
 
   const active = mode === "guided" ? digits.findIndex((d, i) => Number(d) !== trace.steps[i].digit || d === "") : -1;
   // Guiado: al terminar la parte decimal, el alumno coloca la coma antes de seguir.
@@ -684,6 +698,7 @@ export function ColumnSheet({
     <div className="space-y-3">
       <Grid
         trace={trace}
+        calculator={calculator}
         marks={marksFor(trace, shownMarks, mode === "guided" && !done)}
         result={result}
         notes={mode === "free" ? notes : undefined}

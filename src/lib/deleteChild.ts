@@ -20,6 +20,7 @@ const CHILD_SUBCOLLECTIONS = [
   "learningEvidence",
   "learningMissions",
   "helpUsage",
+  "calculatorDraft",
 ] as const;
 
 /**

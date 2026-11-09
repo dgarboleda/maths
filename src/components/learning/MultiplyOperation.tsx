@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   digitsOf,
@@ -13,6 +13,7 @@ import {
   type MultiplyTrace,
 } from "@/lib/learning/core";
 import { useSheetInputMode } from "./NumericKeypad";
+import { calculatorBoardClass, calculatorBoardStyle } from "./calculatorBoard";
 import { secondaryButton } from "./LearningShell";
 import { Challenge } from "./Challenge";
 import { Slider } from "./GraphVisuals";
@@ -69,8 +70,9 @@ function Grid({
   inputRefs,
   idPrefix,
   disabled,
-  slots,
+  slots, calculator = false,
 }: {
+  calculator?: boolean;
   /** Huecos bajo el producto para que el alumno ponga la coma. */
   slots?: { active: number | null; onPick: (k: number) => void; wrong?: boolean };
   trace: MultiplyTrace;
@@ -96,12 +98,13 @@ function Grid({
   // Con coma, el 0 de las unidades también se escribe (0,4).
   const topDigits = digitsOf(trace.A, scaleA + 1);
   const bottomDigits = digitsOf(trace.B, scaleB + 1);
-  const cell = "flex h-11 w-8 items-center justify-center text-2xl font-bold tabular-nums sm:h-12 sm:w-11 sm:text-3xl";
+  const cell = calculator ? "flex h-14 w-12 items-center justify-center text-3xl font-bold tabular-nums" : "flex h-11 w-8 items-center justify-center text-2xl font-bold tabular-nums sm:h-12 sm:w-11 sm:text-3xl";
   const say = (n: number, scale: number) => n.toFixed(scale).replace(".", ",");
   return (
     <div
       data-arrow-nav=""
-      className="overflow-x-auto"
+      className={calculator ? calculatorBoardClass : "overflow-x-auto"}
+      style={calculator ? calculatorBoardStyle : undefined}
       tabIndex={0}
       role="group"
       aria-label={`${say(trace.spec.a, scaleA)} por ${say(trace.spec.b, scaleB)} en columnas`}
@@ -153,7 +156,7 @@ function Grid({
         ))}
         <span aria-hidden="true" className="col-span-full my-1 h-0.5 bg-slate-200" />
         {rows.map((row) => (
-          <Row key={row.key} row={row} order={order} cell={cell} onInput={onInput} onComma={onComma} onKey={onKey} inputRefs={inputRefs} idPrefix={idPrefix} disabled={disabled} keypadMode={keypadMode} />
+          <Row key={row.key} row={row} order={order} cell={cell} onInput={onInput} onComma={onComma} onKey={onKey} inputRefs={inputRefs} idPrefix={idPrefix} disabled={disabled} keypadMode={keypadMode} calculator={calculator} />
         ))}
         {slots && <CommaSlotRow order={order} cells={columns} active={slots.active} onPick={slots.onPick} disabled={disabled} wrong={slots.wrong} />}
       </div>
@@ -171,8 +174,9 @@ function Row({
   inputRefs,
   idPrefix,
   disabled,
-  keypadMode,
+  keypadMode, calculator = false,
 }: {
+  calculator?: boolean;
   row: GridRow;
   order: number[];
   cell: string;
@@ -232,7 +236,7 @@ function Row({
               }}
               onKeyDown={(e) => onKey?.(row.key, i, e)}
               onFocus={(e) => e.target.select()}
-              className={`${cell} rounded-lg border ${ring(c.state)} ${placeColor(i)} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
+              className={`${cell} rounded-lg border ${calculator && !c.state ? "border-slate-600 bg-slate-800/90" : ring(c.state)} ${placeColor(i)} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
             />
           </span>
         );
@@ -332,6 +336,8 @@ export function MultiplyDemo({ spec, initialStep }: { spec: MultiplySpec; initia
 
 // ── Hoja para responder ─────────────────────────────────────────────────
 
+export interface MultiplyDraft { digits: string[]; commaAt: number | null; notes: string[]; scratch: string[][] }
+
 export function MultiplySheet({
   spec,
   mode,
@@ -341,7 +347,10 @@ export function MultiplySheet({
   hintLevel = 0,
   failedResponse = null,
   disabled,
+  draft, onDraft, calculator = false,
 }: {
+  calculator?: boolean;
+  draft?: MultiplyDraft; onDraft?: (draft: MultiplyDraft) => void;
   spec: MultiplySpec;
   mode: "guided" | "free";
   response: string;
@@ -369,13 +378,14 @@ export function MultiplySheet({
   const [lastWhy, setLastWhy] = useState("");
   // Libre
   const scratchRows = trace.bottomDigits.length > 1 ? trace.bottomDigits.length : 0;
-  const [scratch, setScratch] = useState<string[][]>(() => Array.from({ length: scratchRows }, () => Array(columns).fill("")));
-  const [notes, setNotes] = useState<string[]>(() => Array(columns).fill(""));
+  const [scratch, setScratch] = useState<string[][]>(() => Array.from({ length: scratchRows }, (_, row) => Array.from({ length: columns }, (_, col) => draft?.scratch?.[row]?.[col] ?? "")));
+  const [notes, setNotes] = useState<string[]>(() => Array.from({ length: columns }, (_, i) => draft?.notes?.[i] ?? ""));
   const initial = useMemo(() => writtenColumns(response), []); // eslint-disable-line react-hooks/exhaustive-deps
-  const [digits, setDigits] = useState<string[]>(() => Array.from({ length: columns }, (_, i) => initial.digits[i] ?? ""));
+  const [digits, setDigits] = useState<string[]>(() => Array.from({ length: columns }, (_, i) => draft?.digits?.[i] ?? initial.digits[i] ?? ""));
   // La coma la pone el alumno: hueco k, con k cifras a su derecha.
-  const [commaAt, setCommaAt] = useState<number | null>(initial.comma || null);
+  const [commaAt, setCommaAt] = useState<number | null>(draft?.commaAt ?? initial.comma ?? null);
   const [commaMiss, setCommaMiss] = useState<number | null>(null);
+  useEffect(() => { if (mode === "free") onDraft?.({ digits, commaAt, notes, scratch }); }, [mode, onDraft, digits, commaAt, notes, scratch]);
 
   const active = mode === "guided" && filled < writing.length ? writing[filled] : null;
   const askingComma = mode === "guided" && !active && !!commaStep && !commaOk;
@@ -505,6 +515,7 @@ export function MultiplySheet({
   return (
     <div className="space-y-3">
       <Grid
+        calculator={calculator}
         trace={trace}
         columns={columns}
         marks={mode === "guided" ? carryMarks(trace, filled) : undefined}

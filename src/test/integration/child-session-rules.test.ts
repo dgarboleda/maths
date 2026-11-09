@@ -168,6 +168,22 @@ describe("firestore.rules — sesión propia del hijo (custom token)", () => {
     } finally { await deleteApp(app); }
   });
 
+  test("la copia de calculadora solo pertenece al propio alumno y tiene tamaño y campos acotados", async () => {
+    const { app, db, parentId, childId, otherChildId } = await nuevaFamiliaConDosHijos();
+    try {
+      const own = firestoreFns.doc(db, "parents", parentId, "children", childId, "calculatorDraft", "actual");
+      const copy = { written: "{}", exact: "{}", updatedAt: firestoreFns.serverTimestamp() };
+      await firestoreFns.setDoc(own, copy);
+      expect((await firestoreFns.getDoc(own)).data()).toMatchObject({ written: "{}", exact: "{}" });
+      await expect(firestoreFns.setDoc(own, { ...copy, extra: 1 })).rejects.toThrow();
+      await expect(firestoreFns.setDoc(own, { ...copy, exact: "x".repeat(100001) })).rejects.toThrow();
+      await expect(firestoreFns.setDoc(firestoreFns.doc(db, "parents", parentId, "children", childId, "calculatorDraft", "otro"), copy)).rejects.toThrow();
+      const other = firestoreFns.doc(db, "parents", parentId, "children", otherChildId, "calculatorDraft", "actual");
+      await expect(firestoreFns.setDoc(other, copy)).rejects.toThrow();
+      await expect(firestoreFns.getDoc(other)).rejects.toThrow();
+    } finally { await deleteApp(app); }
+  });
+
   test("puede crear intentos, pero no escribir directamente estrellas ni saldo", async () => {
     const { app, db, parentId, childId } = await nuevaFamiliaConDosHijos();
     try {

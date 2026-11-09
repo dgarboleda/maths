@@ -30,7 +30,7 @@ const digit = (place: string, value: string) =>
 
 describe("Calculadora global", () => {
   test("botón flotante: abre el panel lateral y se cierra con Escape devolviendo el foco", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     const { container } = renderCalculator();
     const fab = screen.getByRole("button", { name: "Calculadora" });
     expect(fab).toHaveAttribute("aria-expanded", "false");
@@ -45,7 +45,7 @@ describe("Calculadora global", () => {
   });
 
   test("una suma en columnas: sin corrección y con el resultado para la respuesta", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     const onUse = vi.fn();
     renderCalculator({ labels: ["tu respuesta"], onUse });
     // Acceso también desde la pregunta.
@@ -61,8 +61,49 @@ describe("Calculadora global", () => {
     expect(screen.queryByRole("complementary", { name: "Calculadora" })).toBeNull();
   });
 
+  test("resta en bloques: el alumno escribe préstamos y cifras sin solución automática", async () => {
+    sessionStorage.clear(); localStorage.clear();
+    const onUse = vi.fn();
+    renderCalculator({ labels: ["tu respuesta"], onUse });
+    await open();
+    fireEvent.click(screen.getByRole("radio", { name: "Restar" }));
+    numbers("325", "148");
+    const board = screen.getByRole("group", { name: "325 menos 148 en columnas" });
+    expect(board).toHaveTextContent("325");
+    expect(board).toHaveTextContent("148");
+    expect(screen.getByLabelText("Resultado: unidades")).toHaveValue("");
+    fireEvent.change(screen.getByLabelText("Nota para decenas (llevada o préstamo, opcional)"), { target: { value: "1" } });
+    digit("unidades", "7"); digit("decenas", "7"); digit("centenas", "1");
+    fireEvent.click(screen.getByRole("button", { name: "Usar 177 en tu respuesta" }));
+    expect(onUse).toHaveBeenCalledWith("177", 0);
+  });
+
+  test("acepta negativos y deja que el alumno escriba el signo y el resultado", async () => {
+    sessionStorage.clear(); localStorage.clear(); const onUse = vi.fn();
+    renderCalculator({ labels: ["tu respuesta"], onUse }); await open();
+    fireEvent.click(screen.getByRole("radio", { name: "Restar" })); numbers("3", "4");
+    expect(screen.getByRole("group", { name: "Cuenta con números con signo" })).toHaveTextContent("3 − 4");
+    expect(screen.getByLabelText("Mi resultado con signo")).toHaveValue("");
+    fireEvent.change(screen.getByLabelText("Mi resultado con signo"), { target: { value: "-2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Usar -2 en tu respuesta" }));
+    expect(onUse).toHaveBeenCalledWith("-2", 0);
+  });
+
+  test("comprueba una columna solo cuando se solicita y conserva lo escrito", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open(); numbers("12", "3");
+    digit("unidades", "6"); digit("decenas", "1");
+    expect(screen.queryByText(/Revisa la cifra de las unidades/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar mi trabajo" }));
+    expect(screen.getByText(/Revisa la cifra de las unidades/)).toBeVisible();
+    expect(screen.getByLabelText("Resultado: unidades")).toHaveValue("6");
+    digit("unidades", "5");
+    expect(screen.queryByText(/Revisa la cifra de las unidades/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar mi trabajo" }));
+    expect(screen.getByText("El resultado final es correcto.")).toBeVisible();
+  });
+
   test("encadena cuentas: el resultado pasa a la siguiente y el final se copia", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     renderCalculator();
@@ -96,7 +137,7 @@ describe("Calculadora global", () => {
   });
 
   test("la cadena se conserva al cambiar de pantalla (misma pestaña)", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     const first = renderCalculator();
     await open();
     numbers("12", "3");
@@ -110,8 +151,23 @@ describe("Calculadora global", () => {
     expect(screen.getAllByRole("textbox")[0]).toHaveValue("15");
   });
 
+  test.each([
+    { op: "Sumar", a: "958", b: "76", cell: "Resultado: unidades", note: "Nota para decenas (llevada o préstamo, opcional)" },
+    { op: "Multiplicar", a: "325", b: "24", cell: "Producto: unidades", note: "Llevada sobre las decenas (opcional)" },
+    { op: "Dividir", a: "325", b: "4", cell: "Fila 1: columna 1 de 3", note: "Fila 2: columna 1 de 3" },
+  ])("recupera casillas y notas incompletas de $op", async ({ op, a, b, cell, note }) => {
+    sessionStorage.clear(); localStorage.clear(); const first = renderCalculator(); await open();
+    if (op !== "Sumar") fireEvent.click(screen.getByRole("radio", { name: op }));
+    numbers(a, b);
+    fireEvent.change(screen.getByLabelText(cell, { exact: true }), { target: { value: "7" } });
+    fireEvent.change(screen.getByLabelText(note, { exact: true }), { target: { value: "2" } });
+    first.unmount(); sessionStorage.clear(); renderCalculator(); await open();
+    expect(screen.getByLabelText(cell, { exact: true })).toHaveValue("7");
+    expect(screen.getByLabelText(note, { exact: true })).toHaveValue("2");
+  });
+
   test("una división en la galera abierta pasa el cociente al valor elegido; el resto queda en la cadena", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     const onUse = vi.fn();
     renderCalculator({ labels: ["Agua", "Luz"], onUse });
     await open();
@@ -127,17 +183,17 @@ describe("Calculadora global", () => {
   });
 
   test("sin pantalla que espere un número, solo se calcula y se copia", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     renderCalculator({ labels: ["tu respuesta"], onUse: () => {}, enabled: false });
     await open();
     fireEvent.click(screen.getByRole("radio", { name: "Restar" }));
     numbers("12", "40");
-    expect(screen.getByRole("alert")).toHaveTextContent(/no puede ser menor/);
+    expect(screen.getByRole("group", { name: "Cuenta con números con signo" })).toHaveTextContent("12 − 40");
     expect(screen.queryByRole("button", { name: /^Usar/ })).toBeNull();
   });
 
   test("«Continuar la división con decimales» se aplica al momento a la división escrita", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     renderCalculator();
     await open();
     fireEvent.click(screen.getByRole("radio", { name: "Dividir" }));
@@ -156,7 +212,7 @@ describe("Calculadora global", () => {
   });
 
   test("conserva los ceros decimales al multiplicar y respeta los límites de la hoja", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     renderCalculator();
     await open();
     fireEvent.click(screen.getByRole("radio", { name: "Multiplicar" }));
@@ -181,7 +237,7 @@ describe("hoja manual de fracciones y divisibilidad", () => {
     change("Denominador de Segunda fracción o número", "3");
   };
   test("el alumno escribe los pasos y puede usar una respuesta equivocada", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     const onUse = vi.fn();
     renderCalculator({ labels: ["tu respuesta"], onUse });
     await open();
@@ -196,8 +252,38 @@ describe("hoja manual de fracciones y divisibilidad", () => {
     fireEvent.click(screen.getByRole("button", { name: "Usar 7/6 en tu respuesta" }));
     expect(onUse).toHaveBeenCalledWith("7/6", 0);
   });
+  test("representa cada operación con fracciones apiladas y permite añadir operandos", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    for (const [operation, symbol] of [["add", "+"], ["subtract", "−"], ["multiply", "×"], ["divide", "÷"]]) {
+      change("Operación", operation);
+      expect(screen.getByRole("region", { name: "Operación con fracciones" })).toHaveTextContent(symbol);
+    }
+    fractions();
+    fireEvent.click(screen.getByRole("button", { name: /Añadir número/ }));
+    change("Numerador o entero de Número 3", "1");
+    change("Denominador de Número 3", "6");
+    expect(screen.getByLabelText("Numerador o entero de Mi resultado")).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: "Quitar número 3" }));
+    expect(screen.queryByLabelText("Numerador o entero de Número 3")).toBeNull();
+  });
+  test("ofrece pistas para fracciones sin resolver ni borrar los bloques", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" })); fractions();
+    change("Numerador o entero de Mi resultado", "7"); change("Denominador de Mi resultado", "6");
+    expect(screen.queryByText(/Revisa el resultado final/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar mi trabajo" }));
+    expect(screen.getByText(/Revisa el resultado final/)).toBeVisible();
+    expect(screen.getByLabelText("Numerador o entero de Mi resultado")).toHaveValue("7");
+    expect(screen.queryByText(/5\/6/)).toBeNull();
+    change("Numerador o entero de Mi resultado", "5");
+    expect(screen.queryByText(/Revisa el resultado final/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar mi trabajo" }));
+    expect(screen.getByText("El resultado final es correcto.")).toBeVisible();
+    expect(screen.getByText(/solo se comprobó el resultado/)).toBeVisible();
+  });
   test("la tabla y el resultado manual se conservan y los cambios invalidan la confirmación", async () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     const first = renderCalculator();
     await open();
     fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
@@ -218,8 +304,56 @@ describe("hoja manual de fracciones y divisibilidad", () => {
     expect(screen.queryByText("Resultado escrito: 99")).toBeNull();
     expect(screen.getByLabelText("Mi resultado", { selector: "input" })).toHaveValue("99");
   });
+  test("construye y modifica bloques de expresiones sin evaluarlas", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    change("Operación", "expression"); change("Expresión", "(1+2)");
+    fireEvent.click(screen.getByRole("button", { name: "Añadir × a la expresión" }));
+    expect(screen.getByLabelText("Expresión")).toHaveValue("(1+2)×");
+    fireEvent.click(screen.getByRole("button", { name: "Quitar bloque 2: 1" }));
+    expect(screen.getByLabelText("Expresión")).toHaveValue("( + 2 ) ×");
+    expect(screen.queryByText(/Resultado exacto/)).toBeNull();
+  });
+  test("conserva pasos con fracciones después de cerrar la pestaña", async () => {
+    sessionStorage.clear(); localStorage.clear(); const first = renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    fireEvent.click(screen.getByRole("button", { name: "Añadir paso con fracciones" }));
+    change("Numerador o entero de Primera fracción del paso 2", "1");
+    change("Denominador de Primera fracción del paso 2", "2");
+    change("Numerador o entero de Resultado del paso 2", "5");
+    change("Denominador de Resultado del paso 2", "6");
+    first.unmount(); sessionStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    expect(screen.getByLabelText("Denominador de Primera fracción del paso 2")).toHaveValue("2");
+    expect(screen.getByLabelText("Numerador o entero de Resultado del paso 2")).toHaveValue("5");
+  });
+  test("señala la fila incorrecta de factores sin cambiarla", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    change("Operación", "mcm"); change("Primer entero", "12"); change("Segundo entero", "18");
+    change("Divisor de la fila 1", "2"); change("Fila 1, número 1", "6"); change("Fila 1, número 2", "10"); change("Mi resultado", "36");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar mi trabajo" }));
+    expect(screen.getByText(/Revisa la fila 1: divide/)).toBeVisible();
+    expect(screen.getByLabelText("Fila 1, número 2")).toHaveValue("10");
+    change("Fila 1, número 2", "9");
+    expect(screen.queryByText(/Revisa la fila 1: divide/)).toBeNull();
+  });
+  test("el MCD mantiene los divisores junto a la fila que dividen y no resuelve por el alumno", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    change("Operación", "mcd"); change("Primer entero", "12"); change("Segundo entero", "18");
+    change("Divisor de la fila 1", "2");
+    change("Fila 1, número 1", "6"); change("Fila 1, número 2", "9");
+    fireEvent.click(screen.getByRole("button", { name: "Añadir fila" }));
+    change("Divisor de la fila 2", "3");
+    expect(screen.getByLabelText("Divisor de la fila 2").closest("tr")).toBe(screen.getByLabelText("Fila 1, número 1").closest("tr"));
+    expect(screen.getByLabelText("Mi resultado", { selector: "input" })).toHaveValue("");
+    change("Mi resultado", "10");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar mi resultado" }));
+    expect(screen.getByText("Resultado escrito: 10")).toBeVisible();
+  });
   test("no envía una fracción a una actividad que solo admite enteros", async () => {
-    sessionStorage.clear(); const onUse = vi.fn();
+    sessionStorage.clear(); localStorage.clear(); const onUse = vi.fn();
     renderCalculator({ labels: ["Cajas"], onUse, integerOnly: true });
     await open(); fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
     fractions(); change("Numerador o entero de Mi resultado", "5"); change("Denominador de Mi resultado", "6");
@@ -229,7 +363,7 @@ describe("hoja manual de fracciones y divisibilidad", () => {
     expect(onUse).not.toHaveBeenCalled();
   });
   test("conserva operandos antiguos sin recuperar la solución automática", () => {
-    sessionStorage.clear();
+    sessionStorage.clear(); localStorage.clear();
     sessionStorage.setItem("antigua", JSON.stringify({ op: "add", a: "1/2", b: "1/3", calculated: true }));
     const onResult = vi.fn();
     render(<ExactCalculator storageKey="antigua" onResult={onResult} />);
@@ -239,7 +373,7 @@ describe("hoja manual de fracciones y divisibilidad", () => {
     expect(onResult).not.toHaveBeenCalledWith("5/6");
   });
   test("valida el formato sin resolver expresiones ni aceptar denominador cero", async () => {
-    sessionStorage.clear(); renderCalculator(); await open();
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
     fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
     change("Operación", "expression"); change("Expresión", "(1/2 + 1/3) * 3");
     change("Numerador o entero de Mi resultado", "17"); change("Denominador de Mi resultado", "0");

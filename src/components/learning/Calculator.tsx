@@ -3,6 +3,7 @@
 import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Calculator as CalculatorIcon } from "lucide-react";
 import { secondaryButton } from "./LearningShell";
+import { useAuth } from "@/lib/AuthProvider";
 import styles from "./calculator.module.css";
 
 /* Calculadora en columnas: una herramienta de todo el espacio del alumno.
@@ -32,6 +33,9 @@ interface CalculatorContext {
 const Context = createContext<CalculatorContext | null>(null);
 
 export function CalculatorProvider({ childId, children }: { childId: string; children: ReactNode }) {
+  const { parentId } = useAuth();
+  const [restored, setRestored] = useState(0);
+  const [restoredMode, setRestoredMode] = useState<"written" | "exact">("written");
   const [isOpen, setOpen] = useState(false);
   // El panel (y las hojas) se cargan al abrirlo por primera vez; después se
   // conserva montado para no perder la cuenta a medias.
@@ -70,7 +74,7 @@ export function CalculatorProvider({ childId, children }: { childId: string; chi
       </button>
       {requested && (
         <Suspense fallback={null}>
-          <CalculatorPanel id={panelId} open={isOpen} onClose={close} target={target} storageKey={`maths:calculadora:${childId}`} />
+          <CalculatorPanel key={restored} id={panelId} open={isOpen} onClose={close} target={target} storageKey={`maths:calculadora:${childId}`} parentId={parentId} childId={childId} initialMode={restoredMode} restored={restored > 0} onRestore={(mode) => { setRestoredMode(mode); setRestored((n) => n + 1); }} />
         </Suspense>
       )}
     </Context.Provider>

@@ -15,6 +15,7 @@ import {
 import { secondaryButton } from "./LearningShell";
 import { Challenge } from "./Challenge";
 import { Slider } from "./GraphVisuals";
+import { FactorTable } from "./FactorTable";
 
 /* Tabla de descomposición simultánea en factores primos (MCD y MCM): los
  * números a la izquierda de la raya y, en cada línea, el primo que divide a
@@ -23,40 +24,17 @@ import { Slider } from "./GraphVisuals";
 
 const box =
   "h-10 min-w-0 rounded-md border text-center font-mono text-lg tabular-nums focus:outline-2 focus:outline-cyan-300 sm:h-11";
-const numberCell = "flex h-10 w-14 items-center justify-center font-mono text-lg tabular-nums sm:h-11 sm:w-16";
-
 type Line = { values: string[]; prime: string };
 
-function Table({
-  spec,
-  lines,
-  render,
-  commons,
-}: {
+function Table({ spec, lines, render, commons }: {
   spec: FactorSpec;
   lines: number;
   render: (line: number, column: number | "p") => React.ReactNode;
-  /** Líneas cuyo primo divide a todos (se marcan en la demostración). */
   commons?: Set<number>;
 }) {
-  const k = spec.values.length;
-  return (
-    <div className="overflow-x-auto" tabIndex={0} role="group" aria-label={`Tabla de factores primos de ${spec.values.join(", ")}`}>
-      <div className="mx-auto grid w-max gap-y-1" style={{ gridTemplateColumns: `repeat(${k}, auto) auto` }}>
-        {Array.from({ length: lines }, (_, line) => (
-          <div key={line} className="contents">
-            {spec.values.map((_, c) => (
-              <span key={c} className={numberCell}>{render(line, c)}</span>
-            ))}
-            <span className={`${numberCell} ml-2 border-l-2 border-slate-200 pl-2 ${commons?.has(line) ? "text-amber-200" : "text-cyan-100"}`}>
-              {render(line, "p")}
-              {commons?.has(line) && <span className="ml-1 text-xs" aria-label="divide a todos">●</span>}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <FactorTable columns={spec.values.length} rows={lines} label={`Tabla de factores primos de ${spec.values.join(", ")}`}
+    renderValue={(line, column) => render(line, column)}
+    renderDivisor={(line) => <>{render(line, "p")}{commons?.has(line) && <span className="ml-1 text-xs text-amber-200" aria-label="divide a todos">●</span>}</>} />;
 }
 
 function linesOf(trace: FactorTrace): Line[] {
