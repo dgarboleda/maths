@@ -366,9 +366,11 @@ export function DivisionSheet({
   hintLevel = 0,
   failedResponse = null,
   disabled,
-  draft, onDraft, calculator = false,
+  draft, onDraft, calculator = false, onDecimalComma, focusQuotient,
 }: {
   calculator?: boolean;
+  onDecimalComma?: (draft: DivisionDraft, at: number) => void;
+  focusQuotient?: number;
   draft?: DivisionDraft; onDraft?: (draft: DivisionDraft) => void;
   spec: DivisionSpec;
   layout: DivisionLayout;
@@ -384,7 +386,7 @@ export function DivisionSheet({
   disabled?: boolean;
 }) {
   if (mode === "open")
-    return <OpenDivisionSheet spec={spec} response={response} onChange={onChange} hintLevel={hintLevel} failedResponse={failedResponse} disabled={disabled} draft={draft} onDraft={onDraft} calculator={calculator} />;
+    return <OpenDivisionSheet spec={spec} response={response} onChange={onChange} hintLevel={hintLevel} failedResponse={failedResponse} disabled={disabled} draft={draft} onDraft={onDraft} calculator={calculator} onDecimalComma={onDecimalComma} focusQuotient={focusQuotient} />;
   return <StepDivisionSheet spec={spec} layout={layout} mode={mode} response={response} onChange={onChange} onComplete={onComplete} hintLevel={hintLevel} failedResponse={failedResponse} disabled={disabled} />;
 }
 
@@ -621,9 +623,11 @@ function OpenDivisionSheet({
   onChange,
   hintLevel = 0,
   failedResponse = null,
-  disabled, draft, onDraft, calculator = false,
+  disabled, draft, onDraft, calculator = false, onDecimalComma, focusQuotient,
 }: {
   calculator?: boolean;
+  onDecimalComma?: (draft: DivisionDraft, at: number) => void;
+  focusQuotient?: number;
   draft?: DivisionDraft; onDraft?: (draft: DivisionDraft) => void;
   spec: DivisionSpec;
   response: string;
@@ -632,7 +636,7 @@ function OpenDivisionSheet({
   failedResponse?: string | null;
   disabled?: boolean;
 }) {
-  const keypadMode = useSheetInputMode(isDecimalDivision(spec) ? "decimal" : "numeric");
+  const keypadMode = useSheetInputMode(isDecimalDivision(spec) || onDecimalComma ? "decimal" : "numeric");
   const trace = useMemo(() => divisionTrace(spec), [spec]);
   const n = trace.dividendDigits.length;
   // Casillas del cociente: tantas como cifras puede tener (con decimales, el
@@ -662,6 +666,7 @@ function OpenDivisionSheet({
   });
   useEffect(() => { onDraft?.(state); }, [state, onDraft]);
   const refs = useRef(new Map<string, HTMLInputElement | null>());
+  useEffect(() => { if (focusQuotient !== undefined) { const id = requestAnimationFrame(() => refs.current.get(`q:${focusQuotient}`)?.focus()); return () => cancelAnimationFrame(id); } }, [focusQuotient]);
   const focus = (key: string) => requestAnimationFrame(() => refs.current.get(key)?.focus());
 
   const emit = (next: typeof state) => {
@@ -765,10 +770,12 @@ function OpenDivisionSheet({
                   step >= 0 && step < hinted ? String(trace.steps[step].digit) : undefined,
                   // «,»: después de una casilla llena, o antes de una vacía;
                   // donde ya está, la quita.
-                  decimal
+                  decimal || onDecimalComma
                     ? (filled) => {
                         const at = filled ? i : i - 1;
-                        if (at >= 0 && at < qCells - 1) placeComma(at === state.comma ? null : at);
+                        if (at < 0) return;
+                        if (!decimal) onDecimalComma?.(state, at);
+                        else if (at < qCells - 1) placeComma(at === state.comma ? null : at);
                       }
                     : undefined,
                 );

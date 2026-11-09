@@ -103,6 +103,7 @@ export function CalculatorPanel({
   const [signedSteps, setSignedSteps] = useState(initial?.signedDraft?.steps ?? "");
   const [work, setWork] = useState(initial?.sheet?.work ?? "");
   const [revision, setRevision] = useState(0);
+  const [focusQuotient, setFocusQuotient] = useState<number | undefined>(undefined);
   const [problem, setProblem] = useState<string | null>(null);
   const [checked, setChecked] = useState<{ signature: string; report: CheckReport & { wrongColumn?: number } } | null>(null);
   // Aviso de la última copia: solo se muestra mientras el resultado final siga siendo ese.
@@ -123,7 +124,7 @@ export function CalculatorPanel({
     if (open) heading.current?.focus();
   }, [open]);
 
-  const write = (next = { op, a, b }, decimals = continueDecimal) => {
+  const write = (next = { op, a, b }, decimals = false) => {
     const x = Number(next.a.replace(",", ".")), y = Number(next.b.replace(",", "."));
     const needsSigned = next.a.startsWith("-") || next.b.startsWith("-") || (next.op === "subtract" && x < y);
     if (needsSigned) {
@@ -135,19 +136,25 @@ export function CalculatorPanel({
     const outcome = calculatorSpec(next.op, next.a, next.b, decimals);
     if ("problem" in outcome) return setProblem(outcome.problem);
     setProblem(null);
+    setContinueDecimal(decimals);
     setSigned(false);
     setSheetDraft(undefined);
+    setFocusQuotient(undefined);
     setWork("");
     setRevision((n) => n + 1);
     setSpec(outcome.spec);
     setWritten(next);
   };
-  // Con coma en los números, la división siempre sigue con decimales.
-  const forcedDecimals = a.includes(",") || b.includes(",");
-  /** La casilla se aplica al momento a la división que ya está escrita. */
-  const toggleDecimals = (on: boolean) => {
-    setContinueDecimal(on);
-    if (written?.op === "divide") write(written, on);
+  const enableDecimalDivision = (draft: DivisionDraft, at: number) => {
+    if (!written || written.op !== "divide") return;
+    const next = calculatorSpec("divide", written.a, written.b, true);
+    if (!("spec" in next)) { setProblem(next.problem); return; }
+    setContinueDecimal(true);
+    setSheetDraft({ ...draft, comma: at });
+    setFocusQuotient(at + 1);
+    setWork("");
+    setRevision((n) => n + 1);
+    setSpec(next.spec);
   };
   const result = signed ? (/^-?\d+(?:,\d+)?$/.test(signedResult) ? signedResult : "") : spec ? calculatorResult(spec, work) : "";
   const checkSignature = JSON.stringify([spec, written, work, sheetDraft, signed, signedResult, signedSteps, strategy]);
@@ -286,18 +293,7 @@ export function CalculatorPanel({
               Escribir la cuenta
             </button>
           </div>
-          {op === "divide" && (
-            <label className="flex items-center gap-2 text-sm text-slate-300">
-              <input
-                type="checkbox"
-                checked={continueDecimal || forcedDecimals}
-                disabled={forcedDecimals}
-                onChange={(e) => toggleDecimals(e.target.checked)}
-              />
-              Continuar la división con decimales
-              {forcedDecimals && <span className="text-xs text-slate-400">(con coma en los números, siempre)</span>}
-            </label>
-          )}
+          {op === "divide" && <p className="text-xs text-slate-400">Para continuar con decimales, escribe la coma en el cociente.</p>}
           {problem && <p role="alert" className="text-sm text-amber-200">{problem}</p>}
           {signed && written && <NumericKeypadArea bottom="0px" hideWhenIdle sign comma>
             <div className={`${calculatorBoardClass} space-y-3`} style={calculatorBoardStyle} role="group" aria-label="Cuenta con números con signo">
@@ -311,9 +307,9 @@ export function CalculatorPanel({
           {spec && (
             <>
               {/* En el panel no hay navegación inferior: el teclado va pegado abajo. */}
-              <NumericKeypadArea bottom="0px" hideWhenIdle comma={hasDecimals(spec)}>
+              <NumericKeypadArea bottom="0px" hideWhenIdle comma={spec.op === "divide" || hasDecimals(spec)}>
                 {spec.op === "divide" ? (
-                  <DivisionSheet calculator key={`division-${revision}`} spec={spec} layout="completa" mode="open" response={work} onChange={setWork} draft={sheetDraft as DivisionDraft | undefined} onDraft={setSheetDraft} />
+                  <DivisionSheet calculator key={`division-${revision}`} spec={spec} layout="completa" mode="open" response={work} onChange={setWork} draft={sheetDraft as DivisionDraft | undefined} onDraft={setSheetDraft} onDecimalComma={enableDecimalDivision} focusQuotient={focusQuotient} />
                 ) : spec.op === "multiply" ? (
                   <MultiplySheet calculator key={`multiply-${revision}`} spec={spec} mode="free" response={work} onChange={setWork} draft={sheetDraft as MultiplyDraft | undefined} onDraft={setSheetDraft} />
                 ) : (

@@ -7,6 +7,7 @@ describe("Calculadora: lógica", () => {
     expect(calculatorSpec("multiply", "4", "347")).toEqual({ spec: { op: "multiply", a: 347, b: 4, scaleA: 0, scaleB: 0 } });
     expect(calculatorSpec("divide", "3", "4")).toEqual({ spec: { op: "divide", a: 3, b: 4 } });
     expect(calculatorSpec("divide", "3", "4", true)).toEqual({ spec: { op: "divide", a: 3, b: 4, places: 2 } });
+    expect(calculatorSpec("divide", "4", "2", true)).toEqual({ spec: { op: "divide", a: 4, b: 2, places: 1 } });
     expect(calculatorSpec("subtract", "3", "4")).toEqual({ problem: expect.stringMatching(/no puede ser menor/) });
     expect(calculatorSpec("divide", "3", "0,125")).toEqual({ problem: expect.stringMatching(/dos decimales/) });
   });

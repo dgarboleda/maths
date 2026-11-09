@@ -143,4 +143,19 @@ test("teclado numérico propio en móvil: escribe en la hoja sin abrir el del si
   await denominator.tap();
   await fractionKeypad.getByRole("button", { name: "Escribir 2" }).tap();
   await expect(denominator).toHaveValue("2");
+
+  await page.getByRole("button", { name: "Cuentas escritas" }).tap();
+  await page.getByRole("radio", { name: "Dividir" }).check();
+  await page.getByLabel("Dividendo").fill("3");
+  await page.getByLabel("Divisor", { exact: true }).fill("4");
+  await page.getByRole("button", { name: "Escribir la cuenta" }).tap();
+  await page.getByLabel("Cociente: cifra 1").tap();
+  await page.getByRole("group", { name: "Teclado numérico" }).getByRole("button", { name: "Escribir 0" }).tap();
+  await page.getByRole("group", { name: "Teclado numérico" }).getByRole("button", { name: "Escribir coma" }).tap();
+  await expect(page.getByLabel("Cociente: cifra 1")).toHaveValue("0");
+  await expect(page.getByLabel("Cociente: cifra 2")).toBeVisible();
+  await expect(page.getByText("coma", { exact: true })).toHaveCount(1);
+  await page.getByLabel("Cociente: cifra 2").tap();
+  await page.getByRole("group", { name: "Teclado numérico" }).getByRole("button", { name: "Escribir 7" }).tap();
+  await expect(page.getByLabel("Cociente: cifra 2")).toHaveValue("7");
 });
