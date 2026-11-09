@@ -71,7 +71,7 @@ export function calculatorSpec(
   if (op === "divide") {
     if (y > 999 || Math.round(y * 10 ** (b.split(",")[1]?.length ?? 0)) > 999) return { problem: "El divisor puede tener hasta 3 cifras." };
     let spec: DivisionSpec = { op, a: x, b: y };
-    if (isDecimalDivision(spec) || a.includes(",") || b.includes(",") || continueDecimal) spec = { ...spec, places: exactPlaces(x, y, 3) ?? 3 };
+    if (isDecimalDivision(spec) || a.includes(",") || b.includes(",") || continueDecimal) spec = { ...spec, places: Math.max(continueDecimal ? 1 : 0, exactPlaces(x, y, 3) ?? 3) };
     return validDivisionSpec(spec) ? { spec } : { problem: "Usa números menores que 10 000 000." };
   }
   // Los mismos límites que la hoja: así nunca se dibuja una cuenta que no puede trazar.

@@ -192,23 +192,39 @@ describe("Calculadora global", () => {
     expect(screen.queryByRole("button", { name: /^Usar/ })).toBeNull();
   });
 
-  test("«Continuar la división con decimales» se aplica al momento a la división escrita", async () => {
+  test("la coma amplía la división y conserva las cifras y filas escritas", async () => {
     sessionStorage.clear(); localStorage.clear();
-    renderCalculator();
-    await open();
-    fireEvent.click(screen.getByRole("radio", { name: "Dividir" }));
-    numbers("3", "4");
-    // Sin decimales: 3 ÷ 4 = 0 y sobran 3, una sola casilla en el cociente.
-    expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(1);
-    const box = screen.getByRole("checkbox", { name: /Continuar la división/ });
-    fireEvent.click(box);
+    const first = renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("radio", { name: "Dividir" })); numbers("3", "4");
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 1"), { target: { value: "0" } });
+    fireEvent.change(screen.getByLabelText("Fila 1: columna 1 de 1"), { target: { value: "3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Añadir fila" }));
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 1"), { target: { value: "," } });
     expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(3);
-    fireEvent.click(box);
-    expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(1);
-    // Con coma en los números siempre sigue con decimales: la casilla queda marcada y fija.
-    fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: "3,5" } });
-    expect(screen.getByRole("checkbox", { name: /Continuar la división/ })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: /Continuar la división/ })).toBeDisabled();
+    expect(screen.getByLabelText("Cociente: cifra 1")).toHaveValue("0");
+    expect(screen.getByLabelText("Fila 1: columna 1 de 3")).toHaveValue("3");
+    expect(screen.getByLabelText("Fila 3: columna 1 de 3")).toHaveValue("");
+    expect(screen.getByText("coma")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 2"), { target: { value: "7" } });
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 3"), { target: { value: "5" } });
+    expect(screen.getByText(/Resultado final:/)).toHaveTextContent("0,75");
+    first.unmount(); renderCalculator(); await open();
+    expect(screen.getByLabelText("Cociente: cifra 1")).toHaveValue("0");
+    expect(screen.getByLabelText("Cociente: cifra 3")).toHaveValue("5");
+    expect(screen.getByLabelText("Fila 1: columna 1 de 3")).toHaveValue("3");
+  });
+
+  test("la coma en la casilla vacía continúa después del cociente entero", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("radio", { name: "Dividir" })); numbers("1287", "89");
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 1"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 2"), { target: { value: "4" } });
+    fireEvent.change(screen.getByLabelText("Fila 1: columna 2 de 4"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 3"), { target: { value: "," } });
+    expect(screen.getByLabelText("Cociente: cifra 1")).toHaveValue("1");
+    expect(screen.getByLabelText("Cociente: cifra 2")).toHaveValue("4");
+    expect(screen.getByLabelText("Fila 1: columna 2 de 7")).toHaveValue("3");
+    expect(screen.getByText("coma")).toBeInTheDocument();
   });
 
   test("conserva los ceros decimales al multiplicar y respeta los límites de la hoja", async () => {
@@ -222,8 +238,9 @@ describe("Calculadora global", () => {
     numbers("10000000", "1");
     expect(screen.getByRole("alert")).toHaveTextContent(/menores que 10 000 000/);
     fireEvent.click(screen.getByRole("radio", { name: "Dividir" }));
-    fireEvent.click(screen.getByRole("checkbox", { name: /Continuar la división/ }));
     numbers("3", "4");
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 1"), { target: { value: "0" } });
+    fireEvent.change(screen.getByLabelText("Cociente: cifra 1"), { target: { value: "," } });
     expect(screen.getAllByLabelText(/^Cociente: cifra/)).toHaveLength(3);
   });
 });
