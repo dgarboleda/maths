@@ -57,6 +57,7 @@ test("el alumno trabaja fracciones y MCM en bloques y traslada su resultado", as
   await page.getByLabel("Denominador de Equivalente del número 1").fill("6");
   await page.getByLabel("Numerador o entero de Equivalente del número 2").fill("2");
   await page.getByLabel("Denominador de Equivalente del número 2").fill("6");
+  await page.getByText("Mis pasos (opcional)").click();
   await page.getByLabel("Operación del paso 1").fill("1/2 + 1/3");
   await page.getByLabel("Resultado del paso 1").fill("5/6");
   await page.getByLabel("Numerador o entero de Mi resultado").fill("7");
@@ -68,7 +69,6 @@ test("el alumno trabaja fracciones y MCM en bloques y traslada su resultado", as
   await page.getByRole("button", { name: "Comprobar mi trabajo" }).click();
   await expect(page.getByText("El resultado final es correcto.")).toBeVisible();
   await expect(page.getByText(/tienen un denominador común/)).toBeVisible();
-  await page.getByRole("button", { name: "Confirmar mi resultado" }).click();
   await expect(page.getByRole("button", { name: "Usar 5/6" })).toBeDisabled();
   await expect(page.getByText(/solo admite números enteros/)).toBeVisible();
   await page.getByRole("combobox", { name: "Operación", exact: true }).selectOption("mcm");
@@ -80,6 +80,9 @@ test("el alumno trabaja fracciones y MCM en bloques y traslada su resultado", as
   await page.getByLabel("Fila 1, número 1").fill("6");
   await page.getByLabel("Fila 1, número 2").fill("8");
   await page.getByLabel("Fila 1, número 3").fill("12");
+  await expect(page.getByLabel("Divisor de la fila 2")).toBeVisible();
+  const tableFits = await page.getByRole("region", { name: "Tabla desplazable de factores" }).evaluate((el) => el.scrollWidth <= el.clientWidth);
+  expect(tableFits).toBe(true);
   await page.getByRole("textbox", { name: "Mi resultado", exact: true }).fill("48");
   await page.getByRole("button", { name: "Confirmar mi resultado" }).click();
   await expect(page.getByText("Resultado escrito: 48")).toBeVisible();
@@ -118,10 +121,11 @@ test("teclado numérico propio en móvil: escribe en la hoja sin abrir el del si
   await page.getByLabel("Segundo número").fill("4");
   await page.getByRole("button", { name: "Escribir la cuenta" }).click();
   const keypad = page.getByRole("group", { name: "Teclado numérico" });
-  await expect(keypad).toBeVisible();
+  await expect(keypad).toHaveCount(0);
   const units = page.getByLabel("Resultado: unidades", { exact: true });
   await expect(units).toHaveAttribute("inputmode", "none");
   await units.tap();
+  await expect(keypad).toBeVisible();
   await keypad.getByRole("button", { name: "Escribir 6" }).tap();
   await keypad.getByRole("button", { name: "Escribir 3" }).tap();
   await expect(page.getByRole("button", { name: "Usar 36", exact: true })).toBeVisible();

@@ -47,7 +47,8 @@
 }
 /* Al enfocar una casilla, que quede por encima del teclado numérico propio
    (pegado abajo dentro del panel). */
-.body :is(input, button, select) { scroll-margin-bottom: 16rem; }
+.body input { scroll-margin-bottom: 16rem; }
+.body :is(button, select, summary) { scroll-margin-bottom: 1rem; }
 .footer {
   border-top: 1px solid #334155;
   background: #0f172a;

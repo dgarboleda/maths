@@ -32,6 +32,12 @@ describe("comprobación de la hoja", () => {
     expect(report.details.join(" ")).toMatch(/paso 1/);
     expect(report.message).toMatch(/resultado final es correcto/);
   });
+  test("agrupa ambas fracciones al comprobar un paso estructurado de división", () => {
+    const step = { operation: "", left: "1/2", right: "3/4", operator: "÷", result: "2/3" };
+    expect(checkManualWork("divide", ["1/2", "3/4"], "", [step], rows, "2/3").ok).toBe(true);
+    expect(checkManualWork("divide", ["1/2", "3/4"], "", [{ ...step, result: "1/24" }], rows, "2/3").ok).toBe(false);
+    expect(checkManualWork("divide", ["-1/2", "3/4"], "", [{ ...step, left: "-1/2", result: "-2/3" }], rows, "-2/3").ok).toBe(true);
+  });
   test("distingue entre equivalencia y una fracción simplificada", () => {
     expect(checkManualWork("simplify", ["2/4"], "", [], rows, "2/4").message).toMatch(/simplificar/);
     expect(checkManualWork("simplify", ["2/4"], "", [], rows, "01/02").ok).toBe(true);

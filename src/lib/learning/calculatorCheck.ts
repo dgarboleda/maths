@@ -100,7 +100,7 @@ export function checkManualWork(op: WorkOp, values: string[], expression: string
   }
   for (const [index, step] of steps.entries()) {
     const structured = step.left !== undefined;
-    const operation = structured ? `${step.left ?? ""} ${step.operator ?? "+"} ${step.right ?? ""}` : step.operation.trim();
+    const operation = structured ? `(${step.left ?? ""}) ${step.operator ?? "+"} (${step.right ?? ""})` : step.operation.trim();
     if (!operation && !step.result.trim()) continue;
     if ((structured && (!step.left || !step.right)) || !operation || !step.result.trim()) { details.push(`Completa el paso ${index + 1} para poder revisarlo.`); procedureHasIssue = true; break; }
     const calculation = calculateExpression(operation);

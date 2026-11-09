@@ -390,6 +390,43 @@ describe("hoja manual de fracciones y divisibilidad", () => {
     expect(screen.getByText(/solo admite números enteros/)).toBeVisible();
     expect(onUse).not.toHaveBeenCalled();
   });
+  test("un resultado comprobado se puede usar y uno anterior requiere revisión", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator({ labels: ["respuesta"], onUse: vi.fn() }); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" })); fractions();
+    change("Numerador o entero de Mi resultado", "5"); change("Denominador de Mi resultado", "6");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar mi trabajo" }));
+    expect(screen.getByRole("button", { name: "Usar 5/6 en respuesta" })).toBeEnabled();
+    change("Operación", "multiply");
+    expect(screen.getByText(/La cuenta cambió/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Confirmar mi resultado" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Conservar resultado" }));
+    expect(screen.getByRole("button", { name: "Confirmar mi resultado" })).toBeEnabled();
+  });
+  test("crea una fila vacía al completar la anterior sin resolverla", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    change("Operación", "mcm"); change("Primer entero", "12"); change("Segundo entero", "18");
+    change("Divisor de la fila 1", "2"); change("Fila 1, número 1", "6"); change("Fila 1, número 2", "9");
+    expect(screen.getByLabelText("Divisor de la fila 2")).toHaveValue("");
+    expect(screen.getByLabelText("Fila 2, número 1")).toHaveValue("");
+  });
+  test("muestra la ayuda del denominador común al necesitarla", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    change("Numerador o entero de Primera fracción o número", "1"); change("Denominador de Primera fracción o número", "2");
+    change("Numerador o entero de Segunda fracción o número", "1"); change("Denominador de Segunda fracción o número", "2");
+    expect(screen.getByText("Preparar denominador común (opcional)").closest("details")).not.toHaveAttribute("open");
+    change("Denominador de Segunda fracción o número", "3");
+    expect(screen.getByText("Preparar denominador común (opcional)").closest("details")).toHaveAttribute("open");
+  });
+  test("inserta los signos de expresión en la selección", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" })); change("Operación", "expression"); change("Expresión", "1234");
+    const input = screen.getByLabelText("Expresión") as HTMLInputElement;
+    input.setSelectionRange(1, 3);
+    fireEvent.click(screen.getByRole("button", { name: "Añadir + a la expresión" }));
+    expect(input).toHaveValue("1+4");
+  });
   test("conserva operandos antiguos sin recuperar la solución automática", () => {
     sessionStorage.clear(); localStorage.clear();
     sessionStorage.setItem("antigua", JSON.stringify({ op: "add", a: "1/2", b: "1/3", calculated: true }));

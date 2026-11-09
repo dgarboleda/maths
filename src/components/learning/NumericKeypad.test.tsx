@@ -81,6 +81,19 @@ describe("Teclado numérico de las hojas", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
+  test("en la calculadora aparece al editar y se puede ocultar", () => {
+    touch(true);
+    render(<NumericKeypadArea hideWhenIdle><ColumnSheet spec={{ op: "add", a: 12, b: 3 }} strategy="prestamo" mode="free" response="" onChange={() => {}} /></NumericKeypadArea>);
+    expect(screen.queryByRole("group", { name: "Teclado numérico" })).toBeNull();
+    const input = screen.getByLabelText("Resultado: unidades", { exact: true });
+    act(() => input.focus());
+    expect(screen.getByRole("group", { name: "Teclado numérico" })).toBeVisible();
+    key("Ocultar teclado");
+    expect(screen.queryByRole("group", { name: "Teclado numérico" })).toBeNull();
+    act(() => input.focus());
+    expect(screen.getByRole("group", { name: "Teclado numérico" })).toBeVisible();
+  });
+
   test("Ruffini tiene la tecla del signo menos", () => {
     touch(true);
     const onChange = vi.fn();
