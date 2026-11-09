@@ -282,6 +282,34 @@ describe("hoja manual de fracciones y divisibilidad", () => {
     expect(screen.getByText("El resultado final es correcto.")).toBeVisible();
     expect(screen.getByText(/solo se comprobó el resultado/)).toBeVisible();
   });
+  test("el alumno prepara y conserva fracciones equivalentes con denominador común", async () => {
+    sessionStorage.clear(); localStorage.clear(); const first = renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" })); fractions();
+    change("Numerador o entero de Equivalente del número 1", "3");
+    change("Denominador de Equivalente del número 1", "6");
+    change("Numerador o entero de Equivalente del número 2", "2");
+    change("Denominador de Equivalente del número 2", "6");
+    change("Numerador o entero de Mi resultado", "5"); change("Denominador de Mi resultado", "6");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar mi trabajo" }));
+    expect(screen.getByText(/tienen un denominador común/)).toBeVisible();
+    first.unmount(); sessionStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    expect(screen.getByLabelText("Numerador o entero de Equivalente del número 1")).toHaveValue("3");
+    expect(screen.getByLabelText("Denominador de Equivalente del número 2")).toHaveValue("6");
+  });
+  test("al quitar un operando conserva su correspondencia con las demás equivalencias", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" })); fractions();
+    fireEvent.click(screen.getByRole("button", { name: /Añadir número/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Añadir número/ }));
+    change("Numerador o entero de Número 3", "1"); change("Denominador de Número 3", "4");
+    change("Numerador o entero de Número 4", "1"); change("Denominador de Número 4", "6");
+    change("Numerador o entero de Equivalente del número 3", "3"); change("Denominador de Equivalente del número 3", "12");
+    change("Numerador o entero de Equivalente del número 4", "2"); change("Denominador de Equivalente del número 4", "12");
+    fireEvent.click(screen.getByRole("button", { name: "Quitar número 3" }));
+    expect(screen.getByLabelText("Denominador de Número 3")).toHaveValue("6");
+    expect(screen.getByLabelText("Numerador o entero de Equivalente del número 3")).toHaveValue("2");
+  });
   test("la tabla y el resultado manual se conservan y los cambios invalidan la confirmación", async () => {
     sessionStorage.clear(); localStorage.clear();
     const first = renderCalculator();

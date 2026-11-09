@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { checkManualWork } from "./calculatorCheck";
+import { checkCommonDenominator, checkManualWork } from "./calculatorCheck";
 import { checkSignedWork, checkWrittenWork } from "./calculatorWrittenCheck";
 
 const blankStep = { operation: "", result: "" };
@@ -11,6 +11,20 @@ describe("comprobación de la hoja", () => {
     const wrong = checkManualWork("add", ["1/2", "1/3"], "", [blankStep], rows, "7/6");
     expect(wrong.ok).toBe(false);
     expect(JSON.stringify(wrong)).not.toContain("5/6");
+  });
+  test("revisa equivalencias con cualquier denominador común sin dar la respuesta", () => {
+    expect(checkCommonDenominator(["1/2", "1/3"], ["3/6", "2/6"])).toBeNull();
+    expect(checkCommonDenominator(["1/2", "1/3"], ["6/12", "4/12"])).toBeNull();
+    expect(checkCommonDenominator(["1/2", "1/3"], ["2/6", "2/6"])).toMatch(/número 1/);
+    expect(checkCommonDenominator(["1/2", "1/3"], ["3/6", "4/12"])).toMatch(/aún no son iguales/);
+    expect(checkCommonDenominator(["1/2", "1/3"], ["3/6", ""])).toMatch(/Completa/);
+    expect(checkCommonDenominator(["-1/2", "1/3"], ["3/-6", "2/6"])).toMatch(/aún no son iguales/);
+    const checked = checkManualWork("add", ["1/2", "1/3"], "", [], rows, "5/6", ["3/6", "2/6"]);
+    expect(checked.ok).toBe(true);
+    expect(checked.details.join(" ")).toMatch(/denominador común/);
+    const wrong = checkManualWork("subtract", ["1/2", "1/3"], "", [], rows, "1/6", ["2/6", "2/6"]);
+    expect(wrong.ok).toBe(false);
+    expect(wrong.details.join(" ")).toMatch(/número 1/);
   });
   test("señala el paso incorrecto aunque el resultado final sea correcto", () => {
     const report = checkManualWork("add", ["1/2", "1/3"], "", [{ operation: "1/2 + 1/3", result: "7/6" }], rows, "5/6");
