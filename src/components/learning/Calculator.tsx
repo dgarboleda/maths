@@ -8,8 +8,8 @@ import styles from "./calculator.module.css";
 /* Calculadora en columnas: una herramienta de todo el espacio del alumno.
  * Un botón flotante abre un panel lateral donde se escriben cuentas con su
  * desarrollo (columnas, multiplicación y galera), se encadenan resultados y
- * se copia el resultado final. También calcula fracciones y divisibilidad
- * con sus pasos. Una pantalla que espera un número (una respuesta, los valores
+ * se copia el resultado final. También permite escribir fracciones y tablas
+ * de divisibilidad sin resolverlas. Una pantalla que espera un número (una respuesta, los valores
  * de un plan) lo anuncia con `useCalculatorTarget` y el panel ofrece pasarle
  * el resultado. */
 

@@ -34,7 +34,8 @@ test("calculadora global en una aventura: la cuenta se hace en columnas y el res
   await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
 });
 
-test("la calculadora opera fracciones y MCM sin enviar fracciones a un plan entero", async ({ page }, testInfo) => {
+test("el alumno trabaja fracciones y MCM en bloques y traslada su resultado", async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
   await registrarPadre(page);
   const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
@@ -44,26 +45,30 @@ test("la calculadora opera fracciones y MCM sin enviar fracciones a un plan ente
   await page.getByLabel("Lado del jardín (m)").fill("11");
   await page.getByRole("button", { name: "Calculadora", exact: true }).click();
   await page.getByRole("button", { name: "Fracciones y MCM" }).click();
-  await page.getByLabel("Primera fracción o número").fill("1/2");
-  await page.getByLabel("Segunda fracción o número").fill("1/3");
-  await page.getByRole("button", { name: "Calcular", exact: true }).click();
-  await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 5/6");
+  await page.getByLabel("Numerador o entero de Primera fracción o número").fill("1");
+  await page.getByLabel("Denominador de Primera fracción o número").fill("2");
+  await page.getByLabel("Numerador o entero de Segunda fracción o número").fill("1");
+  await page.getByLabel("Denominador de Segunda fracción o número").fill("3");
+  await expect(page.getByText(/Resultado exacto/)).toHaveCount(0);
+  await page.getByLabel("Operación del paso 1").fill("1/2 + 1/3");
+  await page.getByLabel("Resultado del paso 1").fill("5/6");
+  await page.getByLabel("Numerador o entero de Mi resultado").fill("5");
+  await page.getByLabel("Denominador de Mi resultado").fill("6");
+  await page.getByRole("button", { name: "Confirmar mi resultado" }).click();
   await expect(page.getByRole("button", { name: "Usar 5/6" })).toBeDisabled();
   await expect(page.getByText(/solo admite números enteros/)).toBeVisible();
-  await page.getByRole("button", { name: /Añadir número/ }).click();
-  await page.getByRole("textbox", { name: "Número 3", exact: true }).fill("1/6");
-  await page.getByRole("button", { name: "Calcular", exact: true }).click();
-  await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 1");
-  await page.getByRole("combobox", { name: "Operación", exact: true }).selectOption("expression");
-  await page.getByRole("textbox", { name: "Expresión", exact: true }).fill("(1/2 + 1/3) * 3");
-  await page.getByRole("button", { name: "Calcular", exact: true }).click();
-  await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 5/2");
   await page.getByRole("combobox", { name: "Operación", exact: true }).selectOption("mcm");
   await page.getByLabel("Primer entero").fill("12");
   await page.getByLabel("Segundo entero").fill("16");
+  await page.getByRole("button", { name: /Añadir número/ }).click();
   await page.getByLabel("Entero 3").fill("24");
-  await page.getByRole("button", { name: "Calcular", exact: true }).click();
-  await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 48");
+  await page.getByLabel("Divisor de la fila 1").fill("2");
+  await page.getByLabel("Fila 1, número 1").fill("6");
+  await page.getByLabel("Fila 1, número 2").fill("8");
+  await page.getByLabel("Fila 1, número 3").fill("12");
+  await page.getByRole("textbox", { name: "Mi resultado", exact: true }).fill("48");
+  await page.getByRole("button", { name: "Confirmar mi resultado" }).click();
+  await expect(page.getByText("Resultado escrito: 48")).toBeVisible();
   expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("calculadora-varios-numeros.png"), fullPage: false });
