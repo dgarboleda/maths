@@ -138,13 +138,11 @@ export function NumericKeypadArea({
                 onPointerDown={(e) => e.preventDefault()} onClick={() => press("Backspace")}>
                 <Delete size={20} aria-hidden="true" />
               </button>
-            </div>
-            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-              <button type="button" aria-label="Mover a la izquierda" className={keyClass}
+              <button type="button" aria-label="Mover a la izquierda" className={`${keyClass} col-span-2`}
                 onPointerDown={(e) => e.preventDefault()} onClick={() => press("ArrowLeft")}>
                 <ArrowLeft size={20} aria-hidden="true" />
               </button>
-              <button type="button" aria-label="Mover a la derecha" className={keyClass}
+              <button type="button" aria-label="Mover a la derecha" className={`${keyClass} col-span-2`}
                 onPointerDown={(e) => e.preventDefault()} onClick={() => press("ArrowRight")}>
                 <ArrowRight size={20} aria-hidden="true" />
               </button>
