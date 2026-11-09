@@ -34,9 +34,11 @@ const SYMBOL: Record<CalculatorOp, string> = { add: "+", subtract: "−", multip
 
 /** Cifras y, como mucho, una coma decimal (el punto se lee como coma). */
 export function decimalInput(text: string): string {
-  const clean = text.replace(/\./g, ",").replace(/[^\d,]/g, "");
+  const normalized = text.replace(/[−–]/g, "-");
+  const sign = normalized.startsWith("-") ? "-" : "";
+  const clean = normalized.replace(/\./g, ",").replace(/[^\d,]/g, "");
   const [int, ...rest] = clean.split(",");
-  return rest.length ? `${int},${rest.join("")}` : int;
+  return sign + (rest.length ? `${int},${rest.join("")}` : int);
 }
 
 /**

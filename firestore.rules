@@ -202,6 +202,19 @@ service cloud.firestore {
           allow read, write: if isParentOrChild(parentId, childId);
         }
 
+        // Copia opcional de la hoja de trabajo de la calculadora.
+        match /calculatorDraft/{docId} {
+          allow read: if isParentOrChild(parentId, childId);
+          allow create, update: if isParentOrChild(parentId, childId)
+            && docId == 'actual'
+            && request.resource.data.keys().hasOnly(['written', 'exact', 'updatedAt'])
+            && request.resource.data.keys().hasAll(['written', 'exact', 'updatedAt'])
+            && request.resource.data.written is string && request.resource.data.written.size() <= 100000
+            && request.resource.data.exact is string && request.resource.data.exact.size() <= 100000
+            && request.resource.data.updatedAt == request.time;
+          allow delete: if isParent(parentId);
+        }
+
         // Uso del foco: lo escribe el propio perfil mientras estudia y lo lee
         // la familia en el informe. Un único documento, `resumen`.
         match /helpUsage/{docId} {

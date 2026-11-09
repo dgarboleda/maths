@@ -129,19 +129,11 @@ export function NumericKeypadArea({
                   {d}
                 </button>
               ))}
-              {sign ? (
-                <button type="button" aria-label="Escribir signo menos" className={keyClass}
-                  onPointerDown={(e) => e.preventDefault()} onClick={() => press("−")}>
-                  −
-                </button>
-              ) : comma ? (
-                <button type="button" aria-label="Escribir coma" className={keyClass}
-                  onPointerDown={(e) => e.preventDefault()} onClick={() => press(",")}>
-                  ,
-                </button>
-              ) : (
-                <span aria-hidden="true" />
-              )}
+              {sign && <button type="button" aria-label="Escribir signo menos" className={keyClass}
+                onPointerDown={(e) => e.preventDefault()} onClick={() => press("−")}>−</button>}
+              {comma && <button type="button" aria-label="Escribir coma" className={keyClass}
+                onPointerDown={(e) => e.preventDefault()} onClick={() => press(",")}>,</button>}
+              {!sign && !comma && <span aria-hidden="true" />}
               <button type="button" aria-label="Borrar" className={keyClass}
                 onPointerDown={(e) => e.preventDefault()} onClick={() => press("Backspace")}>
                 <Delete size={20} aria-hidden="true" />

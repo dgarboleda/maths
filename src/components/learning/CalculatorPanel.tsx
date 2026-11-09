@@ -15,11 +15,15 @@ import {
   type CalculatorSpec,
 } from "@/lib/learning/calculator";
 import { divisionTrace, isDecimalDivision, parseNumber } from "@/lib/learning/core";
+import { checkSignedWork, checkWrittenWork } from "@/lib/learning/calculatorWrittenCheck";
+import type { CheckReport } from "@/lib/learning/calculatorCheck";
 import { primaryButton, secondaryButton } from "./LearningShell";
-import { ColumnSheet, OptionPicker, useSubtractStrategy } from "./ColumnOperation";
-import { DivisionSheet } from "./DivisionOperation";
-import { MultiplySheet } from "./MultiplyOperation";
-import { NumericKeypadArea } from "./NumericKeypad";
+import { ColumnSheet, OptionPicker, useSubtractStrategy, type ColumnDraft } from "./ColumnOperation";
+import { calculatorBoardClass, calculatorBoardStyle } from "./calculatorBoard";
+import { readCalculatorDraft, restoreCalculatorFromProfile, saveCalculatorToProfile, writeCalculatorDraft } from "./calculatorStorage";
+import { DivisionSheet, type DivisionDraft } from "./DivisionOperation";
+import { MultiplySheet, type MultiplyDraft } from "./MultiplyOperation";
+import { NumericKeypadArea, useSheetInputMode } from "./NumericKeypad";
 import type { CalculatorTarget } from "./Calculator";
 import { ExactCalculator } from "./ExactCalculator";
 import styles from "./calculator.module.css";
@@ -34,16 +38,31 @@ interface Saved {
   op: CalculatorOp;
   a: string;
   b: string;
+  signedDraft?: { written: { op: CalculatorOp; a: string; b: string }; result: string; steps: string } | null;
+  sheet?: { written: { op: CalculatorOp; a: string; b: string }; continueDecimal: boolean; work: string; draft?: ColumnDraft | MultiplyDraft | DivisionDraft } | null;
 }
 
 function load(key: string): Saved | null {
   try {
-    const raw = sessionStorage.getItem(key);
+    const raw = readCalculatorDraft(key);
     const saved = raw ? (JSON.parse(raw) as Saved) : null;
-    return saved && Array.isArray(saved.chain) ? saved : null;
+    if (!saved || !Array.isArray(saved.chain) || !CALCULATOR_OPS.some((item) => item.id === saved.op) || typeof saved.a !== "string" || typeof saved.b !== "string") return null;
+    const validWritten = (entry: unknown): entry is { op: CalculatorOp; a: string; b: string } => {
+      if (!entry || typeof entry !== "object") return false;
+      const value = entry as { op?: unknown; a?: unknown; b?: unknown };
+      return CALCULATOR_OPS.some((item) => item.id === value.op) && typeof value.a === "string" && value.a.length <= 20 && typeof value.b === "string" && value.b.length <= 20;
+    };
+    if (saved.signedDraft && (!validWritten(saved.signedDraft.written) || typeof saved.signedDraft.result !== "string" || typeof saved.signedDraft.steps !== "string")) saved.signedDraft = null;
+    if (saved.sheet && (!validWritten(saved.sheet.written) || typeof saved.sheet.work !== "string" || typeof saved.sheet.continueDecimal !== "boolean")) saved.sheet = null;
+    return saved;
   } catch {
     return null;
   }
+}
+
+function SignedResult({ value, onChange, className }: { value: string; onChange: (value: string) => void; className: string }) {
+  const keypadMode = useSheetInputMode("text");
+  return <label className="block text-sm text-slate-300">Mi resultado con signo<input className={className} inputMode={keypadMode} value={value} onChange={(event) => onChange(decimalInput(event.target.value).slice(0, 20))} /></label>;
 }
 
 export function CalculatorPanel({
@@ -52,26 +71,40 @@ export function CalculatorPanel({
   onClose,
   target,
   storageKey,
+  parentId, childId, onRestore, initialMode = "written", restored = false,
 }: {
   id: string;
   open: boolean;
   onClose: () => void;
   target: CalculatorTarget | null;
   storageKey: string;
+  parentId?: string | null; childId: string; onRestore: (mode: "written" | "exact") => void; initialMode?: "written" | "exact"; restored?: boolean;
 }) {
   const [initial] = useState(() => load(storageKey));
-  const [mode, setMode] = useState<"written" | "exact">("written");
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
+  const [mode, setMode] = useState<"written" | "exact">(initialMode);
   const [exactResult, setExactResult] = useState("");
   const [chain, setChain] = useState<CalculatorEntry[]>(initial?.chain ?? []);
   const [op, setOp] = useState<CalculatorOp>(initial?.op ?? "add");
   const [a, setA] = useState(initial?.a ?? "");
   const [b, setB] = useState(initial?.b ?? "");
-  const [continueDecimal, setContinueDecimal] = useState(false);
-  const [spec, setSpec] = useState<CalculatorSpec | null>(null);
-  const [written, setWritten] = useState<{ op: CalculatorOp; a: string; b: string } | null>(null);
-  const [work, setWork] = useState("");
+  const [continueDecimal, setContinueDecimal] = useState(initial?.sheet?.continueDecimal ?? false);
+  const [spec, setSpec] = useState<CalculatorSpec | null>(() => {
+    const sheet = initial?.sheet;
+    if (!sheet?.written) return null;
+    const restored = calculatorSpec(sheet.written.op, sheet.written.a, sheet.written.b, sheet.continueDecimal);
+    return "spec" in restored ? restored.spec : null;
+  });
+  const [sheetDraft, setSheetDraft] = useState<ColumnDraft | MultiplyDraft | DivisionDraft | undefined>(initial?.sheet?.draft);
+  const [written, setWritten] = useState<{ op: CalculatorOp; a: string; b: string } | null>(initial?.signedDraft?.written ?? initial?.sheet?.written ?? null);
+  const [signed, setSigned] = useState(Boolean(initial?.signedDraft));
+  const [signedResult, setSignedResult] = useState(initial?.signedDraft?.result ?? "");
+  const [signedSteps, setSignedSteps] = useState(initial?.signedDraft?.steps ?? "");
+  const [work, setWork] = useState(initial?.sheet?.work ?? "");
   const [revision, setRevision] = useState(0);
   const [problem, setProblem] = useState<string | null>(null);
+  const [checked, setChecked] = useState<{ signature: string; report: CheckReport & { wrongColumn?: number } } | null>(null);
   // Aviso de la última copia: solo se muestra mientras el resultado final siga siendo ese.
   const [copied, setCopied] = useState<{ value: string; text: string } | null>(null);
   const [targetIndex, setTargetIndex] = useState(0);
@@ -81,19 +114,29 @@ export function CalculatorPanel({
 
   useEffect(() => {
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify({ chain, op, a, b } satisfies Saved));
+      writeCalculatorDraft(storageKey, JSON.stringify({ chain, op, a, b, signedDraft: signed && written ? { written, result: signedResult, steps: signedSteps } : null, sheet: spec && written ? { written, continueDecimal, work, draft: sheetDraft } : null } satisfies Saved));
     } catch {
       /* sin almacenamiento, la cadena dura mientras la pantalla esté abierta */
     }
-  }, [storageKey, chain, op, a, b]);
+  }, [storageKey, chain, op, a, b, signed, written, signedResult, signedSteps, spec, continueDecimal, work, sheetDraft]);
   useEffect(() => {
     if (open) heading.current?.focus();
   }, [open]);
 
   const write = (next = { op, a, b }, decimals = continueDecimal) => {
+    const x = Number(next.a.replace(",", ".")), y = Number(next.b.replace(",", "."));
+    const needsSigned = next.a.startsWith("-") || next.b.startsWith("-") || (next.op === "subtract" && x < y);
+    if (needsSigned) {
+      if (!/^-?\d+(?:,\d{0,3})?$/.test(next.a) || !/^-?\d+(?:,\d{0,3})?$/.test(next.b)) return setProblem("Escribe dos números con hasta tres decimales.");
+      if (next.op === "divide" && y === 0) return setProblem("No se puede dividir entre 0.");
+      if (Math.abs(x) >= 10_000_000 || Math.abs(y) >= 10_000_000) return setProblem("Usa números menores que 10 000 000 en valor absoluto.");
+      setProblem(null); setSigned(true); setSignedResult(""); setSignedSteps(""); setSpec(null); setSheetDraft(undefined); setWork(""); setWritten(next); return;
+    }
     const outcome = calculatorSpec(next.op, next.a, next.b, decimals);
     if ("problem" in outcome) return setProblem(outcome.problem);
     setProblem(null);
+    setSigned(false);
+    setSheetDraft(undefined);
     setWork("");
     setRevision((n) => n + 1);
     setSpec(outcome.spec);
@@ -106,7 +149,9 @@ export function CalculatorPanel({
     setContinueDecimal(on);
     if (written?.op === "divide") write(written, on);
   };
-  const result = spec ? calculatorResult(spec, work) : "";
+  const result = signed ? (/^-?\d+(?:,\d+)?$/.test(signedResult) ? signedResult : "") : spec ? calculatorResult(spec, work) : "";
+  const checkSignature = JSON.stringify([spec, written, work, sheetDraft, signed, signedResult, signedSteps, strategy]);
+  const feedback = checked?.signature === checkSignature ? checked.report : null;
   const last = chain.at(-1);
   const final = mode === "written" ? result || last?.result || "" : exactResult;
   const copyNotice = copied?.value === final ? copied.text : null;
@@ -117,11 +162,15 @@ export function CalculatorPanel({
 
   /** Guarda la cuenta en la cadena y empieza otra con su resultado. */
   const continueWith = () => {
-    if (!spec || !written || !result) return;
-    setChain((c) => [...c, calculatorEntry(written.op, written.a, written.b, spec, work)]);
+    if ((!spec && !signed) || !written || !result) return;
+    setChain((c) => [...c, spec ? calculatorEntry(written.op, written.a, written.b, spec, work) : { ...written, result }]);
     setA(result);
     setB("");
     setSpec(null);
+    setSheetDraft(undefined);
+    setSigned(false);
+    setSignedResult("");
+    setSignedSteps("");
     setWritten(null);
     setWork("");
     requestAnimationFrame(() => second.current?.focus());
@@ -136,6 +185,10 @@ export function CalculatorPanel({
     setA("");
     setB("");
     setSpec(null);
+    setSheetDraft(undefined);
+    setSigned(false);
+    setSignedResult("");
+    setSignedSteps("");
     setWritten(null);
     setWork("");
     setProblem(null);
@@ -186,7 +239,16 @@ export function CalculatorPanel({
         <button type="button" aria-pressed={mode === "exact"} className={`${styles.modeButton} ${mode === "exact" ? styles.modeActive : ""}`} onClick={() => setMode("exact")}>Fracciones y MCM</button>
       </div>
       <div className={`${styles.body} space-y-4`}>
-        <div hidden={mode !== "exact"}><ExactCalculator storageKey={`${storageKey}:exacta`} onResult={setExactResult} /></div>
+        {restored && <p role="status" className="text-sm text-cyan-100">Copia recuperada de tu perfil.</p>}
+        {parentId && <details className="rounded-xl border border-slate-700 bg-slate-900/80 p-3 text-sm text-slate-200">
+          <summary className="cursor-pointer font-semibold">Guardar o recuperar en otro dispositivo</summary>
+          <p className="mt-2 text-xs text-slate-300">Guarda una copia en tu perfil. Al recuperarla, sustituye la hoja guardada en este dispositivo.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" disabled={syncing} className={secondaryButton} onClick={async () => { setSyncing(true); try { await saveCalculatorToProfile(parentId, childId, storageKey); setSyncMessage("Copia guardada en tu perfil."); } catch { setSyncMessage("No se pudo guardar la copia. Inténtalo con conexión."); } finally { setSyncing(false); } }}>Guardar copia</button>
+            <button type="button" disabled={syncing} className={secondaryButton} onClick={async () => { setSyncing(true); try { if (await restoreCalculatorFromProfile(parentId, childId, storageKey)) onRestore(mode); else setSyncMessage("Aún no hay una copia guardada."); } catch { setSyncMessage("No se pudo recuperar la copia. Inténtalo con conexión."); } finally { setSyncing(false); } }}>Recuperar copia</button>
+          </div><p role="status" className="mt-2 text-xs text-cyan-100">{syncMessage}</p>
+        </details>}
+        <div hidden={mode !== "exact"}><NumericKeypadArea bottom="0px" sign comma><ExactCalculator storageKey={`${storageKey}:exacta`} onResult={setExactResult} /></NumericKeypadArea></div>
         <div hidden={mode !== "written"} className="space-y-4">
         <p className="text-sm leading-relaxed text-slate-300">Escribe una cuenta en la hoja. Para combinar más de dos números, abre «Fracciones y MCM».</p>
 
@@ -214,11 +276,11 @@ export function CalculatorPanel({
           <div className="flex flex-wrap items-end gap-3">
             <label className="text-sm text-slate-300">
               {op === "divide" ? "Dividendo" : op === "multiply" ? "Primer factor" : "Primer número"}
-              <input className={field} inputMode="decimal" maxLength={11} value={a} onChange={(e) => setA(decimalInput(e.target.value))} />
+              <input className={field} inputMode="text" maxLength={11} value={a} onChange={(e) => setA(decimalInput(e.target.value))} />
             </label>
             <label className="text-sm text-slate-300">
               {op === "divide" ? "Divisor" : op === "multiply" ? "Segundo factor" : "Segundo número"}
-              <input ref={second} className={field} inputMode="decimal" maxLength={11} value={b} onChange={(e) => setB(decimalInput(e.target.value))} />
+              <input ref={second} className={field} inputMode="text" maxLength={11} value={b} onChange={(e) => setB(decimalInput(e.target.value))} />
             </label>
             <button type="button" className={secondaryButton} onClick={() => write()}>
               Escribir la cuenta
@@ -237,16 +299,32 @@ export function CalculatorPanel({
             </label>
           )}
           {problem && <p role="alert" className="text-sm text-amber-200">{problem}</p>}
+          {signed && written && <NumericKeypadArea bottom="0px" sign comma>
+            <div className={`${calculatorBoardClass} space-y-3`} style={calculatorBoardStyle} role="group" aria-label="Cuenta con números con signo">
+              <p className="text-center font-mono text-3xl font-bold text-sky-300">{written.a} <span className="text-white">{{ add: "+", subtract: "−", multiply: "×", divide: "÷" }[written.op]}</span> {written.b}</p>
+              <label className="block text-sm text-slate-300">Mis pasos<input className={`${field} w-full`} value={signedSteps} onChange={(event) => setSignedSteps(event.target.value.slice(0, 256))} /></label>
+              <SignedResult className={`${field} w-full`} value={signedResult} onChange={setSignedResult} />
+              <p className="text-xs text-slate-300">Escribe el signo y el resultado que calculaste. Para revisar un paso, usa una igualdad, por ejemplo: 3 − 4 = −1.</p>
+            </div>
+          </NumericKeypadArea>}
+          {(spec || (signed && written)) && <div className="space-y-2">
+            <button type="button" className={secondaryButton} onClick={() => {
+              const report = signed && written ? checkSignedWork(written, signedResult, signedSteps) : spec ? checkWrittenWork(spec, work, sheetDraft as ColumnDraft | MultiplyDraft | undefined, strategy) : null;
+              if (report) setChecked({ signature: checkSignature, report });
+            }}>Comprobar mi trabajo</button>
+            {feedback && <div role="status" className={`space-y-1 rounded-xl p-3 text-sm ${feedback.ok ? "bg-emerald-950/60 text-emerald-100" : "bg-amber-950/60 text-amber-100"}`}><p className="font-semibold">{feedback.message}</p>{feedback.details.map((detail, i) => <p key={i}>{detail}</p>)}</div>}
+          </div>}
+          {signed && result && <button type="button" className={primaryButton} onClick={continueWith}>Seguir con {result} <ArrowRight size={16} aria-hidden="true" /></button>}
           {spec && (
             <>
               {/* En el panel no hay navegación inferior: el teclado va pegado abajo. */}
               <NumericKeypadArea bottom="0px" comma={hasDecimals(spec)}>
                 {spec.op === "divide" ? (
-                  <DivisionSheet key={`division-${revision}`} spec={spec} layout="completa" mode="open" response="" onChange={setWork} />
+                  <DivisionSheet calculator key={`division-${revision}`} spec={spec} layout="completa" mode="open" response={work} onChange={setWork} draft={sheetDraft as DivisionDraft | undefined} onDraft={setSheetDraft} />
                 ) : spec.op === "multiply" ? (
-                  <MultiplySheet key={`multiply-${revision}`} spec={spec} mode="free" response="" onChange={setWork} />
+                  <MultiplySheet calculator key={`multiply-${revision}`} spec={spec} mode="free" response={work} onChange={setWork} draft={sheetDraft as MultiplyDraft | undefined} onDraft={setSheetDraft} />
                 ) : (
-                  <ColumnSheet key={`${revision}-${strategy}`} spec={spec} strategy={strategy} mode="free" response="" onChange={setWork} />
+                  <ColumnSheet key={`${revision}-${strategy}`} spec={spec} strategy={strategy} mode="free" calculator response={work} onChange={setWork} draft={sheetDraft as ColumnDraft | undefined} onDraft={setSheetDraft} wrongColumn={feedback?.wrongColumn ?? null} />
                 )}
               </NumericKeypadArea>
               {remainderNote && (
