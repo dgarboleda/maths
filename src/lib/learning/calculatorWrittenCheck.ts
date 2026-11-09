@@ -84,13 +84,17 @@ export function checkWrittenWork(spec: CalculatorSpec, work: string, draft: Colu
       const accepted = [step.workTop, 1];
       if (column > 0 && trace.steps[column - 1]?.regroup) accepted.push(step.top === 0 ? 10 : step.top - 1);
       if (!accepted.includes(Number(note))) return issue(`Revisa el préstamo anotado en las ${placeName(column - trace.scale)}.`);
+    } else if (strategy === "compensacion" && (step.workTop !== step.top || step.workBottom !== step.bottom)) {
+      const accepted = [step.workTop, step.workBottom, 1];
+      if (step.regroup) accepted.push(10);
+      if (!accepted.includes(Number(note))) return issue(`Revisa la compensación anotada en las ${placeName(column - trace.scale)}.`);
     }
   }
   if (!work) return issue("Completa las casillas del resultado para comprobarlo.");
   const expected = calculateManyExact(spec.op, [String(spec.a), String(spec.b)]);
   const answer = calculateManyExact("simplify", [work]);
   if ("problem" in expected || "problem" in answer || expected.value !== answer.value) return issue("Completa las cifras que faltan y, si usas decimales, revisa la posición de la coma.");
-  return { ok: true, message: "El resultado final es correcto.", details: [spec.op === "add" ? "Se revisaron las llevadas escritas; las casillas vacías son opcionales." : strategy === "prestamo" ? "Se revisaron las anotaciones en columnas con préstamo; otras notas pueden representar pasos intermedios." : "Las notas de compensación pueden representar varios pasos y no se han comprobado."] };
+  return { ok: true, message: "El resultado final es correcto.", details: [spec.op === "add" ? "Se revisaron las llevadas escritas; las casillas vacías son opcionales." : strategy === "prestamo" ? "Se revisaron las anotaciones en columnas con préstamo; otras notas pueden representar pasos intermedios." : "Se revisaron las anotaciones de compensación reconocibles; otras pueden representar pasos intermedios."] };
 }
 
 export function checkSignedWork(written: { op: CalculatorOp; a: string; b: string }, result: string, steps: string): CheckReport {

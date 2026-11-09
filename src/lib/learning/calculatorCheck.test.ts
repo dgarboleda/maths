@@ -159,6 +159,10 @@ describe("comprobación de la hoja", () => {
     const borrowed = { digits: ["9", "9", ""], commaAt: null, notes: ["10", "9", "0"] };
     expect(checkWrittenWork(subtraction, "99", borrowed, "prestamo").ok).toBe(true);
     expect(checkWrittenWork(subtraction, "99", { ...borrowed, notes: ["10", "8", "0"] }, "prestamo").message).toMatch(/préstamo/);
+    const compensation = { op: "subtract" as const, a: 32, b: 17 };
+    const compensated = { digits: ["5", "1"], commaAt: null, notes: ["12", "1"] };
+    expect(checkWrittenWork(compensation, "15", compensated, "compensacion").ok).toBe(true);
+    expect(checkWrittenWork(compensation, "15", { ...compensated, notes: ["8", "1"] }, "compensacion").message).toMatch(/compensación/);
   });
   test("detecta filas de división desplazadas y acepta filas alineadas", () => {
     const spec = { op: "divide" as const, a: 17, b: 5 };
