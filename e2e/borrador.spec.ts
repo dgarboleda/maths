@@ -34,7 +34,8 @@ test("calculadora global en una aventura: la cuenta se hace en columnas y el res
   await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
 });
 
-test("la calculadora opera fracciones y MCM sin enviar fracciones a un plan entero", async ({ page }) => {
+test("la calculadora opera fracciones y MCM sin enviar fracciones a un plan entero", async ({ page }, testInfo) => {
+  if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
   await registrarPadre(page);
   const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
   const childId = await entrarAlEspacio(page, nombre, pin);
@@ -49,12 +50,23 @@ test("la calculadora opera fracciones y MCM sin enviar fracciones a un plan ente
   await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 5/6");
   await expect(page.getByRole("button", { name: "Usar 5/6" })).toBeDisabled();
   await expect(page.getByText(/solo admite números enteros/)).toBeVisible();
+  await page.getByRole("button", { name: /Añadir número/ }).click();
+  await page.getByRole("textbox", { name: "Número 3", exact: true }).fill("1/6");
+  await page.getByRole("button", { name: "Calcular", exact: true }).click();
+  await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 1");
+  await page.getByRole("combobox", { name: "Operación", exact: true }).selectOption("expression");
+  await page.getByRole("textbox", { name: "Expresión", exact: true }).fill("(1/2 + 1/3) * 3");
+  await page.getByRole("button", { name: "Calcular", exact: true }).click();
+  await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 5/2");
   await page.getByRole("combobox", { name: "Operación", exact: true }).selectOption("mcm");
   await page.getByLabel("Primer entero").fill("12");
   await page.getByLabel("Segundo entero").fill("16");
+  await page.getByLabel("Entero 3").fill("24");
   await page.getByRole("button", { name: "Calcular", exact: true }).click();
   await expect(page.getByText(/Resultado exacto:/)).toHaveText("Resultado exacto: 48");
   expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("calculadora-varios-numeros.png"), fullPage: false });
   await page.getByLabel("Copiar en").selectOption({ label: "Baldosas" });
   await page.getByRole("button", { name: "Usar 48", exact: true }).click();
   await expect(page.getByLabel("Baldosas", { exact: true })).toHaveValue("48");

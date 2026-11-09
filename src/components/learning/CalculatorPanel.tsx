@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ClipboardCopy, RotateCcw, X } from "lucide-react";
+import { ArrowRight, Calculator as CalculatorIcon, ClipboardCopy, RotateCcw, X } from "lucide-react";
 import {
   CALCULATOR_OPS,
   calculatorEntry,
@@ -170,23 +170,25 @@ export function CalculatorPanel({
         }
       }}
     >
-      <header className="flex items-center gap-3 border-b border-slate-700 px-4 py-3">
-        <h2 id={`${id}-title`} ref={heading} tabIndex={-1} className="font-display text-xl font-bold text-white">
-          Calculadora
-        </h2>
+      <header className={styles.header}>
+        <span aria-hidden="true" className={styles.headerIcon}><CalculatorIcon size={22} /></span>
+        <div className="min-w-0 flex-1">
+          <h2 id={`${id}-title`} ref={heading} tabIndex={-1} className="font-display text-xl font-bold text-white">Calculadora</h2>
+          <p className="mt-0.5 text-xs text-slate-300">Tu espacio para resolver paso a paso</p>
+        </div>
         <button type="button" aria-label="Cerrar la calculadora" onClick={onClose}
           className="ml-auto grid size-11 place-items-center rounded-xl text-slate-300 hover:bg-white/5 hover:text-white">
           <X size={20} aria-hidden="true" />
         </button>
       </header>
+      <div role="group" aria-label="Tipo de calculadora" className={styles.modeGroup}>
+        <button type="button" aria-pressed={mode === "written"} className={`${styles.modeButton} ${mode === "written" ? styles.modeActive : ""}`} onClick={() => setMode("written")}>Cuentas escritas</button>
+        <button type="button" aria-pressed={mode === "exact"} className={`${styles.modeButton} ${mode === "exact" ? styles.modeActive : ""}`} onClick={() => setMode("exact")}>Fracciones y MCM</button>
+      </div>
       <div className={`${styles.body} space-y-4`}>
-        <p className="text-xs text-slate-400">Usa la hoja para escribir una cuenta o calcula fracciones, MCM y MCD con sus pasos.</p>
-        <div role="group" aria-label="Tipo de calculadora" className="flex flex-wrap gap-2">
-          <button type="button" aria-pressed={mode === "written"} className={mode === "written" ? primaryButton : secondaryButton} onClick={() => setMode("written")}>Cuentas escritas</button>
-          <button type="button" aria-pressed={mode === "exact"} className={mode === "exact" ? primaryButton : secondaryButton} onClick={() => setMode("exact")}>Fracciones y MCM</button>
-        </div>
         <div hidden={mode !== "exact"}><ExactCalculator storageKey={`${storageKey}:exacta`} onResult={setExactResult} /></div>
         <div hidden={mode !== "written"} className="space-y-4">
+        <p className="text-sm leading-relaxed text-slate-300">Escribe una cuenta en la hoja. Para combinar más de dos números, abre «Fracciones y MCM».</p>
 
         {chain.length > 0 && (
           <section aria-labelledby={`${id}-chain`} className="space-y-2">
@@ -195,7 +197,7 @@ export function CalculatorPanel({
               {chain.map((entry, i) => (
                 <li key={i} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2">
                   <span className="text-xs font-bold text-slate-400">{i + 1}.</span>
-                  <span className="font-mono text-base text-slate-100">{entryText(entry)}</span>
+                  <span className="break-all font-mono text-base text-slate-100">{entryText(entry)}</span>
                   <button type="button" onClick={() => reuse(entry.result)} aria-label={`Usar ${entry.result} en la cuenta nueva`}
                     className="ml-auto min-h-9 rounded-lg border border-slate-600 px-2.5 text-xs font-semibold text-cyan-100 hover:bg-slate-800">
                     Usar
@@ -262,33 +264,29 @@ export function CalculatorPanel({
       </div>
 
       <footer className={`${styles.footer} space-y-2`}>
-        <p className="text-sm text-slate-300" aria-live="polite">
+        <p className={styles.resultRow} aria-live="polite">
           {final ? (
-            <>
-              Resultado final: <strong className="font-mono text-lg text-cyan-100">{final}</strong>
-            </>
+            <>Resultado final: <strong className={styles.resultValue}>{final}</strong></>
           ) : (
             mode === "written" ? "Escribe el resultado en la hoja para usarlo." : "Calcula para usar el resultado."
           )}
         </p>
-        <div className="flex flex-wrap items-end gap-2">
+        {target && target.labels.length > 1 && (
+          <label className={styles.destination}>
+            <span>Copiar en</span>
+            <select value={index} onChange={(e) => setTargetIndex(Number(e.target.value))}>
+              {target.labels.map((label, i) => <option key={label} value={i}>{label}</option>)}
+            </select>
+          </label>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
           <button type="button" className={secondaryButton} disabled={!final} onClick={() => void copy()}>
             <ClipboardCopy size={16} aria-hidden="true" />
             Copiar
           </button>
-          {target && target.labels.length > 1 && (
-            <label className="text-sm text-slate-300">
-              Copiar en
-              <select className={`${field} w-auto`} value={index} onChange={(e) => setTargetIndex(Number(e.target.value))}>
-                {target.labels.map((label, i) => (
-                  <option key={label} value={i}>{label}</option>
-                ))}
-              </select>
-            </label>
-          )}
           {target && (
             <button type="button" className={primaryButton} disabled={!final || incompatibleTarget} onClick={useInTarget}>
-              {final ? `Usar ${final}${target.labels.length > 1 ? "" : ` en ${target.labels[0]}`}` : "Usar el resultado"}
+              {final ? `Usar ${final.length > 24 ? "resultado" : final}${target.labels.length > 1 ? "" : ` en ${target.labels[0]}`}` : "Usar el resultado"}
             </button>
           )}
           {mode === "written" && (chain.length > 0 || spec) && (

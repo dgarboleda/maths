@@ -248,3 +248,69 @@ test("mantiene copiable un resultado fuera del rango aceptado por la actividad",
   expect(screen.getByRole("button", { name: /Copiar/ })).toBeEnabled();
   expect(screen.getByText(/fuera del rango/)).toBeVisible();
 });
+
+test("calcula tres fracciones y conserva los operandos en la pestaña", async () => {
+  sessionStorage.clear();
+  const first = renderCalculator();
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  fireEvent.change(screen.getByLabelText("Primera fracción o número"), { target: { value: "1/2" } });
+  fireEvent.change(screen.getByLabelText("Segunda fracción o número"), { target: { value: "1/3" } });
+  fireEvent.click(screen.getByRole("button", { name: /Añadir número/ }));
+  fireEvent.change(screen.getByLabelText("Número 3"), { target: { value: "1/6" } });
+  fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
+  expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("1");
+  first.unmount();
+  renderCalculator();
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  expect(screen.getByLabelText("Número 3")).toHaveValue("1/6");
+  expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("1");
+  fireEvent.click(screen.getByRole("button", { name: "Quitar número 3" }));
+  expect(screen.queryByLabelText("Número 3")).not.toBeInTheDocument();
+  expect(screen.getByText("Calcula para usar el resultado.")).toBeVisible();
+});
+
+test("resuelve expresiones combinadas y pasa el resultado al destino", async () => {
+  sessionStorage.clear();
+  const onUse = vi.fn();
+  renderCalculator({ labels: ["tu respuesta"], onUse });
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  fireEvent.change(screen.getByLabelText("Operación", { exact: true }), { target: { value: "expression" } });
+  fireEvent.change(screen.getByLabelText("Expresión"), { target: { value: "(1/2 + 1/3) * 3" } });
+  fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
+  expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("5/2");
+  fireEvent.click(screen.getByRole("button", { name: "Usar 5/2 en tu respuesta" }));
+  expect(onUse).toHaveBeenCalledWith("5/2", 0);
+});
+
+test("recupera las cuentas guardadas antes de admitir más operandos", async () => {
+  sessionStorage.clear();
+  sessionStorage.setItem("maths:calculadora:hijo:exacta", JSON.stringify({ op: "add", a: "1/2", b: "1/3", calculated: true }));
+  renderCalculator();
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  expect(screen.getByLabelText("Primera fracción o número")).toHaveValue("1/2");
+  expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("5/6");
+});
+
+test("recupera una expresión guardada y permite limpiar la cuenta", async () => {
+  sessionStorage.clear();
+  const first = renderCalculator();
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  fireEvent.change(screen.getByLabelText("Operación", { exact: true }), { target: { value: "expression" } });
+  fireEvent.change(screen.getByLabelText("Expresión"), { target: { value: "2 + 3 * 4" } });
+  fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
+  expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("14");
+  first.unmount();
+  renderCalculator();
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+  expect(screen.getByLabelText("Expresión")).toHaveValue("2 + 3 * 4");
+  expect(screen.getByText(/Resultado exacto:/)).toHaveTextContent("14");
+  fireEvent.click(screen.getByRole("button", { name: "Limpiar cuenta" }));
+  expect(screen.getByLabelText("Expresión")).toHaveValue("");
+  expect(screen.getByText("Calcula para usar el resultado.")).toBeVisible();
+});

@@ -5,8 +5,8 @@ export const EXACT_OPS = [
   { id: "multiply", label: "Multiplicar fracciones" },
   { id: "divide", label: "Dividir fracciones" },
   { id: "simplify", label: "Simplificar fracción" },
-  { id: "mcm", label: "Mínimo común múltiplo (MCM)" },
-  { id: "mcd", label: "Máximo común divisor (MCD)" },
+  { id: "mcm", label: "MCM (mínimo común múltiplo)" },
+  { id: "mcd", label: "MCD (máximo común divisor)" },
 ] as const;
 export type ExactOp = (typeof EXACT_OPS)[number]["id"];
 interface Rational { n: bigint; d: bigint }
@@ -78,4 +78,129 @@ export function calculateExact(op: ExactOp, first: string, second: string): Exac
   const value = format(simplify(n, d));
   steps.push(`Resultado simplificado: ${value}.`);
   return { value, steps: [...normalized, ...steps] };
+}
+
+/** Máximo de valores en una cuenta de la misma operación. */
+export const MAX_EXACT_VALUES = 8;
+
+/** Combina valores sin pasar los resultados intermedios por la validación de entrada. */
+export function calculateManyExact(op: ExactOp, values: string[]): ExactOutcome {
+  if (op === "simplify") return calculateExact(op, values[0] ?? "", "");
+  if (!EXACT_OPS.some((item) => item.id === op)) return { problem: "Elige una operación válida." };
+  if (values.length < 2 || values.length > MAX_EXACT_VALUES) return { problem: `Escribe entre 2 y ${MAX_EXACT_VALUES} números.` };
+  const parsed = values.map(parse);
+  const invalid = parsed.findIndex((value) => value === null);
+  if (invalid >= 0) return { problem: `Revisa el número ${invalid + 1}: escribe un entero, decimal o fracción válida; el denominador no puede ser 0.` };
+  const numbers = parsed as Rational[];
+  if (op === "mcm" || op === "mcd") {
+    if (numbers.some((value) => value.d !== BigInt(1))) return { problem: "Para MCD y MCM escribe números enteros." };
+    const integers = numbers.map((value) => abs(value.n));
+    const common = integers.reduce((current, value) => gcd(current, value), BigInt(0));
+    if (op === "mcd") {
+      if (common === BigInt(0)) return { problem: "El MCD de números todos iguales a 0 no está definido." };
+      return { value: `${common}`, steps: [`El mayor divisor común de ${integers.join(", ")} es ${common}.`] };
+    }
+    let multiple = BigInt(1);
+    const steps: string[] = [];
+    for (const value of integers) {
+      const before = multiple;
+      const divisor = gcd(before, value);
+      multiple = divisor === BigInt(0) ? BigInt(0) : before / divisor * value;
+      if (steps.length || before !== BigInt(1)) steps.push(`MCM(${before}, ${value}) = ${multiple}.`);
+      else steps.push(`Empezamos con ${value}.`);
+    }
+    steps.push(`MCM de todos los números: ${multiple}.`);
+    return { value: `${multiple}`, steps };
+  }
+  let result = numbers[0];
+  const steps: string[] = [];
+  const symbol = { add: "+", subtract: "−", multiply: "×", divide: "÷" }[op];
+  for (let index = 1; index < numbers.length; index++) {
+    const next = numbers[index];
+    if (op === "divide" && next.n === BigInt(0)) return { problem: `El número ${index + 1} es 0: no se puede dividir entre 0.` };
+    const before = format(result);
+    if (op === "add" || op === "subtract") {
+      const common = result.d / gcd(result.d, next.d) * next.d;
+      const left = result.n * (common / result.d), right = next.n * (common / next.d);
+      const numerator = op === "add" ? left + right : left - right;
+      steps.push(`Denominador común de ${before} y ${format(next)}: ${common}.`);
+      result = simplify(numerator, common);
+    } else if (op === "multiply") result = simplify(result.n * next.n, result.d * next.d);
+    else result = simplify(result.n * next.d, result.d * next.n);
+    steps.push(`${before} ${symbol} (${format(next)}) = ${format(result)}.`);
+  }
+  return { value: format(result), steps };
+}
+
+/** Expresiones con +, −, ×, ÷ y paréntesis, sin evaluar código. */
+export function calculateExpression(source: string): ExactOutcome {
+  if (source.length > 256) return { problem: "La expresión admite hasta 256 caracteres." };
+  const text = source.replace(/[−–]/g, "-").replace(/×/g, "*").replace(/÷/g, "/");
+  const tokens: string[] = [];
+  let position = 0, count = 0;
+  while (position < text.length) {
+    if (/\s/.test(text[position])) { position++; continue; }
+    const rest = text.slice(position);
+    const number = /^(?:\d{1,30}(?:[.,]\d{1,6})?|[.,]\d{1,6})/.exec(rest);
+    if (number) { tokens.push(number[0]); position += number[0].length; count++; }
+    else if ("+-*/()".includes(text[position])) { tokens.push(text[position++]); }
+    else return { problem: "Usa números, +, −, ×, ÷ y paréntesis. No se admiten otras funciones." };
+    if (tokens.length > 96 || count > 32) return { problem: "La expresión es demasiado larga: usa como máximo 32 números." };
+  }
+  if (!tokens.length) return { problem: "Escribe una expresión, por ejemplo (1/2 + 1/3) × 3." };
+  let cursor = 0, depth = 0;
+  const steps: string[] = [];
+  const fail = (message: string): never => { throw new Error(message); };
+  const combine = (left: Rational, right: Rational, op: string): Rational => {
+    if (op === "/" && right.n === BigInt(0)) return fail("No se puede dividir entre 0.");
+    let result: Rational;
+    if (op === "+") result = simplify(left.n * right.d + right.n * left.d, left.d * right.d);
+    else if (op === "-") result = simplify(left.n * right.d - right.n * left.d, left.d * right.d);
+    else if (op === "*") result = simplify(left.n * right.n, left.d * right.d);
+    else result = simplify(left.n * right.d, left.d * right.n);
+    const symbol = op === "*" ? "×" : op === "/" ? "÷" : op === "-" ? "−" : "+";
+    steps.push(`${format(left)} ${symbol} (${format(right)}) = ${format(result)}.`);
+    return result;
+  };
+  const unary = (): Rational => {
+    if (++depth > 32) return fail("Reduce los paréntesis o signos anidados.");
+    const token = tokens[cursor++];
+    let result: Rational;
+    if (token === "+" || token === "-") {
+      const value = unary();
+      result = token === "-" ? { n: -value.n, d: value.d } : value;
+    } else if (token === "(") {
+      result = expression();
+      if (tokens[cursor++] !== ")") return fail("Falta cerrar un paréntesis.");
+    } else {
+      const value = token && parse(token);
+      if (!value) return fail("Revisa la expresión: falta un número o hay un operador de más.");
+      result = value;
+    }
+    depth--;
+    return result;
+  };
+  const product = (): Rational => {
+    let value = unary();
+    while (tokens[cursor] === "*" || tokens[cursor] === "/") {
+      const op = tokens[cursor++];
+      value = combine(value, unary(), op);
+    }
+    return value;
+  };
+  const expression = (): Rational => {
+    let value = product();
+    while (tokens[cursor] === "+" || tokens[cursor] === "-") {
+      const op = tokens[cursor++];
+      value = combine(value, product(), op);
+    }
+    return value;
+  };
+  try {
+    const result = expression();
+    if (cursor !== tokens.length) return { problem: "Revisa la expresión: puede faltar un operador o sobrar un paréntesis." };
+    return { value: format(result), steps: steps.length ? steps : [`Resultado: ${format(result)}.`] };
+  } catch (error) {
+    return { problem: error instanceof Error ? error.message : "No se pudo calcular la expresión." };
+  }
 }
