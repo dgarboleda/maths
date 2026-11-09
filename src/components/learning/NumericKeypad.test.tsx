@@ -87,10 +87,12 @@ describe("Teclado numérico de las hojas", () => {
     expect(screen.queryByRole("group", { name: "Teclado numérico" })).toBeNull();
     const input = screen.getByLabelText("Resultado: unidades", { exact: true });
     act(() => input.focus());
+    fireEvent.click(input);
     expect(screen.getByRole("group", { name: "Teclado numérico" })).toBeVisible();
     key("Ocultar teclado");
     expect(screen.queryByRole("group", { name: "Teclado numérico" })).toBeNull();
     act(() => input.focus());
+    fireEvent.click(input);
     expect(screen.getByRole("group", { name: "Teclado numérico" })).toBeVisible();
   });
 

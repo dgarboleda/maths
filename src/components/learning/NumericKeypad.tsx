@@ -117,12 +117,14 @@ export function NumericKeypadArea({
       <div
         ref={area}
         onClickCapture={(e) => {
-          if (hideWhenIdle && e.target instanceof Element && !e.target.closest("[data-numeric-keypad]") && !(e.target instanceof HTMLInputElement && e.target.inputMode === "none")) setEngaged(false);
+          if (!hideWhenIdle || !(e.target instanceof Element) || e.target.closest("[data-numeric-keypad]")) return;
+          if (e.target instanceof HTMLInputElement && e.target.inputMode === "none") { clearTimeout(hideTimer.current); setEngaged(true); }
+          else setEngaged(false);
         }}
         onFocusCapture={(e) => {
           if (e.target instanceof HTMLInputElement) {
             last.current = e.target;
-            if (hideWhenIdle && e.target.inputMode === "none") { clearTimeout(hideTimer.current); setEngaged(true); }
+            if (hideWhenIdle && e.target.inputMode === "none") { clearTimeout(hideTimer.current); hideTimer.current = setTimeout(() => setEngaged(true), 200); }
           }
         }}
         onBlurCapture={(e) => {
