@@ -268,7 +268,7 @@ export function CalculatorPanel({
           {final ? (
             <>Resultado final: <strong className={styles.resultValue}>{final}</strong></>
           ) : (
-            mode === "written" ? "Escribe el resultado en la hoja para usarlo." : "Calcula para usar el resultado."
+            mode === "written" ? "Escribe el resultado en la hoja para usarlo." : "Escribe y confirma tu resultado para usarlo."
           )}
         </p>
         {target && target.labels.length > 1 && (
