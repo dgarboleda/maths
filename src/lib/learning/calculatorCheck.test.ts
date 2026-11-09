@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { checkCommonDenominator, checkManualWork } from "./calculatorCheck";
 import { checkSignedWork, checkWrittenWork } from "./calculatorWrittenCheck";
+import { divisionRowVariants } from "./core";
 
 const blankStep = { operation: "", result: "" };
 const rows = [{ divisor: "", cells: [] }];
@@ -38,6 +39,11 @@ describe("comprobación de la hoja", () => {
     expect(checkManualWork("divide", ["1/2", "3/4"], "", [{ ...step, result: "1/24" }], rows, "2/3").ok).toBe(false);
     expect(checkManualWork("divide", ["-1/2", "3/4"], "", [{ ...step, left: "-1/2", result: "-2/3" }], rows, "-2/3").ok).toBe(true);
   });
+  test("ignora un paso estructurado vacío pero señala uno incompleto", () => {
+    const empty = { operation: "", left: "", right: "", operator: "+", result: "" };
+    expect(checkManualWork("add", ["1/2", "1/3"], "", [empty], rows, "5/6").ok).toBe(true);
+    expect(checkManualWork("add", ["1/2", "1/3"], "", [{ ...empty, left: "1/2" }], rows, "5/6").details.join(" ")).toMatch(/Completa el paso/);
+  });
   test("distingue entre equivalencia y una fracción simplificada", () => {
     expect(checkManualWork("simplify", ["2/4"], "", [], rows, "2/4").message).toMatch(/simplificar/);
     expect(checkManualWork("simplify", ["2/4"], "", [], rows, "01/02").ok).toBe(true);
@@ -54,11 +60,11 @@ describe("comprobación de la hoja", () => {
     const missing = [{ divisor: "", cells: [] }, ...valid];
     expect(checkManualWork("mcm", ["12", "18"], "", [], missing, "36").details.join(" ")).toMatch(/fila 1/);
   });
-  test("admite cuatro números y es explícita cuando no puede revisar una tabla con cero", () => {
+  test("admite cuatro números y comprueba el MCM con cero", () => {
     const four = [{ divisor: "2", cells: ["1", "1", "1", "1"] }];
     expect(checkManualWork("mcd", ["2", "2", "2", "2"], "", [], four, "2").ok).toBe(true);
     const zero = checkManualWork("mcm", ["0", "4"], "", [], [{ divisor: "2", cells: ["0", "2"] }], "0");
-    expect(zero.ok).toBe(false);
+    expect(zero.ok).toBe(true);
     expect(zero.details.join(" ")).toMatch(/cero/);
   });
   test("compara sumas de fracciones de forma exacta, también con enteros grandes", () => {
@@ -96,7 +102,14 @@ describe("comprobación de la hoja", () => {
     const draft = { digits: ["0", "0", "8", "7"], commaAt: null, notes: [], scratch: [["0", "0", "3", "1"], ["0", "0", "5", "6"]] };
     expect(checkWrittenWork(spec, "7800", draft, "prestamo").ok).toBe(true);
     draft.scratch[0][2] = "4";
-    expect(checkWrittenWork(spec, "7800", draft, "prestamo").message).toMatch(/fila 1/);
+    expect(checkWrittenWork(spec, "7800", draft, "prestamo").message).toMatch(/productos parciales/);
+  });
+  test("no acepta dos productos parciales que usan la misma cifra del factor", () => {
+    const spec = { op: "multiply" as const, a: 325, b: 24 };
+    const draft = { digits: ["0", "0", "8", "7"], commaAt: null, notes: [], scratch: [["0", "0", "3", "1"], ["0", "0", "3", "1"]] };
+    expect(checkWrittenWork(spec, "7800", draft, "prestamo").ok).toBe(false);
+    const repeated = { ...draft, scratch: [["0", "5", "6"], ["0", "0", "5", "6"]] };
+    expect(checkWrittenWork({ op: "multiply", a: 325, b: 22 }, "7150", { ...repeated, digits: ["0", "5", "1", "7"] }, "prestamo").ok).toBe(true);
   });
   test("acepta una suma decimal bien alineada y verifica un paso firmado", () => {
     const decimal = { op: "add" as const, a: 0.5, b: 0.25 };
@@ -108,10 +121,73 @@ describe("comprobación de la hoja", () => {
   test("acepta MCD de números primos entre sí sin filas de factores", () => {
     expect(checkManualWork("mcd", ["8", "15"], "", [], rows, "1").ok).toBe(true);
   });
+  test("comprueba resultados y pasos de las operaciones manuales", () => {
+    const examples = [
+      ["subtract", ["5/6", "1/3"], "1/2", "1/3"],
+      ["multiply", ["-2/3", "9/4"], "-3/2", "3/2"],
+      ["divide", ["3/4", "1/2"], "3/2", "3/8"],
+      ["mcm", ["4", "6"], "12", "24"],
+      ["mcd", ["8", "15"], "1", "2"],
+    ] as const;
+    for (const [op, values, correct, wrong] of examples) {
+      const correctReport = checkManualWork(op, [...values], "", [], rows, correct);
+      expect(correctReport.message).not.toMatch(/Revisa el resultado final/);
+      expect(checkManualWork(op, [...values], "", [], rows, wrong).message).toMatch(/Revisa el resultado final/);
+    }
+    expect(checkManualWork("expression", [], "2 + 3 × 4", [], rows, "14").ok).toBe(true);
+    expect(checkManualWork("expression", [], "2 + 3 × 4", [], rows, "20").ok).toBe(false);
+  });
+  test("explica la limitación de decimales periódicos en divisiones con signo", () => {
+    const division = { op: "divide" as const, a: "-1", b: "3" };
+    expect(checkSignedWork(division, "-0,333", "").message).toMatch(/periódicos/);
+    expect(checkSignedWork(division, "0,333", "").message).toMatch(/signos/);
+    expect(checkSignedWork({ ...division, b: "2" }, "-0,4", "").message).toMatch(/Revisa el resultado/);
+    expect(checkSignedWork({ ...division, b: "2" }, "-0,5", "").ok).toBe(true);
+  });
+  test("distingue una división decimal aproximada de una exacta", () => {
+    const recurring = { op: "divide" as const, a: 10, b: 3, places: 3 };
+    const work = `L3,333;${divisionRowVariants(recurring)[0].map((row) => row.value).join(",")}`;
+    expect(checkWrittenWork(recurring, work, undefined, "prestamo")).toMatchObject({ ok: true, message: expect.stringMatching(/aproximado/) });
+  });
+  test("revisa llevadas y préstamos escritos sin exigir anotaciones", () => {
+    const sum = { op: "add" as const, a: 58, b: 27 };
+    const draft = { digits: ["5", "8"], commaAt: null, notes: ["", "1"] };
+    expect(checkWrittenWork(sum, "85", draft, "prestamo").ok).toBe(true);
+    expect(checkWrittenWork(sum, "85", { ...draft, notes: ["", "2"] }, "prestamo").message).toMatch(/llevada/);
+    expect(checkWrittenWork(sum, "85", { ...draft, notes: [] }, "prestamo").ok).toBe(true);
+    const subtraction = { op: "subtract" as const, a: 100, b: 1 };
+    const borrowed = { digits: ["9", "9", ""], commaAt: null, notes: ["10", "9", "0"] };
+    expect(checkWrittenWork(subtraction, "99", borrowed, "prestamo").ok).toBe(true);
+    expect(checkWrittenWork(subtraction, "99", { ...borrowed, notes: ["10", "8", "0"] }, "prestamo").message).toMatch(/préstamo/);
+    const compensation = { op: "subtract" as const, a: 32, b: 17 };
+    const compensated = { digits: ["5", "1"], commaAt: null, notes: ["12", "1"] };
+    expect(checkWrittenWork(compensation, "15", compensated, "compensacion").ok).toBe(true);
+    expect(checkWrittenWork(compensation, "15", { ...compensated, notes: ["8", "1"] }, "compensacion").message).toMatch(/compensación/);
+  });
+  test("detecta filas de división desplazadas y acepta filas alineadas", () => {
+    const spec = { op: "divide" as const, a: 17, b: 5 };
+    const draft = { quotient: ["3"], comma: null, rows: [["1", "5"], ["", "2"]] };
+    expect(checkWrittenWork(spec, "L3;15,2", draft, "prestamo").ok).toBe(true);
+    expect(checkWrittenWork(spec, "L3;15,2", { ...draft, rows: [["1", "5"], ["2", ""]] }, "prestamo").message).toMatch(/alineación/);
+  });
+  test("comprueba cero en MCM y MCD y detecta filas equivocadas", () => {
+    expect(checkManualWork("mcm", ["0", "4"], "", [], rows, "0").ok).toBe(true);
+    expect(checkManualWork("mcd", ["0", "4"], "", [], [{ divisor: "2", cells: ["0", "2"] }, { divisor: "2", cells: ["0", "1"] }], "4").ok).toBe(true);
+    expect(checkManualWork("mcm", ["0", "4"], "", [], [{ divisor: "2", cells: ["0", "3"] }], "0").ok).toBe(false);
+    expect(checkManualWork("mcd", ["0", "0"], "", [], rows, "0").ok).toBe(false);
+  });
+  test("señala vínculos que no puede reconocer sin rechazar pasos válidos", () => {
+    const related = [{ operation: "1/2 + 1/3", result: "5/6" }, { operation: "5/6 * 1", result: "5/6" }];
+    expect(checkManualWork("add", ["1/2", "1/3"], "", related, rows, "5/6").details.join(" ")).not.toMatch(/No pude relacionar/);
+    const unrelated = [{ operation: "7 * 8", result: "56" }];
+    const report = checkManualWork("add", ["1/2", "1/3"], "", unrelated, rows, "5/6");
+    expect(report.ok).toBe(true);
+    expect(report.details.join(" ")).toMatch(/No pude relacionar/);
+  });
   test("revisa las filas de la división y no da por comprobado un procedimiento ausente", () => {
     const spec = { op: "divide" as const, a: 17, b: 5 };
     expect(checkWrittenWork(spec, "", undefined, "prestamo").message).toMatch(/fila/);
-    expect(checkWrittenWork(spec, "L3;15,2", undefined, "prestamo").ok).toBe(true);
+    expect(checkWrittenWork(spec, "L3;15,2", undefined, "prestamo")).toMatchObject({ ok: true, details: [expect.stringMatching(/no se pudo comprobar la alineación/)] });
     expect(checkWrittenWork(spec, "L3;14,2", undefined, "prestamo").ok).toBe(false);
   });
 });

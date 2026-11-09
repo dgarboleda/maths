@@ -328,7 +328,7 @@ export function CalculatorPanel({
           )}
           {(spec || (signed && written)) && <div className="space-y-2">
             <button type="button" className={secondaryButton} onClick={() => {
-              const report = signed && written ? checkSignedWork(written, signedResult, signedSteps) : spec ? checkWrittenWork(spec, work, sheetDraft as ColumnDraft | MultiplyDraft | undefined, strategy) : null;
+              const report = signed && written ? checkSignedWork(written, signedResult, signedSteps) : spec ? checkWrittenWork(spec, work, sheetDraft, strategy) : null;
               if (report) setChecked({ signature: checkSignature, report });
             }}>Comprobar mi trabajo</button>
             {feedback && <div role="status" className={`space-y-1 rounded-xl p-3 text-sm ${feedback.ok ? "bg-emerald-950/60 text-emerald-100" : "bg-amber-950/60 text-amber-100"}`}><p className="font-semibold">{feedback.message}</p>{feedback.details.map((detail, i) => <p key={i}>{detail}</p>)}</div>}
