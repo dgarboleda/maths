@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { checkCommonDenominator, checkManualWork } from "./calculatorCheck";
+import { checkCommonDenominator, checkManualWork, checkReciprocals } from "./calculatorCheck";
 import { checkSignedWork, checkWrittenWork } from "./calculatorWrittenCheck";
 import { divisionRowVariants } from "./core";
 
@@ -43,6 +43,24 @@ describe("comprobación de la hoja", () => {
     const empty = { operation: "", left: "", right: "", operator: "+", result: "" };
     expect(checkManualWork("add", ["1/2", "1/3"], "", [empty], rows, "5/6").ok).toBe(true);
     expect(checkManualWork("add", ["1/2", "1/3"], "", [{ ...empty, left: "1/2" }], rows, "5/6").details.join(" ")).toMatch(/Completa el paso/);
+  });
+  test("comprueba los inversos escritos sin imponer una representación única", () => {
+    expect(checkReciprocals(["1/2", "3/4"], ["4/3"])).toBeNull();
+    expect(checkReciprocals(["1/2", "3/4"], ["8/6"])).toBeNull();
+    expect(checkReciprocals(["1/2", "-3/4"], ["4/-3"])).toBeNull();
+    expect(checkReciprocals(["1", "2"], ["1/2"])).toBeNull();
+    expect(checkReciprocals(["1", "0,5"], ["2"])).toBeNull();
+    expect(checkReciprocals(["1/2", "3/4"], ["3/4"])).toMatch(/divisor 1/);
+    expect(checkReciprocals(["1", "2", "3"], ["1/2", ""])).toMatch(/Completa/);
+    expect(checkManualWork("divide", ["1/2", "3/4", "5/6"], "", [], rows, "4/5", [], ["4/3", "6/5"]).ok).toBe(true);
+    expect(checkReciprocals(["1", "2"], ["1/0"])).toMatch(/formato/);
+    const correct = checkManualWork("divide", ["1/2", "3/4"], "", [], rows, "2/3", [], ["4/3"]);
+    expect(correct.ok).toBe(true);
+    expect(correct.details.join(" ")).toMatch(/inversos escritos son correctos/);
+    const wrong = checkManualWork("divide", ["1/2", "3/4"], "", [], rows, "2/3", [], ["3/4"]);
+    expect(wrong.ok).toBe(false);
+    expect(wrong.details.join(" ")).toMatch(/Revisa el inverso/);
+    expect(checkManualWork("divide", ["1/2", "0"], "", [], rows, "0", [], ["1/0"]).message).toMatch(/dividir entre 0/);
   });
   test("distingue entre equivalencia y una fracción simplificada", () => {
     expect(checkManualWork("simplify", ["2/4"], "", [], rows, "2/4").message).toMatch(/simplificar/);

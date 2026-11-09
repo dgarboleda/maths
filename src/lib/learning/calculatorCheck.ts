@@ -63,6 +63,20 @@ function checkFactors(op: "mcm" | "mcd", raw: string[], rows: ManualFactorRow[])
   return null;
 }
 
+/** Comprueba los inversos que el alumno escribe para cada divisor. */
+export function checkReciprocals(values: string[], reciprocals: string[]): string | null {
+  const divisors = values.slice(1);
+  if (!reciprocals.slice(0, divisors.length).some((value) => value?.trim())) return null;
+  for (const [index, divisor] of divisors.entries()) {
+    const inverse = reciprocals[index]?.trim() ?? "";
+    if (!inverse) return `Completa el inverso del divisor ${index + 1}.`;
+    if (!validManualNumber(inverse)) return `Revisa el formato del inverso del divisor ${index + 1}.`;
+    const product = calculateManyExact("multiply", [divisor, inverse]);
+    if ("problem" in product || product.value !== "1") return `Revisa el inverso del divisor ${index + 1}: al multiplicarlo por el divisor debe dar 1.`;
+  }
+  return null;
+}
+
 /** Comprueba equivalencias escritas, sin imponer el mínimo común múltiplo. */
 export function checkCommonDenominator(values: string[], equivalents: string[]): string | null {
   if (!equivalents.slice(0, values.length).some((value) => value?.trim())) return null;
@@ -83,7 +97,7 @@ export function checkCommonDenominator(values: string[], equivalents: string[]):
   return null;
 }
 
-export function checkManualWork(op: WorkOp, values: string[], expression: string, steps: ManualStep[], rows: ManualFactorRow[], result: string, equivalents: string[] = []): CheckReport {
+export function checkManualWork(op: WorkOp, values: string[], expression: string, steps: ManualStep[], rows: ManualFactorRow[], result: string, equivalents: string[] = [], reciprocals: string[] = []): CheckReport {
   const setup = validateManualSetup(op, values, expression);
   if (setup) return issue(setup);
   const expected = op === "expression" ? calculateExpression(expression) : calculateManyExact(op as ExactOp, values);
@@ -94,6 +108,11 @@ export function checkManualWork(op: WorkOp, values: string[], expression: string
     const problem = checkCommonDenominator(values, equivalents);
     if (problem) { details.push(problem); procedureHasIssue = true; }
     else details.push("Las fracciones equivalentes representan las mismas cantidades y tienen un denominador común.");
+  }
+  if (op === "divide" && reciprocals.slice(0, values.length - 1).some((value) => value?.trim())) {
+    const problem = checkReciprocals(values, reciprocals);
+    if (problem) { details.push(problem); procedureHasIssue = true; }
+    else details.push("Los inversos escritos son correctos: puedes multiplicarlos por el primer número.");
   }
   if (op === "mcm" || op === "mcd") {
     const problem = checkFactors(op, values, rows);

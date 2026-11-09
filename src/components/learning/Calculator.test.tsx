@@ -427,6 +427,35 @@ describe("hoja manual de fracciones y divisibilidad", () => {
     expect(screen.getByLabelText("Divisor de la fila 2")).toHaveValue("");
     expect(screen.getByLabelText("Fila 2, número 1")).toHaveValue("");
   });
+  test("el alumno escribe y revisa los inversos sin cambiar la división original", async () => {
+    sessionStorage.clear(); localStorage.clear(); const first = renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" })); change("Operación", "divide");
+    change("Numerador o entero de Primera fracción o número", "1"); change("Denominador de Primera fracción o número", "2");
+    change("Numerador o entero de Segunda fracción o número", "3"); change("Denominador de Segunda fracción o número", "4");
+    expect(screen.getByLabelText("Numerador o entero de Inverso del divisor 1")).toHaveValue("");
+    change("Numerador o entero de Inverso del divisor 1", "3"); change("Denominador de Inverso del divisor 1", "4");
+    change("Numerador o entero de Mi resultado", "2"); change("Denominador de Mi resultado", "3");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar mi trabajo" }));
+    expect(screen.getByText(/Revisa el inverso del divisor 1/)).toBeVisible();
+    change("Numerador o entero de Inverso del divisor 1", "4"); change("Denominador de Inverso del divisor 1", "3");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar mi trabajo" }));
+    expect(screen.getByText(/Los inversos escritos son correctos/)).toBeVisible();
+    expect(screen.getByLabelText("Numerador o entero de Segunda fracción o número")).toHaveValue("3");
+    expect(screen.getByLabelText("Denominador de Segunda fracción o número")).toHaveValue("4");
+    first.unmount(); renderCalculator(); await open(); fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
+    expect(screen.getByLabelText("Numerador o entero de Inverso del divisor 1")).toHaveValue("4");
+    expect(screen.getByLabelText("Denominador de Inverso del divisor 1")).toHaveValue("3");
+  });
+  test("conserva la correspondencia entre divisores e inversos al quitar uno", async () => {
+    sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
+    fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" })); change("Operación", "divide");
+    fireEvent.click(screen.getByRole("button", { name: /Añadir número/ }));
+    change("Numerador o entero de Inverso del divisor 1", "4"); change("Denominador de Inverso del divisor 1", "3");
+    change("Numerador o entero de Inverso del divisor 2", "7"); change("Denominador de Inverso del divisor 2", "5");
+    fireEvent.click(screen.getByRole("button", { name: "Quitar número 3" }));
+    expect(screen.getByLabelText("Numerador o entero de Inverso del divisor 1")).toHaveValue("4");
+    expect(screen.queryByLabelText("Numerador o entero de Inverso del divisor 2")).toBeNull();
+  });
   test("muestra la ayuda del denominador común al necesitarla", async () => {
     sessionStorage.clear(); localStorage.clear(); renderCalculator(); await open();
     fireEvent.click(screen.getByRole("button", { name: "Fracciones y MCM" }));
