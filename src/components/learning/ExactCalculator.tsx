@@ -201,8 +201,8 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
         </div>
         <p className="text-xs text-slate-400">El resultado va en los bloques después del signo igual. Desliza el tablero si no cabe en la pantalla.</p>
         {!unary && <div className="flex flex-wrap gap-2"><button type="button" className={secondaryButton} disabled={extra.length >= MAX_EXACT_VALUES - 2} onClick={() => { setExtra((old) => [...old, ""]); invalidateEquation(); }}>+ Añadir número</button>{extra.map((_, index) => <button key={index} type="button" className={secondaryButton} aria-label={`Quitar número ${index + 3}`} onClick={() => { setExtra((old) => old.filter((_, i) => i !== index)); setEquivalents((old) => old.filter((_, i) => i !== index + 2)); setFactorRows((old) => old.map((row) => ({ ...row, cells: row.cells.filter((_, column) => column !== index + 2) }))); invalidateEquation(); }}>Quitar {index + 3}</button>)}</div>}
-        {(op === "add" || op === "subtract") && <details open={showEquivalents} onToggle={(event) => setShowEquivalents(event.currentTarget.open)} className="space-y-3">
-          <summary onClick={() => { dismissedEquivalents.current = showEquivalents; }} className="cursor-pointer font-bold text-cyan-100">Preparar denominador común (opcional)</summary>
+        {(op === "add" || op === "subtract") && <details open={showEquivalents} className="space-y-3">
+          <summary onClick={(event) => { event.preventDefault(); dismissedEquivalents.current = showEquivalents; setShowEquivalents(!showEquivalents); }} className="cursor-pointer font-bold text-cyan-100">Preparar denominador común (opcional)</summary>
           <p className="text-sm text-slate-300">Si los denominadores son diferentes, escribe una fracción equivalente para cada número usando el mismo denominador. Puedes usar cualquier múltiplo común.</p>
           <div className={`${calculatorBoardClass} space-y-3`} style={calculatorBoardStyle}>
             {values.map((value, index) => <div key={index} role="group" aria-label={`Equivalencia del número ${index + 1}`} className="flex items-center justify-center gap-3">
@@ -244,8 +244,8 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
       <div className="flex flex-wrap gap-2">{!confirmed && <button type="button" className={primaryButton} disabled={staleResult} onClick={confirm}>Confirmar mi resultado</button>}<button type="button" className={secondaryButton} disabled={!confirmed} onClick={() => { if (expressionMode) setExpression(result); else setA(result); invalidateEquation(); }}>{expressionMode ? "Copiar a la expresión" : "Copiar al primer número"}</button></div>
       {confirmed && <p role="status" className="text-sm text-cyan-100">Resultado escrito: {result}</p>}
     </section>
-    <details open={showSteps} onToggle={(event) => setShowSteps(event.currentTarget.open)} className="space-y-3 rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
-      <summary className="cursor-pointer font-bold text-white">Mis pasos (opcional)</summary>
+    <details open={showSteps} className="space-y-3 rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
+      <summary onClick={(event) => { event.preventDefault(); setShowSteps(!showSteps); }} className="cursor-pointer font-bold text-white">Mis pasos (opcional)</summary>
       <p className="text-sm text-slate-300">Completa los bloques con tus operaciones y resultados intermedios. Puedes añadir o quitar pasos.</p>
       {steps.map((step, i) => <fieldset key={i} className="space-y-2 rounded-xl border border-slate-700 p-3"><legend className="px-1 text-sm font-bold text-cyan-200">Paso {i + 1}</legend>
         {step.left !== undefined ? <div className={calculatorBoardClass} style={calculatorBoardStyle} role="region" aria-label={`Fracciones del paso ${i + 1}`} tabIndex={0}>
