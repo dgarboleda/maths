@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useRef, useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowLeft, ArrowRight, Delete } from "lucide-react";
 import { makePreference } from "./preferences";
 
@@ -62,10 +62,13 @@ function navigate(container: HTMLElement, input: HTMLInputElement, key: "ArrowLe
 export function NumericKeypadArea({
   sign = false,
   comma = false,
+  hideWhenIdle = false,
   bottom = "calc(5rem + env(safe-area-inset-bottom))",
   children,
 }: {
   sign?: boolean;
+  /** Muestra el teclado solo mientras se usa una casilla compatible. */
+  hideWhenIdle?: boolean;
   /** Tecla «,» para poner la coma desde la casilla (operaciones con decimales). */
   comma?: boolean;
   /** Distancia del teclado al borde inferior de lo que se desplaza: por
@@ -76,8 +79,11 @@ export function NumericKeypadArea({
   const coarse = useCoarsePointer();
   const [choice, setChoice] = useKeyboardChoice();
   const active = coarse && choice === "propio";
+  const [engaged, setEngaged] = useState(false);
   const area = useRef<HTMLDivElement>(null);
   const last = useRef<HTMLInputElement | null>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(hideTimer.current), []);
 
   const target = () => {
     const focused = document.activeElement;
@@ -110,13 +116,31 @@ export function NumericKeypadArea({
     <KeypadContext.Provider value={active}>
       <div
         ref={area}
+        onClickCapture={(e) => {
+          if (!hideWhenIdle || !(e.target instanceof Element) || e.target.closest("[data-numeric-keypad]")) return;
+          if (e.target instanceof HTMLInputElement && e.target.inputMode === "none") { clearTimeout(hideTimer.current); setEngaged(true); }
+          else setEngaged(false);
+        }}
         onFocusCapture={(e) => {
-          if (e.target instanceof HTMLInputElement) last.current = e.target;
+          if (e.target instanceof HTMLInputElement) {
+            last.current = e.target;
+            if (hideWhenIdle && e.target.inputMode === "none") { clearTimeout(hideTimer.current); hideTimer.current = setTimeout(() => setEngaged(true), 200); }
+          }
+        }}
+        onBlurCapture={(e) => {
+          if (!hideWhenIdle) return;
+          const next = e.relatedTarget;
+          if (next instanceof HTMLInputElement && next.inputMode === "none") return;
+          if (next instanceof Element && next.closest("[data-numeric-keypad]")) return;
+          // Espera al final del toque para no desplazar el control antes del clic.
+          clearTimeout(hideTimer.current);
+          hideTimer.current = setTimeout(() => setEngaged(false), 200);
         }}
       >
         {children}
-        {active && (
+        {active && (!hideWhenIdle || engaged) && (
           <div
+            data-numeric-keypad=""
             role="group"
             aria-label="Teclado numérico"
             className="sticky z-30 mt-3 rounded-2xl border border-slate-700 bg-slate-950/95 p-2 shadow-lg backdrop-blur"
@@ -147,10 +171,12 @@ export function NumericKeypadArea({
                 <ArrowRight size={20} aria-hidden="true" />
               </button>
             </div>
-            <button type="button" className="mt-1 min-h-11 w-full text-xs font-semibold text-cyan-200 underline"
-              onClick={() => setChoice("telefono")}>
-              Usar el teclado del teléfono
-            </button>
+            <div className="mt-1 flex items-center gap-2">
+              <button type="button" className="min-h-11 flex-1 text-xs font-semibold text-cyan-200 underline" onClick={() => setChoice("telefono")}>
+                Usar el teclado del teléfono
+              </button>
+              {hideWhenIdle && <button type="button" className="min-h-11 rounded-lg px-2 text-xs font-semibold text-cyan-200 underline" onClick={() => { if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur(); setEngaged(false); }}>Ocultar teclado</button>}
+            </div>
           </div>
         )}
         {coarse && !active && (

@@ -12,8 +12,8 @@ export function FactorTable({ columns, rows, label, renderValue, renderDivisor, 
   renderDivisor: (row: number) => ReactNode;
   calculator?: boolean;
 }) {
-  const numberClass = calculator ? "min-w-16 p-1" : "min-w-14 p-0.5 sm:min-w-16";
-  const divisorClass = calculator ? "border-l-2 border-slate-200 p-1 pl-2" : "border-l-2 border-slate-200 p-0.5 pl-2 text-cyan-100";
+  const numberClass = calculator ? "min-w-12 p-0.5" : "min-w-14 p-0.5 sm:min-w-16";
+  const divisorClass = calculator ? "border-l-2 border-slate-200 p-0.5 pl-1" : "border-l-2 border-slate-200 p-0.5 pl-2 text-cyan-100";
   const values = (row: number, header: boolean) => Array.from({ length: columns }, (_, column) => header
     ? <th key={column} scope="col" className={numberClass}>{renderValue(row, column)}</th>
     : <td key={column} className={numberClass}>{renderValue(row, column)}</td>);

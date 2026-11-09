@@ -248,7 +248,7 @@ export function CalculatorPanel({
             <button type="button" disabled={syncing} className={secondaryButton} onClick={async () => { setSyncing(true); try { if (await restoreCalculatorFromProfile(parentId, childId, storageKey)) onRestore(mode); else setSyncMessage("Aún no hay una copia guardada."); } catch { setSyncMessage("No se pudo recuperar la copia. Inténtalo con conexión."); } finally { setSyncing(false); } }}>Recuperar copia</button>
           </div><p role="status" className="mt-2 text-xs text-cyan-100">{syncMessage}</p>
         </details>}
-        <div hidden={mode !== "exact"}><NumericKeypadArea bottom="0px" sign comma><ExactCalculator storageKey={`${storageKey}:exacta`} onResult={setExactResult} /></NumericKeypadArea></div>
+        <div hidden={mode !== "exact"}><NumericKeypadArea bottom="0px" hideWhenIdle sign comma><ExactCalculator storageKey={`${storageKey}:exacta`} onResult={setExactResult} /></NumericKeypadArea></div>
         <div hidden={mode !== "written"} className="space-y-4">
         <p className="text-sm leading-relaxed text-slate-300">Escribe una cuenta en la hoja. Para combinar más de dos números, abre «Fracciones y MCM».</p>
 
@@ -299,7 +299,7 @@ export function CalculatorPanel({
             </label>
           )}
           {problem && <p role="alert" className="text-sm text-amber-200">{problem}</p>}
-          {signed && written && <NumericKeypadArea bottom="0px" sign comma>
+          {signed && written && <NumericKeypadArea bottom="0px" hideWhenIdle sign comma>
             <div className={`${calculatorBoardClass} space-y-3`} style={calculatorBoardStyle} role="group" aria-label="Cuenta con números con signo">
               <p className="text-center font-mono text-3xl font-bold text-sky-300">{written.a} <span className="text-white">{{ add: "+", subtract: "−", multiply: "×", divide: "÷" }[written.op]}</span> {written.b}</p>
               <label className="block text-sm text-slate-300">Mis pasos<input className={`${field} w-full`} value={signedSteps} onChange={(event) => setSignedSteps(event.target.value.slice(0, 256))} /></label>
@@ -307,18 +307,11 @@ export function CalculatorPanel({
               <p className="text-xs text-slate-300">Escribe el signo y el resultado que calculaste. Para revisar un paso, usa una igualdad, por ejemplo: 3 − 4 = −1.</p>
             </div>
           </NumericKeypadArea>}
-          {(spec || (signed && written)) && <div className="space-y-2">
-            <button type="button" className={secondaryButton} onClick={() => {
-              const report = signed && written ? checkSignedWork(written, signedResult, signedSteps) : spec ? checkWrittenWork(spec, work, sheetDraft as ColumnDraft | MultiplyDraft | undefined, strategy) : null;
-              if (report) setChecked({ signature: checkSignature, report });
-            }}>Comprobar mi trabajo</button>
-            {feedback && <div role="status" className={`space-y-1 rounded-xl p-3 text-sm ${feedback.ok ? "bg-emerald-950/60 text-emerald-100" : "bg-amber-950/60 text-amber-100"}`}><p className="font-semibold">{feedback.message}</p>{feedback.details.map((detail, i) => <p key={i}>{detail}</p>)}</div>}
-          </div>}
           {signed && result && <button type="button" className={primaryButton} onClick={continueWith}>Seguir con {result} <ArrowRight size={16} aria-hidden="true" /></button>}
           {spec && (
             <>
               {/* En el panel no hay navegación inferior: el teclado va pegado abajo. */}
-              <NumericKeypadArea bottom="0px" comma={hasDecimals(spec)}>
+              <NumericKeypadArea bottom="0px" hideWhenIdle comma={hasDecimals(spec)}>
                 {spec.op === "divide" ? (
                   <DivisionSheet calculator key={`division-${revision}`} spec={spec} layout="completa" mode="open" response={work} onChange={setWork} draft={sheetDraft as DivisionDraft | undefined} onDraft={setSheetDraft} />
                 ) : spec.op === "multiply" ? (
@@ -337,6 +330,13 @@ export function CalculatorPanel({
               )}
             </>
           )}
+          {(spec || (signed && written)) && <div className="space-y-2">
+            <button type="button" className={secondaryButton} onClick={() => {
+              const report = signed && written ? checkSignedWork(written, signedResult, signedSteps) : spec ? checkWrittenWork(spec, work, sheetDraft as ColumnDraft | MultiplyDraft | undefined, strategy) : null;
+              if (report) setChecked({ signature: checkSignature, report });
+            }}>Comprobar mi trabajo</button>
+            {feedback && <div role="status" className={`space-y-1 rounded-xl p-3 text-sm ${feedback.ok ? "bg-emerald-950/60 text-emerald-100" : "bg-amber-950/60 text-amber-100"}`}><p className="font-semibold">{feedback.message}</p>{feedback.details.map((detail, i) => <p key={i}>{detail}</p>)}</div>}
+          </div>}
         </section>
         </div>
       </div>
@@ -349,7 +349,7 @@ export function CalculatorPanel({
             mode === "written" ? "Escribe el resultado en la hoja para usarlo." : "Escribe y confirma tu resultado para usarlo."
           )}
         </p>
-        {target && target.labels.length > 1 && (
+        {final && target && target.labels.length > 1 && (
           <label className={styles.destination}>
             <span>Copiar en</span>
             <select value={index} onChange={(e) => setTargetIndex(Number(e.target.value))}>
@@ -358,12 +358,12 @@ export function CalculatorPanel({
           </label>
         )}
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className={secondaryButton} disabled={!final} onClick={() => void copy()}>
+          {final && <button type="button" className={secondaryButton} onClick={() => void copy()}>
             <ClipboardCopy size={16} aria-hidden="true" />
             Copiar
-          </button>
-          {target && (
-            <button type="button" className={primaryButton} disabled={!final || incompatibleTarget} onClick={useInTarget}>
+          </button>}
+          {target && final && (
+            <button type="button" className={primaryButton} disabled={incompatibleTarget} onClick={useInTarget}>
               {final ? `Usar ${final.length > 24 ? "resultado" : final}${target.labels.length > 1 ? "" : ` en ${target.labels[0]}`}` : "Usar el resultado"}
             </button>
           )}
