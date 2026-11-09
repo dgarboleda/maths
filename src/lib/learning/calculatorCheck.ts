@@ -61,13 +61,38 @@ function checkFactors(op: "mcm" | "mcd", raw: string[], rows: ManualFactorRow[])
   return null;
 }
 
-export function checkManualWork(op: WorkOp, values: string[], expression: string, steps: ManualStep[], rows: ManualFactorRow[], result: string): CheckReport {
+/** Comprueba equivalencias escritas, sin imponer el mínimo común múltiplo. */
+export function checkCommonDenominator(values: string[], equivalents: string[]): string | null {
+  if (!equivalents.slice(0, values.length).some((value) => value?.trim())) return null;
+  const denominators: bigint[] = [];
+  for (const [index, original] of values.entries()) {
+    const equivalent = equivalents[index]?.trim() ?? "";
+    if (!equivalent) return `Completa la fracción equivalente del número ${index + 1}.`;
+    if (!validManualNumber(equivalent)) return `Revisa el formato de la fracción equivalente del número ${index + 1}.`;
+    const originalValue = calculateExpression(original);
+    if ("problem" in originalValue || !equal(equivalent, originalValue.value)) return `La fracción equivalente del número ${index + 1} no representa la misma cantidad. Multiplica o divide el numerador y el denominador por el mismo número.`;
+    const normalized = equivalent.replace(/[−–]/g, "-").replace(/\s/g, "");
+    const fraction = /^([+-]?\d+)\/([+-]?\d+)$/.exec(normalized);
+    if (!fraction && !/^[+-]?\d+$/.test(normalized)) return `Escribe el número ${index + 1} como fracción para comparar los denominadores.`;
+    const denominator = fraction ? BigInt(fraction[2]) : BigInt(1);
+    denominators.push(denominator);
+  }
+  if (denominators.some((denominator) => denominator !== denominators[0])) return "Las fracciones son equivalentes, pero sus denominadores aún no son iguales. Busca un múltiplo común.";
+  return null;
+}
+
+export function checkManualWork(op: WorkOp, values: string[], expression: string, steps: ManualStep[], rows: ManualFactorRow[], result: string, equivalents: string[] = []): CheckReport {
   const setup = validateManualSetup(op, values, expression);
   if (setup) return issue(setup);
   const expected = op === "expression" ? calculateExpression(expression) : calculateManyExact(op as ExactOp, values);
   if ("problem" in expected) return issue(expected.problem);
   const details: string[] = [];
   let procedureHasIssue = false;
+  if ((op === "add" || op === "subtract") && equivalents.slice(0, values.length).some((value) => value?.trim())) {
+    const problem = checkCommonDenominator(values, equivalents);
+    if (problem) { details.push(problem); procedureHasIssue = true; }
+    else details.push("Las fracciones equivalentes representan las mismas cantidades y tienen un denominador común.");
+  }
   if (op === "mcm" || op === "mcd") {
     const problem = checkFactors(op, values, rows);
     if (problem) { details.push(problem); procedureHasIssue = true; }

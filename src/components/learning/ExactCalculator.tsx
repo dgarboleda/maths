@@ -13,11 +13,11 @@ interface Step { operation: string; result: string; left?: string; right?: strin
 interface FactorRow { divisor: string; cells: string[] }
 interface Saved {
   format: "manual-v1"; op: WorkOp; a: string; b: string; extra: string[]; expression: string;
-  steps: Step[]; factorRows: FactorRow[]; result: string; confirmed: boolean;
+  steps: Step[]; factorRows: FactorRow[]; equivalents: string[]; result: string; confirmed: boolean;
 }
 const emptyStep = (): Step => ({ operation: "", result: "" });
 const emptyFactorRow = (): FactorRow => ({ divisor: "", cells: [] });
-const initialSaved = (): Saved => ({ format: "manual-v1", op: "add", a: "", b: "", extra: [], expression: "", steps: [emptyStep()], factorRows: [emptyFactorRow()], result: "", confirmed: false });
+const initialSaved = (): Saved => ({ format: "manual-v1", op: "add", a: "", b: "", extra: [], expression: "", steps: [emptyStep()], factorRows: [emptyFactorRow()], equivalents: [], result: "", confirmed: false });
 const shortText = (value: unknown, limit: number): value is string => typeof value === "string" && value.length <= limit;
 function load(key: string): Saved {
   const fallback = initialSaved();
@@ -35,10 +35,11 @@ function load(key: string): Saved {
     const rows = saved.factorRows;
     if (!Array.isArray(steps) || steps.length < 1 || steps.length > MAX_WORK_STEPS || steps.some((step) => !step || !shortText(step.operation, 256) || !shortText(step.result, 64) || (step.left !== undefined && !shortText(step.left, 64)) || (step.right !== undefined && !shortText(step.right, 64)) || (step.operator !== undefined && !["+", "−", "×", "÷"].includes(step.operator)))) return fallback;
     if (!Array.isArray(rows) || rows.length < 1 || rows.length > MAX_FACTOR_ROWS || rows.some((row) => !row || !shortText(row.divisor, 64) || !Array.isArray(row.cells) || row.cells.length > MAX_EXACT_VALUES || row.cells.some((cell) => !shortText(cell, 64)))) return fallback;
+    const equivalents = Array.isArray(saved.equivalents) && saved.equivalents.length <= MAX_EXACT_VALUES && saved.equivalents.every((value) => shortText(value, 64)) ? saved.equivalents : [];
     const result = shortText(saved.result, 64) ? saved.result : "";
     const values = saved.op === "simplify" ? [saved.a] : [saved.a, saved.b, ...extra];
     const confirmed = saved.confirmed === true && validManualNumber(result, saved.op === "mcm" || saved.op === "mcd") && !validateManualSetup(saved.op!, values, expression);
-    return { format: "manual-v1", op: saved.op!, a: saved.a, b: saved.b, extra, expression, steps, factorRows: rows, result, confirmed };
+    return { format: "manual-v1", op: saved.op!, a: saved.a, b: saved.b, extra, expression, steps, factorRows: rows, equivalents, result, confirmed };
   } catch { return fallback; }
 }
 
@@ -76,6 +77,18 @@ function NumberBlocks({ label, value, onChange, integer = false, compact = false
   </fieldset>;
 }
 
+/** Muestra el valor original como referencia; el alumno escribe la equivalencia. */
+function FractionReference({ value, index }: { value: string; index: number }) {
+  const slash = value.indexOf("/");
+  const numerator = slash < 0 ? value : value.slice(0, slash);
+  const denominator = slash < 0 ? "" : value.slice(slash + 1);
+  return <span role="img" aria-label={`Número ${index + 1}: ${value || "sin escribir"}`} className="block w-14 shrink-0 text-center font-mono text-xl font-bold">
+    <span title={numerator} className="block h-10 overflow-hidden text-ellipsis whitespace-nowrap leading-10 text-sky-300">{numerator || "?"}</span>
+    <span aria-hidden="true" className="my-1 block h-0.5 bg-slate-200" />
+    <span title={denominator} className="block h-10 overflow-hidden text-ellipsis whitespace-nowrap leading-10 text-emerald-300">{denominator || (value ? "1" : "?")}</span>
+  </span>;
+}
+
 /** La familia de bloques es una hoja libre: solo el alumno escribe pasos y resultado. */
 export function ExactCalculator({ storageKey, onResult }: { storageKey: string; onResult: (value: string) => void }) {
   const keypadMode = useSheetInputMode("numeric");
@@ -87,6 +100,7 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
   const [expression, setExpression] = useState(initial.expression);
   const [steps, setSteps] = useState(initial.steps);
   const [factorRows, setFactorRows] = useState(initial.factorRows);
+  const [equivalents, setEquivalents] = useState(initial.equivalents);
   const [result, setResult] = useState(initial.result);
   const [confirmed, setConfirmed] = useState(initial.confirmed);
   const [problem, setProblem] = useState<string | null>(null);
@@ -98,8 +112,8 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
   const final = confirmed ? result.trim().replace(/[−–]/g, "-") : "";
   useEffect(() => { onResult(final); }, [final, onResult]);
   useEffect(() => {
-    try { writeCalculatorDraft(storageKey, JSON.stringify({ format: "manual-v1", op, a, b, extra, expression, steps, factorRows, result, confirmed } satisfies Saved)); } catch { /* la hoja sigue disponible sin almacenamiento */ }
-  }, [storageKey, op, a, b, extra, expression, steps, factorRows, result, confirmed]);
+    try { writeCalculatorDraft(storageKey, JSON.stringify({ format: "manual-v1", op, a, b, extra, expression, steps, factorRows, equivalents, result, confirmed } satisfies Saved)); } catch { /* la hoja sigue disponible sin almacenamiento */ }
+  }, [storageKey, op, a, b, extra, expression, steps, factorRows, equivalents, result, confirmed]);
   const invalidate = () => { setConfirmed(false); setProblem(null); setFeedback(null); onResult(""); };
   const confirm = () => {
     const issue = validateManualSetup(op, values, expression);
@@ -119,7 +133,7 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
     }));
     invalidate();
   };
-  const clear = () => { setA(""); setB(""); setExtra([]); setExpression(""); setSteps([emptyStep()]); setFactorRows([emptyFactorRow()]); setResult(""); invalidate(); };
+  const clear = () => { setA(""); setB(""); setExtra([]); setEquivalents([]); setExpression(""); setSteps([emptyStep()]); setFactorRows([emptyFactorRow()]); setResult(""); invalidate(); };
   return <section aria-labelledby="exact-calculator-title" className="space-y-4">
     <div><h3 id="exact-calculator-title" className="text-base font-bold text-white">Tu hoja de bloques</h3><p className="mt-1 text-sm leading-relaxed text-slate-300">Escribe la cuenta, desarrolla cada paso y coloca tu resultado. Puedes comprobar tu trabajo cuando quieras.</p></div>
     <div className="space-y-4 rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
@@ -148,11 +162,22 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
           </div>
         </div>
         <p className="text-xs text-slate-400">El resultado va en los bloques después del signo igual. Desliza el tablero si no cabe en la pantalla.</p>
-        {!unary && <div className="flex flex-wrap gap-2"><button type="button" className={secondaryButton} disabled={extra.length >= MAX_EXACT_VALUES - 2} onClick={() => { setExtra((old) => [...old, ""]); invalidate(); }}>+ Añadir número</button>{extra.map((_, index) => <button key={index} type="button" className={secondaryButton} aria-label={`Quitar número ${index + 3}`} onClick={() => { setExtra((old) => old.filter((_, i) => i !== index)); setFactorRows((old) => old.map((row) => ({ ...row, cells: row.cells.filter((_, column) => column !== index + 2) }))); invalidate(); }}>Quitar {index + 3}</button>)}</div>}
+        {(op === "add" || op === "subtract") && <section aria-label="Preparar denominador común" className="space-y-3">
+          <div><h4 className="font-bold text-white">Preparar denominador común</h4><p className="mt-1 text-sm text-slate-300">Si los denominadores son diferentes, escribe una fracción equivalente para cada número usando el mismo denominador. Puedes usar cualquier múltiplo común.</p></div>
+          <div className={`${calculatorBoardClass} space-y-3`} style={calculatorBoardStyle}>
+            {values.map((value, index) => <div key={index} role="group" aria-label={`Equivalencia del número ${index + 1}`} className="flex items-center justify-center gap-3">
+              <FractionReference value={value} index={index} />
+              <span aria-hidden="true" className="text-3xl font-bold text-slate-100">=</span>
+              <NumberBlocks compact label={`Equivalente del número ${index + 1}`} value={equivalents[index] ?? ""} onChange={(next) => { setEquivalents((old) => { const updated = [...old]; while (updated.length <= index) updated.push(""); updated[index] = next; return updated; }); invalidate(); }} />
+            </div>)}
+          </div>
+          <p className="text-xs text-slate-400">Multiplica o divide el numerador y el denominador por el mismo número. Después puedes usar estas fracciones en «Mis pasos».</p>
+        </section>}
+        {!unary && <div className="flex flex-wrap gap-2"><button type="button" className={secondaryButton} disabled={extra.length >= MAX_EXACT_VALUES - 2} onClick={() => { setExtra((old) => [...old, ""]); invalidate(); }}>+ Añadir número</button>{extra.map((_, index) => <button key={index} type="button" className={secondaryButton} aria-label={`Quitar número ${index + 3}`} onClick={() => { setExtra((old) => old.filter((_, i) => i !== index)); setEquivalents((old) => old.filter((_, i) => i !== index + 2)); setFactorRows((old) => old.map((row) => ({ ...row, cells: row.cells.filter((_, column) => column !== index + 2) }))); invalidate(); }}>Quitar {index + 3}</button>)}</div>}
       </div> : <div className="space-y-3">
         <NumberBlocks label={unary ? "Fracción" : integer ? "Primer entero" : "Primera fracción o número"} value={a} integer={integer} onChange={(value) => { setA(value); invalidate(); }} />
         {!unary && <NumberBlocks label={integer ? "Segundo entero" : "Segunda fracción o número"} value={b} integer={integer} onChange={(value) => { setB(value); invalidate(); }} />}
-        {!unary && extra.map((value, index) => <div key={index} className="flex min-w-0 items-end gap-2"><div className="min-w-0 flex-1"><NumberBlocks label={integer ? `Entero ${index + 3}` : `Número ${index + 3}`} value={value} integer={integer} onChange={(next) => { setExtra((old) => old.map((v, i) => i === index ? next : v)); invalidate(); }} /></div><button type="button" aria-label={`Quitar número ${index + 3}`} className={`${secondaryButton} shrink-0`} onClick={() => { setExtra((old) => old.filter((_, i) => i !== index)); setFactorRows((old) => old.map((row) => ({ ...row, cells: row.cells.filter((_, column) => column !== index + 2) }))); invalidate(); }}>Quitar</button></div>)}
+        {!unary && extra.map((value, index) => <div key={index} className="flex min-w-0 items-end gap-2"><div className="min-w-0 flex-1"><NumberBlocks label={integer ? `Entero ${index + 3}` : `Número ${index + 3}`} value={value} integer={integer} onChange={(next) => { setExtra((old) => old.map((v, i) => i === index ? next : v)); invalidate(); }} /></div><button type="button" aria-label={`Quitar número ${index + 3}`} className={`${secondaryButton} shrink-0`} onClick={() => { setExtra((old) => old.filter((_, i) => i !== index)); setEquivalents((old) => old.filter((_, i) => i !== index + 2)); setFactorRows((old) => old.map((row) => ({ ...row, cells: row.cells.filter((_, column) => column !== index + 2) }))); invalidate(); }}>Quitar</button></div>)}
         {!unary && <button type="button" className={secondaryButton} disabled={extra.length >= MAX_EXACT_VALUES - 2} onClick={() => { setExtra((old) => [...old, ""]); invalidate(); }}>+ Añadir número</button>}
         <p className="text-xs text-slate-400">Hasta {MAX_EXACT_VALUES} números. {integer ? "Escribe enteros." : "Deja el denominador vacío para escribir un entero o decimal."}</p>
       </div>}
@@ -195,7 +220,7 @@ export function ExactCalculator({ storageKey, onResult }: { storageKey: string; 
       {fractionBoard ? <p className="text-sm text-slate-300">Escribe tu resultado en el tablero de arriba.</p> : <NumberBlocks label="Mi resultado" value={result} integer={integer} onChange={(value) => { setResult(value); invalidate(); }} />}
       <p className="text-xs text-slate-300">Comprueba tu trabajo para recibir pistas; confirma lo que escribiste para copiarlo o usarlo.</p>
       {problem && <p role="alert" className="text-sm text-amber-200">{problem}</p>}
-      <button type="button" className={secondaryButton} onClick={() => setFeedback(checkManualWork(op, values, expression, steps, factorRows, result))}>Comprobar mi trabajo</button>
+      <button type="button" className={secondaryButton} onClick={() => setFeedback(checkManualWork(op, values, expression, steps, factorRows, result, equivalents))}>Comprobar mi trabajo</button>
       {feedback && <div role="status" className={`space-y-1 rounded-xl p-3 text-sm ${feedback.ok ? "bg-emerald-950/60 text-emerald-100" : "bg-amber-950/60 text-amber-100"}`}><p className="font-semibold">{feedback.message}</p>{feedback.details.map((detail, i) => <p key={i}>{detail}</p>)}</div>}
       <div className="flex flex-wrap gap-2"><button type="button" className={primaryButton} onClick={confirm}>Confirmar mi resultado</button><button type="button" className={secondaryButton} disabled={!confirmed} onClick={() => { if (expressionMode) setExpression(result); else setA(result); invalidate(); }}>{expressionMode ? "Copiar a la expresión" : "Copiar al primer número"}</button></div>
       {confirmed && <p role="status" className="text-sm text-cyan-100">Resultado escrito: {result}</p>}

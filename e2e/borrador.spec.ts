@@ -53,6 +53,10 @@ test("el alumno trabaja fracciones y MCM en bloques y traslada su resultado", as
   await expect(page.getByText(/Resultado exacto/)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include("aside").analyze()).violations).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.getByLabel("Numerador o entero de Equivalente del número 1").fill("3");
+  await page.getByLabel("Denominador de Equivalente del número 1").fill("6");
+  await page.getByLabel("Numerador o entero de Equivalente del número 2").fill("2");
+  await page.getByLabel("Denominador de Equivalente del número 2").fill("6");
   await page.getByLabel("Operación del paso 1").fill("1/2 + 1/3");
   await page.getByLabel("Resultado del paso 1").fill("5/6");
   await page.getByLabel("Numerador o entero de Mi resultado").fill("7");
@@ -63,6 +67,7 @@ test("el alumno trabaja fracciones y MCM en bloques y traslada su resultado", as
   await page.getByLabel("Numerador o entero de Mi resultado").fill("5");
   await page.getByRole("button", { name: "Comprobar mi trabajo" }).click();
   await expect(page.getByText("El resultado final es correcto.")).toBeVisible();
+  await expect(page.getByText(/tienen un denominador común/)).toBeVisible();
   await page.getByRole("button", { name: "Confirmar mi resultado" }).click();
   await expect(page.getByRole("button", { name: "Usar 5/6" })).toBeDisabled();
   await expect(page.getByText(/solo admite números enteros/)).toBeVisible();
