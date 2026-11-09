@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { divisionTrace, getLesson, type DivisionSpec } from "../src/lib/learning/domain";
+import { divisionFields, divisionTrace, getLesson, type DivisionSpec } from "../src/lib/learning/domain";
 import { escribirGalera, escribirRuffini, escribirTabla } from "./operaciones";
 import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
 
@@ -183,4 +183,45 @@ test("Ruffini: tabla en la clase y guiada con la esquina y los coeficientes", as
   await expect(page.getByText("Tu respuesta es correcta. Revisa por qué funciona.")).toBeVisible();
   await sinDesbordeNiViolaciones(page);
   await page.screenshot({ path: testInfo.outputPath("guiada-ruffini.png"), fullPage: true });
+});
+
+
+test("ejercicio guiado: puede desmarcar una coma incorrecta sin perder la división", async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
+  if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
+  await registrarPadre(page);
+  const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2014-03-02" });
+  const childId = await entrarAlEspacio(page, nombre, pin);
+  const lesson = getLesson("division-decimales")!;
+  await page.goto(`/jugar/${childId}/aprende/${lesson.id}`);
+  await page.getByRole("button", { name: "Ir a la clase", exact: true }).click();
+  await page.getByRole("button", { name: "Continuar la explicación" }).click();
+  await page.getByRole("button", { name: "Continuar la explicación" }).click();
+  await page.getByRole("button", { name: "Ver cómo se resuelve" }).click();
+  await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
+  await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
+  await page.getByRole("button", { name: "Ahora, hazlo con ayuda" }).click();
+  const concept = lesson.guided[0];
+  await page.getByRole("radio", { name: concept.choices!.find((choice) => choice.id === concept.answer)!.label, exact: true }).check();
+  await page.getByRole("button", { name: "Comprobar mi respuesta" }).click();
+  await page.getByRole("button", { name: "Siguiente actividad" }).click();
+  await page.getByRole("radio", { name: "Restar de memoria" }).click();
+  const spec = lesson.guided[1].column as DivisionSpec;
+  const trace = divisionTrace(spec, "abreviada");
+  if (trace.commaAfter === null || trace.steps.length < 3) throw new Error("El ejercicio necesita al menos dos posiciones de coma");
+  for (const field of divisionFields(trace).filter((field) => field.step <= trace.commaAfter!)) {
+    if (field.kind === "q") await page.getByLabel(`Cociente: cifra ${field.step + 1}`, { exact: true }).fill(field.text);
+    else for (const [i, digit] of field.text.split("").entries()) {
+      await page.getByLabel(`Resta del paso ${field.step + 1}: casilla ${field.width - field.text.length + i + 1} de ${field.width}`, { exact: true }).fill(digit);
+    }
+  }
+  const wrongIndex = trace.commaAfter === 0 ? 2 : 1;
+  const wrong = page.getByRole("button", { name: `Poner la coma después de la cifra ${wrongIndex} del cociente` });
+  await wrong.click();
+  await expect(page.getByText(/Ahí no/)).toBeVisible();
+  await wrong.click();
+  await expect(page.getByText(/Ahí no/)).toHaveCount(0);
+  await expect(page.getByText(/Acabas de bajar/)).toBeVisible();
+  await page.getByRole("button", { name: `Poner la coma después de la cifra ${trace.commaAfter + 1} del cociente` }).click();
+  await expect(page.getByLabel(`Cociente: cifra ${trace.commaAfter + 2}`, { exact: true })).toBeVisible();
 });

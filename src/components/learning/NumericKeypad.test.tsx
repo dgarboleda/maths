@@ -40,6 +40,10 @@ describe("Teclado numérico de las hojas", () => {
     key("Escribir coma");
     key("Escribir 4");
     expect(onChange).toHaveBeenLastCalledWith("4,75");
+    act(() => screen.getByLabelText("Resultado: centésimas", { exact: true }).focus());
+    key("Escribir coma");
+    expect(onChange).toHaveBeenLastCalledWith("475");
+    expect(screen.getByLabelText("Resultado: centésimas", { exact: true })).toHaveValue("5");
   });
 
   test("sin decimales no hay tecla de coma", () => {

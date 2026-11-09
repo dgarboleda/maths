@@ -390,7 +390,7 @@ function Grid({
                 if (typedComma(e.target.value)) return onComma?.(i, c.value !== "");
                 onInput?.(i, e.target.value.replace(/\D/g, "").slice(-1));
               }}
-              onKeyDown={(e) => onKey?.(i, e)}
+              onKeyDown={(e) => { if ((e.key === "," || e.key === ".") && onComma) { e.preventDefault(); onComma(i, c.value !== ""); } else onKey?.(i, e); }}
               onFocus={(e) => e.target.select()}
               className={`${cell} rounded-lg border ${ring} ${color(i)} text-center placeholder:opacity-40 focus:outline-2 focus:outline-cyan-300`}
             />
@@ -611,7 +611,7 @@ export function ColumnSheet({
         setCommaMiss(null);
         setLastWhy(`La coma del resultado va debajo de las comas de los números: deja ${scale} ${scale === 1 ? "cifra decimal" : "cifras decimales"} a su derecha.`);
         requestAnimationFrame(() => focus(scale));
-      } else setCommaMiss(k);
+      } else setCommaMiss((previous) => previous === k ? null : k);
       return;
     }
     placeComma(commaAt === k ? null : k);
@@ -622,11 +622,12 @@ export function ColumnSheet({
   };
   // «,» en una casilla: la coma va justo después de la última cifra escrita
   // (se escribe de derecha a izquierda): a la izquierda de una casilla llena,
-  // a la derecha de una vacía. Escribirla donde ya está la quita.
+  // a la derecha de una vacía. Si ya está puesta, volver a escribirla la quita.
   const typeComma = (i: number, filled: boolean) => {
     if (mode !== "free" || !scale) return;
+    if (commaAt !== null) { placeComma(null); return; }
     const k = filled ? i + 1 : i;
-    if (k >= 1 && k < cells) placeComma(k === commaAt ? null : k);
+    if (k >= 1 && k < cells) placeComma(k);
   };
 
   const focus = (i: number) => refs.current[i]?.focus();
@@ -744,7 +745,7 @@ export function ColumnSheet({
         ) : (
           <p className="text-xs text-slate-400">
             Escribe el resultado desde la derecha. Arriba puedes anotar llevadas o préstamos.
-            {scale ? " Pon la coma escribiendo «,» en la casilla donde va (otra vez en el mismo sitio, la quitas)." : ""}
+            {scale ? " Pon la coma escribiendo «,» en la casilla donde va (si vuelves a pulsar la coma, la quitas)." : ""}
           </p>
         )}
       </div>
