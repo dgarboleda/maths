@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n, type ChoiceLabel } from "./questions";
 import { dec, list } from "./topicHelpers";
@@ -86,6 +87,7 @@ export const METRIC_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 350 ÷ 1000? Responde con un decimal.", 0.35, ["Dividir entre 1000 corre la coma tres lugares a la izquierda.", "350 ÷ 1000 = 0,35."], ["Entre 1000 se corre la coma tres lugares.", "350 → 35 → 3,5 → 0,35.", "Es 0,35."]),
       c("d-3", "¿Qué unidad usarías para medir la masa de una manzana?", ["Kilómetros", "Gramos", "Litros"], 1, "Los gramos miden masa; los kilómetros, longitud, y los litros, capacidad."),
     ],
+    practiceCorrection: errorFollowup("Convierte 250 centímetros a metros.", 2.5, "Un metro equivale a 100 centímetros; al pasar de centímetros a metros dividimos entre 100.", "250 ÷ 100 = 2,5 metros; la cantidad de longitud es la misma."),
     questions(v) {
       const [rx, rBig, rSmall] = v === 0 ? [2, "kg", "g"] : [4, "m", "cm"];
       const [tBig, tSmall] = v === 1 ? ["km", "m"] : ["L", "mL"];
@@ -324,6 +326,7 @@ export const FIGURE_LESSONS: Lesson[] = [
       c("d-2", "¿Cómo se llama un ángulo de 90°?", ["Agudo", "Recto", "Obtuso"], 1, "Un ángulo de 90° es recto; los agudos miden menos y los obtusos más."),
       n("d-3", "¿Cuántos grados suman los ángulos de un cuadrilátero?", 360, ["Un cuadrilátero se divide en dos triángulos.", "2 × 180 = 360°."], ["Divide el cuadrilátero con una diagonal.", "Quedan dos triángulos.", "2 × 180."], { unit: "°" }),
     ],
+    practiceCorrection: errorFollowup("Un triángulo tiene dos ángulos de 35° cada uno. ¿Cuántos grados mide el tercer ángulo?", 110, "Los tres ángulos interiores de un triángulo suman 180 grados.", "El tercero mide 180 − 35 − 35 = 110 grados; como supera 90 grados, el triángulo es obtusángulo."),
     questions(v) {
       const [la, lb] = v === 0 ? [5, 8] : [7, 4];
       const [o1, o2] = v === 1 ? [100, 95] : [120, 70];
@@ -527,6 +530,7 @@ export const FIGURE_LESSONS: Lesson[] = [
       c("d-2", "¿Cómo son dos ángulos opuestos por el vértice?", ["Iguales", "Suplementarios", "Complementarios"], 0, "Los ángulos opuestos por el vértice son iguales."),
       n("d-3", "¿Cuántos grados mide cada ángulo que forman dos rectas perpendiculares?", 90, ["Dos perpendiculares forman cuatro ángulos iguales que suman 360°.", "360 ÷ 4 = 90°."], ["Son cuatro ángulos iguales.", "Juntos suman 360°.", "360 ÷ 4."], { unit: "°" }),
     ],
+    practiceCorrection: errorFollowup("Dos rectas paralelas son cortadas por una transversal. Un ángulo interior mide 70°. ¿Cuánto mide su conjugado interno?", 110, "Los ángulos conjugados internos suman 180 grados cuando las rectas son paralelas.", "Restamos 180 − 70 = 110 grados para obtener el ángulo buscado."),
     questions(v) {
       const x = [65, 48, 72, 110, 55, 130][v];
       const concept = [
@@ -711,6 +715,7 @@ export const AREA_LESSONS: Lesson[] = [
       fig(n("d-2", "¿Cuál es el área de un triángulo de base 8 cm y altura 6 cm?", 24, ["El triángulo es la mitad de un rectángulo de la misma base y altura.", "8 × 6 ÷ 2 = 24 cm²."], ["Multiplica la base por la altura.", "8 × 6 = 48.", "Divide entre 2."], { unit: "cm²" }), { kind: "polygon", shape: "triangle", base: "8 cm", height: "6 cm" }),
       c("d-3", "¿Qué es la altura de un triángulo?", ["Su lado más largo", "La distancia perpendicular de un vértice al lado opuesto", "La mitad de la base"], 1, "La altura es perpendicular a la base y llega al vértice opuesto."),
     ],
+    practiceCorrection: errorFollowup("Un paralelogramo tiene base de 8 cm, lado inclinado de 5 cm y altura perpendicular de 3 cm. ¿Cuál es su área en centímetros cuadrados?", 24, "Para calcular el área usamos la base y la altura perpendicular, no el lado inclinado.", "Multiplicamos 8 × 3 = 24 centímetros cuadrados."),
     questions(v) {
       const [pb, pl, ph] = v === 0 ? [8, 5, 4] : [10, 6, 5];
       const [tB, tb] = v === 1 ? [9, 5] : [12, 8];
@@ -901,6 +906,7 @@ export const AREA_LESSONS: Lesson[] = [
       fig(n("d-2", "Con π ≈ 3,14, ¿cuál es la longitud de una circunferencia de 5 cm de radio?", 31.4, ["La longitud es 2πr.", "2 × 3,14 × 5 = 31,4 cm."], ["Usa L = 2πr.", "2 × 5 = 10.", "10 × 3,14."], { unit: "cm" }), { kind: "circle", radius: "5 cm" }),
       c("d-3", "¿En qué unidad se mide un área?", ["cm", "cm²", "cm³"], 1, "El área se mide en unidades cuadradas; cm³ es para volumen y cm para longitud."),
     ],
+    practiceCorrection: errorFollowup("Un cilindro tiene radio 1 m y altura 2 m. Usa π = 3,14. ¿Cuál es su área lateral, sin tapas, en metros cuadrados?", 12.56, "El área lateral es la longitud de la circunferencia de la base multiplicada por la altura.", "Calculamos 2 × 3,14 × 1 × 2 = 12,56 metros cuadrados; no incluimos las tapas."),
     questions(v) {
       const [ba, bb, bc] = v === 0 ? [10, 6, 4] : [8, 5, 3];
       const rr = v === 1 ? 3 : 5;
@@ -1102,6 +1108,7 @@ export const THALES_LESSONS: Lesson[] = [
       c("d-2", "¿Qué tienen en común dos figuras semejantes?", ["La misma forma", "Siempre el mismo tamaño", "El mismo perímetro"], 0, "Las figuras semejantes tienen la misma forma; su tamaño puede ser distinto."),
       n("d-3", "Un rectángulo de 4 cm por 6 cm se amplía con razón 2. ¿Cuánto mide su lado mayor?", 12, ["Cada lado se multiplica por 2.", "6 × 2 = 12 cm."], ["Ampliar con razón 2 es multiplicar por 2.", "El lado mayor mide 6 cm.", "6 × 2."], { unit: "cm" }),
     ],
+    practiceCorrection: errorFollowup("En dos rectas cortadas por paralelas, los segmentos 2 y 6 corresponden respectivamente a 3 y x. ¿Cuánto vale x?", 9, "Conservamos el orden de los segmentos correspondientes: 2/6 = 3/x.", "Al multiplicar en cruz, 2x = 18 y por tanto x = 9."),
     questions(v) {
       const [ga, gb, gc] = v === 0 ? [50, 60, 70] : [40, 65, 75];
       const [pa, pb] = v === 1 ? [3, 6] : [4, 10];

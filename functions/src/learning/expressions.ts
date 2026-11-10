@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -71,6 +72,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es −6 + 2?", -4, ["Empezamos en −6 y avanzamos 2 hacia la derecha.", "−6 → −5 → −4: el resultado es −4, todavía negativo porque 6 está más lejos del cero que 2."], ["Empieza en −6.", "Avanza 2.", "−4."]),
       c("d-3", "En 2x + 7 = 15, ¿qué valor tiene x?", ["4", "11", "8"], 0, "2x = 8, así que x = 4."),
     ],
+    practiceCorrection: errorFollowup("Si x = 2, ¿cuánto vale la expresión reducida de 4x + 3 + 2x?", 15, "Combinamos solo los términos semejantes: 4x + 2x = 6x, y conservamos el 3.", "Sustituimos x por 2 en 6x + 3 → 6 × 2 + 3 = 15."),
     questions(v) {
       const [a, b, x] = [[3, 5, 2], [4, -7, 3], [2, 9, -4], [5, -3, -2], [6, 1, -3], [3, -8, 5]][v],
         [c1, c2, c3] = [[5, 2, 3], [7, 3, 1], [4, 6, 2], [8, 5, 3], [6, 2, 5], [9, 4, 2]][v],
@@ -258,6 +260,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es (−3) × (−4)?", 12, ["Los dos factores son negativos: signos iguales dan positivo.", "3 × 4 = 12, así que (−3) × (−4) = 12."], ["Multiplica 3 × 4.", "Dos negativos dan positivo.", "12."]),
       c("d-3", "¿Cuánto es 2x + 5x?", ["7x", "10x", "7x²"], 0, "Son términos semejantes: 2 + 5 = 7."),
     ],
+    practiceCorrection: errorFollowup("Si x = 3, ¿cuánto vale 4(x + 2)?", 20, "Distribuimos el 4 a ambos términos: 4(x + 2) = 4x + 8.", "Con x = 3 obtenemos 4 × 3 + 8 = 20; también es 4 × 5."),
     questions(v) {
       const [a, b] = [[3, 4], [5, 2], [4, 6], [6, 3], [2, 7], [7, 5]][v],
         [na, nb] = [[2, 5], [3, 4], [4, 7], [5, 2], [6, 3], [3, 8]][v],
@@ -431,6 +434,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       n("d-2", "Desarrolla 2(x + 6). ¿Cuál es el término sin x?", 12, ["El 2 multiplica a cada término del paréntesis: 2 × x = 2x y 2 × 6 = 12.", "2(x + 6) = 2x + 12: el término sin x es 12."], ["El 2 multiplica a ambos términos.", "2 × 6.", "12."]),
       c("d-3", "¿Qué conserva una igualdad?", ["Restar 2x solo a un lado", "Restar 2x a ambos lados", "Cambiar x por 2"], 1, "La misma operación en ambos lados."),
     ],
+    practiceCorrection: errorFollowup("¿Cuántas soluciones tiene 2x + 1 = 2x + 5?", 0, "Restamos 2x a ambos lados y queda una igualdad que afirma que uno es igual a cinco.", "Como esa igualdad es falsa para cualquier valor de x, la ecuación tiene 0 soluciones."),
     questions(v) {
       const [a, b, cc, x] = [[5, 3, 2, 4], [7, 2, 3, 5], [6, 5, 4, 3], [9, 1, 5, 6], [4, 7, 1, 2], [8, 4, 3, 7]][v],
         d = a * x + b - cc * x,
@@ -603,6 +607,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       n("d-2", "Resuelve 4x + 1 = 21.", 5, ["Restamos 1 a ambos lados: 4x = 20.", "Dividimos entre 4 y queda x = 5. Comprobación: 4 × 5 + 1 = 21."], ["Resta 1.", "Divide entre 4.", "5."]),
       c("d-3", "¿Cuál es mayor: −3 o −8?", ["−3", "−8", "Son iguales"], 0, "−3 está a la derecha de −8."),
     ],
+    practiceCorrection: errorFollowup("Si −2x > 8, ¿cuál es el límite de la solución x < __?", -4, "Dividimos ambos lados entre −2 y cambiamos el sentido de la desigualdad.", "El resultado es x < −4; por ejemplo, x = −5 cumple la desigualdad original."),
     questions(v) {
       const [a, b, cc] = [[3, 2, 17], [4, 5, 31], [5, 1, 24], [2, 7, 20], [6, 3, 40], [7, 4, 36]][v],
         bound = (cc - b) / a,
@@ -780,6 +785,7 @@ export const EXPRESSION_LESSONS: Lesson[] = [
       c("d-2", "En la secuencia 5, 8, 11, 14, ¿cuánto aumenta cada vez?", ["3", "5", "14"], 0, "8 − 5 = 3, y así sucesivamente."),
       n("d-3", "¿Cuánto es (20 − 8) ÷ 4?", 3, ["El paréntesis va primero: 20 − 8 = 12.", "Después la división: 12 ÷ 4 = 3."], ["Paréntesis primero.", "12 ÷ 4.", "3."]),
     ],
+    practiceCorrection: errorFollowup("Una recta pasa por (0, 1) y (2, 7). ¿Cuál es su pendiente?", 3, "La pendiente es el cambio de y dividido entre el cambio de x.", "El cambio de y es 6 y el de x es 2 → 6 ÷ 2 = 3."),
     questions(v) {
       const [m, b] = [[3, 4], [5, 2], [4, 9], [-2, 15], [6, 1], [-3, 20]][v],
         xk = [6, 4, 7, 5, 8, 3][v],

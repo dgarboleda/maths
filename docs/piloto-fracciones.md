@@ -8,6 +8,8 @@ En «Sumar y restar fracciones», la práctica presenta una suma en la que una c
 
 Esta secuencia es parte del piloto, no una mejora de aprendizaje ya demostrada. En la revisión y las sesiones de abajo conviene observar si se entiende la distinción entre identificar el error y corregir la suma, y si el alumno puede justificar su respuesta sin las alternativas.
 
+Las demás clases también incluyen, tras su pregunta conceptual o de análisis de error, una aplicación numérica nueva de la idea. Estas aplicaciones tienen evidencia propia y no califican una explicación libre. Las comprobaciones y los repasos existentes conservan su selección de preguntas; no se afirma que un error active automáticamente una aplicación determinada. Todo este contenido sigue pendiente de revisión docente independiente.
+
 ## Revisión docente
 
 Una persona docente distinta de la autora debe completar una copia de [la plantilla de revisión](revision-docente-plantilla.md) para cada una de las siete clases de fracciones del [catálogo](../functions/src/learning/catalog.ts). Registrar identificador, versión, fecha, evidencia, correcciones y decisión. Prestar atención a:

@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -122,6 +123,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         "Una igualdad compara valores, independientemente del orden de escritura.",
       ),
     ],
+    practiceCorrection: errorFollowup("Resuelve x + 6 = 14. ¿Cuánto vale x?", 8, "Restamos 6 a ambos lados para conservar la igualdad.", "Queda x = 8; comprobamos que 8 + 6 = 14."),
     questions(v) {
       const [x, b] = [[5, 3], [9, 4], [6, 8], [12, 5], [7, 9], [15, 6]][v],
         total = x + b,
@@ -411,6 +413,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         ],
       ),
     ],
+    practiceCorrection: errorFollowup("Resuelve 4x = 28. ¿Cuánto vale x?", 7, "Dividimos ambos lados entre 4, que es distinto de cero.", "Obtenemos x = 7; al sustituir, 4 × 7 = 28."),
     questions(v) {
       const [x, m] = [[4, 3], [7, 5], [6, 8], [9, 4], [3, 7], [8, 6]][v],
         b = [5, 9, 4, 12, 7, 3][v],
@@ -675,6 +678,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         ["Sustituye la letra.", "Multiplica antes de sumar.", "8 + 3 = 11."],
       ),
     ],
+    practiceCorrection: errorFollowup("Resuelve 2x − 3 = 11. ¿Cuánto vale x?", 7, "Sumamos 3 a ambos lados y obtenemos 2x = 14.", "Dividimos ambos lados entre 2 → x = 7. Comprobamos que 2 × 7 − 3 = 11."),
     questions(v) {
       const [m, x, b] = [[3, 5, 4], [2, 9, 7], [5, 4, 6], [4, 7, 3], [6, 2, 9], [7, 3, 5]][v],
         total = m * x + b,
@@ -985,6 +989,7 @@ export const ALGEBRA_LESSONS: Lesson[] = [
         "Ese cargo no depende de cuántas unidades se compren.",
       ),
     ],
+    practiceCorrection: errorFollowup("Cada entrada cuesta 4 soles y hay un cargo fijo de 3 soles. ¿Cuál es el costo total de 5 entradas?", 23, "El costo de las entradas es 4 × 5 = 20 soles.", "Sumamos el cargo fijo una sola vez: 20 + 3 = 23 soles."),
     questions(v) {
       const [count, price, fixed] = [[6, 4, 5], [4, 3, 6], [7, 5, 8], [3, 9, 4], [5, 6, 10], [8, 2, 7]][v],
         budget = count * price + fixed,

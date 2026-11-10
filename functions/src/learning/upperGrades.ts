@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -83,6 +84,7 @@ export const SYSTEM_LESSONS: Lesson[] = [
       n("d-2", "Resuelve 3x − 4 = 11.", 5, ["Sumamos 4 a ambos lados para deshacer la resta: 3x = 15.", "Dividimos entre 3 y queda x = 5. Comprobación: 3 × 5 − 4 = 11."], ["Suma 4 a ambos lados.", "3x = 15.", "Divide entre 3."]),
       c("d-3", "¿Qué par cumple x + y = 7?", ["(3, 4)", "(3, 5)", "(2, 6)"], 0, "3 + 4 = 7."),
     ],
+    practiceCorrection: errorFollowup("Si x + y = 10 y x − y = 4, ¿cuánto vale y?", 3, "Restamos la segunda ecuación de la primera: las x se cancelan y quedan dos veces y.", "Así, 2y = 6 y por tanto y = 3; entonces x = 7 satisface ambas ecuaciones."),
     questions(v) {
       const [x, y] = [[6, 4], [9, 3], [7, 5], [11, 2], [8, 1], [10, 7]][v],
         s = x + y,
@@ -279,6 +281,7 @@ export const EXPONENTIAL_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es el 10% de 300?", 30, ["10% es la décima parte de la cantidad.", "300 ÷ 10 = 30. Comprobación: 30 × 10 = 300."], ["10% es una décima parte.", "Divide entre 10.", "30."]),
       c("d-3", "¿Qué secuencia aumenta siempre en la misma cantidad?", ["3, 6, 12, 24", "5, 8, 11, 14", "2, 4, 8, 16"], 1, "5, 8, 11, 14 suma 3 cada vez."),
     ],
+    practiceCorrection: errorFollowup("Una cantidad de 100 sube 20% y luego baja 20%. ¿Cuál es la cantidad final?", 96, "La subida se calcula sobre 100 y da 120.", "La bajada se calcula sobre 120 → 120 × 0,8 = 96, no sobre la cantidad inicial."),
     questions(v) {
       const [a, b, k] = [[50, 2, 4], [30, 3, 3], [20, 2, 5], [10, 3, 4], [40, 2, 3], [5, 4, 3]][v],
         pct = [20, 5, 15, 40, 8, 30][v],
@@ -491,6 +494,7 @@ export const TRIGONOMETRY_LESSONS: Lesson[] = [
       n("d-2", "Escribe 12/16 como decimal.", 0.75, ["Primero se simplifica: 12/16 = 3/4, dividiendo ambos términos entre 4.", "3 ÷ 4 = 0,75."], ["Simplifica: 12/16 = 3/4.", "3 ÷ 4.", "0,75."]),
       c("d-3", "En un triángulo rectángulo, ¿cuál es el lado más largo?", ["Uno de los catetos", "La hipotenusa", "Depende del ángulo"], 1, "La hipotenusa, opuesta al ángulo recto, es siempre el lado mayor."),
     ],
+    practiceCorrection: errorFollowup("En un triángulo rectángulo, un ángulo tiene cateto opuesto 3 e hipotenusa 5. ¿Cuál es su seno?", 0.6, "El seno es el cateto opuesto dividido entre la hipotenusa.", "Así, sen = 3/5 = 0,6; la hipotenusa es el lado mayor."),
     questions(v) {
       const [opp, adj, hyp] = [[3, 4, 5], [12, 16, 20], [24, 7, 25], [7, 24, 25], [15, 20, 25], [16, 12, 20]][v],
         [d, t] = [[10, 0.15], [8, 0.25], [20, 0.1], [12, 0.5], [6, 0.75], [40, 0.05]][v],
@@ -692,6 +696,7 @@ export const SPREAD_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 19 − 4?", 15, ["Restar 4 a 19: de 19 a 15 se retroceden 4.", "19 − 4 = 15. Comprobación: 15 + 4 = 19."], ["Resta.", "19 − 4.", "15."]),
       c("d-3", "¿Qué mide el rango de un conjunto de datos?", ["El valor más repetido", "La diferencia entre el mayor y el menor", "El valor central"], 1, "Rango = máximo − mínimo."),
     ],
+    practiceCorrection: errorFollowup("Calcula la mediana de 8, 2, 6 y 4.", 5, "Ordenamos los cuatro datos de menor a mayor: 2, 4, 6 y 8.", "La mediana es el promedio de los dos valores centrales: (4 + 6) ÷ 2 = 5."),
     questions(v) {
       const data = [
           [2, 5, 6, 9, 11, 12, 14, 20],
@@ -907,6 +912,7 @@ export const COUNTING_LESSONS: Lesson[] = [
       n("d-2", "Al lanzar un dado, ¿cuál es la probabilidad de sacar 5? Escríbela como fracción.", 1 / 6, ["Las 6 caras del dado son igual de probables: hay 6 casos posibles.", "Solo una muestra el 5: P = 1/6."], ["¿Cuántas caras tiene el dado?", "¿Cuántas muestran un 5?", "Favorables ÷ posibles."]),
       c("d-3", "¿En cuál de estas situaciones importa el orden?", ["Elegir 2 frutas para un jugo", "Elegir el 1.° y el 2.° puesto de una carrera", "Elegir 3 libros para leer"], 1, "En un podio no es lo mismo ganar que quedar segundo."),
     ],
+    practiceCorrection: errorFollowup("¿Cuántas parejas distintas pueden elegirse entre 4 personas si el orden no importa?", 6, "Hay 4 × 3 = 12 elecciones ordenadas de dos personas distintas.", "Cada pareja aparece en dos órdenes, así que dividimos 12 entre 2 y obtenemos 6."),
     questions(v) {
       const [a, b, cc] = [[3, 2, 2], [4, 3, 2], [5, 2, 3], [3, 3, 4], [6, 2, 2], [2, 5, 4]][v],
         runners = [5, 6, 7, 8, 4, 9][v],
@@ -1091,6 +1097,7 @@ export const TRANSFORMATION_LESSONS: Lesson[] = [
       c("d-2", "¿En qué cuadrante está el punto (−2, 3)?", ["Primero", "Segundo", "Tercero"], 1, "x negativa e y positiva: segundo cuadrante."),
       n("d-3", "¿Cuál es el opuesto de −7?", 7, ["El opuesto está a la misma distancia del cero, al otro lado.", "−7 está 7 unidades a la izquierda; su opuesto, 7, está 7 a la derecha."], ["El opuesto está a la misma distancia del 0.", "Del otro lado.", "7."]),
     ],
+    practiceCorrection: errorFollowup("Al girar el punto (2, −3) 180° alrededor del origen, ¿cuál es la coordenada y del resultado?", 3, "Un giro de 180 grados alrededor del origen cambia el signo de ambas coordenadas.", "El punto se transforma en (−2, 3), por lo que la coordenada y es 3."),
     questions(v) {
       const [x, y] = [[2, -1], [3, 4], [-2, 5], [4, -3], [-5, 2], [1, 6]][v],
         [a, b] = [[3, 4], [-2, 1], [5, -3], [-4, -2], [2, -6], [-3, 5]][v],

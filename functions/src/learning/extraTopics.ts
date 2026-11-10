@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, columnar, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -82,6 +83,7 @@ export const NUMBER_EXTRA_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 3,7 × 100?", 370, ["Multiplicar por 100 es multiplicar por 10 dos veces: la coma se desplaza dos posiciones a la derecha.", "3,7 → 37 → 370. Comprobación: 370 ÷ 100 = 3,7."], ["Multiplicar por 100.", "La coma se mueve a la derecha.", "370."]),
       c("d-3", "¿Cuál es mayor?", ["0,01", "0,001", "Son iguales"], 0, "0,01 son diez milésimas; 0,001, una."),
     ],
+    practiceCorrection: errorFollowup("Escribe como decimal el mayor de 3 × 10⁻³ y 2 × 10⁻⁴.", 0.003, "El primer número es 0,003 y el segundo es 0,0002.", "Comparando las cifras decimales, el mayor es 0,003."),
     questions(v) {
       const [big, bigExp] = [[45, 7], [63, 6], [82, 8], [27, 5], [91, 9], [36, 7]][v],
         bigValue = big * 10 ** (bigExp - 1),
@@ -266,6 +268,7 @@ export const DECIMAL_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 3,2 × 10?", 32, ["Multiplicar por 10 desplaza la coma una posición a la derecha: cada décima pasa a ser una unidad.", "3,2 × 10 = 32. Comprobación: 32 ÷ 10 = 3,2."], ["Multiplicar por 10.", "La coma va a la derecha.", "32."]),
       n("d-3", "¿Cuánto es 45 ÷ 9?", 5, ["Dividir 45 entre 9 es buscar el número que, multiplicado por 9, da 45.", "9 × 5 = 45, así que 45 ÷ 9 = 5."], ["Busca un factor.", "9 × 5.", "5."]),
     ],
+    practiceCorrection: errorFollowup("Calcula 0,3 × 0,4.", 0.12, "Multiplicamos 3 × 4 = 12 y contamos una cifra decimal en cada factor.", "El producto lleva dos cifras decimales: 0,12. Es menor que ambos factores positivos."),
     questions(v) {
       const [a, b] = [[2.4, 0.3], [1.5, 0.6], [3.2, 0.25], [0.8, 0.7], [4.5, 1.2], [2.6, 0.5]][v],
         [d1, d2] = [[6.3, 0.7], [4.8, 0.6], [7.2, 0.09], [5.6, 0.8], [8.1, 0.9], [3.6, 0.04]][v],
@@ -441,6 +444,7 @@ export const ANGLE_LESSONS: Lesson[] = [
       c("d-2", "¿Cuánto mide un ángulo recto?", ["45°", "90°", "180°"], 1, "Un ángulo recto mide 90°."),
       n("d-3", "¿Cuánto es (5 − 2) × 180?", 540, ["El paréntesis va primero: 5 − 2 = 3.", "3 × 180 = 540: tres veces 180."], ["Paréntesis primero.", "3 × 180.", "540."]),
     ],
+    practiceCorrection: errorFollowup("Dos rectas se cruzan. Si uno de los ángulos mide 125°, ¿cuánto mide su opuesto por el vértice?", 125, "Los ángulos opuestos por el vértice tienen la misma medida.", "Por tanto, el ángulo opuesto también mide 125°; el ángulo vecino es el suplementario."),
     questions(v) {
       const [t1, t2] = [[48, 75], [62, 39], [35, 105], [90, 27], [54, 68], [110, 23]][v],
         given = [65, 112, 38, 140, 73, 96][v],
@@ -620,6 +624,7 @@ export const SIMILARITY_LESSONS: Lesson[] = [
       n("d-2", "¿Cuántos cm hay en 7 m?", 700, ["1 m = 100 cm.", "7 m = 7 × 100 = 700 cm."], ["1 m = 100 cm.", "7 × 100.", "700."]),
       c("d-3", "Si un cuadrado de lado 2 pasa a lado 4, ¿su área…?", ["se duplica", "se multiplica por 4", "no cambia"], 1, "De 4 a 16: por 4."),
     ],
+    practiceCorrection: errorFollowup("Un rectángulo de 2 cm por 3 cm se amplía multiplicando ambos lados por 4. ¿Cuánto mide el lado que antes medía 3 cm?", 12, "Una ampliación semejante multiplica cada longitud por el mismo factor.", "El lado pedido mide 3 × 4 = 12 cm; el otro mide 8 cm."),
     questions(v) {
       const [a, b, a2] = [[4, 6, 10], [3, 5, 12], [6, 9, 9], [5, 8, 15], [2, 7, 6], [8, 12, 6]][v],
         [scale, cm] = [[500, 6], [200, 7.5], [1000, 4.2], [250, 12], [100, 9.5], [2000, 3.5]][v],
@@ -798,6 +803,7 @@ export const QUADRATIC_LESSONS: Lesson[] = [
       n("d-2", "Desarrolla x(x + 4). ¿Cuál es el coeficiente de x?", 4, ["La x de fuera multiplica a cada término del paréntesis: x · x = x² y x · 4 = 4x.", "x(x + 4) = x² + 4x: el coeficiente de x es 4."], ["Distributiva.", "x × 4 = 4x.", "4."]),
       c("d-3", "Si a × b = 0, entonces…", ["a y b son 0", "al menos uno de los dos es 0", "a = b"], 1, "Un producto es 0 si alguno de sus factores es 0."),
     ],
+    practiceCorrection: errorFollowup("La ecuación x² = 5x tiene dos soluciones. Una es 5; ¿cuál es la otra?", 0, "Llevamos todo a un lado y factorizamos: x² − 5x = x(x − 5).", "El producto es cero si x = 0 o si x − 5 = 0; la otra solución es 0."),
     questions(v) {
       const sq = [7, 9, 6, 12, 8, 11][v],
         [p, q] = [[3, -5], [-2, 7], [4, -6], [-3, 8], [5, -2], [-4, 9]][v],

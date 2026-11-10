@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n, type ChoiceLabel } from "./questions";
 import { dec, divisorPairs, divisors, frac, gcd, isPrime, list, powerForm, primeFactors, sup } from "./topicHelpers";
@@ -117,6 +118,7 @@ export const NUMBER_THEORY_LESSONS: Lesson[] = [
       n("d-2", "Al dividir 29 entre 4, ¿cuánto sobra (el resto)?", 1, ["4 × 7 = 28 es el múltiplo de 4 más cercano sin pasarse.", "29 − 28 = 1, así que sobra 1."], ["Busca el múltiplo de 4 más cercano a 29.", "4 × 7 = 28.", "29 − 28 = 1."]),
       c("d-3", "¿Cuál de estas divisiones es exacta?", ["35 ÷ 4", "35 ÷ 5", "35 ÷ 6"], 1, "35 ÷ 5 = 7 sin resto; 35 ÷ 4 y 35 ÷ 6 dejan resto."),
     ],
+    practiceCorrection: errorFollowup("¿Qué resto deja 84 al dividirlo entre 3?", 0, "Sumamos las cifras de 84 → 8 + 4 = 12, que es múltiplo de 3.", "Por tanto, 84 es divisible entre 3 y el resto es 0."),
     questions(v) {
       const [b, q] = [[6, 4], [7, 3], [8, 5], [9, 4], [5, 6], [12, 3]][v];
       const a = b * q;
@@ -339,6 +341,7 @@ export const NUMBER_THEORY_LESSONS: Lesson[] = [
       n("d-2", "¿Cuántos divisores tiene 12?", 6, ["12 = 1 × 12 = 2 × 6 = 3 × 4.", "Los divisores son 1, 2, 3, 4, 6 y 12: en total 6."], ["Busca las parejas que multiplicadas dan 12.", "1 × 12, 2 × 6 y 3 × 4.", "Cada pareja da dos divisores."]),
       n("d-3", "¿Cuánto es 2 × 2 × 3 × 5?", 60, ["2 × 2 = 4 y 4 × 3 = 12.", "12 × 5 = 60."], ["Multiplica de izquierda a derecha.", "2 × 2 = 4.", "4 × 3 × 5 = 60."]),
     ],
+    practiceCorrection: errorFollowup("En la descomposición prima de 60, ¿cuántos factores 2 aparecen?", 2, "Descomponemos 60 como 2 × 30 y después 30 como 2 × 15.", "Como 15 = 3 × 5, queda 60 = 2 × 2 × 3 × 5: aparecen dos factores 2."),
     questions(v) {
       const [p, comp, f] = [[13, 21, 3], [17, 27, 3], [19, 33, 3], [23, 35, 5], [29, 39, 3], [31, 49, 7]][v];
       const even = [34, 46, 58, 62, 74, 94][v];
@@ -557,6 +560,7 @@ export const NUMBER_THEORY_LESSONS: Lesson[] = [
       n("d-2", "En el número 3725, ¿cuánto vale la cifra 7?", 700, ["El 7 está en la tercera posición desde la derecha, la de las centenas.", "7 centenas son 7 × 100 = 700."], ["Mira en qué posición está el 7.", "Está en las centenas.", "7 × 100 = 700."]),
       c("d-3", "¿Cuál es la descomposición de 846?", ["800 + 40 + 6", "8 + 4 + 6", "80 + 40 + 6"], 0, "846 = 800 + 40 + 6."),
     ],
+    practiceCorrection: errorFollowup("¿Qué número representa XLIV?", 44, "XL representa 40 porque X antes de L resta diez a cincuenta.", "IV representa 4 porque I antes de V resta una unidad: XLIV representa 40 + 4 = 44."),
     questions(v) {
       const repeat = v === 0 ? 40 : 400;
       const [pairA, pairB, pairText] = v === 1 ? ["XI", "IX", "XI = 10 + 1 y IX = 10 − 1: la I se suma o se resta según su lugar."] : ["LX", "XL", "LX = 50 + 10 y XL = 50 − 10: la X se suma o se resta según su lugar."];
@@ -787,6 +791,7 @@ export const REAL_NUMBER_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es √81?", 9, ["Buscamos el número que multiplicado por sí mismo da 81.", "9 × 9 = 81, así que √81 es 9."], ["Piensa en los cuadrados perfectos.", "¿Qué número por sí mismo da 81?", "9 × 9 = 81."]),
       c("d-3", "¿Cuál de estos números es entero?", ["−7", "2,5", "1/2"], 0, "−7 es un entero negativo; 2,5 y 1/2 no son enteros."),
     ],
+    practiceCorrection: errorFollowup("Escribe 0,375 como fracción. Introduce una fracción equivalente.", 0.375, "El decimal exacto 0,375 equivale a 375/1000 porque tiene tres cifras decimales.", "Al dividir numerador y denominador entre 125 obtenemos 3/8; por eso es racional."),
     questions(v) {
       const [pn, pd, pDec] = v === 3 ? [5, 11, "0,4545…"] : [2, 3, "0,666…"];
       const [ns, ms] = v === 1 ? [12, 16] : [50, 49];
@@ -1009,6 +1014,7 @@ export const REAL_NUMBER_LESSONS: Lesson[] = [
       n("d-2", "Completa 72 = 8 × __", 9, ["72 ÷ 8 = 9.", "Comprobación → 8 × 9 = 72."], ["Divide 72 entre 8.", "Piensa en la tabla del 8.", "8 × 9 = 72."]),
       c("d-3", "¿Cuál de estos números es un cuadrado perfecto?", ["50", "64", "72"], 1, "64 = 8 × 8; 50 y 72 no son el cuadrado de ningún entero."),
     ],
+    practiceCorrection: errorFollowup("Si √45 = a√5, ¿cuánto vale a?", 3, "Descomponemos 45 como 9 × 5, donde 9 tiene raíz cuadrada exacta.", "Entonces √45 = √9 × √5 = 3√5, de modo que a vale 3."),
     questions(v) {
       const [ca, cb] = v === 0 ? [5, 2] : [3, 5];
       const [s1, s2] = v === 1 ? [9, 16] : [36, 64];
@@ -1216,6 +1222,7 @@ export const MIXED_NUMBER_LESSONS: Lesson[] = [
       n("d-2", "¿Cuántos cuartos hay en 2 enteros?", 8, ["Cada entero está formado por 4 cuartos.", "Dos enteros son 2 × 4 = 8 cuartos."], ["Un entero son 4/4.", "Dos enteros son dos veces 4/4.", "2 × 4 = 8."]),
       c("d-3", "¿Qué fracción es mayor que 1?", ["3/5", "7/4", "4/7"], 1, "7/4 tiene más cuartos de los que forman un entero (4/4)."),
     ],
+    practiceCorrection: errorFollowup("Al expresar 19/4 como número mixto, ¿cuántas unidades completas hay?", 4, "Dividimos 19 entre 4: el cociente es 4 y el resto es 3.", "Así, 19/4 son 4 unidades y 3/4; el número de unidades completas es 4."),
     questions(v) {
       const [w, nn, d] = [[2, 3, 4], [1, 2, 5], [3, 1, 6], [4, 2, 3], [2, 5, 8], [5, 1, 2]][v];
       const imp = w * d + nn;
@@ -1424,6 +1431,7 @@ export const COMPOUND_RULE_LESSONS: Lesson[] = [
       n("d-2", "4 pintores pintan una casa en 6 días. Trabajando igual, ¿en cuántos días la pintan 8 pintores?", 3, ["Con el doble de pintores se tarda la mitad.", "6 ÷ 2 = 3 días."], ["¿Más pintores tardan más o menos?", "Es una relación inversa.", "El doble de pintores, la mitad de días."], { unit: "días" }),
       c("d-3", "Para hacer la misma obra con más trabajadores, ¿qué relación hay entre trabajadores y días?", ["Directa", "Inversa", "No se relacionan"], 1, "Si se duplican los trabajadores, los días se reducen a la mitad: es inversa."),
     ],
+    practiceCorrection: errorFollowup("Cuatro personas terminan un trabajo en 6 días. ¿Cuántos días necesitan 8 personas al mismo ritmo para el mismo trabajo?", 3, "Para un trabajo fijo, personas y tiempo son inversamente proporcionales.", "Al duplicar las personas, el tiempo se divide entre dos: 6 ÷ 2 = 3 días."),
     questions(v) {
       const [W1, M1, D1, W2, M2] = [[6, 30, 10, 4, 36], [8, 40, 15, 10, 60], [5, 20, 12, 6, 30], [9, 45, 8, 6, 60], [4, 24, 9, 6, 40], [10, 50, 6, 12, 80]][v];
       const D2 = (D1 * W1 * M2) / (W2 * M1);

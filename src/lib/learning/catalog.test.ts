@@ -31,7 +31,9 @@ describe("Contrato editorial del programa inicial", () => {
       expect(l.sections).toHaveLength(3);
       expect(l.examples.length).toBeGreaterThanOrEqual(2);
       expect(l.guided).toHaveLength(3);
-      expect(l.practice).toHaveLength(l.id === "fracciones-suma-resta" ? 8 : 7);
+      expect(l.practice).toHaveLength(8);
+      expect(l.practice[4].task, l.id).toBe(4);
+      expect(l.practice[5]).toMatchObject({ id: "p-correction", task: 8, intent: "procedure" });
       expect(new Set(l.practice.map((q) => q.format)).size).toBe(3);
       expect(l.commonErrors.length).toBeGreaterThanOrEqual(3);
       l.legacyModuleIds.forEach((id) =>
@@ -94,18 +96,18 @@ describe("Contrato editorial del programa inicial", () => {
     expect(fraction.practice[1].answer).toBe(24); // 2/5 de 60
     expect(fraction.practice[2].answer).toBe(12); // 1/5 de 60
     expect(fraction.practice[3].answer).toBe(72); // 6/5 de 60
-    expect(fraction.practice[6].answer).toBe(60); // 24 son 2/5 de la reserva
+    expect(fraction.practice.find((q) => q.task === 6)!.answer).toBe(60); // 24 son 2/5 de la reserva
     expect(fraction.checks[0][4].answer).toBe(72); // 60 son 5/6 de 72
     const percentages = getLesson("porcentajes-aplicados")!;
     expect(percentages.practice[1].answer).toBe(60); // 20% de 300
     expect(percentages.practice[2].answer).toBe(240);
     expect(percentages.practice[3].answer).toBe(360);
-    expect(percentages.practice[6].answer).toBe(300); // 240 tras −20%
+    expect(percentages.practice.find((q) => q.task === 6)!.answer).toBe(300); // 240 tras −20%
     expect(getLesson("ecuaciones-un-paso")!.practice[3].answer).toBe(-5); // x+9=4
-    expect(getLesson("ecuaciones-un-paso")!.practice[6].answer).toBe(10); // x/5=2
+    expect(getLesson("ecuaciones-un-paso")!.practice.find((q) => q.task === 6)!.answer).toBe(10); // x/5=2
     expect(getLesson("ecuaciones-dos-pasos")!.checks[0][1].answer).toBe(4); // 5x+6=26
     expect(getLesson("modelar-ecuaciones")!.practice[3].answer).toBe(4); // máx. 20: (20−6)/3 = 4,67
-    expect(getLesson("modelar-ecuaciones")!.practice[6].answer).toBe(6); // 11 y 21 por 1 y 3 h
+    expect(getLesson("modelar-ecuaciones")!.practice.find((q) => q.task === 6)!.answer).toBe(6); // 11 y 21 por 1 y 3 h
   });
 
   test("los dos puntos nunca separan números: en Perú «:» también es división", () => {

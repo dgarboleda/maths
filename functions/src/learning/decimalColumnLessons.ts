@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { fmt } from "./algorithms/columns";
 import { divisionTrace, exactPlaces } from "./algorithms/division";
@@ -87,6 +88,7 @@ export const MULTIPLY_COLUMN_LESSONS: Lesson[] = [
         ["Suma en columnas desde las unidades.", "En las centenas, 7 + 9 = 16: llevas 1.", "1 + 6 + 1 = 8 millares."],
       ),
     ],
+    practiceCorrection: errorFollowup("Calcula 1,2 × 0,4.", 0.48, "Multiplicamos 12 × 4 = 48 y contamos dos cifras decimales entre los factores.", "El producto es 0,48; es menor que 1,2 porque tomamos cuatro décimos de esa cantidad."),
     questions(v) {
       const [oa, ob] = [[347, 6], [586, 7], [429, 8], [763, 4], [958, 3], [274, 9]][v];
       const [ta, td] = [[47, 6], [38, 7], [56, 4], [29, 8], [67, 3], [45, 9]][v];
@@ -320,6 +322,7 @@ export const DECIMAL_DIVISION_LESSONS: Lesson[] = [
         ["Reparte primero las centenas.", "Lo que sobra se junta con la cifra siguiente.", "7 → 2, 15 → 5, 6 → 2."],
       ),
     ],
+    practiceCorrection: errorFollowup("Calcula 3,6 ÷ 0,6.", 6, "Multiplicamos tanto el dividendo como el divisor por 10 para mantener el cociente.", "La división equivalente es 36 ÷ 6 = 6; comprobamos que 6 × 0,6 = 3,6."),
     questions(v) {
       const [ra, rb] = [[23, 4], [19, 8], [38, 5], [31, 4], [17, 8], [45, 6]][v];
       const [ka, kb, KA, KB] = [[0, 0, 0, 0], [6.3, 0.7, 63, 7], [0, 0, 0, 0], [4.8, 0.06, 480, 6], [0, 0, 0, 0], [2.4, 0.3, 24, 3]][v];

@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import { dec, frac } from "./topicHelpers";
@@ -95,6 +96,7 @@ export const STATISTICS_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 9 ÷ 30? Responde con un decimal.", 0.3, ["9 ÷ 30 es la fracción 9/30, que se simplifica dividiendo entre 3.", "Queda 3/10, que en decimal es 0,3."], ["Simplifica la fracción 9/30.", "Divide arriba y abajo entre 3.", "3/10 es 0,3."]),
       c("d-3", "En la lista 2, 3, 2, 5, 2, ¿cuántas veces aparece el 2?", ["2", "3", "5"], 1, "El 2 aparece en la primera, la tercera y la quinta posición: 3 veces."),
     ],
+    practiceCorrection: errorFollowup("Una tabla registra 2 personas con 0 hermanos, 4 con 1 y 3 con 2. ¿Cuál es la frecuencia acumulada hasta 2 hermanos?", 9, "La frecuencia acumulada hasta 2 incluye las frecuencias de 0, 1 y 2 hermanos.", "Sumamos 2 + 4 + 3 = 9 personas; no usamos solo la última frecuencia."),
     questions(v) {
       const counts = [[4, 10, 8, 2, 1], [6, 9, 3, 1, 1], [5, 12, 6, 4, 3], [8, 16, 10, 4, 2], [2, 7, 6, 3, 2], [10, 20, 12, 6, 2]][v];
       const total = counts.reduce((a, b) => a + b, 0);
@@ -275,6 +277,7 @@ export const STATISTICS_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 0,3 × 360?", 108, ["0,3 × 360 es el 30 % de 360.", "360 × 3 ÷ 10 = 108."], ["Multiplica 360 por 3.", "1080.", "Divide entre 10."]),
       c("d-3", "En una tabla, 8 de 32 estudiantes eligen rojo. ¿Qué porcentaje es?", ["8 %", "25 %", "32 %"], 1, "8/32 = 1/4, que es el 25 %."),
     ],
+    practiceCorrection: errorFollowup("Un gráfico circular tiene dos sectores de 90° y 150°. ¿Cuántos grados debe medir el tercer sector?", 120, "Los sectores de un gráfico circular completo suman 360 grados.", "Restamos los ángulos conocidos: 360 − 90 − 150 = 120 grados."),
     questions(v) {
       const n0 = [40, 60, 30, 72, 50, 36][v];
       const start = v === 1 ? 50 : 80;

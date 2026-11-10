@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -84,6 +85,7 @@ export const INTEREST_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 1,05 × 200?", 210, ["1,05 = 1 + 0,05: multiplicar por 1,05 es tomar el total y añadir su 5%.", "200 × 1 = 200 y 200 × 0,05 = 10; 200 + 10 = 210."], ["1 × 200 = 200.", "0,05 × 200 = 10.", "Suma."]),
       c("d-3", "Un precio de 100 soles sube 10% y luego otro 10%. ¿Cuánto cuesta al final?", ["121 soles", "120 soles", "110 soles"], 0, "El segundo 10% se aplica sobre 110 → 110 + 11 = 121."),
     ],
+    practiceCorrection: errorFollowup("Depositas 100 soles al 10% anual compuesto. ¿Cuántos soles hay al final de dos años?", 121, "Al final del primer año hay 100 × 1,10 = 110 soles.", "El segundo año se calcula sobre 110 → 110 × 1,10 = 121 soles."),
     questions(v) {
       const [p1, r1, t1] = [[1000, 5, 3], [2000, 4, 2], [1500, 6, 4], [800, 10, 3], [2500, 8, 2], [1200, 5, 5]][v],
         i1 = (p1 * r1 * t1) / 100,
@@ -273,6 +275,7 @@ export const SEQUENCE_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 2⁵?", 32, ["2⁵ es multiplicar 2 por sí mismo 5 veces: 2 · 2 · 2 · 2 · 2.", "2 → 4 → 8 → 16 → 32."], ["Multiplica 2 por sí mismo 5 veces.", "2 · 2 · 2 = 8.", "8 · 2 · 2."]),
       c("d-3", "¿Qué expresión da el término de la posición n en 5, 10, 15, 20…?", ["5n", "n + 5", "5 + 5 + n"], 0, "Cada término es 5 veces su posición."),
     ],
+    practiceCorrection: errorFollowup("En la sucesión 3, 6, 12, 24, ¿cuál es el siguiente término?", 48, "Cada término se obtiene multiplicando el anterior por 2.", "El siguiente es 24 × 2 = 48; la razón multiplicativa se mantiene constante."),
     questions(v) {
       const [a1, d1, k1] = [[3, 4, 10], [5, 3, 12], [2, 7, 8], [10, 5, 15], [1, 6, 20], [7, 2, 25]][v],
         t1 = a1 + (k1 - 1) * d1,
@@ -453,6 +456,7 @@ export const COORDINATE_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es −2 − 5?", -7, ["Restar 5 es retroceder 5 en la recta, empezando en −2.", "−2 → −7: el resultado es −7, más lejos del cero."], ["Ubica −2 en la recta.", "Restar 5 es moverse 5 a la izquierda.", "−7."]),
       c("d-3", "¿En qué cuadrante está el punto (−2, 3)?", ["Segundo (II)", "Primero (I)", "Cuarto (IV)"], 0, "x negativa y y positiva: segundo cuadrante."),
     ],
+    practiceCorrection: errorFollowup("¿Cuál es la distancia entre (0, 0) y (3, 4)?", 5, "Los cambios horizontal y vertical forman los catetos de un triángulo rectángulo.", "Aplicamos Pitágoras: la distancia es √(3² + 4²) = √25 = 5."),
     questions(v) {
       const [ax, ay, bx, by] = [[1, 2, 4, 6], [-2, 1, 4, 9], [0, -3, 5, 9], [3, 3, -6, 15], [-4, -1, 4, 14], [2, 5, -5, -19]][v],
         dx = bx - ax,
@@ -636,6 +640,7 @@ export const QUADRATIC_FUNCTION_LESSONS: Lesson[] = [
       n("d-2", "Si y = x² + 1, ¿cuánto vale y cuando x = 4?", 17, ["Sustituimos x por 4 y queda y = 4² + 1.", "Primero la potencia: 4² = 16; después la suma: 16 + 1 = 17."], ["Eleva 4 al cuadrado.", "16.", "Suma 1."]),
       c("d-3", "¿Qué forma tiene la gráfica de y = x²?", ["Una parábola que abre hacia arriba", "Una recta", "Una parábola que abre hacia abajo"], 0, "x² nunca es negativo y crece hacia ambos lados del 0."),
     ],
+    practiceCorrection: errorFollowup("¿Cuál es el valor máximo de y = −(x − 2)² + 5?", 5, "El cuadrado es siempre no negativo, así que su opuesto no puede ser mayor que cero.", "El máximo ocurre cuando x = 2 y el cuadrado vale cero: y = 5."),
     questions(v) {
       const [a, h, k, x] = [[2, 1, 3, 4], [-1, 2, 5, 5], [3, -1, -4, 1], [1, 3, -2, 7], [-2, -3, 9, -1], [1, -2, 1, 3]][v],
         y = a * (x - h) ** 2 + k,
@@ -814,6 +819,7 @@ export const SOLID_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 2³ · 3?", 24, ["La potencia va primero: 2³ = 2 · 2 · 2 = 8.", "Después la multiplicación: 8 · 3 = 24."], ["2³ = 2 · 2 · 2.", "Es 8.", "Multiplica por 3."]),
       c("d-3", "¿Cuál de estos cuerpos tiene una base circular y termina en punta?", ["El cono", "El cilindro", "La esfera"], 0, "El cono tiene una base circular y un vértice."),
     ],
+    practiceCorrection: errorFollowup("Un cono tiene radio 2 cm y altura 3 cm. Usa π = 3,14. ¿Cuál es su volumen en centímetros cúbicos?", 12.56, "El volumen del cono es un tercio del volumen del cilindro con la misma base y altura.", "Calculamos 3,14 × 2² × 3 ÷ 3 = 12,56 centímetros cúbicos."),
     questions(v) {
       const [side, ph] = [[6, 5], [3, 10], [9, 4], [12, 7], [5, 6], [4, 9]][v],
         pyramid = (side * side * ph) / 3,
@@ -992,6 +998,7 @@ export const CONDITIONAL_LESSONS: Lesson[] = [
       n("d-2", "En un aula de 30 estudiantes, 12 son mujeres. ¿Qué fracción son mujeres? Escríbela como decimal.", 0.4, ["La fracción compara la parte con el total: 12 mujeres de 30 estudiantes, 12/30.", "12/30 = 2/5 = 0,4, dividiendo ambos términos entre 6."], ["Mujeres ÷ total.", "12 ÷ 30.", "0,4."]),
       c("d-3", "Al lanzar un dado, ¿cuál es la probabilidad de obtener un número par?", ["1/2", "1/3", "1/6"], 0, "Hay 3 pares (2, 4, 6) de 6 resultados."),
     ],
+    practiceCorrection: errorFollowup("En un grupo, 6 estudiantes prefieren fútbol: 2 son de cuarto y 4 de quinto. Entre quienes prefieren fútbol, ¿qué fracción es de quinto?", 2 / 3, "La condición restringe el total a los 6 estudiantes que prefieren fútbol.", "De ellos, 4 son de quinto: la fracción es 4/6 = 2/3."),
     questions(v) {
       const [f4, v4, f5, v5] = [[12, 8, 6, 14], [10, 15, 5, 20], [9, 3, 6, 9], [16, 4, 5, 15], [7, 13, 14, 6], [21, 9, 10, 10]][v],
         total = f4 + v4 + f5 + v5,

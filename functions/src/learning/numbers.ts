@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -82,6 +83,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 9 − 4?", 5, ["Restar 4 es retroceder 4 desde el 9 → 8, 7, 6, 5.", "9 − 4 = 5. Comprobación: 5 + 4 = 9."], ["Cuenta hacia atrás desde 9.", "Faltan 5 para llegar de 4 a 9.", "El resultado es 5."]),
       c("d-3", "¿Qué número está más cerca del 0?", ["7", "2", "5"], 1, "2 está a dos unidades del cero; los otros, más lejos."),
     ],
+    practiceCorrection: errorFollowup("¿Cuál es el menor de −8 y −3? Escribe ese número.", -8, "En la recta numérica, −8 está más a la izquierda que −3.", "Por eso −8 < −3 y el menor de los dos números es −8."),
     questions(v) {
       const [a, b, k] = [[2, 7, 5], [5, 3, 9], [8, 4, 6], [3, 9, 2], [6, 1, 7], [4, 6, 3]][v],
         mid = [[-6, 4], [-8, 2], [-5, 9], [-10, 4], [-3, 7], [-12, 6]][v];
@@ -268,6 +270,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 12 − 7?", 5, ["La resta busca cuánto falta de 7 a 12: de 7 a 10 hay 3 y de 10 a 12 hay 2.", "3 + 2 = 5, así que 12 − 7 = 5. Comprobación: 5 + 7 = 12."], ["Cuenta desde 7 hasta 12.", "Faltan 5.", "El resultado es 5."]),
       c("d-3", "¿Cuál es el opuesto de 6?", ["1/6", "−6", "0"], 1, "El opuesto está a la misma distancia del cero, al otro lado."),
     ],
+    practiceCorrection: errorFollowup("Calcula −5 − 3.", -8, "Partimos de −5 y restar 3 significa avanzar tres unidades a la izquierda.", "Llegamos a −8; por tanto, −5 − 3 = −8."),
     questions(v) {
       const [a, b] = [[-6, 9], [-8, 3], [5, -11], [-4, 10], [7, -12], [-9, 5]][v],
         [c1, c2] = [[3, 5], [6, 4], [2, 9], [7, 8], [5, 6], [4, 7]][v],
@@ -451,6 +454,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es −4 − 4 − 4?", -12, ["Cada «− 4» es un desplazamiento de 4 unidades a la izquierda, empezando en −4.", "−4 → −8 → −12: tres desplazamientos de 4 a la izquierda dan −12, es decir, 3 × (−4)."], ["Empieza en −4.", "Retrocede 4 dos veces más.", "−12."]),
       c("d-3", "¿Qué deshace multiplicar por 5?", ["Restar 5", "Dividir entre 5", "Sumar 5"], 1, "Multiplicar y dividir por el mismo número distinto de cero son inversas."),
     ],
+    practiceCorrection: errorFollowup("Calcula (−24) ÷ (−6).", 4, "Al dividir dos números negativos el cociente es positivo.", "24 ÷ 6 = 4, y comprobamos que (−6) × 4 = −24."),
     questions(v) {
       const [a, b] = [[4, 7], [6, 3], [9, 5], [8, 4], [7, 6], [5, 9]][v],
         [d, q] = [[56, 8], [42, 6], [72, 9], [36, 4], [63, 7], [48, 6]][v],
@@ -637,6 +641,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 15 − 9?", 6, ["La resta busca cuánto falta de 9 a 15: de 9 a 10 hay 1 y de 10 a 15 hay 5.", "1 + 5 = 6, así que 15 − 9 = 6. Comprobación: 6 + 9 = 15."], ["Cuenta desde 9.", "Hasta 15 faltan 6.", "6."]),
       c("d-3", "En (2 + 3) × 4, ¿qué se calcula primero?", ["2 + 3", "3 × 4", "Da igual"], 0, "Los paréntesis se calculan primero."),
     ],
+    practiceCorrection: errorFollowup("Calcula 24 ÷ 4 × 3.", 18, "División y multiplicación tienen la misma prioridad, así que se resuelven de izquierda a derecha.", "Primero 24 ÷ 4 = 6; después 6 × 3 = 18."),
     questions(v) {
       const [a, b, k] = [[5, 3, 4], [7, 2, 6], [4, 5, 3], [9, 3, 2], [6, 4, 5], [8, 2, 7]][v],
         [m, q, r, s] = [[3, 4, 2, 5], [5, 2, 6, 3], [4, 6, 3, 2], [2, 7, 5, 4], [6, 3, 4, 3], [3, 8, 2, 6]][v],
@@ -814,6 +819,7 @@ export const NUMBER_LESSONS: Lesson[] = [
       c("d-2", "¿Qué número multiplicado por sí mismo da 25?", ["5", "12,5", "25"], 0, "5 × 5 = 25."),
       n("d-3", "¿Cuánto es 2 × 2 × 2?", 8, ["Se multiplica de dos en dos, de izquierda a derecha: 2 × 2 = 4.", "4 × 2 = 8. Son tres factores iguales: 2³ = 8."], ["Multiplica de dos en dos.", "2 × 2 = 4.", "4 × 2 = 8."]),
     ],
+    practiceCorrection: errorFollowup("Calcula 2³ × 2². Escribe el resultado como número.", 32, "Las potencias tienen la misma base: conservamos el 2 y sumamos los exponentes.", "Así obtenemos 2⁵, que equivale a 32."),
     questions(v) {
       const [base, exp] = [[3, 3], [2, 6], [5, 3], [4, 3], [3, 4], [2, 5]][v],
         [e1, e2] = [[3, 4], [5, 2], [2, 6], [4, 3], [6, 3], [3, 5]][v],
