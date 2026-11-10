@@ -2,6 +2,12 @@
 
 Estado: preparado; revisión docente independiente y sesiones con estudiantes pendientes. El cambio en ubicación es una hipótesis, no evidencia de mejora.
 
+## Análisis y corrección de un error
+
+En «Sumar y restar fracciones», la práctica presenta una suma en la que una compañera sumó también los denominadores. El estudiante identifica qué debe cambiar y, en la actividad siguiente, calcula la misma suma. La corrección acepta fracciones equivalentes y ofrece una explicación y pistas. El repaso diferido recupera el análisis del mismo tipo de error con otras cantidades; las comprobaciones mantienen sus propias preguntas. La práctica registra las dos respuestas por separado y no acredita por sí sola que el estudiante pueda explicar su razonamiento.
+
+Esta secuencia es parte del piloto, no una mejora de aprendizaje ya demostrada. En la revisión y las sesiones de abajo conviene observar si se entiende la distinción entre identificar el error y corregir la suma, y si el alumno puede justificar su respuesta sin las alternativas.
+
 ## Revisión docente
 
 Una persona docente distinta de la autora debe completar una copia de [la plantilla de revisión](revision-docente-plantilla.md) para cada una de las siete clases de fracciones del [catálogo](../functions/src/learning/catalog.ts). Registrar identificador, versión, fecha, evidencia, correcciones y decisión. Prestar atención a:

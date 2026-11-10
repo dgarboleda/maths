@@ -21,6 +21,12 @@ type Draft = Omit<
    *  otra estructura (problema inverso, comparación o cambio de
    *  representación). */
   questions: (variant: number) => Question[];
+  /** Actividad adicional de práctica, situada después de q4. Tiene identidad
+   * propia para no atribuir sus respuestas a otra tarea del banco. */
+  practiceCorrection?: Question;
+  /** Índices de tareas para el repaso diferido cuando una clase necesita
+   * recuperar una idea concreta; por defecto se conserva el recorrido común. */
+  reviewTasks?: number[];
   /** Tarea de aplicación propia, distinta de las de los bancos. */
   application: Question;
   editorial?: Lesson["editorial"];
@@ -74,7 +80,7 @@ export function arrangeChoices(question: Question, seed: string): Question {
 export function defineLesson(raw: Draft): Lesson {
   const questionsRaw = raw.questions;
   const draft: Draft = { ...typesetDeep({ ...raw, questions: undefined }), questions: (v: number) => typesetDeep(questionsRaw(v)) };
-  const { questions, editorial, application, diagnostic, ...content } = draft;
+  const { questions, editorial, application, diagnostic, practiceCorrection, reviewTasks, ...content } = draft;
   const arrange = (q: Question) => arrangeChoices(q, content.id);
   const checkConcept = CHECK_CONCEPTS[content.id];
   if (!checkConcept) throw new Error(`Falta la formulación conceptual de la comprobación B: ${content.id}`);
@@ -84,6 +90,9 @@ export function defineLesson(raw: Draft): Lesson {
     if (prefix === "b") items[0] = typesetDeep(checkConcept);
     return indexes.map((index, i) => arrange({ ...items[index], id: `${prefix}-${i + 1}`, task: index }));
   };
+  const practice = bank(1, "p", [0, 1, 2, 3, 4, 5, 6]);
+  if (practiceCorrection)
+    practice.splice(5, 0, arrange({ ...practiceCorrection, id: "p-correction", task: 8 }));
   return {
     ...content,
     version: CONTENT_VERSION,
@@ -96,11 +105,11 @@ export function defineLesson(raw: Draft): Lesson {
     },
     diagnostic: diagnostic.map(arrange),
     guided: bank(0, "g", [0, 1, 2]),
-    practice: bank(1, "p", [0, 1, 2, 3, 4, 5, 6]),
+    practice,
     // La comprobación exige la transferencia de otra estructura (q6); el
     // repaso diferido recupera la transferencia cercana (q5).
     checks: [bank(2, "a", [0, 1, 2, 4, 6]), bank(3, "b", [0, 1, 2, 4, 6])],
-    review: bank(4, "r", [0, 2, 3, 5]),
+    review: bank(4, "r", reviewTasks ?? [0, 2, 3, 5]),
     // Problemas que no aparecen en ningún otro banco (forma 5, y la
     // transferencia de la forma 0, que la guiada no usa): solo el repaso
     // mixto de la unidad los muestra.

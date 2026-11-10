@@ -43,6 +43,34 @@ function completeCheck(helpOnTransfer = false) {
 }
 
 describe("Evidencia educativa", () => {
+  test("la práctica enlaza el análisis del error de fracciones con su corrección", () => {
+    const fractions = getLesson("fracciones-suma-resta")!;
+    let now = NOW;
+    let state = applyLearningAction(fractions, undefined, { kind: "begin", stage: "practice" }, now);
+    for (let i = 0; i < 4; i++) {
+      const question = currentQuestion(fractions, state)!;
+      state = applyLearningAction(fractions, state, { kind: "answer", questionId: question.id, response: correctResponse(question) }, now += 5_000);
+      state = applyLearningAction(fractions, state, { kind: "next" }, now += 5_000);
+    }
+    const analysis = currentQuestion(fractions, state)!;
+    expect(analysis.task).toBe(4);
+    expect(analysis.prompt).toContain("1/3 y 1/6");
+    state = applyLearningAction(fractions, state, { kind: "answer", questionId: analysis.id, response: correctResponse(analysis) }, now += 5_000);
+    state = applyLearningAction(fractions, state, { kind: "next" }, now += 5_000);
+    const correction = currentQuestion(fractions, state)!;
+    expect(correction).toMatchObject({ id: "p-correction", task: 8, answer: 0.5 });
+    expect(correction.prompt).toContain("1/3 + 1/6");
+    state = applyLearningAction(fractions, state, { kind: "answer", questionId: correction.id, response: "2/9" }, now += 5_000);
+    expect(state.responses["practice:p-correction"].correct).toBe(false);
+    state = applyLearningAction(fractions, state, { kind: "answer", questionId: correction.id, response: "3/6" }, now += 5_000);
+    expect(state.responses["practice:p-correction"]).toMatchObject({ correct: true, firstCorrect: false, attempts: 2 });
+    state = applyLearningAction(fractions, state, { kind: "next" }, now += 5_000);
+    expect(currentQuestion(fractions, state)!.id).toBe("p-6");
+    const reviewAnalysis = fractions.review.find((q) => q.task === 4)!;
+    expect(reviewAnalysis.prompt).not.toBe(analysis.prompt);
+    expect(reviewAnalysis.intent).toBe("concept");
+    expect(fractions.checks.flat().some((q) => q.prompt === analysis.prompt || q.prompt === reviewAnalysis.prompt)).toBe(false);
+  });
   test("recorrer clase y ejemplos no acredita comprensión", () => {
     let state = update(undefined, { kind: "begin", stage: "class" });
     const steps = lesson.sections.length + lesson.examples.length;

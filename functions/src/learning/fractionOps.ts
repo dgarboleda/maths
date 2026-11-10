@@ -75,6 +75,18 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
       c("d-2", "¿Cuánto es 2/9 + 5/9?", ["7/18", "7/9", "10/9"], 1, "Con el mismo denominador se suman los numeradores."),
       n("d-3", "¿Cuál es el menor múltiplo común de 4 y 6?", 12, ["Escribimos los múltiplos de cada uno: de 4 → 4, 8, 12, 16…; de 6 → 6, 12, 18…", "El primero que aparece en las dos listas es 12: mcm(4, 6) = 12."], ["Escribe los múltiplos de cada uno.", "Busca el primero que se repite.", "12."]),
     ],
+    practiceCorrection: n(
+      "correction",
+      "Corrige la suma anterior: ¿cuánto es 1/3 + 1/6?",
+      1 / 2,
+      [
+        "Expresamos un tercio en sextos: 1/3 = 2/6. La cantidad no cambia; solo cambia el tamaño de las partes.",
+        "Sumamos partes del mismo tamaño: 2/6 + 1/6 = 3/6 = 1/2.",
+      ],
+      ["Busca partes del mismo tamaño para las dos fracciones.", "Un tercio equivale a dos sextos.", "Suma 2/6 y 1/6, y simplifica si quieres."],
+      { errors: [{ value: 2 / 9, feedback: "Al sumar los denominadores cambiaste el tamaño de las partes. Expresa primero ambas fracciones en sextos." }] },
+    ),
+    reviewTasks: [4, 2, 3, 5],
     questions(v) {
       const [a, b, cc, d] = [[1, 2, 1, 3], [2, 3, 1, 4], [3, 4, 1, 6], [2, 5, 1, 3], [1, 4, 5, 6], [3, 8, 1, 6]][v],
         [s1, s2, s3, s4] = [[3, 4, 1, 3], [5, 6, 1, 4], [4, 5, 1, 2], [7, 8, 1, 6], [2, 3, 1, 5], [5, 9, 1, 6]][v],
@@ -128,7 +140,17 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
           ["Igual que en la suma, necesitas partes del mismo tamaño.", `Usa ${lcm(s2, s4)} como denominador.`, "Resta los numeradores convertidos."],
           { errors: [{ value: (s1 - s3) / (s2 - s4), feedback: "Restaste numeradores y denominadores. Usa un denominador común." }].filter((e) => Number.isFinite(e.value)) },
         ),
-        c(
+        v === 1 ? c(
+          "q4",
+          "Una compañera afirma que la suma de 1/3 y 1/6 es 2/9 porque sumó los numeradores y también los denominadores. ¿Qué debe corregir?",
+          [
+            ["Nada: siempre se suman los dos denominadores", "Al sumar los denominadores cambias el tamaño de las partes; primero deben expresarse con el mismo denominador."],
+            "Debe expresar las fracciones con un denominador común antes de sumar las partes",
+            ["Debe multiplicar las dos fracciones", "Se pregunta por una suma; multiplicar representa otra operación."],
+          ],
+          1,
+          "Los tercios y los sextos tienen distinto tamaño. Primero expresa ambos en partes del mismo tamaño y después suma.",
+        ) : c(
           "q4",
           `Un compañero calcula ${s3}/${s2} + ${s1}/${s2} = ${s3 + s1}/${2 * s2}. ¿Qué falla?`,
           [
