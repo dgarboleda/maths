@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { assertChildSessionCurrent } from "./childSession";
-import { getAdventure, type AdventureDef } from "./learning/adventures";
+import { getAdventure, missingAdventureLessons, type AdventureDef } from "./learning/adventures";
 import { getLesson } from "./learning/catalog";
 import {
   applyAdventureAction,
@@ -242,7 +242,7 @@ export const recordLearningAction = onCall(
         : [];
     try {
       return await db.runTransaction(async (tx) => {
-        const [profile, snapshot, previousEvent, allProgress, ...unitProgress] =
+        const [profile, snapshot, previousEvent, allProgress, unitProgress, adventureProgress] =
           await Promise.all([
             tx.get(child),
             tx.get(progress),
@@ -250,10 +250,11 @@ export const recordLearningAction = onCall(
             // El repaso diario decide qué repasar con el avance real del perfil.
             daily ? tx.get(child.collection("learningProgress")) : null,
             // El repaso mixto solo mezcla clases que el estudiante ya terminó.
-            ...(reviewUnit
-              ? unitLessons(reviewUnit).map((l) =>
-                  tx.get(child.collection("learningProgress").doc(l.id)),
-                )
+            Promise.all(reviewUnit
+              ? unitLessons(reviewUnit).map((l) => tx.get(child.collection("learningProgress").doc(l.id)))
+              : []),
+            Promise.all(adventure
+              ? adventure.lessonIds.map((id) => tx.get(child.collection("learningProgress").doc(id)))
               : []),
           ]);
         assertChildSessionCurrent(request, profile);
@@ -285,6 +286,12 @@ export const recordLearningAction = onCall(
             "aborted",
             "El avance cambió en otra pestaña. Actualiza la página para continuar.",
           );
+        if (adventure) {
+          const progressById = Object.fromEntries(adventureProgress.map((doc) => [doc.id, doc.data() as LearningProgress | undefined]));
+          const missing = missingAdventureLessons(adventure, progressById);
+          if (missing.length)
+            throw new HttpsError("failed-precondition", "Completa la explicación, los ejemplos y la aplicación de las clases relacionadas antes de jugar esta aventura.");
+        }
         const now = Date.now();
         let dailyInput: { eligible: string[]; support: Set<string>; focus: Map<string, number | null> } | null = null;
         if (daily && allProgress) {

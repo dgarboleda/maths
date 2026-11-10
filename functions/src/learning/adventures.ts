@@ -1,5 +1,5 @@
 import { MORE_ADVENTURES } from "./moreAdventures";
-import type { UnitId } from "./types";
+import type { LearningProgress, UnitId } from "./types";
 
 /** Una decisión que el estudiante ajusta antes de probar su plan. */
 export interface AdventureInput {
@@ -36,9 +36,19 @@ export interface AdventureDef {
   goals: string[];
   evaluate(values: number[]): AdventureResult;
   success: string;
-  /** Clases que enseñan la matemática de la aventura; tras la última se
-   *  ofrece jugarla. */
+  /** Todas las clases que deben completarse antes de jugar. */
   lessonIds: string[];
+}
+
+/** La aplicación terminada por sí sola no sustituye la explicación y los ejemplos. */
+export function missingAdventureLessons(
+  adventure: Pick<AdventureDef, "lessonIds">,
+  progress: Record<string, Pick<LearningProgress, "classCompleted" | "examplesCompleted" | "completedAt"> | undefined>,
+): string[] {
+  return adventure.lessonIds.filter((id) => {
+    const lesson = progress[id];
+    return !lesson?.classCompleted || !lesson.examplesCompleted || !lesson.completedAt;
+  });
 }
 
 const all = (n: number, ok: boolean) => Array.from({ length: n }, () => ok);

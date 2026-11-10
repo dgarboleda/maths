@@ -1,14 +1,15 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { crearHijo, entrarAlEspacio, registrarPadre } from "./utilidades";
+import { crearHijo, entrarAlEspacio, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
 import { escribirColumnas } from "./operaciones";
 
 test("calculadora global en una aventura: la cuenta se hace en columnas y el resultado pasa al plan", async ({ page }, testInfo) => {
   test.setTimeout(180_000);
   if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
-  await registrarPadre(page);
+  const correo = await registrarPadre(page);
   const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
   const childId = await entrarAlEspacio(page, nombre, pin);
+  await sembrarClasesTerminadas(correo, childId, ["expresiones-algebraicas", "propiedad-distributiva"]);
   await page.goto(`/jugar/${childId}/aventura`);
   await page.getByRole("link", { name: /El jardín de baldosas/ }).click();
   await page.getByRole("button", { name: "Investigar la situación" }).click();
@@ -37,9 +38,10 @@ test("calculadora global en una aventura: la cuenta se hace en columnas y el res
 test("el alumno trabaja fracciones y MCM en bloques y traslada su resultado", async ({ page }, testInfo) => {
   test.setTimeout(180_000);
   if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
-  await registrarPadre(page);
+  const correo = await registrarPadre(page);
   const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
   const childId = await entrarAlEspacio(page, nombre, pin);
+  await sembrarClasesTerminadas(correo, childId, ["expresiones-algebraicas", "propiedad-distributiva"]);
   await page.goto(`/jugar/${childId}/aventura/jardin-baldosas`);
   await page.getByRole("button", { name: "Investigar la situación" }).click();
   await page.getByLabel("Lado del jardín (m)").fill("11");
@@ -110,9 +112,10 @@ test("teclado numérico propio en móvil: escribe en la hoja sin abrir el del si
   test.skip(testInfo.project.name !== "móvil", "solo en pantalla táctil");
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 320, height: 740 });
-  await registrarPadre(page);
+  const correo = await registrarPadre(page);
   const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
   const childId = await entrarAlEspacio(page, nombre, pin);
+  await sembrarClasesTerminadas(correo, childId, ["expresiones-algebraicas", "propiedad-distributiva"]);
   await page.goto(`/jugar/${childId}/aventura`);
   await page.getByRole("link", { name: /El jardín de baldosas/ }).click();
   await page.getByRole("button", { name: "Investigar la situación" }).click();
@@ -169,9 +172,10 @@ test("teclado numérico propio en móvil: escribe en la hoja sin abrir el del si
 test("división de fracciones: escribe y comprueba el inverso en el tablero", async ({ page }, testInfo) => {
   test.setTimeout(180_000);
   if (testInfo.project.name === "móvil") await page.setViewportSize({ width: 320, height: 740 });
-  await registrarPadre(page);
+  const correo = await registrarPadre(page);
   const { nombre, pin } = await crearHijo(page, { nombre: "Alex", nacimiento: "2012-06-12" });
   const childId = await entrarAlEspacio(page, nombre, pin);
+  await sembrarClasesTerminadas(correo, childId, ["expresiones-algebraicas", "propiedad-distributiva"]);
   await page.goto(`/jugar/${childId}/aventura/jardin-baldosas`);
   await page.getByRole("button", { name: "Investigar la situación" }).click();
   await page.getByRole("button", { name: "Calculadora", exact: true }).click();

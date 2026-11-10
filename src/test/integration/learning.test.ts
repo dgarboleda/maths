@@ -22,6 +22,23 @@ import {
   STAR_REWARDS,
 } from "@/lib/learning/domain";
 
+async function completeRequiredLesson(family: Awaited<ReturnType<typeof createFamily>>, lessonId: string) {
+  const lesson = getLesson(lessonId)!;
+  let revision = 0;
+  const send = async (action: LearningAction) => {
+    const result = await call<{ progress: LearningProgress }>(family.app, "recordLearningAction", {
+      parentId: family.parentId, childId: family.childId, lessonId,
+      expectedRevision: revision, operationId: crypto.randomUUID(), action,
+    });
+    revision = result.progress.revision;
+  };
+  await send({ kind: "begin", stage: "class" });
+  for (let i = 0; i < lesson.sections.length + lesson.examples.length; i++) await send({ kind: "next" });
+  await send({ kind: "begin", stage: "application" });
+  await send({ kind: "reveal", questionId: "m-1" });
+  await send({ kind: "next" });
+}
+
 describe("Servicio educativo y reglas reales", () => {
   test("solo la sesión del perfil autorizado puede registrar evidencia", async () => {
     const family = await createFamily(),
@@ -306,6 +323,15 @@ describe("Servicio educativo y reglas reales", () => {
         childId: family.childId,
         lessonId: "apagon",
       };
+      const blocked = { ...base, expectedRevision: 0, operationId: crypto.randomUUID(), action: { kind: "inspect" } };
+      await expect(call(family.app, "recordLearningAction", blocked)).rejects.toMatchObject({ code: "functions/failed-precondition" });
+      await expect(call(family.app, "recordLearningAction", { ...blocked, operationId: crypto.randomUUID(), action: { kind: "dispatch", allocation: [100, 45, 35] } })).rejects.toMatchObject({ code: "functions/failed-precondition" });
+      const childPath = ["parents", family.parentId, "children", family.childId] as const;
+      expect((await fs.getDoc(fs.doc(family.db, ...childPath, "learningMissions", "apagon"))).exists()).toBe(false);
+      expect((await fs.getDocs(fs.collection(family.db, ...childPath, "learningEvidence"))).empty).toBe(true);
+      await completeRequiredLesson(family, "fracciones-unidad");
+      await expect(call(family.app, "recordLearningAction", { ...blocked, operationId: crypto.randomUUID() })).rejects.toMatchObject({ code: "functions/failed-precondition" });
+      await completeRequiredLesson(family, "fraccion-cantidad");
       await call(family.app, "recordLearningAction", {
         ...base,
         expectedRevision: 0,
@@ -342,7 +368,7 @@ describe("Servicio educativo y reglas reales", () => {
         (
           await fs.getDoc(fs.doc(family.db, ...path, "starBalance", "total"))
         ).data()?.total,
-      ).toBe(10);
+      ).toBe(10 + 2 * STAR_REWARDS.lesson);
       await fs.updateDoc(family.profile, { deleting: true });
       await expect(
         call(family.app, "recordLearningAction", {
@@ -355,9 +381,30 @@ describe("Servicio educativo y reglas reales", () => {
       await deleteApp(family.app);
     }
   });
+  test("terminar solo la aplicación no desbloquea una aventura sin explicación y ejemplos", async () => {
+    const family = await createFamily();
+    try {
+      const base = { parentId: family.parentId, childId: family.childId, lessonId: "perimetro-area" };
+      for (const [revision, action] of [
+        { kind: "begin", stage: "application" },
+        { kind: "reveal", questionId: "m-1" },
+        { kind: "next" },
+      ].entries()) {
+        await call(family.app, "recordLearningAction", { ...base, expectedRevision: revision, operationId: crypto.randomUUID(), action });
+      }
+      await expect(call(family.app, "recordLearningAction", {
+        ...base, lessonId: "jardin-baldosas", expectedRevision: 0,
+        operationId: crypto.randomUUID(), action: { kind: "inspect" },
+      })).rejects.toMatchObject({ code: "functions/failed-precondition" });
+    } finally {
+      await deleteApp(family.app);
+    }
+  });
   test("cada aventura de unidad valida su propio plan y premia por separado", async () => {
     const family = await createFamily();
     try {
+      await completeRequiredLesson(family, "modelar-ecuaciones");
+      await completeRequiredLesson(family, "inecuaciones");
       const base = {
         parentId: family.parentId,
         childId: family.childId,
@@ -508,6 +555,8 @@ describe("Servicio educativo y reglas reales", () => {
   test("el borrado del perfil también elimina la nueva evidencia educativa", async () => {
     const family = await createFamily();
     try {
+      await completeRequiredLesson(family, "fracciones-unidad");
+      await completeRequiredLesson(family, "fraccion-cantidad");
       const base = {
         parentId: family.parentId,
         childId: family.childId,
@@ -516,7 +565,7 @@ describe("Servicio educativo y reglas reales", () => {
       };
       await call(family.app, "recordLearningAction", {
         ...base,
-        lessonId: "fraccion-cantidad",
+        lessonId: "enteros-recta",
         action: { kind: "begin", stage: "class" },
       });
       await call(family.app, "recordLearningAction", {

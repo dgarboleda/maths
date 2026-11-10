@@ -2,6 +2,8 @@
 
 El programa incluido contiene 73 clases en 7 unidades (cuatro de ellas, bases de primaria opcionales). Las 18 últimas se describen en [temas añadidos](temas-anadidos.md). El alumno puede comenzar una clase, practicar con los nueve minijuegos o por escrito, comprobar su comprensión, repasar y aplicar lo aprendido en una aventura sin que su familia prepare mundos, módulos o niveles.
 
+Para jugar una aventura debe completar todas sus clases relacionadas: explicación, ejemplos y aplicación. La ubicación no sustituye estas partes; se admite completarlas con ayuda. El servidor verifica cada requisito antes de aceptar acciones, incluso en aventuras ya empezadas. El avance y los premios de las aventuras anteriores se conservan, pero para volver a jugarlas hay que completar las clases pendientes.
+
 ## Progreso y acompañamiento familiar
 
 Resumen, Hijos, Progreso y el detalle individual utilizan `learningProgress`, `learningMissions` y la evidencia validada por Functions en `learningEvidence`. `learningSummary` comparte los criterios con `LearningReport`:
