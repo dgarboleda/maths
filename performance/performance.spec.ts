@@ -3,7 +3,7 @@ import { createServer } from "node:net";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import lighthouse from "lighthouse";
 import budgets from "./budgets.json";
-import { registrarPadre, crearHijo, entrarAlPerfil, entrarComoFamilia, idDeHijo, sembrarNivelConTerminal } from "../e2e/utilidades";
+import { registrarPadre, crearHijo, entrarAlPerfil, entrarComoFamilia, idDeHijo, sembrarNivelConTerminal, sembrarClasesTerminadas } from "../e2e/utilidades";
 
 /**
  * En CI las cinco auditorías se reparten en dos runners con `PERF_GRUPO`
@@ -77,6 +77,7 @@ test("presupuesto de producción: login, clase, aventura, nivel y editor con ses
       await audit("aprendizaje", lessonRoute);
     }
     if (toca("aventura")) {
+      await sembrarClasesTerminadas(email, childId, ["fracciones-unidad", "fraccion-cantidad"]);
       const adventureRoute = `/jugar/${childId}/aventura/apagon`;
       await page.goto(new URL(adventureRoute, baseURL).href);
       await page.getByRole("button", { name: /Inspeccionar la central/ }).click();
