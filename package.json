@@ -8,7 +8,7 @@
   "scripts": {
     "predev": "node scripts/liberar-puerto-dev.mjs && node -e \"require('fs').rmSync('.next/dev/cache/turbopack', { recursive: true, force: true })\"",
     "dev": "next dev",
-    "prebuild": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\"",
+    "prebuild": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\" && (curl --max-time 20 -sS -w '\\nSTATUS %{http_code} in %{time_total}s\\n' https://us-central1-maths-bbf31.cloudfunctions.net/deploymentStatus || true) && (curl --max-time 20 -sS -w '\\nSTATUS %{http_code} in %{time_total}s\\n' -H 'Content-Type: application/json' -d '{\"data\":{}}' https://us-central1-maths-bbf31.cloudfunctions.net/recordLearningAction || true)",
     "build": "opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint",

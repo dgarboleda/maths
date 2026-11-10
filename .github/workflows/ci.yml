@@ -22,14 +22,6 @@ env:
   NEXT_PUBLIC_FIREBASE_APP_ID: "1:000000000000:web:0000000000000000"
 
 jobs:
-  diagnostico_temporal:
-    name: Diagnóstico temporal del servicio educativo
-    runs-on: ubuntu-latest
-    steps:
-      - name: Consultar estado y comprobar llamada sin credenciales
-        run: |
-          curl --max-time 20 -sS -w "\nHTTP %{http_code} en %{time_total}s\n" https://us-central1-maths-bbf31.cloudfunctions.net/deploymentStatus
-          curl --max-time 20 -sS -w "\nHTTP %{http_code} en %{time_total}s\n" -H "Content-Type: application/json" -d '{"data":{}}' https://us-central1-maths-bbf31.cloudfunctions.net/recordLearningAction
   calidad:
     name: Lint, tipos y compilación
     runs-on: ubuntu-latest
