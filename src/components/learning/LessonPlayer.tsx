@@ -47,6 +47,9 @@ import {
 } from "./LearningShell";
 import { LearningVisual } from "./LearningVisual";
 import { QuestionFigureSlot } from "./QuestionFigureSlot";
+import { WorkedExample } from "./WorkedExample";
+import { selfExplains } from "@/lib/learning/selfExplanation";
+import { reinforcementPlan } from "@/lib/learning/reinforcement";
 import { hasVisualTutor } from "./tutor/lessons";
 import { OperationDemo, OperationExample, OperationWorkspace, useOperationHelp } from "./Operation";
 import { OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
@@ -255,26 +258,11 @@ export function LessonPlayer({
                   {lesson.examples[progress.index].column ? (
                     <OperationExample key={progress.index} spec={lesson.examples[progress.index].column!} />
                   ) : (
-                  <ol className="space-y-3">
-                    {lesson.examples[progress.index].steps.map(
-                      (step, index) => (
-                        <li
-                          key={step.math}
-                          className="rounded-xl border border-slate-700 bg-slate-950 p-4"
-                        >
-                          <p className="text-xs font-bold uppercase text-cyan-200">
-                            Paso {index + 1}
-                          </p>
-                          <p className="mt-2 overflow-x-auto text-lg font-semibold">
-                            <MathText text={step.math} />
-                          </p>
-                          <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                            <strong>Por qué:</strong> <MathText text={step.why} />
-                          </p>
-                        </li>
-                      ),
-                    )}
-                  </ol>
+                  <WorkedExample
+                    key={progress.index}
+                    example={lesson.examples[progress.index]}
+                    explain={selfExplains(lesson, progress.index)}
+                  />
                   )}
                   <p className="rounded-xl bg-emerald-950/40 p-4 text-emerald-100">
                     <MathText text={lesson.examples[progress.index].conclusion} />
@@ -309,6 +297,7 @@ export function LessonPlayer({
                   lesson={lesson}
                   progress={progress}
                   allProgress={data.progress}
+                  mastered={data.placement?.result?.mastered}
                   now={now}
                   run={run}
                   disabled={mutation.blocked}
@@ -837,6 +826,7 @@ function LessonSummary({
   lesson,
   progress,
   allProgress,
+  mastered,
   now,
   run,
   disabled,
@@ -845,6 +835,7 @@ function LessonSummary({
   lesson: Lesson;
   progress: LearningProgress;
   allProgress: Record<string, LearningProgress>;
+  mastered?: string[];
   now: number;
   run: (action: LearningAction) => Promise<boolean>;
   disabled: boolean;
@@ -861,6 +852,18 @@ function LessonSummary({
       ? lesson.review
       : lesson.checks[progress.checkForm];
   const stage = result === progress.lastReview ? "review" : "check";
+  const plan = reinforcementPlan({
+    stage,
+    questions,
+    responses: progress.responses,
+    result,
+    prerequisites: lesson.prerequisites.flatMap((id) => {
+      const base = getLessonSummary(id);
+      return base ? [{ id, title: base.title }] : [];
+    }),
+    progress: allProgress,
+    mastered,
+  });
   return (
     <section className="space-y-5 rounded-2xl border border-cyan-300/30 bg-slate-900 p-5 sm:p-7">
       <p className="text-sm font-bold text-cyan-200">
@@ -882,6 +885,37 @@ function LessonSummary({
               : "Sigue practicando con las explicaciones. Las respuestas con pistas y las correcciones muestran aprendizaje con apoyo."}
           </p>
         </div>
+      )}
+      {plan.length > 0 && (
+        <section aria-labelledby="plan-refuerzo" className="rounded-xl border border-amber-300/30 bg-amber-950/20 p-4">
+          <h4 id="plan-refuerzo" className="font-bold text-amber-100">Tu plan de refuerzo</h4>
+          <p className="mt-1 text-sm text-slate-300">
+            Sale de tus respuestas en {stage === "review" ? "el repaso" : "la comprobación"}. Sigue los pasos en orden y vuelve a comprobar.
+          </p>
+          <ol className="mt-3 space-y-3">
+            {plan.map((step, index) => (
+              <li key={step.id + (step.lessonId ?? "")} className="rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+                <p className="font-bold text-white">{index + 1}. {step.title}</p>
+                <p className="mt-1 leading-relaxed text-slate-300">{step.detail}</p>
+                {step.stage && (
+                  <button
+                    type="button"
+                    className={`${secondaryButton} mt-3`}
+                    disabled={disabled}
+                    onClick={() => void run({ kind: "begin", stage: step.stage! })}
+                  >
+                    {step.stage === "class" ? "Releer la explicación" : step.stage === "examples" ? "Explicar los ejemplos" : "Ir a la práctica"}
+                  </button>
+                )}
+                {step.lessonId && (
+                  <Link className={`${secondaryButton} mt-3`} href={`/jugar/${childId}/aprende/${step.lessonId}`}>
+                    Abrir esa clase
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
       {progress.reviewDueAt && (
         <p className="text-sm text-slate-300">

@@ -11,7 +11,7 @@ La entrega implementa el producto y los instrumentos del piloto. **No se ha real
 1. Entra a `/jugar/{childId}` y encuentra Continuar, Aprender, Practicar y Aventura. Antes de su primera clase puede hacer la evaluación de ubicación (opcional) para saber qué clases saltar.
 2. Abre una clase. Tres preguntas breves exploran sus bases; puede ir directamente a la explicación o demostrar lo que ya sabe en la comprobación.
 3. Recorre tres ideas con representación, significado y notación; manipula un modelo visual y consulta vocabulario.
-4. Sigue dos ejemplos cuyos pasos explican **por qué** se hace cada transformación.
+4. Estudia un ejemplo cuyos pasos explican **por qué** se hace cada transformación y, desde el segundo, justifica él mismo cada paso antes de leer la explicación (ver [Ejemplos que se explican](#ejemplos-que-se-explican-y-plan-de-refuerzo)).
 5. Completa tres actividades guiadas y siete de práctica con reintentos, pistas graduales y desarrollo completo.
 6. Resuelve cinco tareas de comprobación con primera respuesta registrada, incluidas comprensión conceptual y una transferencia con otra estructura (problema inverso, comparación o cambio de representación).
 7. Aplica la idea a una situación de la ciudad con una tarea propia, de varios pasos y distinta de los bancos. Puede completar el recorrido con apoyo y recibe las mismas cinco estrellas.
@@ -98,6 +98,15 @@ Todos tienen etiqueta textual que se actualiza con cada cambio, controles nativo
 - El repaso contiene cuatro tareas y exige al menos el 80% (4/4 por redondeo hacia arriba), incluida comprensión y transferencia. Superarlo registra evidencia diferida y programa otro a siete días; necesitar apoyo programa otro a tres.
 - Un fallo posterior conserva las fechas y logros históricos, y recomienda refuerzo. No bloquea una aventura ni borra progreso.
 - Estos umbrales son hipótesis del piloto, no una prueba estandarizada. Deben calibrarse mediante revisión y observación.
+
+## Ejemplos que se explican y plan de refuerzo
+
+Dos ayudas para estudiar que salen del contenido y de las respuestas ya existentes. No cambian el protocolo, los bancos ni `CONTENT_VERSION`, no se guardan, no dan estrellas y nunca bloquean.
+
+- **Autoexplicación (`src/lib/learning/selfExplanation.ts`, `WorkedExample.tsx`).** El primer ejemplo de cada clase se muestra completo. Desde el segundo, cada paso enseña su operación y pregunta «¿Por qué se hace este paso?» con tres justificaciones: la suya y las de los pasos más cercanos del mismo ejemplo, en un orden fijo por ejemplo y paso. Al elegir se muestra la justificación correcta, haya acertado o no. «Mostrar todas las explicaciones» y el botón de continuar están siempre disponibles. Los ejemplos en columnas conservan su animación. Así el recorrido retira el apoyo por grados: leer, explicar, resolver con ayuda, resolver solo.
+- **Plan de refuerzo (`src/lib/learning/reinforcement.ts`).** Si la última comprobación o el último repaso no se superan, el resumen sustituye el consejo general por pasos ordenados según lo que falló: comprensión → releer la explicación; cálculo → explicar los ejemplos; transferencia → práctica; dos o más respuestas incorrectas y una base sin comprobación autónoma (ni dada por sabida en la ubicación) → enlace a esa clase, en primer lugar. Distingue dos casos que no son «no saber»: respuestas correctas pero apresuradas (leer con calma) y respuestas correctas con pistas (practicar sin ellas).
+
+Limitaciones: elegir entre justificaciones del mismo ejemplo se puede resolver a veces por las cifras que mencionan; es un estímulo para leer cada porqué, no una medida de comprensión, y por eso no genera evidencia ni aparece en el informe familiar. Las reglas del plan son hipótesis del piloto, como los demás umbrales.
 
 ## Evaluación de ubicación
 
