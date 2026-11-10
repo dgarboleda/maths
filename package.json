@@ -8,7 +8,7 @@
   "scripts": {
     "predev": "node scripts/liberar-puerto-dev.mjs && node -e \"require('fs').rmSync('.next/dev/cache/turbopack', { recursive: true, force: true })\"",
     "dev": "next dev",
-    "prebuild": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\" && (curl --max-time 20 -sS -w '\\nHEALTH %{http_code} in %{time_total}s\\n' https://maths.dgarboleda-4bb.workers.dev/api/health || true) && (curl --max-time 20 -sS -i -X OPTIONS -H 'Origin: https://maths.dgarboleda-4bb.workers.dev' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type,authorization' https://us-central1-maths-bbf31.cloudfunctions.net/recordLearningAction || true)",
+    "prebuild": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\"",
     "build": "opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint",
