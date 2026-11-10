@@ -4,7 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { Check, Compass, Flag, Map, RotateCcw } from "lucide-react";
-import { ADVENTURES, dailyDue, dailyEligible, initialDaily, LEARNING_UNITS, LESSONS, learningStatus } from "@/lib/learning/domain";
+import { ADVENTURES, dailyDue, dailyEligible, initialDaily, LEARNING_UNITS, LESSONS, learningStatus, missingAdventureLessons } from "@/lib/learning/domain";
 import { useLearningData } from "@/lib/learning/useLearningData";
 import { useLearningClock } from "@/lib/learning/useLearningClock";
 import { nextStudyLesson, plannedLessonIds } from "@/lib/learning/studyPlan";
@@ -68,7 +68,7 @@ export function LearningMap({ childId }: { childId: string }) {
                   })}
                 </ol>
                 {adventures.map((adventure) => <Link key={adventure.id} href={`${base}/aventura/${adventure.id}`} className="mx-5 mb-5 flex min-h-12 items-center gap-3 rounded-xl border border-violet-300/30 bg-violet-300/5 p-4 text-violet-200">
-                  <Compass size={22} aria-hidden="true" /><span><span className="block font-bold">Aventura: {adventure.title}</span><span className="text-sm">{data.adventures[adventure.id]?.completedAt ? "Aventura terminada · volver a explorar" : "Aplica las ideas de esta ruta"}</span></span>
+                  <Compass size={22} aria-hidden="true" /><span><span className="block font-bold">Aventura: {adventure.title}</span><span className="text-sm">{missingAdventureLessons(adventure, data.progress).length ? "Completa las clases relacionadas para jugar" : data.adventures[adventure.id]?.completedAt ? "Aventura terminada · volver a explorar" : "Aplica las ideas de esta ruta"}</span></span>
                 </Link>)}
               </section>
             </li>;

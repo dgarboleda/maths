@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AdventureVisual } from "./AdventureVisual";
+import { AdventureRequirements } from "./AdventureRequirements";
 import { OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
 import { useState } from "react";
 import { CheckCircle2, Circle, Minus, Plus, Search, Zap } from "lucide-react";
@@ -15,6 +16,7 @@ import {
   getAdventure,
   getLessonSummary,
   initialAdventure,
+  missingAdventureLessons,
   type AdventureDef,
   type AdventureState,
 } from "@/lib/learning/core";
@@ -55,19 +57,20 @@ export function AdventurePlayer({
   const saved = data.adventures[adventure.id] ?? initialAdventure(adventure.id);
   const state =
     confirmed && confirmed.revision > saved.revision ? confirmed : saved;
+  const missing = missingAdventureLessons(adventure, data.progress);
   return (
     <LearningShell
       childId={childId}
       title={adventure.title}
       eyebrow={adventure.eyebrow}
     >
-      <AdventureGame
+      {missing.length ? <AdventureRequirements childId={childId} missing={missing} previouslyCompleted={Boolean(state.completedAt)} /> : <AdventureGame
         key={adventure.id}
         childId={childId}
         adventure={adventure}
         state={state}
         mutation={mutation}
-      />
+      />}
     </LearningShell>
   );
 }

@@ -16,6 +16,7 @@ import {
   learningStatus,
   LESSON_INDEX,
   ADVENTURES,
+  missingAdventureLessons,
   questionsFor,
   STAGE_LABELS,
   STAR_REWARDS,
@@ -307,6 +308,7 @@ export function LessonPlayer({
                   childId={childId}
                   lesson={lesson}
                   progress={progress}
+                  allProgress={data.progress}
                   now={now}
                   run={run}
                   disabled={mutation.blocked}
@@ -834,6 +836,7 @@ function LessonSummary({
   childId,
   lesson,
   progress,
+  allProgress,
   now,
   run,
   disabled,
@@ -841,6 +844,7 @@ function LessonSummary({
   childId: string;
   lesson: Lesson;
   progress: LearningProgress;
+  allProgress: Record<string, LearningProgress>;
   now: number;
   run: (action: LearningAction) => Promise<boolean>;
   disabled: boolean;
@@ -950,7 +954,7 @@ function LessonSummary({
             key={adventure.id}
             href={`/jugar/${childId}/aventura/${adventure.id}`}
           >
-            Jugar {adventure.title}
+            {missingAdventureLessons(adventure, { ...allProgress, [lesson.id]: progress }).length ? "Ver requisitos de" : "Jugar"} {adventure.title}
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
         ))}

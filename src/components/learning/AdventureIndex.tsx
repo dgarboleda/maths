@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Compass } from "lucide-react";
 import { useLearningData } from "@/lib/learning/useLearningData";
-import { ADVENTURES, LEARNING_UNITS } from "@/lib/learning/core";
+import { ADVENTURES, LEARNING_UNITS, missingAdventureLessons } from "@/lib/learning/core";
 import {
   LearningLoading,
   LearningLoadError,
@@ -37,7 +37,8 @@ export function AdventureIndex({ childId }: { childId: string }) {
       <ul className="grid gap-4 sm:grid-cols-2">
         {ADVENTURES.map((adventure) => {
           const state = data.adventures[adventure.id],
-            unit = LEARNING_UNITS.find((u) => u.id === adventure.unitId);
+            unit = LEARNING_UNITS.find((u) => u.id === adventure.unitId),
+            missing = missingAdventureLessons(adventure, data.progress);
           return (
             <li key={adventure.id}>
               <Link
@@ -62,7 +63,9 @@ export function AdventureIndex({ childId }: { childId: string }) {
                     {adventure.intro}
                   </p>
                   <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-cyan-200">
-                    {state?.completedAt
+                    {missing.length
+                      ? `Completa ${missing.length} ${missing.length === 1 ? "clase" : "clases"} para jugar`
+                      : state?.completedAt
                       ? "Completada · volver a jugar"
                       : state?.attempts
                         ? `Continuar · ${state.attempts} ${state.attempts === 1 ? "prueba" : "pruebas"}`

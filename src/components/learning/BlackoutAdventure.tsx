@@ -8,7 +8,8 @@ import {
   useLearningAction,
   useLearningData,
 } from "@/lib/learning/useLearningData";
-import { initialAdventure, type AdventureState } from "@/lib/learning/core";
+import { getAdventure, initialAdventure, missingAdventureLessons, type AdventureState } from "@/lib/learning/core";
+import { AdventureRequirements } from "./AdventureRequirements";
 import {
   LearningLoading,
   LearningLoadError,
@@ -59,18 +60,19 @@ export function BlackoutAdventure({ childId }: { childId: string }) {
   const saved = data.adventures.apagon ?? initialAdventure("apagon");
   const state =
     confirmed && confirmed.revision > saved.revision ? confirmed : saved;
+  const missing = missingAdventureLessons(getAdventure("apagon")!, data.progress);
   return (
     <LearningShell
       childId={childId}
       title="El apagón"
       eyebrow="Capítulo 01 / Devuelve la energía a la ciudad"
     >
-      <AdventureGame
+      {missing.length ? <AdventureRequirements childId={childId} missing={missing} previouslyCompleted={Boolean(state.completedAt)} /> : <AdventureGame
         key={childId}
         childId={childId}
         state={state}
         mutation={mutation}
-      />
+      />}
     </LearningShell>
   );
 }

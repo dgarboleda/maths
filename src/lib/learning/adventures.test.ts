@@ -6,6 +6,7 @@ import {
   getLesson,
   initialAdventure,
   LEARNING_UNITS,
+  missingAdventureLessons,
 } from "./domain";
 
 const NOW = 1_700_000_000_000;
@@ -40,11 +41,21 @@ const play = (id: string, allocation: number[]) =>
   );
 
 describe("Aventuras por unidad", () => {
+  test("exige explicación, ejemplos y aplicación de todas las clases relacionadas", () => {
+    const adventure = getAdventure("apagon")!;
+    const complete = { classCompleted: true, examplesCompleted: true, completedAt: NOW };
+    expect(missingAdventureLessons(adventure, {})).toEqual(adventure.lessonIds);
+    expect(missingAdventureLessons(adventure, { "fracciones-unidad": complete, "fraccion-cantidad": { ...complete, examplesCompleted: false } })).toEqual(["fraccion-cantidad"]);
+    expect(missingAdventureLessons(adventure, { "fracciones-unidad": complete, "fraccion-cantidad": { ...complete, completedAt: null } })).toEqual(["fraccion-cantidad"]);
+    expect(missingAdventureLessons(adventure, { "fracciones-unidad": complete, "fraccion-cantidad": complete })).toEqual([]);
+  });
   test("cada unidad tiene aventuras con ids propios y clases existentes", () => {
     expect(new Set(ADVENTURES.map((a) => a.id)).size).toBe(ADVENTURES.length);
     for (const unit of LEARNING_UNITS)
       expect(ADVENTURES.filter((a) => a.unitId === unit.id), unit.id).not.toHaveLength(0);
     for (const adventure of ADVENTURES) {
+      expect(adventure.lessonIds.length, adventure.id).toBeGreaterThan(0);
+      expect(new Set(adventure.lessonIds).size, adventure.id).toBe(adventure.lessonIds.length);
       // El id comparte la callable con clases y repasos: no puede chocar.
       expect(getLesson(adventure.id)).toBeUndefined();
       expect(adventure.id.startsWith("repaso-")).toBe(false);

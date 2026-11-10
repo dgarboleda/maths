@@ -8,6 +8,7 @@
   "scripts": {
     "predev": "node scripts/liberar-puerto-dev.mjs && node -e \"require('fs').rmSync('.next/dev/cache/turbopack', { recursive: true, force: true })\"",
     "dev": "next dev",
+    "prebuild": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\"",
     "build": "opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint",

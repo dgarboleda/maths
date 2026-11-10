@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { getLesson, placementQuestion, type Question } from "../src/lib/learning/domain";
-import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre } from "./utilidades";
+import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
 
 const familyEmail = new WeakMap<Page, string>();
 async function learner(page: Page) {
@@ -107,7 +107,7 @@ test("clase, ejemplos, práctica con reintento, comprobación y aplicación con 
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Jugar El apagón" }),
+    page.getByRole("link", { name: "Ver requisitos de El apagón" }),
   ).toBeVisible();
   await page.reload();
   await expect(
@@ -170,6 +170,13 @@ test("El apagón responde a decisiones, se guarda y funciona en una cuenta sin n
   await page.getByRole("link", { name: "Aventura", exact: true }).click();
   await page.getByRole("link", { name: /El apagón/ }).click();
   await expect(page).toHaveURL(new RegExp(`/jugar/${childId}/aventura/apagon$`));
+  await expect(page.getByRole("heading", { name: "Completa estas clases para jugar" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Inspeccionar la central/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Qué representa una fracción" })).toHaveAttribute("href", `/jugar/${childId}/aprende/fracciones-unidad`);
+  await sembrarClasesTerminadas(familyEmail.get(page)!, childId, ["fracciones-unidad"]);
+  await expect(page.getByRole("link", { name: "Qué representa una fracción" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Completa estas clases para jugar" })).toBeVisible();
+  await sembrarClasesTerminadas(familyEmail.get(page)!, childId, ["fraccion-cantidad"]);
   await page.getByRole("button", { name: /Inspeccionar la central/ }).click();
   await expect(page.getByText(/Reserva disponible: 180/)).toBeVisible();
   const configure = async (values: number[]) => {
@@ -211,6 +218,7 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
   page,
 }) => {
   const childId = await learner(page);
+  await sembrarClasesTerminadas(familyEmail.get(page)!, childId, ["expresiones-algebraicas", "propiedad-distributiva"]);
   await page.goto(`/jugar/${childId}/aventura`);
   await expect(page.getByRole("heading", { name: "Aventuras", exact: true })).toBeVisible();
   await page.getByRole("link", { name: /El jardín de baldosas/ }).click();
@@ -240,6 +248,7 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
 
 test("una nueva aventura muestra un esquema que responde al plan", async ({ page }) => {
   const childId = await learner(page);
+  await sembrarClasesTerminadas(familyEmail.get(page)!, childId, ["sistemas-ecuaciones"]);
   await page.goto(`/jugar/${childId}/aventura/feria-energia`);
   await page.getByRole("button", { name: "Investigar la situación" }).click();
   await page.getByLabel("Generadores pequeños", { exact: true }).fill("6");
