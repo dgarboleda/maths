@@ -112,7 +112,7 @@ export function lessonScreenHelp(lesson: Lesson, progress: LearningProgress, que
     id: `${lesson.id}:${progress.stage}:${progress.index}`,
     title: section ? "Una idea, paso a paso" : example ? "Entiende el ejemplo" : "Tu recorrido en esta clase",
     description: section ? "Lee la explicación y prueba los controles del gráfico: observa qué cambia y qué se mantiene. Estos son los símbolos y las palabras que aparecen en esta parte." :
-      example ? "Cada paso muestra una operación y explica por qué se hace. Intenta anticipar el siguiente antes de continuar." :
+      example ? "Cada paso muestra una operación y explica por qué se hace. Desde el segundo ejemplo, elige tú la justificación antes de leerla: no cuenta para tu comprobación." :
         "Primero comprende la idea, después practica y al final comprueba qué puedes resolver por tu cuenta. Puedes volver a la explicación cuando lo necesites.",
     ideas: ideasForText(text, lesson.vocabulary),
     formulas: progress.stage === "diagnostic" ? [] : formulasFor(lesson.id),

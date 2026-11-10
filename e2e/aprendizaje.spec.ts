@@ -72,8 +72,19 @@ test("clase, ejemplos, práctica con reintento, comprobación y aplicación con 
   await expect(
     page.getByText(lesson.examples[0].steps[0].why, { exact: false }),
   ).toBeVisible();
-  for (let i = 1; i < lesson.examples.length; i++)
+  for (let i = 1; i < lesson.examples.length; i++) {
     await page.getByRole("button", { name: "Otro ejemplo razonado" }).click();
+    // Desde el segundo ejemplo, el alumno justifica cada paso antes de leerlo;
+    // es opcional y no impide continuar.
+    const step = lesson.examples[i].steps[0];
+    await expect(page.getByText("Por qué:")).toHaveCount(0);
+    await page
+      .getByRole("group", { name: "¿Por qué se hace este paso?" })
+      .getByRole("button", { name: step.why, exact: true })
+      .click();
+    await expect(page.getByText("Lo explicaste tú")).toBeVisible();
+    await expect(page.getByText(step.why, { exact: true })).toBeVisible();
+  }
   await page.getByRole("button", { name: "Ahora, hazlo con ayuda" }).click();
   // Un error recibe el feedback propio de esa alternativa y permite reintentar.
   const wrong = lesson.guided[0].choices!.find((o) => o.id !== lesson.guided[0].answer)!;
@@ -161,6 +172,13 @@ test("consultar la explicación durante la comprobación registra apoyo y no sim
     page.getByText("Resuelvo con apoyo", { exact: true }).first(),
   ).toBeVisible();
   await expect(page.getByText(/Próximo repaso:/)).toHaveCount(0);
+  // El resumen convierte esas respuestas en un plan: aquí acertó todo, pero
+  // con apoyo, así que no manda releer la clase sino practicar sin pistas.
+  const plan = page.getByRole("region", { name: "Tu plan de refuerzo" });
+  await expect(plan.getByText("1. Resuelve sin pistas", { exact: true })).toBeVisible();
+  await expect(plan.getByRole("button", { name: "Releer la explicación" })).toHaveCount(0);
+  await plan.getByRole("button", { name: "Ir a la práctica" }).click();
+  await expect(page.getByRole("heading", { name: "Práctica", exact: true })).toBeVisible();
 });
 
 test("El apagón responde a decisiones, se guarda y funciona en una cuenta sin niveles", async ({
