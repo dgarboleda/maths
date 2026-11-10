@@ -15,7 +15,8 @@
  * - 6: la coma la pone el alumno (resultado de suma, resta y multiplicación
  *   y cociente de la galera); con decimales, la galera empieza por las
  *   unidades (0,…) y la respuesta guarda la coma («C0,75;…»).
+ * - 7: análisis y corrección de un error en la práctica de suma de fracciones.
  *
  * Módulo propio para que el navegador lo importe sin cargar el catálogo.
  */
-export const CONTENT_VERSION = 6;
+export const CONTENT_VERSION = 7;

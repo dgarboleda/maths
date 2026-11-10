@@ -31,7 +31,7 @@ describe("Contrato editorial del programa inicial", () => {
       expect(l.sections).toHaveLength(3);
       expect(l.examples.length).toBeGreaterThanOrEqual(2);
       expect(l.guided).toHaveLength(3);
-      expect(l.practice).toHaveLength(7);
+      expect(l.practice).toHaveLength(l.id === "fracciones-suma-resta" ? 8 : 7);
       expect(new Set(l.practice.map((q) => q.format)).size).toBe(3);
       expect(l.commonErrors.length).toBeGreaterThanOrEqual(3);
       l.legacyModuleIds.forEach((id) =>
