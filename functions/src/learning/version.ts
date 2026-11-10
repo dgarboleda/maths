@@ -16,7 +16,8 @@
  *   y cociente de la galera); con decimales, la galera empieza por las
  *   unidades (0,…) y la respuesta guarda la coma («C0,75;…»).
  * - 7: análisis y corrección de un error en la práctica de suma de fracciones.
+ * - 8: actividades de aplicación tras la pregunta conceptual en las demás clases.
  *
  * Módulo propio para que el navegador lo importe sin cargar el catálogo.
  */
-export const CONTENT_VERSION = 7;
+export const CONTENT_VERSION = 8;

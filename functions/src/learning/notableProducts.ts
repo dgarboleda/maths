@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -32,6 +33,7 @@ export const NOTABLE_PRODUCT_LESSONS: Lesson[] = [
       c("d-2", "¿Cuál es el resultado de 2(x + 3)?", ["2x + 3", "2x + 6", "x + 6"], 1, "El 2 multiplica a ambos términos: 2x + 6."),
       n("d-3", "Reduce 3x + 4x. ¿Cuál es el coeficiente de x?", 7, ["3x y 4x son términos semejantes: los dos cuentan veces x.", "3 veces x más 4 veces x son 7 veces x: el coeficiente es 7."], ["Son términos semejantes.", "Suma los coeficientes.", "3 + 4 = 7."]),
     ],
+    practiceCorrection: errorFollowup("En el desarrollo de (x + 4)², ¿cuál es el coeficiente del término en x?", 8, "El cuadrado de una suma incluye dos veces el producto de sus términos.", "El término central es 2 × 4 × x = 8x, así que el coeficiente es 8."),
     questions(v) {
       const k = [2, 3, 4, 5, 6, 7][v];
       return [

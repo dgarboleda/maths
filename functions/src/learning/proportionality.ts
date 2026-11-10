@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -121,6 +122,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "El mismo factor multiplicativo conserva la razón.",
       ),
     ],
+    practiceCorrection: errorFollowup("Una mezcla usa 2 vasos de jugo por 3 de agua. Si usamos 6 vasos de jugo y conservamos la mezcla, ¿cuántos vasos de agua necesitamos?", 9, "De 2 a 6 vasos de jugo multiplicamos por 3.", "Para conservar la razón multiplicamos también el agua por 3 → 3 × 3 = 9 vasos."),
     questions(v) {
       const [a, b, k] = [[2, 3, 4], [3, 5, 3], [2, 7, 3], [5, 2, 3], [3, 4, 5], [4, 7, 2]][v],
         // Dos mezclas azules:verdes cuya proporción de azules hay que comparar.
@@ -402,6 +404,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         ["Son grupos iguales.", "Suma cuatro veces 3.", "El total es 12."],
       ),
     ],
+    practiceCorrection: errorFollowup("Una bicicleta recorre 12 km en una hora. ¿Cuántos metros recorre en un minuto a velocidad constante?", 200, "Convertimos 12 km en 12 000 metros y una hora en 60 minutos.", "Dividimos 12 000 entre 60: la tasa es 200 metros por minuto."),
     questions(v) {
       const [count, rate] = [[4, 5], [3, 8], [6, 4], [5, 7], [8, 3], [7, 6]][v],
         cost = count * rate,
@@ -687,6 +690,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "La tasa conserva el valor que corresponde a cada unidad.",
       ),
     ],
+    practiceCorrection: errorFollowup("Si 3 cuadernos cuestan 12 soles y el precio es proporcional, ¿cuánto cuestan 5 cuadernos?", 20, "Cada cuaderno cuesta 12 ÷ 3 = 4 soles.", "Cinco cuadernos cuestan 5 × 4 = 20 soles, conservando la misma razón."),
     questions(v) {
       const [k, x] = [[3, 4], [5, 2], [4, 7], [6, 3], [2, 9], [7, 5]][v],
         next = [10, 7, 3, 8, 4, 6][v],
@@ -999,6 +1003,7 @@ export const PROPORTIONALITY_LESSONS: Lesson[] = [
         "Un descuento positivo reduce el precio, sin necesariamente anularlo.",
       ),
     ],
+    practiceCorrection: errorFollowup("Un artículo cuesta 200 soles y tiene un descuento del 15%. ¿Cuántos soles se descuentan?", 30, "El porcentaje de descuento se calcula sobre el precio inicial de 200 soles.", "El 15% de 200 es 0,15 × 200 = 30 soles de descuento."),
     questions(v) {
       const [p, base] = [[10, 250], [20, 300], [15, 400], [35, 600], [25, 360], [40, 450]][v],
         delta = (base * p) / 100,

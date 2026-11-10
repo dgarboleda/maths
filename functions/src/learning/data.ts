@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -74,6 +75,7 @@ export const DATA_LESSONS: Lesson[] = [
       c("d-2", "Ordena de menor a mayor: 9, 2, 5. ¿Cuál queda en el centro?", ["2", "5", "9"], 1, "2, 5, 9: el central es 5."),
       n("d-3", "¿Cuánto es 15 − 4?", 11, ["Restar 4 a 15: de 15 a 11 se retroceden 4.", "15 − 4 = 11. Comprobación: 11 + 4 = 15."], ["Cuenta hacia atrás.", "15 − 4.", "11."]),
     ],
+    practiceCorrection: errorFollowup("Calcula la mediana de 9, 3, 7 y 5.", 6, "Primero ordenamos los datos: 3, 5, 7 y 9.", "Hay cuatro valores, así que promediamos los dos centrales: (5 + 7) ÷ 2 = 6."),
     questions(v) {
       const data = [[4, 7, 5, 9, 5], [12, 8, 10, 15, 10], [3, 6, 6, 2, 8], [20, 14, 17, 14, 25], [9, 11, 7, 13, 10], [5, 9, 9, 4, 13]][v],
         even = [[10, 3, 8, 5], [12, 7, 9, 16], [9, 2, 4, 7], [15, 11, 21, 13], [6, 10, 3, 9], [14, 8, 5, 11]][v],
@@ -255,6 +257,7 @@ export const DATA_LESSONS: Lesson[] = [
       n("d-2", "Escribe 3/4 como porcentaje (el número antes de %).", 75, ["Un porcentaje dice cuántas partes de cada 100, y 3/4 = 75/100, multiplicando ambos términos por 25.", "75/100 = 75%."], ["3 ÷ 4.", "0,75 × 100.", "75."]),
       c("d-3", "Al lanzar una moneda, ¿cuántos resultados posibles hay?", ["1", "2", "4"], 1, "Cara o cruz."),
     ],
+    practiceCorrection: errorFollowup("Una bolsa tiene 3 fichas rojas y 5 azules. Si se extrae una al azar, ¿cuál es la probabilidad de obtener una roja?", 0.375, "Hay 3 casos favorables y 3 + 5 = 8 fichas posibles en total.", "La probabilidad es 3/8; el denominador cuenta todas las fichas, no solo las azules."),
     questions(v) {
       const [red, blue] = [[3, 5], [4, 6], [2, 7], [5, 3], [6, 9], [7, 5]][v],
         [total, broken] = [[40, 6], [25, 4], [50, 9], [20, 3], [80, 12], [60, 15]][v],
@@ -437,6 +440,7 @@ export const DATA_LESSONS: Lesson[] = [
       c("d-2", "Al lanzar un dado, P(sacar 6) es…", ["1/6", "1/2", "6"], 0, "Un caso favorable entre seis posibles."),
       n("d-3", "¿Cuánto es 1 − 3/8?", 5 / 8, ["Para restar de 1, se escribe el entero como fracción con el mismo denominador: 1 = 8/8.", "8/8 − 3/8 = 5/8. Comprobación: 5/8 + 3/8 = 1."], ["Escribe 1 como 8/8.", "Resta numeradores.", "5/8."]),
     ],
+    practiceCorrection: errorFollowup("Una bolsa contiene 2 fichas rojas y 2 azules. Se extraen dos sin reposición. ¿Cuál es la probabilidad de obtener dos rojas?", 1 / 6, "La primera roja tiene probabilidad 2/4; después queda una roja entre tres fichas.", "Multiplicamos las probabilidades sucesivas: 2/4 × 1/3 = 1/6."),
     questions(v) {
       const target = [7, 6, 8, 5, 9, 10][v],
         ways = { 7: 6, 6: 5, 8: 5, 5: 4, 9: 4, 10: 3 }[target]!,

@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -107,6 +108,7 @@ export const MULTIPLICATION_LESSONS: Lesson[] = [
         "Hay grupos iguales cuando cada grupo tiene la misma cantidad: 3 bolsas de 5 caramelos.",
       ),
     ],
+    practiceCorrection: errorFollowup("Hay 5 filas de 7 paneles cada una. ¿Cuántos paneles hay en total?", 35, "Son cinco grupos iguales de siete paneles, así que multiplicamos 5 por 7.", "5 × 7 = 35; también se obtiene sumando 7 cinco veces."),
     questions(v) {
       const concept = v % 3;
       const [ca, cb] = [[3, 4], [5, 2], [4, 6], [2, 7], [6, 3], [3, 8]][v];

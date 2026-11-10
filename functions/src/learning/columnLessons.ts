@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { columnBugs, columnTrace, fmt, fmtFixed, placeName } from "./algorithms/columns";
 import { divisionBugs, divisionTrace } from "./algorithms/division";
@@ -79,6 +80,7 @@ export const COLUMN_LESSONS: Lesson[] = [
         ["Mira si 2 alcanza para quitar 8.", "Cambia una decena por 10 unidades.", "12 − 8 = 4 y quedan 4 decenas."],
       ),
     ],
+    practiceCorrection: errorFollowup("Alinea las comas y calcula 4,5 + 2,35.", 6.85, "Escribimos 4,5 como 4,50 para alinear unidades, décimas y centésimas.", "Sumamos 4,50 + 2,35 = 6,85; las comas quedan en la misma columna."),
     questions(v) {
       const concept = v % 3;
       const [ca, cb] = [[468, 257], [741, 368], [582, 236], [925, 487], [634, 179], [813, 245]][v];
@@ -323,6 +325,7 @@ export const COLUMN_LESSONS: Lesson[] = [
         ["Reparte primero las decenas.", "8 ÷ 4 = 2 decenas.", "Luego 4 ÷ 4 = 1."],
       ),
     ],
+    practiceCorrection: errorFollowup("Calcula 816 ÷ 8. No olvides escribir todas las cifras del cociente.", 102, "Ocho centenas entre ocho dan una centena; al bajar la decena, 1 es menor que 8, así que escribimos 0 decenas.", "Al bajar el 6 quedan 16 unidades, que entre 8 dan 2. El cociente es 102 y 102 × 8 = 816."),
     questions(v) {
       const concept = v % 3;
       const [ca, cb] = [[846, 3], [624, 6], [935, 4], [728, 7], [1224, 4], [918, 9]][v];
@@ -549,6 +552,7 @@ export const FACTOR_LESSONS: Lesson[] = [
         ["Escribe los primeros múltiplos de 4.", "Escribe los de 6.", "Busca el primero que se repite."],
       ),
     ],
+    practiceCorrection: errorFollowup("Calcula el mínimo común múltiplo de 6 y 8.", 24, "Los múltiplos de 6 son 6, 12, 18 y 24; los de 8 son 8, 16 y 24.", "El menor múltiplo positivo que comparten es 24."),
     questions(v) {
       const concept = v % 3;
       const [ca, cb] = [[12, 18], [8, 20], [15, 25], [16, 24], [9, 21], [10, 14]][v];
@@ -761,6 +765,7 @@ export const RUFFINI_LESSONS: Lesson[] = [
         ["Primero el producto.", "(−2) × 5 = −10.", "−10 + 3."],
       ),
     ],
+    practiceCorrection: errorFollowup("Para aplicar Ruffini al dividir un polinomio entre x + 2, ¿qué número se coloca en la esquina?", -2, "Se usa el valor que hace cero al divisor x + 2.", "Si x = −2, la suma −2 + 2 vale 0; por eso se coloca −2."),
     questions(v) {
       const concept = v % 3;
       const [p1, r1] = ([[[2, -3, 1, 5], 2], [[1, 4, -2, 3], 1], [[3, -5, 2, -4], 2], [[1, -2, 4, 1], 3], [[2, 1, -3, 7], -1], [[1, 3, -4, 2], 2]] as [number[], number][])[v];

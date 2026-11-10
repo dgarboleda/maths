@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n, type ChoiceLabel } from "./questions";
 import { dec, divisors, gcd, list, sub, sup } from "./topicHelpers";
@@ -74,6 +75,7 @@ export const FACTORING_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto vale (x + 2)(x + 3) cuando x = 1?", 12, ["Con x = 1 → (1 + 2)(1 + 3) = 3 × 4.", "3 × 4 = 12."], ["Sustituye x por 1.", "Calcula cada paréntesis.", "Multiplica 3 por 4."]),
       n("d-3", "¿Qué dos números suman 7 y multiplicados dan 10? Escribe el mayor.", 5, ["Las parejas que dan 10 son 1 y 10 o 2 y 5.", "2 + 5 = 7, así que el mayor es 5."], ["Busca parejas que multiplicadas den 10.", "1 × 10 o 2 × 5.", "¿Cuál suma 7?"]),
     ],
+    practiceCorrection: errorFollowup("Completa la factorización x² − 5x + 6 = (x − 2)(x − __). ¿Qué número falta?", 3, "Los términos constantes de los factores deben sumar −5 y multiplicar 6.", "Como uno es −2, el otro es −3; en el espacio que sigue al signo menos va 3."),
     questions(v) {
       const [p, q] = [[2, 5], [3, 4], [1, 6], [2, 7], [3, 5], [4, 6]][v];
       const k = [5, 4, 7, 9, 6, 8][v];
@@ -273,6 +275,7 @@ export const FACTORING_LESSONS: Lesson[] = [
       c("d-2", "¿Cuál es la factorización de x² − 16?", ["(x − 4)²", "(x + 4)(x − 4)", "(x − 8)(x + 2)"], 1, "x² − 16 es una diferencia de cuadrados: (x + 4)(x − 4)."),
       n("d-3", "¿Cuánto es 1/4 + 1/6? Responde con una fracción.", 5 / 12, ["El denominador común es 12, el menor múltiplo de 4 y de 6.", "1/4 = 3/12 y 1/6 = 2/12, así que 3/12 + 2/12 = 5/12."], ["Busca un denominador común.", "12 es múltiplo de 4 y de 6.", "1/4 = 3/12 y 1/6 = 2/12."]),
     ],
+    practiceCorrection: errorFollowup("Si x = 2, ¿cuánto vale (4x + 12) ÷ 4?", 5, "Dividimos ambos términos entre 4 → (4x + 12) ÷ 4 = x + 3.", "Sustituyendo x = 2 obtenemos 2 + 3 = 5; en la expresión original también resulta 20 ÷ 4."),
     questions(v) {
       const k = [3, 5, 2, 4, 6, 7][v];
       const concept = [
@@ -467,6 +470,7 @@ export const LOGARITHM_LESSONS: Lesson[] = [
       n("d-2", "¿A qué exponente hay que elevar 10 para obtener 1000?", 3, ["1000 = 10 × 10 × 10.", "Son tres factores 10, así que el exponente es 3."], ["Escribe 1000 como producto de dieces.", "10 × 10 × 10.", "Cuenta los factores."]),
       c("d-3", "Una cantidad se multiplica por 3 cada año. ¿Qué tipo de crecimiento es?", ["Lineal", "Exponencial", "Constante"], 1, "Multiplicar por un factor fijo en cada paso es crecimiento exponencial."),
     ],
+    practiceCorrection: errorFollowup("Si logaritmo en base 10 de 2 es a y de 5 es b, ¿cuánto vale a + b?", 1, "La suma de los logaritmos de números positivos es el logaritmo de su producto.", "Como 2 × 5 = 10 y el logaritmo en base 10 de 10 es 1, la suma vale 1."),
     questions(v) {
       const e2 = v === 0 ? 5 : 6;
       const e10 = v === 1 ? 3 : 2;

@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -73,6 +74,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 2 × (9 + 3)?", 24, ["El paréntesis va primero: 9 + 3 = 12.", "2 × 12 = 24. Es el perímetro de un rectángulo de 9 × 3."], ["Paréntesis primero.", "2 × 12.", "24."]),
       c("d-3", "¿En qué unidad se mide una superficie?", ["m", "m²", "m³"], 1, "Las superficies se miden en unidades cuadradas."),
     ],
+    practiceCorrection: errorFollowup("Un rectángulo mide 8 cm por 3 cm. ¿Cuál es su área en centímetros cuadrados?", 24, "El área cuenta las unidades cuadradas interiores y se calcula multiplicando largo por ancho.", "8 × 3 = 24 centímetros cuadrados; sumar los lados daría el perímetro."),
     questions(v) {
       const [b, h] = [[6, 4], [9, 5], [12, 7], [8, 3], [10, 6], [15, 4]][v],
         [tb, th] = [[10, 6], [8, 5], [14, 9], [12, 7], [9, 4], [16, 5]][v],
@@ -275,6 +277,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es 7²?", 49, ["7² es multiplicar 7 por sí mismo.", "7 × 7 = 49."], ["Un número al cuadrado es por sí mismo.", "7 × 7.", "49."]),
       fig(c("d-3", "Si el diámetro mide 8 cm, ¿cuánto mide el radio?", ["16 cm", "4 cm", "8 cm"], 1, "El radio es la mitad del diámetro."), { kind: "circle", diameter: "8 cm" }),
     ],
+    practiceCorrection: errorFollowup("Usa π = 3,14. ¿Cuál es el área de un círculo de radio 2 cm, en centímetros cuadrados?", 12.56, "El área es π por el cuadrado del radio; no se multiplica simplemente por el diámetro.", "Calculamos 3,14 × 2² = 3,14 × 4 = 12,56 centímetros cuadrados."),
     questions(v) {
       const r = [5, 3, 10, 4, 6, 7][v],
         d = [8, 12, 20, 6, 14, 18][v],
@@ -464,6 +467,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
       fig(n("d-2", "Área de un círculo de radio 3 (π ≈ 3,14).", 28.26, ["El área del círculo es π × r²: con r = 3, r² = 3 × 3 = 9.", "3,14 × 9 = 28,26."], ["A = πr².", "3² = 9.", "3,14 × 9."]), { kind: "circle", radius: "3" }),
       c("d-3", "¿Qué unidad mide un volumen?", ["cm", "cm²", "cm³"], 2, "Los volúmenes se miden en unidades cúbicas."),
     ],
+    practiceCorrection: errorFollowup("Un prisma mide 2 dm por 3 dm por 5 cm. ¿Cuál es su volumen en centímetros cúbicos?", 3000, "Convertimos todas las longitudes a centímetros: 2 dm son 20 cm y 3 dm son 30 cm.", "Multiplicamos las tres dimensiones en la misma unidad: 20 × 30 × 5 = 3000 centímetros cúbicos."),
     questions(v) {
       const [l, w, h] = [[4, 3, 2], [6, 5, 3], [8, 4, 5], [7, 2, 6], [5, 5, 4], [9, 3, 2]][v],
         [cr, ch] = [[1, 3], [4, 5], [3, 2], [1, 7], [5, 4], [3, 3]][v],
@@ -642,6 +646,7 @@ export const GEOMETRY_LESSONS: Lesson[] = [
       n("d-2", "¿Cuánto es √100?", 10, ["√100 es el número no negativo que, multiplicado por sí mismo, da 100.", "10 × 10 = 100, así que √100 = 10."], ["¿Qué número al cuadrado da 100?", "Prueba con 10.", "10."]),
       c("d-3", "¿Qué tipo de ángulo mide 90°?", ["Agudo", "Recto", "Obtuso"], 1, "Un ángulo de 90° es recto."),
     ],
+    practiceCorrection: errorFollowup("Un triángulo tiene lados 3, 4 y 5. ¿Cuánto suma el cuadrado de los dos lados menores?", 25, "Elevamos al cuadrado los dos lados menores: 3² = 9 y 4² = 16.", "La suma es 9 + 16 = 25, igual a 5²; por eso cumple la condición de Pitágoras."),
     questions(v) {
       const [a, b, cc] = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [9, 12, 15], [7, 24, 25]][v],
         [ka, kc] = [[12, 13], [8, 10], [15, 17], [9, 15], [20, 25], [16, 20]][v],

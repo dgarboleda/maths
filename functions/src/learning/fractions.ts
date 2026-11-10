@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -131,6 +132,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         "1/2 + 1/2 = 1.",
       ),
     ],
+    practiceCorrection: errorFollowup("La fracción 11/4 contiene unidades completas y una parte más. ¿Cuántas unidades completas contiene?", 2, "Cada unidad completa contiene cuatro cuartos; agrupamos 11 cuartos de cuatro en cuatro.", "Dos unidades son 8/4 y sobran 3/4; por eso contiene 2 unidades completas."),
     questions(v) {
       // Parámetros independientes entre sí: ninguna respuesta se deduce de otra.
       const [num, den] = [[3, 4], [2, 6], [3, 5], [5, 8], [4, 10], [7, 12]][v],
@@ -412,6 +414,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         "Con partes del mismo tamaño, tres partes son más que una.",
       ),
     ],
+    practiceCorrection: errorFollowup("Completa una fracción equivalente: 2/5 = __/15.", 6, "Para pasar de 5 a 15 multiplicamos el denominador por 3.", "Multiplicamos también el numerador por 3 → 2 × 3 = 6, así que 2/5 = 6/15."),
     questions(v) {
       const [a, b, k] = [[1, 3, 2], [2, 5, 3], [3, 4, 4], [2, 7, 2], [5, 6, 3], [3, 8, 2]][v],
         // Pares con numeradores y denominadores distintos.
@@ -689,6 +692,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         ],
       ),
     ],
+    practiceCorrection: errorFollowup("Expresa 0,4 como porcentaje. Escribe solo el número del porcentaje.", 40, "Un entero equivale al 100%; multiplicamos 0,4 por 100 para contar centésimos.", "0,4 × 100 = 40; por tanto 0,4 equivale al 40%."),
     questions(v) {
       const p = [35, 80, 12, 45, 5, 64][v],
         decimal = p / 100,
@@ -976,6 +980,7 @@ export const FRACTION_LESSONS: Lesson[] = [
         ["Son tres grupos de 15.", "15 + 15 = 30.", "30 + 15 = 45."],
       ),
     ],
+    practiceCorrection: errorFollowup("Calcula 3/5 de 40.", 24, "Dividimos 40 entre 5 para encontrar una quinta parte: 40 ÷ 5 = 8.", "Tomamos tres partes: 3 × 8 = 24, que es menor que la cantidad completa."),
     questions(v) {
       const [num, den, total] = [[3, 4, 40], [2, 5, 60], [5, 6, 72], [3, 8, 80], [2, 3, 90], [4, 5, 150]][v],
         part = total / den,

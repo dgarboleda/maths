@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -264,6 +265,7 @@ export const FRACTION_OPERATION_LESSONS: Lesson[] = [
       c("d-2", "¿Cuántos medios caben en 3 unidades?", ["3", "6", "1,5"], 1, "Cada unidad tiene 2 medios: 3 × 2 = 6."),
       n("d-3", "Simplifica 6/8. ¿Cuál es el nuevo numerador?", 3, ["Para simplificar, se dividen numerador y denominador entre un divisor común: 6 y 8 son pares.", "6 ÷ 2 = 3 y 8 ÷ 2 = 4, así que 6/8 = 3/4. El nuevo numerador es 3."], ["Busca un divisor común.", "Ambos son pares.", "6 ÷ 2 = 3."]),
     ],
+    practiceCorrection: errorFollowup("Calcula 1/2 de 3/4. Escribe una fracción o un decimal.", 0.375, "Tomar la mitad de tres cuartos significa multiplicar 1/2 por 3/4.", "Multiplicamos numeradores y denominadores: 1/2 × 3/4 = 3/8, una cantidad menor que 3/4."),
     questions(v) {
       const [a, b, cc, d] = [[2, 3, 3, 4], [1, 2, 4, 5], [3, 5, 2, 3], [3, 4, 2, 7], [2, 5, 5, 6], [5, 8, 2, 3]][v],
         [p, q, r, s] = [[3, 4, 1, 8], [2, 3, 1, 6], [5, 6, 1, 3], [4, 5, 2, 15], [3, 5, 3, 10], [7, 8, 1, 4]][v],

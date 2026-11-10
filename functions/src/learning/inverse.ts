@@ -1,3 +1,4 @@
+import { errorFollowup } from "./errorFollowup";
 import { defineLesson } from "./defineLesson";
 import { choice as c, example as ex, numeric as n } from "./questions";
 import type { Lesson } from "./types";
@@ -62,6 +63,7 @@ export const INVERSE_LESSONS: Lesson[] = [
       c("d-2", "Si 3 sensores consumen 12, ¿cuánto consumen 6 al mismo ritmo?", ["6", "24", "12"], 1, "Es directa: el doble de sensores, el doble de consumo."),
       n("d-3", "¿Cuánto es 5 × 12?", 60, ["Se puede descomponer 12 en 10 + 2, así que 5 × 10 = 50 y 5 × 2 = 10.", "50 + 10 = 60."], ["Cinco grupos de 12.", "50 + 10.", "60."]),
     ],
+    practiceCorrection: errorFollowup("Si 4 personas tardan 6 horas en una tarea, ¿cuántas horas tardan 8 personas al mismo ritmo?", 3, "Al duplicar el número de personas, el tiempo se reduce a la mitad si el trabajo y el ritmo son los mismos.", "La mitad de 6 es 3 horas; se conserva el producto 4 × 6 = 8 × 3."),
     questions(v) {
       const [w1, t1, w2] = [[2, 12, 4], [3, 8, 6], [4, 15, 6], [5, 16, 4], [6, 10, 4], [8, 9, 12]][v],
         [s1, h1, s2] = [[60, 4, 80], [40, 6, 30], [90, 2, 60], [50, 6, 75], [80, 3, 120], [45, 4, 60]][v],
