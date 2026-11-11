@@ -14,6 +14,7 @@ import {
 import { getExpertChallenge } from "@/lib/learning/expert";
 import type { useLearningAction } from "@/lib/learning/useLearningData";
 import { OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
+import { ExpertVisual } from "./ExpertVisual";
 import { primaryButton, secondaryButton } from "./LearningShell";
 
 /**
@@ -218,6 +219,7 @@ function ExpertPlan({
             </div>
           ))}
         </fieldset>
+        <ExpertVisual adventureId={adventure.id} params={round.params} inputs={inputs} values={values} />
         <OpenCalculatorButton disabled={mutation.blocked} />
         {invalid && (
           <p role="alert" className="text-sm text-amber-200">
