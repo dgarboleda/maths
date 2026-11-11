@@ -128,7 +128,9 @@ export function OptionPicker<T extends string>({
   disabled,
 }: {
   label: string;
-  options: readonly { id: T; label: string }[];
+  /** Con `symbol`, en móvil se ve solo el signo; el nombre sigue siendo
+   *  el texto accesible del botón. */
+  options: readonly { id: T; label: string; symbol?: string }[];
   value: T;
   onChange: (value: T) => void;
   disabled?: boolean;
@@ -143,13 +145,19 @@ export function OptionPicker<T extends string>({
           aria-checked={value === option.id}
           disabled={disabled}
           onClick={() => onChange(option.id)}
-          className={`min-h-11 rounded-full border px-4 text-sm font-semibold ${
+          title={option.symbol ? option.label : undefined}
+          className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold ${
             value === option.id
               ? "border-cyan-300 bg-cyan-950/60 text-cyan-100"
               : "border-slate-600 bg-slate-950 text-slate-300"
           }`}
         >
-          {option.label}
+          {option.symbol ? (
+            <>
+              <span aria-hidden="true" className="text-xl leading-none">{option.symbol}</span>
+              <span className="sr-only sm:not-sr-only">{option.label}</span>
+            </>
+          ) : option.label}
         </button>
       ))}
     </div>

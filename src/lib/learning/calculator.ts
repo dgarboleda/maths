@@ -21,11 +21,12 @@ import {
   type MultiplySpec,
 } from "./core";
 
+/** `symbol`: en pantallas estrechas el botón muestra solo el signo. */
 export const CALCULATOR_OPS = [
-  { id: "add", label: "Sumar" },
-  { id: "subtract", label: "Restar" },
-  { id: "multiply", label: "Multiplicar" },
-  { id: "divide", label: "Dividir" },
+  { id: "add", label: "Sumar", symbol: "+" },
+  { id: "subtract", label: "Restar", symbol: "−" },
+  { id: "multiply", label: "Multiplicar", symbol: "×" },
+  { id: "divide", label: "Dividir", symbol: "÷" },
 ] as const;
 export type CalculatorOp = (typeof CALCULATOR_OPS)[number]["id"];
 export type CalculatorSpec = ArithmeticSpec | MultiplySpec | DivisionSpec;
