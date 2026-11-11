@@ -158,7 +158,7 @@ Se guarda cada prueba, se puede volver a experimentar y el premio de diez estrel
 
 ### Reto experto (fase 2)
 
-Completar una misión desbloquea su **reto experto** (`functions/src/learning/expertChallenges.ts`): la historia da un giro, cambia los datos y exige más que aplicar una fórmula. Las pistas por dato de la misión se abren a petición («Ver pista»); en el reto experto no hay pistas junto a los datos y la única ayuda es la respuesta a cada plan probado, que señala el error sin dar el método completo.
+Completar una misión desbloquea su **reto experto** (`functions/src/learning/expertChallenges.ts`): la historia da un giro, cambia los datos y exige más que aplicar una fórmula. Cada reto es una familia de **partidas**: los mismos objetivos con datos distintos (entre 5 y 12 por reto). La tabla describe la partida original. Las pistas por dato de la misión se abren a petición («Ver pista»); en el reto experto no hay pistas junto a los datos y la única ayuda es la respuesta a cada plan probado, que señala el error sin dar el método completo.
 
 | Aventura | Giro del reto experto | Qué lo hace difícil |
 | --- | --- | --- |
@@ -182,10 +182,11 @@ Completar una misión desbloquea su **reto experto** (`functions/src/learning/ex
 | El ahorro para el observatorio | 12 % simple frente a 10 % compuesto | Primer año en que gana la compuesta |
 | La trayectoria del cohete | h(t) = −t² + 10t y altura segura de 16 m | Vértice y ecuación cuadrática por simetría |
 
-- **Estado:** `learningMissions/{aventura}.expert` (opcional): lectura del informe, pruebas, último plan, respuesta y fecha de logro. La misión conserva su plan y su fecha.
-- **Acciones:** `{ kind: "inspect" | "dispatch", expert: true }`. El servidor exige la misión completada, valida las entradas propias del reto y rechaza `expert` con otro valor o en aventuras sin reto.
-- **Premio:** 5 estrellas la primera vez que se supera (`STAR_REWARDS.adventureExpert`); el plan de estrellas lo cuenta en «Aventuras».
-- **Validez:** `expertChallenges.test.ts` recorre todo el espacio de entradas de cada reto (salvo la receta, que se acota por los huevos): cada reto tiene solución, la de la misión no sirve, y los retos de «el mejor», «el mínimo» o «el máximo» aceptan solo el óptimo.
+- **Partidas al azar:** al aceptar el reto, el servidor elige una partida a partir de su hora y de la revisión; el navegador no la elige. Superada una partida, «Jugar con datos nuevos» (`replay`) reparte otra distinta y reinicia las pruebas. Las partidas salen de rejillas de parámetros filtradas: solución entera dentro de los rangos de entrada y, en los retos de «el mejor», un único óptimo. Torneo, feria y tómbola usan configuraciones encontradas por búsqueda exhaustiva. La partida 0 es la original, de modo que un reto empezado antes de las partidas conserva sus datos.
+- **Estado:** `learningMissions/{aventura}.expert` (opcional): lectura del informe, partida (`variant`), pruebas de la partida, último plan, respuesta, partida superada (`solvedAt`), partidas superadas (`rounds`) y primera vez superado (`completedAt`). La misión conserva su plan y su fecha.
+- **Acciones:** `{ kind: "inspect" | "dispatch" | "replay", expert: true }`. El servidor exige la misión completada, valida las entradas propias del reto, solo admite `replay` con la partida superada y rechaza `expert` con otro valor o en aventuras sin reto.
+- **Premio:** 5 estrellas la primera vez que se supera (`STAR_REWARDS.adventureExpert`); las partidas siguientes son de entrenamiento. El plan de estrellas lo cuenta en «Aventuras».
+- **Validez:** `expertChallenges.test.ts` comprueba cada partida de cada reto: su solución entera se acepta, la de la misión no sirve y cualquier plan recibe una respuesta concreta. Donde el espacio de entradas es pequeño, lo recorre entero: los retos de «el mejor», «el mínimo» o «el máximo» aceptan solo el óptimo. La receta se acota por los huevos.
 
 El servidor valida cada plan con el número de entradas y los rangos de su aventura y guarda el estado en `learningMissions/{aventura}`. El estado guardado de El apagón no cambia de forma. Tras la última clase relacionada, el resumen ofrece jugar la aventura; el informe familiar muestra planes probados y misiones completadas.
 

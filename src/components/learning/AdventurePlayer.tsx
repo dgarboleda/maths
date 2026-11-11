@@ -103,7 +103,7 @@ function AdventureGame({
     adventure.inputs.map((input) => input.label),
     (value, i) => change(i, value),
     // Con el reto experto en marcha, la calculadora escribe en su plan.
-    state.inspected && !mutation.blocked && !(state.expert?.inspected && !state.expert.completedAt),
+    state.inspected && !mutation.blocked && !state.expert?.inspected,
     true,
   );
   const nudge = (i: number, delta: number) => {

@@ -10,6 +10,7 @@ import type {
 } from "@/lib/learning/domain";
 import {
   dailyQuestions,
+  getAdventure,
   getLesson,
   initialMixedReview,
   mixedQuestions,
@@ -456,15 +457,29 @@ describe("Servicio educativo y reglas reales", () => {
           ...base, expectedRevision: revision, operationId: crypto.randomUUID(), action,
         });
       await expect(expert(2, { kind: "inspect", expert: "si" })).rejects.toMatchObject({ code: "functions/invalid-argument" });
+      await expect(expert(2, { kind: "replay" })).rejects.toMatchObject({ code: "functions/invalid-argument" });
       await expect(expert(2, { kind: "dispatch", allocation: [9, 8, 1], expert: true })).rejects.toMatchObject({ code: "functions/invalid-argument" });
-      expect((await expert(2, { kind: "inspect", expert: true })).stars).toBe(0);
-      const almost = await expert(3, { kind: "dispatch", allocation: [9, 9], expert: true });
+      const read = await expert(2, { kind: "inspect", expert: true });
+      expect(read.stars).toBe(0);
+      // El servidor elige la partida; su solución sale del catálogo.
+      const challenge = getAdventure("ascensor-carga")!.expert!;
+      const variant = read.progress.expert!.variant!;
+      const [boxes, trips] = challenge.solution(variant);
+      await expect(expert(3, { kind: "replay", expert: true })).rejects.toMatchObject({ code: "functions/failed-precondition" });
+      const almost = await expert(3, { kind: "dispatch", allocation: [boxes, trips + 1], expert: true });
       expect(almost.stars).toBe(0);
       expect(almost.progress.expert).toMatchObject({ attempts: 1, completedAt: null });
-      const solved = await expert(4, { kind: "dispatch", allocation: [9, 8], expert: true });
+      const solved = await expert(4, { kind: "dispatch", allocation: [boxes, trips], expert: true });
       expect(solved.stars).toBe(5);
       expect(solved.progress.expert!.completedAt).toBeGreaterThan(0);
-      expect((await expert(5, { kind: "dispatch", allocation: [9, 8], expert: true })).stars).toBe(0);
+      // Otra partida, con datos nuevos, no vuelve a premiar.
+      const again = await expert(5, { kind: "replay", expert: true });
+      expect(again.stars).toBe(0);
+      const next = again.progress.expert!.variant!;
+      expect(next).not.toBe(variant);
+      const replayed = await expert(6, { kind: "dispatch", allocation: challenge.solution(next), expert: true });
+      expect(replayed.stars).toBe(0);
+      expect(replayed.progress.expert).toMatchObject({ rounds: 2, completedAt: solved.progress.expert!.completedAt });
       // La misión conserva su plan y su fecha.
       expect(solved.progress.allocation).toEqual([11, 4]);
       expect(solved.progress.completedAt).toBe(result.progress.completedAt);

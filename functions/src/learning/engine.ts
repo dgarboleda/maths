@@ -394,6 +394,8 @@ function rangeError(inputs: AdventureInput[]) {
 export const EXPERT_INITIAL_FEEDBACK = "Lee el nuevo informe: la situación ha cambiado.";
 export const EXPERT_INSPECT_FEEDBACK =
   "Nuevo plan en marcha. Esta vez no hay pistas junto a los datos: decide, prueba y la ciudad te dirá qué falla.";
+export const EXPERT_REPLAY_FEEDBACK =
+  "Datos nuevos, mismo reto. Lee el informe con atención: los números han cambiado.";
 export function initialExpert(adventure: AdventureDef): ExpertState {
   return {
     inspected: false,
@@ -402,6 +404,29 @@ export function initialExpert(adventure: AdventureDef): ExpertState {
     feedback: EXPERT_INITIAL_FEEDBACK,
     completedAt: null,
   };
+}
+/** Partida actual del reto experto (los estados anteriores a las partidas
+ *  juegan la original). */
+export function expertVariant(expert: ExpertState | undefined): number {
+  return expert?.variant ?? 0;
+}
+/** La partida actual está superada. Antes de las partidas, el reto tenía
+ *  una sola, superada en `completedAt`. */
+export function expertRoundSolved(expert: ExpertState | undefined): boolean {
+  if (!expert) return false;
+  return expert.solvedAt !== undefined ? expert.solvedAt !== null : expert.completedAt !== null;
+}
+export function expertRounds(expert: ExpertState | undefined): number {
+  return expert?.rounds ?? (expert?.completedAt ? 1 : 0);
+}
+/** Partida al azar, distinta de la actual. Se deriva de la hora del servidor
+ *  y de la revisión: el navegador no la elige. */
+function pickVariant(count: number, seed: string, current?: number): number {
+  if (count <= 1) return 0;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  const next = (h >>> 0) % count;
+  return next === current ? (next + 1) % count : next;
 }
 export function applyAdventureAction(
   previous: AdventureState | undefined,
@@ -416,24 +441,47 @@ export function applyAdventureAction(
     updatedAt: now,
   };
   if (action.expert) {
-    if (!adventure.expert) throw new LearningError("Esta aventura no tiene reto experto.");
+    const challenge = adventure.expert;
+    if (!challenge) throw new LearningError("Esta aventura no tiene reto experto.");
     if (!state.completedAt)
       throw new LearningError("Completa primero la misión para desbloquear el reto experto.");
     const expert = { ...(state.expert ?? initialExpert(adventure)) };
     state.expert = expert;
+    const seed = `${id}:${now}:${state.revision}`;
     if (action.kind === "inspect") {
+      // La primera lectura reparte una partida al azar; releer no la cambia.
+      if (!expert.inspected) {
+        expert.variant = pickVariant(challenge.variants, seed);
+        expert.solvedAt = null;
+      }
       expert.inspected = true;
       expert.feedback = EXPERT_INSPECT_FEEDBACK;
       return state;
     }
     if (!expert.inspected) throw new LearningError("Lee primero el nuevo informe.");
+    if (action.kind === "replay") {
+      if (!expertRoundSolved(expert))
+        throw new LearningError("Supera esta partida antes de jugar con datos nuevos.");
+      expert.rounds = expertRounds(expert);
+      expert.variant = pickVariant(challenge.variants, seed, expertVariant(expert));
+      expert.attempts = 0;
+      expert.allocation = expertInputs(adventure).map((input) => input.start);
+      expert.feedback = EXPERT_REPLAY_FEEDBACK;
+      expert.solvedAt = null;
+      return state;
+    }
     const inputs = expertInputs(adventure);
     if (!validAllocation(adventure, action.allocation, inputs)) throw rangeError(inputs);
+    const solvedBefore = expertRoundSolved(expert);
     expert.allocation = [...action.allocation];
     expert.attempts++;
-    const result = adventure.expert.evaluate(expert.allocation);
+    const result = challenge.round(expertVariant(expert)).evaluate(expert.allocation);
     expert.feedback = result.feedback;
-    if (result.goals.every(Boolean)) expert.completedAt ??= now;
+    if (result.goals.every(Boolean) && !solvedBefore) {
+      expert.completedAt ??= now;
+      expert.solvedAt = now;
+      expert.rounds = expertRounds({ ...expert, completedAt: null }) + 1;
+    }
     return state;
   }
   if (action.kind === "inspect") {

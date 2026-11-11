@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Compass, Flame, Trophy } from "lucide-react";
 import { useLearningData } from "@/lib/learning/useLearningData";
-import { ADVENTURES, LEARNING_UNITS, missingAdventureLessons, STAR_REWARDS } from "@/lib/learning/core";
+import { ADVENTURES, expertRounds, LEARNING_UNITS, missingAdventureLessons, STAR_REWARDS } from "@/lib/learning/core";
 import {
   LearningLoading,
   LearningLoadError,
@@ -37,7 +37,7 @@ export function AdventureIndex({ childId }: { childId: string }) {
         respuesta escrita: decides un plan, lo pruebas y la ciudad te dice qué
         condición falta. Cada misión completada da {STAR_REWARDS.adventure} estrellas una vez y
         desbloquea su reto experto: la historia da un giro, sin pistas, por{" "}
-        {STAR_REWARDS.adventureExpert} estrellas más.
+        {STAR_REWARDS.adventureExpert} estrellas más. Cada partida del reto trae datos nuevos.
       </p>
       <ul className="grid gap-4 sm:grid-cols-2">
         {ADVENTURES.map((adventure) => {
@@ -81,7 +81,7 @@ export function AdventureIndex({ childId }: { childId: string }) {
                     <span className={`mt-3 flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${state.expert?.completedAt ? "border-amber-300/50 text-amber-100" : "border-fuchsia-300/50 text-fuchsia-100"}`}>
                       {state.expert?.completedAt ? <Trophy size={14} aria-hidden="true" /> : <Flame size={14} aria-hidden="true" />}
                       {state.expert?.completedAt
-                        ? "Reto experto superado"
+                        ? `Reto experto superado · ${expertRounds(state.expert)} ${expertRounds(state.expert) === 1 ? "partida" : "partidas"}`
                         : state.expert?.attempts
                           ? `Reto experto en curso · ${state.expert.attempts} ${state.expert.attempts === 1 ? "prueba" : "pruebas"}`
                           : "Reto experto disponible"}

@@ -139,6 +139,7 @@ function validAction(
     const inputs = a.expert ? expertInputs(adventure) : adventure.inputs;
     return (
       a.kind === "inspect" ||
+      (a.kind === "replay" && a.expert === true) ||
       (a.kind === "dispatch" && validAllocation(adventure, a.allocation, inputs))
     );
   }

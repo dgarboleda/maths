@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Circle, Flame, Minus, Plus, Trophy, Zap } from "lucide-react";
+import { CheckCircle2, Circle, Dices, Flame, Minus, Plus, Trophy, Zap } from "lucide-react";
 import {
   expertInputs,
+  expertRounds,
+  expertRoundSolved,
+  expertVariant,
   STAR_REWARDS,
   type AdventureDef,
   type AdventureState,
@@ -15,7 +18,9 @@ import { primaryButton, secondaryButton } from "./LearningShell";
 /**
  * Segunda fase de una aventura: se desbloquea al completar la misión. La
  * historia da un giro y el plan se prueba sin pistas junto a los datos; la
- * única ayuda es la respuesta de la ciudad a cada plan probado.
+ * única ayuda es la respuesta de la ciudad a cada plan probado. Cada partida
+ * trae datos elegidos al azar por el servidor: superada una, se puede jugar
+ * otra con datos nuevos.
  */
 export function ExpertChallenge({
   adventure,
@@ -29,11 +34,14 @@ export function ExpertChallenge({
   const challenge = adventure.expert;
   if (!challenge || !state.completedAt) return null;
   const expert = state.expert;
-  const done = Boolean(expert?.completedAt);
+  const solved = expertRoundSolved(expert);
+  const rounds = expertRounds(expert);
+  const variant = expertVariant(expert);
   return (
     <section
       aria-labelledby={`reto-${adventure.id}`}
-      className={`space-y-5 rounded-3xl border p-5 sm:p-6 ${done ? "border-amber-300/50 bg-amber-950/20" : "border-fuchsia-400/40 bg-gradient-to-b from-fuchsia-950/40 to-slate-950"}`}
+      data-variant={expert?.inspected ? variant : undefined}
+      className={`space-y-5 rounded-3xl border p-5 sm:p-6 ${solved ? "border-amber-300/50 bg-amber-950/20" : "border-fuchsia-400/40 bg-gradient-to-b from-fuchsia-950/40 to-slate-950"}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -41,19 +49,30 @@ export function ExpertChallenge({
             <Flame size={14} aria-hidden="true" /> Fase 2 · Reto experto
           </p>
           <h2 id={`reto-${adventure.id}`} className="mt-1 text-2xl font-bold text-white">
-            {done ? "Reto experto superado" : "La historia da un giro"}
+            {solved ? "Reto experto superado" : "La historia da un giro"}
           </h2>
         </div>
-        <p className="rounded-full border border-amber-300/40 px-3 py-1 text-sm font-bold text-amber-100">
-          {done ? `Superado en ${expert!.attempts} ${expert!.attempts === 1 ? "prueba" : "pruebas"}` : `+${STAR_REWARDS.adventureExpert} estrellas`}
-        </p>
+        <div className="flex flex-wrap gap-2 text-sm font-bold">
+          {solved && (
+            <p className="rounded-full border border-amber-300/40 px-3 py-1 text-amber-100">
+              Superado en {expert!.attempts} {expert!.attempts === 1 ? "prueba" : "pruebas"}
+            </p>
+          )}
+          {rounds > 0 ? (
+            <p className="rounded-full border border-slate-500 px-3 py-1 text-slate-200">
+              {rounds} {rounds === 1 ? "partida superada" : "partidas superadas"}
+            </p>
+          ) : (
+            <p className="rounded-full border border-amber-300/40 px-3 py-1 text-amber-100">+{STAR_REWARDS.adventureExpert} estrellas</p>
+          )}
+        </div>
       </div>
       {!expert?.inspected ? (
         <>
           <p className="max-w-3xl leading-relaxed text-slate-200">
             Cumpliste la misión, pero la ciudad no descansa. El reto experto cambia los datos y pide
             más: optimizar, razonar al revés o cumplir más condiciones a la vez. No hay pistas junto a
-            los datos.
+            los datos, y cada partida trae datos distintos.
           </p>
           <button
             type="button"
@@ -66,7 +85,7 @@ export function ExpertChallenge({
           </button>
         </>
       ) : (
-        <ExpertPlan key={adventure.id} adventure={adventure} state={state} mutation={mutation} />
+        <ExpertPlan key={`${variant}:${rounds}`} adventure={adventure} state={state} mutation={mutation} />
       )}
     </section>
   );
@@ -83,11 +102,13 @@ function ExpertPlan({
 }) {
   const challenge = adventure.expert!;
   const expert = state.expert!;
+  const round = challenge.round(expertVariant(expert));
   const inputs = expertInputs(adventure);
   const [values, setValues] = useState(() => expert.allocation.map(String));
   const [invalid, setInvalid] = useState<string | null>(null);
-  const tested = expert.attempts > 0 ? challenge.evaluate(expert.allocation) : null;
-  const done = Boolean(expert.completedAt);
+  const tested = expert.attempts > 0 ? round.evaluate(expert.allocation) : null;
+  const solved = expertRoundSolved(expert);
+  const firstRound = expertRounds(expert) <= 1;
   const change = (i: number, value: string) => {
     setInvalid(null);
     setValues((old) => old.map((v, at) => (at === i ? value : v)));
@@ -119,11 +140,9 @@ function ExpertPlan({
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,1fr)]">
       <div className="space-y-4">
-        <p className="rounded-2xl border border-fuchsia-300/30 bg-slate-950/70 p-4 leading-relaxed text-slate-100">
-          {challenge.brief}
-        </p>
+        <p className="rounded-2xl border border-fuchsia-300/30 bg-slate-950/70 p-4 leading-relaxed text-slate-100">{round.brief}</p>
         <ul aria-label="Objetivos del reto experto" className="space-y-2">
-          {challenge.goals.map((goal, i) => {
+          {round.goals.map((goal, i) => {
             const met = tested?.goals[i] ?? false;
             return (
               <li
@@ -137,12 +156,24 @@ function ExpertPlan({
             );
           })}
         </ul>
-        {done && (
-          <div className="space-y-2 rounded-2xl border border-amber-300/40 bg-amber-950/40 p-4 text-amber-50">
+        {solved && (
+          <div className="space-y-3 rounded-2xl border border-amber-300/40 bg-amber-950/40 p-4 text-amber-50">
             <p className="inline-flex items-center gap-2 font-bold">
-              <Trophy size={18} aria-hidden="true" /> {STAR_REWARDS.adventureExpert} estrellas, una sola vez
+              <Trophy size={18} aria-hidden="true" />
+              {firstRound
+                ? `${STAR_REWARDS.adventureExpert} estrellas, una sola vez`
+                : `Las ${STAR_REWARDS.adventureExpert} estrellas ya son tuyas: esta partida es para entrenar`}
             </p>
-            <p className="text-sm leading-relaxed">{challenge.success}</p>
+            <p className="text-sm leading-relaxed">{round.success}</p>
+            <button
+              type="button"
+              disabled={mutation.blocked}
+              className={secondaryButton}
+              onClick={() => void mutation.run(adventure.id, state.revision, { kind: "replay", expert: true })}
+            >
+              <Dices size={17} aria-hidden="true" />
+              Jugar con datos nuevos
+            </button>
           </div>
         )}
       </div>
@@ -156,7 +187,7 @@ function ExpertPlan({
         <div
           role="status"
           aria-live="polite"
-          className={`rounded-xl border p-4 text-sm leading-relaxed ${done ? "border-amber-300/40 bg-amber-950/50 text-amber-50" : "border-slate-600 bg-slate-950 text-slate-200"}`}
+          className={`rounded-xl border p-4 text-sm leading-relaxed ${solved ? "border-amber-300/40 bg-amber-950/50 text-amber-50" : "border-slate-600 bg-slate-950 text-slate-200"}`}
         >
           {expert.feedback}
         </div>

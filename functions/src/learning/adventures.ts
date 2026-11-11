@@ -43,17 +43,27 @@ export interface AdventureDef {
   expert?: ExpertChallenge;
 }
 
-/** Reto experto: un giro en la historia que cambia los datos. Exige
- *  optimizar, razonar al revés o combinar más condiciones, y no muestra
- *  pistas por entrada: solo responde al plan probado. */
-export interface ExpertChallenge {
-  /** El giro de la historia, con todos los datos nuevos. */
+/** Una partida del reto experto: el giro de la historia con unos datos
+ *  concretos, sus objetivos y cómo responde a cada plan. */
+export interface ExpertRound {
+  /** El giro de la historia, con todos los datos de esta partida. */
   brief: string;
-  /** Entradas propias; si faltan, se reutilizan las de la misión. */
-  inputs?: AdventureInput[];
   goals: string[];
   evaluate(values: number[]): AdventureResult;
   success: string;
+}
+
+/** Reto experto: una familia de partidas con los mismos objetivos y datos
+ *  distintos, para poder volver a jugarlo. Exige optimizar, razonar al
+ *  revés o combinar más condiciones, y no muestra pistas por entrada. */
+export interface ExpertChallenge {
+  /** Entradas propias (iguales en todas las partidas); si faltan, las de la misión. */
+  inputs?: AdventureInput[];
+  /** Número de partidas distintas. La 0 es la original. */
+  variants: number;
+  round(variant: number): ExpertRound;
+  /** Un plan que supera la partida (para las pruebas y el resumen). */
+  solution(variant: number): number[];
 }
 
 export function expertInputs(adventure: Pick<AdventureDef, "inputs" | "expert">): AdventureInput[] {
