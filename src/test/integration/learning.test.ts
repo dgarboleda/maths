@@ -370,7 +370,7 @@ describe("Servicio educativo y reglas reales", () => {
         (
           await fs.getDoc(fs.doc(family.db, ...path, "starBalance", "total"))
         ).data()?.total,
-      ).toBe(10 + 2 * STAR_REWARDS.lesson);
+      ).toBe(ADVENTURE_STARS.basica + 2 * STAR_REWARDS.lesson);
       await fs.updateDoc(family.profile, { deleting: true });
       await expect(
         call(family.app, "recordLearningAction", {
