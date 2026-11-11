@@ -16,6 +16,8 @@ export const STAR_REWARDS = {
   mixed: 5,
   /** Aventura completada (una vez por aventura). */
   adventure: 10,
+  /** Reto experto de una aventura superado (una vez por aventura). */
+  adventureExpert: 5,
   /** Primera sesión del repaso diario terminada cada día. */
   daily: 2,
   /** Extra al alcanzar una racha de 7, 14 o 30 días. */

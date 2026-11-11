@@ -449,6 +449,25 @@ describe("Servicio educativo y reglas reales", () => {
         ),
       );
       expect(saved.data()?.allocation).toEqual([11, 4]);
+
+      // Reto experto: acciones mal formadas se rechazan; superarlo premia una vez.
+      const expert = (revision: number, action: Record<string, unknown>) =>
+        call<{ progress: AdventureState; stars: number }>(family.app, "recordLearningAction", {
+          ...base, expectedRevision: revision, operationId: crypto.randomUUID(), action,
+        });
+      await expect(expert(2, { kind: "inspect", expert: "si" })).rejects.toMatchObject({ code: "functions/invalid-argument" });
+      await expect(expert(2, { kind: "dispatch", allocation: [9, 8, 1], expert: true })).rejects.toMatchObject({ code: "functions/invalid-argument" });
+      expect((await expert(2, { kind: "inspect", expert: true })).stars).toBe(0);
+      const almost = await expert(3, { kind: "dispatch", allocation: [9, 9], expert: true });
+      expect(almost.stars).toBe(0);
+      expect(almost.progress.expert).toMatchObject({ attempts: 1, completedAt: null });
+      const solved = await expert(4, { kind: "dispatch", allocation: [9, 8], expert: true });
+      expect(solved.stars).toBe(5);
+      expect(solved.progress.expert!.completedAt).toBeGreaterThan(0);
+      expect((await expert(5, { kind: "dispatch", allocation: [9, 8], expert: true })).stars).toBe(0);
+      // La misión conserva su plan y su fecha.
+      expect(solved.progress.allocation).toEqual([11, 4]);
+      expect(solved.progress.completedAt).toBe(result.progress.completedAt);
     } finally {
       await deleteApp(family.app);
     }

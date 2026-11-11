@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Compass } from "lucide-react";
+import { ArrowRight, CheckCircle2, Compass, Flame, Trophy } from "lucide-react";
 import { useLearningData } from "@/lib/learning/useLearningData";
-import { ADVENTURES, LEARNING_UNITS, missingAdventureLessons } from "@/lib/learning/core";
+import { ADVENTURES, LEARNING_UNITS, missingAdventureLessons, STAR_REWARDS } from "@/lib/learning/core";
 import {
   LearningLoading,
   LearningLoadError,
@@ -23,16 +23,21 @@ export function AdventureIndex({ childId }: { childId: string }) {
   const done = ADVENTURES.filter(
     (adventure) => data.adventures[adventure.id]?.completedAt,
   ).length;
+  const experts = ADVENTURES.filter(
+    (adventure) => data.adventures[adventure.id]?.expert?.completedAt,
+  ).length;
   return (
     <LearningShell
       childId={childId}
       title="Aventuras"
-      eyebrow={`${done} de ${ADVENTURES.length} misiones completadas`}
+      eyebrow={`${done} de ${ADVENTURES.length} misiones completadas · ${experts} retos expertos`}
     >
       <p className="mb-6 max-w-3xl leading-relaxed text-slate-300">
         Explora las misiones de cada unidad en Ciudad Central. No hay una única
         respuesta escrita: decides un plan, lo pruebas y la ciudad te dice qué
-        condición falta. Cada misión completada da 10 estrellas una vez.
+        condición falta. Cada misión completada da {STAR_REWARDS.adventure} estrellas una vez y
+        desbloquea su reto experto: la historia da un giro, sin pistas, por{" "}
+        {STAR_REWARDS.adventureExpert} estrellas más.
       </p>
       <ul className="grid gap-4 sm:grid-cols-2">
         {ADVENTURES.map((adventure) => {
@@ -72,6 +77,16 @@ export function AdventureIndex({ childId }: { childId: string }) {
                         : "Empezar misión"}
                     <ArrowRight size={16} aria-hidden="true" />
                   </span>
+                  {state?.completedAt && !missing.length && (
+                    <span className={`mt-3 flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${state.expert?.completedAt ? "border-amber-300/50 text-amber-100" : "border-fuchsia-300/50 text-fuchsia-100"}`}>
+                      {state.expert?.completedAt ? <Trophy size={14} aria-hidden="true" /> : <Flame size={14} aria-hidden="true" />}
+                      {state.expert?.completedAt
+                        ? "Reto experto superado"
+                        : state.expert?.attempts
+                          ? `Reto experto en curso · ${state.expert.attempts} ${state.expert.attempts === 1 ? "prueba" : "pruebas"}`
+                          : "Reto experto disponible"}
+                    </span>
+                  )}
                 </div>
               </Link>
             </li>

@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { AdventureVisual } from "./AdventureVisual";
 import { AdventureRequirements } from "./AdventureRequirements";
+import { ExpertChallenge } from "./ExpertChallenge";
 import { OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
 import { useState } from "react";
-import { CheckCircle2, Circle, Minus, Plus, Search, Zap } from "lucide-react";
+import { CheckCircle2, Circle, Lightbulb, Minus, Plus, Search, Zap } from "lucide-react";
 import {
   useLearningAction,
   useLearningData,
@@ -88,6 +89,8 @@ function AdventureGame({
 }) {
   const [values, setValues] = useState(() => state.allocation.map(String));
   const [invalid, setInvalid] = useState<string | null>(null);
+  // Las pistas de cada dato se abren a petición: primero se intenta.
+  const [clues, setClues] = useState<Record<string, boolean>>({});
   const tested =
     state.attempts > 0 ? adventure.evaluate(state.allocation) : null;
   const success = Boolean(state.completedAt) && tested?.goals.every(Boolean);
@@ -99,7 +102,8 @@ function AdventureGame({
   useCalculatorTarget(
     adventure.inputs.map((input) => input.label),
     (value, i) => change(i, value),
-    state.inspected && !mutation.blocked,
+    // Con el reto experto en marcha, la calculadora escribe en su plan.
+    state.inspected && !mutation.blocked && !(state.expert?.inspected && !state.expert.completedAt),
     true,
   );
   const nudge = (i: number, delta: number) => {
@@ -214,7 +218,18 @@ function AdventureGame({
                       {input.label}
                       {input.unit ? ` (${input.unit})` : ""}
                     </label>
-                    <p className="mt-1 text-xs text-slate-400">{input.clue}</p>
+                    {clues[input.id] ? (
+                      <p className="mt-1 text-xs text-cyan-100">{input.clue}</p>
+                    ) : (
+                      <button
+                        type="button"
+                        className="mt-1 inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-slate-300 underline"
+                        onClick={() => setClues((old) => ({ ...old, [input.id]: true }))}
+                      >
+                        <Lightbulb size={14} aria-hidden="true" /> Ver pista
+                        <span className="sr-only"> de {input.label}</span>
+                      </button>
+                    )}
                     <div className="mt-2 flex items-center gap-2">
                       <button
                         type="button"
@@ -260,8 +275,8 @@ function AdventureGame({
                 Probar el plan
               </button>
               <p className="text-xs text-slate-400">
-                Cada prueba se guarda. Puedes experimentar: los objetivos
-                reflejan el último plan probado.
+                Cada prueba se guarda. Intenta primero sin pistas: los
+                objetivos reflejan el último plan probado.
               </p>
             </>
           )}
@@ -274,14 +289,16 @@ function AdventureGame({
           </h2>
           <p className="text-slate-200">{adventure.success}</p>
           <p className="text-sm text-emerald-200">
+            {state.attempts <= 3 ? `¡Lo lograste en ${state.attempts} ${state.attempts === 1 ? "prueba" : "pruebas"}! ` : ""}
             10 estrellas una sola vez. Aprender con ayuda conserva la misma
             recompensa.
           </p>
-          <Link href={`/jugar/${childId}/aventura`} className={primaryButton}>
+          <Link href={`/jugar/${childId}/aventura`} className={secondaryButton}>
             Elegir otra aventura
           </Link>
         </section>
       )}
+      <ExpertChallenge adventure={adventure} state={state} mutation={mutation} />
       <section className="space-y-3 rounded-2xl border border-slate-700 bg-slate-900 p-5">
         <h2 className="font-bold">La matemática detrás de esta misión</h2>
         <div className="flex flex-wrap gap-3">

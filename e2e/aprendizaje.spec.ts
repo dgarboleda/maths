@@ -242,6 +242,10 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
   await page.getByRole("link", { name: /El jardín de baldosas/ }).click();
   await page.getByRole("button", { name: "Investigar la situación" }).click();
   await expect(page.getByRole("status").filter({ hasText: /al menos 110 m²/ })).toBeVisible();
+  // Las pistas de cada dato se abren a petición.
+  await expect(page.getByText("Cuenta un lado, los otros tres y no olvides las 4 esquinas: 4n + 4.")).toHaveCount(0);
+  await page.getByRole("button", { name: "Ver pista de Baldosas" }).click();
+  await expect(page.getByText("Cuenta un lado, los otros tres y no olvides las 4 esquinas: 4n + 4.")).toBeVisible();
   const plan = async (lado: string, baldosas: string) => {
     await page.getByLabel("Lado del jardín (m)").fill(lado);
     await page.getByLabel("Baldosas", { exact: true }).fill(baldosas);
@@ -255,8 +259,35 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
   await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
   const results = await new AxeBuilder({ page }).include("main").analyze();
   expect(results.violations).toEqual([]);
+
+  // Fase 2: el reto experto cambia los datos y no muestra pistas.
+  const expert = page.getByRole("region", { name: "La historia da un giro" });
+  await expert.getByRole("button", { name: "Aceptar el reto" }).click();
+  await expect(expert.getByText(/borde doble/)).toBeVisible();
+  await expect(expert.getByRole("button", { name: /Ver pista/ })).toHaveCount(0);
+  const expertPlan = async (lado: string, baldosas: string) => {
+    await expert.getByLabel("Lado del jardín (m)").fill(lado);
+    await expert.getByLabel("Baldosas", { exact: true }).fill(baldosas);
+    await expert.getByRole("button", { name: "Probar el plan experto" }).click();
+  };
+  // La solución de la misión ya no sirve.
+  await expertPlan("11", "48");
+  await expect(expert.getByRole("status")).toHaveText("Con lado 11, el césped mide 121 m²: no llega a 150.");
+  await expertPlan("13", "56");
+  await expect(expert.getByRole("status")).toContainText("forman un solo anillo");
+  // Cumple, pero no es el óptimo.
+  await expertPlan("14", "128");
+  await expect(expert.getByRole("status")).toContainText("gastaría menos baldosas");
+  await expertPlan("13", "120");
+  const superado = page.getByRole("region", { name: "Reto experto superado" });
+  await expect(superado.getByText("Superado en 4 pruebas")).toBeVisible();
+  await page.reload();
+  await expect(superado.getByText("Superado en 4 pruebas")).toBeVisible();
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+
   await page.getByRole("link", { name: "Elegir otra aventura" }).click();
-  await expect(page.getByText("1 de 19 misiones completadas")).toBeVisible();
+  await expect(page.getByText("1 de 19 misiones completadas · 1 retos expertos")).toBeVisible();
+  await expect(page.getByText("Reto experto superado")).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

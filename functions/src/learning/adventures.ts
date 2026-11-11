@@ -1,3 +1,4 @@
+import { EXPERT_CHALLENGES } from "./expertChallenges";
 import { MORE_ADVENTURES } from "./moreAdventures";
 import type { LearningProgress, UnitId } from "./types";
 
@@ -38,6 +39,25 @@ export interface AdventureDef {
   success: string;
   /** Todas las clases que deben completarse antes de jugar. */
   lessonIds: string[];
+  /** Segunda fase, más difícil, que se desbloquea al completar la misión. */
+  expert?: ExpertChallenge;
+}
+
+/** Reto experto: un giro en la historia que cambia los datos. Exige
+ *  optimizar, razonar al revés o combinar más condiciones, y no muestra
+ *  pistas por entrada: solo responde al plan probado. */
+export interface ExpertChallenge {
+  /** El giro de la historia, con todos los datos nuevos. */
+  brief: string;
+  /** Entradas propias; si faltan, se reutilizan las de la misión. */
+  inputs?: AdventureInput[];
+  goals: string[];
+  evaluate(values: number[]): AdventureResult;
+  success: string;
+}
+
+export function expertInputs(adventure: Pick<AdventureDef, "inputs" | "expert">): AdventureInput[] {
+  return adventure.expert?.inputs ?? adventure.inputs;
 }
 
 /** La aplicación terminada por sí sola no sustituye la explicación y los ejemplos. */
@@ -405,7 +425,9 @@ const torneo: AdventureDef = {
   lessonIds: ["media-mediana-moda"],
 };
 
-export const ADVENTURES: AdventureDef[] = [apagon, camara, receta, ascensor, baldosas, huerto, torneo, ...MORE_ADVENTURES];
+export const ADVENTURES: AdventureDef[] = [apagon, camara, receta, ascensor, baldosas, huerto, torneo, ...MORE_ADVENTURES].map(
+  (adventure) => ({ ...adventure, expert: EXPERT_CHALLENGES[adventure.id] }),
+);
 
 export function getAdventure(id: string) {
   return ADVENTURES.find((adventure) => adventure.id === id);
