@@ -225,6 +225,29 @@ export function isAnswerCorrect(question: Question, response: string): boolean {
 export function correctResponse(question: Question): string {
   return question.column?.op === "divide" ? divisionAnswerText(question.column) : String(question.answer);
 }
+/** Lo que respondió el estudiante, legible para revisarlo: el texto de la
+ *  opción elegida, el cociente de la galera o el número escrito. `null` si
+ *  no se puede mostrar (sin respuesta, o un procedimiento sin cociente). */
+export function responseText(question: Question, response: string | null | undefined): string | null {
+  const clean = response?.trim();
+  if (!clean) return null;
+  if (question.format === "choice") return question.choices?.find((item) => item.id === clean)?.label ?? null;
+  if (question.column?.op === "divide") {
+    const work = checkDivisionWork(question.column, clean) ?? checkOpenDivision(question.column, clean);
+    if (work) return `una galera con cociente ${fmt(work.quotient)}`;
+    return clean;
+  }
+  if (question.column && (isFactorSpec(question.column) || isRuffiniSpec(question.column))) return null;
+  return question.unit ? `${clean} ${question.unit}` : clean;
+}
+/** La respuesta correcta, legible: el texto de la opción correcta o el
+ *  número (con su unidad). */
+export function correctText(question: Question): string {
+  if (question.format === "choice")
+    return question.choices?.find((item) => item.id === question.answer)?.label ?? String(question.answer);
+  const text = correctResponse(question);
+  return question.unit ? `${text} ${question.unit}` : text;
+}
 /** Valor numérico con el que se buscan los errores previstos. */
 export function responseValue(question: Question, response: string): number | null {
   if (question.column?.op === "divide") return divisionResponseValue(question.column, response);

@@ -196,7 +196,15 @@ export const FRACTION_LESSONS: Lesson[] = [
             "El denominador cuenta las partes iguales.",
             `El denominador es ${den}.`,
           ],
-          { step: true },
+          {
+            step: true,
+            errors: [
+              {
+                value: 1 / den,
+                feedback: `Escribiste la fracción completa, 1/${den}, y la idea es correcta. Pero el hueco pide solo el número que va debajo de la raya: ${den}.`,
+              },
+            ],
+          },
         ), { kind: "fraction-bar", bars: [{ parts: den, shaded: 1 }] }),
         n(
           "q3",

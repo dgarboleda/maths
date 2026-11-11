@@ -37,6 +37,7 @@ import { hasHelpContent, lessonScreenHelp } from "@/lib/learning/screenHelp";
 import { relatedFormula } from "@/lib/learning/formulas";
 import { useLearningHelpOpen } from "./LearningHelp";
 import { AnswerResult } from "./AnswerResult";
+import { WrongAnswerDetail } from "./WrongAnswerDetail";
 import {
   LearningLoading,
   LearningLoadError,
@@ -942,6 +943,7 @@ function LessonSummary({
                 >
                   <p className="font-bold"><MathText text={q.prompt} /></p>
                   <AnswerResult evidence={e} />
+                  <WrongAnswerDetail question={q} evidence={e} />
                   <p className="mt-2 leading-relaxed text-slate-200">
                     <MathText text={q.explanation} />
                   </p>
