@@ -6,6 +6,7 @@ import {
   expertRounds,
   expertRoundSolved,
   expertVariant,
+  getExpertChallenge,
   STAR_REWARDS,
   type AdventureDef,
   type AdventureState,
@@ -44,7 +45,7 @@ const SEVERAL = new Set(["camara-fria", "ascensor-carga", "torneo-lanzamientos"]
 
 /** Todos los planes posibles de un reto. */
 function* plans(adventure: AdventureDef): Generator<number[]> {
-  const inputs = expertInputs(adventure);
+  const inputs = expertInputs(adventure, getExpertChallenge(adventure.id));
   const values = inputs.map((input) => input.min);
   while (true) {
     yield [...values];
@@ -57,15 +58,15 @@ function* plans(adventure: AdventureDef): Generator<number[]> {
     values[i]++;
   }
 }
-const space = (adventure: AdventureDef) => expertInputs(adventure).reduce((total, input) => total * (input.max - input.min + 1), 1);
+const space = (adventure: AdventureDef) => expertInputs(adventure, getExpertChallenge(adventure.id)).reduce((total, input) => total * (input.max - input.min + 1), 1);
 const clean = (text: string) => !/undefined|NaN|null|Infinity/.test(text);
 
 describe("retos expertos", () => {
   test("todas las aventuras tienen un reto con varias partidas distintas", () => {
-    expect(ADVENTURES.filter((adventure) => !adventure.expert).map((a) => a.id)).toEqual([]);
+    expect(ADVENTURES.filter((adventure) => !getExpertChallenge(adventure.id)).map((a) => a.id)).toEqual([]);
     expect(Object.keys(SOLVED).sort()).toEqual(ADVENTURES.map((a) => a.id).sort());
     for (const adventure of ADVENTURES) {
-      const challenge = adventure.expert!;
+      const challenge = getExpertChallenge(adventure.id)!;
       expect(challenge.variants, adventure.id).toBeGreaterThanOrEqual(5);
       expect(challenge.variants, adventure.id).toBeLessThanOrEqual(12);
       const briefs = new Set(Array.from({ length: challenge.variants }, (_, v) => challenge.round(v).brief));
@@ -74,14 +75,14 @@ describe("retos expertos", () => {
   });
 
   test("la partida original conserva los datos del reto anterior a las partidas", () => {
-    for (const adventure of ADVENTURES) expect(adventure.expert!.solution(0), adventure.id).toEqual(SOLVED[adventure.id].expert);
+    for (const adventure of ADVENTURES) expect(getExpertChallenge(adventure.id)!.solution(0), adventure.id).toEqual(SOLVED[adventure.id].expert);
   });
 
   for (const adventure of ADVENTURES) {
-    const challenge = adventure.expert!;
+    const challenge = getExpertChallenge(adventure.id)!;
     const { mission } = SOLVED[adventure.id];
     test(`${adventure.id}: cada partida tiene solución, distinta de la misión, y responde a cualquier plan`, () => {
-      const inputs = expertInputs(adventure);
+      const inputs = expertInputs(adventure, challenge);
       for (let v = 0; v < challenge.variants; v++) {
         const round = challenge.round(v), solution = challenge.solution(v);
         expect(clean(round.brief) && clean(round.success) && round.goals.every(clean), `${adventure.id} #${v}`).toBe(true);
@@ -123,7 +124,7 @@ describe("retos expertos", () => {
   }
 
   test("receta: en cada partida solo sirve usar todos los huevos", () => {
-    const recipe = ADVENTURES.find((a) => a.id === "receta-festival")!.expert!;
+    const recipe = getExpertChallenge("receta-festival")!;
     for (let v = 0; v < recipe.variants; v++) {
       const [, , eggs, ] = recipe.solution(v);
       const bag = Number(/bolsas de harina de (\d+) g/.exec(recipe.round(v).brief)![1]);
@@ -151,22 +152,22 @@ describe("retos expertos", () => {
 
 describe("motor del reto experto", () => {
   const id = "ascensor-carga";
-  const challenge = ADVENTURES.find((a) => a.id === id)!.expert!;
+  const challenge = getExpertChallenge(id)!;
   const completed = (): AdventureState =>
     applyAdventureAction(applyAdventureAction(undefined, { kind: "inspect" }, NOW, id), { kind: "dispatch", allocation: [11, 4] }, NOW, id);
-  const accepted = (now = NOW) => applyAdventureAction(completed(), { kind: "inspect", expert: true }, now, id);
+  const accepted = (now = NOW) => applyAdventureAction(completed(), { kind: "inspect", expert: true }, now, id, getExpertChallenge(id));
 
   test("se desbloquea al completar la misión, exige leer el informe y reparte una partida", () => {
     const fresh = applyAdventureAction(undefined, { kind: "inspect" }, NOW, id);
-    expect(() => applyAdventureAction(fresh, { kind: "inspect", expert: true }, NOW, id)).toThrow(/Completa primero la misión/);
+    expect(() => applyAdventureAction(fresh, { kind: "inspect", expert: true }, NOW, id, getExpertChallenge(id))).toThrow(/Completa primero la misión/);
     const done = completed();
-    expect(() => applyAdventureAction(done, { kind: "dispatch", allocation: [9, 8], expert: true }, NOW, id)).toThrow(/Lee primero el nuevo informe/);
+    expect(() => applyAdventureAction(done, { kind: "dispatch", allocation: [9, 8], expert: true }, NOW, id, getExpertChallenge(id))).toThrow(/Lee primero el nuevo informe/);
     const read = accepted();
     expect(read.expert).toMatchObject({ inspected: true, attempts: 0, completedAt: null, solvedAt: null });
     expect(read.expert!.variant).toBeGreaterThanOrEqual(0);
     expect(read.expert!.variant).toBeLessThan(challenge.variants);
     // Releer no cambia la partida.
-    expect(applyAdventureAction(read, { kind: "inspect", expert: true }, NOW + 5, id).expert!.variant).toBe(read.expert!.variant);
+    expect(applyAdventureAction(read, { kind: "inspect", expert: true }, NOW + 5, id, getExpertChallenge(id)).expert!.variant).toBe(read.expert!.variant);
     expect(read.completedAt).toBe(done.completedAt);
     expect(read.allocation).toEqual([11, 4]);
     // Distintas horas reparten partidas distintas.
@@ -176,21 +177,21 @@ describe("motor del reto experto", () => {
   test("superar una partida se registra una vez; otra partida trae datos nuevos sin repetir premio", () => {
     let state = accepted();
     const first = expertVariant(state.expert);
-    expect(() => applyAdventureAction(state, { kind: "replay", expert: true }, NOW, id)).toThrow(/Supera esta partida/);
-    state = applyAdventureAction(state, { kind: "dispatch", allocation: [0, 0], expert: true }, NOW + 1, id);
+    expect(() => applyAdventureAction(state, { kind: "replay", expert: true }, NOW, id, getExpertChallenge(id))).toThrow(/Supera esta partida/);
+    state = applyAdventureAction(state, { kind: "dispatch", allocation: [0, 0], expert: true }, NOW + 1, id, getExpertChallenge(id));
     expect(state.expert).toMatchObject({ attempts: 1, completedAt: null });
-    state = applyAdventureAction(state, { kind: "dispatch", allocation: challenge.solution(first), expert: true }, NOW + 2, id);
+    state = applyAdventureAction(state, { kind: "dispatch", allocation: challenge.solution(first), expert: true }, NOW + 2, id, getExpertChallenge(id));
     expect(state.expert).toMatchObject({ attempts: 2, completedAt: NOW + 2, solvedAt: NOW + 2, rounds: 1 });
     // Probar de nuevo la misma partida no cuenta otra vez.
-    state = applyAdventureAction(state, { kind: "dispatch", allocation: challenge.solution(first), expert: true }, NOW + 3, id);
+    state = applyAdventureAction(state, { kind: "dispatch", allocation: challenge.solution(first), expert: true }, NOW + 3, id, getExpertChallenge(id));
     expect(state.expert).toMatchObject({ attempts: 3, completedAt: NOW + 2, rounds: 1 });
 
-    state = applyAdventureAction(state, { kind: "replay", expert: true }, NOW + 4, id);
+    state = applyAdventureAction(state, { kind: "replay", expert: true }, NOW + 4, id, getExpertChallenge(id));
     const second = expertVariant(state.expert);
     expect(second).not.toBe(first);
     expect(state.expert).toMatchObject({ attempts: 0, solvedAt: null, completedAt: NOW + 2, rounds: 1, allocation: [0, 0] });
     expect(expertRoundSolved(state.expert)).toBe(false);
-    state = applyAdventureAction(state, { kind: "dispatch", allocation: challenge.solution(second), expert: true }, NOW + 5, id);
+    state = applyAdventureAction(state, { kind: "dispatch", allocation: challenge.solution(second), expert: true }, NOW + 5, id, getExpertChallenge(id));
     expect(state.expert).toMatchObject({ completedAt: NOW + 2, solvedAt: NOW + 5, rounds: 2 });
     expect(STAR_REWARDS.adventureExpert).toBe(5);
   });
@@ -201,13 +202,13 @@ describe("motor del reto experto", () => {
       expert: { inspected: true, attempts: 1, allocation: [9, 9], feedback: "", completedAt: null },
     };
     expect(expertVariant(legacy.expert)).toBe(0);
-    const solved = applyAdventureAction(legacy, { kind: "dispatch", allocation: [9, 8], expert: true }, NOW, id);
+    const solved = applyAdventureAction(legacy, { kind: "dispatch", allocation: [9, 8], expert: true }, NOW, id, getExpertChallenge(id));
     expect(solved.expert).toMatchObject({ completedAt: NOW, solvedAt: NOW, rounds: 1 });
     // Superado antes de las partidas: cuenta como una partida y permite otra.
     const old = { ...legacy.expert!, completedAt: NOW };
     expect(expertRoundSolved(old)).toBe(true);
     expect(expertRounds(old)).toBe(1);
-    const next = applyAdventureAction({ ...legacy, expert: old }, { kind: "replay", expert: true }, NOW + 1, id);
+    const next = applyAdventureAction({ ...legacy, expert: old }, { kind: "replay", expert: true }, NOW + 1, id, getExpertChallenge(id));
     expect(next.expert).toMatchObject({ rounds: 1, solvedAt: null, completedAt: NOW });
     expect(expertVariant(next.expert)).not.toBe(0);
   });
@@ -215,11 +216,11 @@ describe("motor del reto experto", () => {
   test("valida las entradas propias del reto", () => {
     const rocket = "trayectoria-cohete";
     let state = applyAdventureAction(applyAdventureAction(undefined, { kind: "inspect" }, NOW, rocket), { kind: "dispatch", allocation: [4, 16] }, NOW, rocket);
-    state = applyAdventureAction(state, { kind: "inspect", expert: true }, NOW, rocket);
+    state = applyAdventureAction(state, { kind: "inspect", expert: true }, NOW, rocket, getExpertChallenge(rocket));
     expect(state.expert!.allocation).toEqual([0, 0, 0]);
-    expect(() => applyAdventureAction(state, { kind: "dispatch", allocation: [25, 2], expert: true }, NOW, rocket)).toThrow(/número entero/);
-    expect(() => applyAdventureAction(state, { kind: "dispatch", allocation: [25, 2, 13], expert: true }, NOW, rocket)).toThrow(/número entero/);
-    const solution = ADVENTURES.find((a) => a.id === rocket)!.expert!.solution(expertVariant(state.expert));
-    expect(applyAdventureAction(state, { kind: "dispatch", allocation: solution, expert: true }, NOW, rocket).expert!.completedAt).toBe(NOW);
+    expect(() => applyAdventureAction(state, { kind: "dispatch", allocation: [25, 2], expert: true }, NOW, rocket, getExpertChallenge(rocket))).toThrow(/número entero/);
+    expect(() => applyAdventureAction(state, { kind: "dispatch", allocation: [25, 2, 13], expert: true }, NOW, rocket, getExpertChallenge(rocket))).toThrow(/número entero/);
+    const solution = getExpertChallenge(rocket)!.solution(expertVariant(state.expert));
+    expect(applyAdventureAction(state, { kind: "dispatch", allocation: solution, expert: true }, NOW, rocket, getExpertChallenge(rocket)).expert!.completedAt).toBe(NOW);
   });
 });

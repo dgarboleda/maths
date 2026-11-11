@@ -1,4 +1,3 @@
-import { EXPERT_CHALLENGES } from "./expertChallenges";
 import { MORE_ADVENTURES } from "./moreAdventures";
 import type { LearningProgress, UnitId } from "./types";
 
@@ -39,8 +38,6 @@ export interface AdventureDef {
   success: string;
   /** Todas las clases que deben completarse antes de jugar. */
   lessonIds: string[];
-  /** Segunda fase, más difícil, que se desbloquea al completar la misión. */
-  expert?: ExpertChallenge;
 }
 
 /** Una partida del reto experto: el giro de la historia con unos datos
@@ -66,8 +63,9 @@ export interface ExpertChallenge {
   solution(variant: number): number[];
 }
 
-export function expertInputs(adventure: Pick<AdventureDef, "inputs" | "expert">): AdventureInput[] {
-  return adventure.expert?.inputs ?? adventure.inputs;
+/** Entradas del reto experto: las suyas o, si no tiene, las de la misión. */
+export function expertInputs(adventure: Pick<AdventureDef, "inputs">, challenge: Pick<ExpertChallenge, "inputs"> | undefined): AdventureInput[] {
+  return challenge?.inputs ?? adventure.inputs;
 }
 
 /** La aplicación terminada por sí sola no sustituye la explicación y los ejemplos. */
@@ -435,9 +433,9 @@ const torneo: AdventureDef = {
   lessonIds: ["media-mediana-moda"],
 };
 
-export const ADVENTURES: AdventureDef[] = [apagon, camara, receta, ascensor, baldosas, huerto, torneo, ...MORE_ADVENTURES].map(
-  (adventure) => ({ ...adventure, expert: EXPERT_CHALLENGES[adventure.id] }),
-);
+// Los retos expertos viven en `expertChallenges.ts` y no se importan aquí:
+// este catálogo llega a la página de cada clase, que no los necesita.
+export const ADVENTURES: AdventureDef[] = [apagon, camara, receta, ascensor, baldosas, huerto, torneo, ...MORE_ADVENTURES];
 
 export function getAdventure(id: string) {
   return ADVENTURES.find((adventure) => adventure.id === id);

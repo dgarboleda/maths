@@ -4,6 +4,7 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { assertChildSessionCurrent } from "./childSession";
 import { expertInputs, getAdventure, missingAdventureLessons, type AdventureDef } from "./learning/adventures";
+import { getExpertChallenge } from "./learning/expertChallenges";
 import { getLesson } from "./learning/catalog";
 import {
   applyAdventureAction,
@@ -135,8 +136,9 @@ function validAction(
   const a = action as Record<string, unknown>;
   if (adventure) {
     // `expert` solo puede ser true, y solo en aventuras con reto experto.
-    if (a.expert !== undefined && (a.expert !== true || !adventure.expert)) return false;
-    const inputs = a.expert ? expertInputs(adventure) : adventure.inputs;
+    const challenge = getExpertChallenge(adventure.id);
+    if (a.expert !== undefined && (a.expert !== true || !challenge)) return false;
+    const inputs = a.expert ? expertInputs(adventure, challenge) : adventure.inputs;
     return (
       a.kind === "inspect" ||
       (a.kind === "replay" && a.expert === true) ||
@@ -336,6 +338,7 @@ export const recordLearningAction = onCall(
               action as AdventureAction,
               now,
               adventure.id,
+              getExpertChallenge(adventure.id),
             )
           : reviewUnit
             ? applyMixedReviewAction(

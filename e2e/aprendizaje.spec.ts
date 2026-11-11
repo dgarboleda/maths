@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { getAdventure, getLesson, placementQuestion, type Question } from "../src/lib/learning/domain";
+import { getExpertChallenge, getLesson, placementQuestion, type Question } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
 
 const familyEmail = new WeakMap<Page, string>();
@@ -266,7 +266,7 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
   await expert.getByRole("button", { name: "Aceptar el reto" }).click();
   await expect(expert.getByText(/anillos de baldosas/)).toBeVisible();
   await expect(expert.getByRole("button", { name: /Ver pista/ })).toHaveCount(0);
-  const challenge = getAdventure("jardin-baldosas")!.expert!;
+  const challenge = getExpertChallenge("jardin-baldosas")!;
   const section = page.locator("section[data-variant]");
   const variant = Number(await section.getAttribute("data-variant"));
   const [lado, baldosas] = challenge.solution(variant);

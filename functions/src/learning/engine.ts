@@ -1,4 +1,4 @@
-import { expertInputs, getAdventure, type AdventureDef, type AdventureInput } from "./adventures";
+import { expertInputs, getAdventure, type AdventureDef, type AdventureInput, type ExpertChallenge } from "./adventures";
 import { isAnswerCorrect, MAX_RESPONSE_LENGTH } from "./questions";
 import type {
   AdventureAction,
@@ -396,11 +396,11 @@ export const EXPERT_INSPECT_FEEDBACK =
   "Nuevo plan en marcha. Esta vez no hay pistas junto a los datos: decide, prueba y la ciudad te dirá qué falla.";
 export const EXPERT_REPLAY_FEEDBACK =
   "Datos nuevos, mismo reto. Lee el informe con atención: los números han cambiado.";
-export function initialExpert(adventure: AdventureDef): ExpertState {
+export function initialExpert(adventure: AdventureDef, challenge: ExpertChallenge): ExpertState {
   return {
     inspected: false,
     attempts: 0,
-    allocation: expertInputs(adventure).map((input) => input.start),
+    allocation: expertInputs(adventure, challenge).map((input) => input.start),
     feedback: EXPERT_INITIAL_FEEDBACK,
     completedAt: null,
   };
@@ -433,6 +433,9 @@ export function applyAdventureAction(
   action: AdventureAction,
   now: number,
   id = "apagon",
+  /** Reto experto de la aventura (`getExpertChallenge`): se pasa aparte para
+   *  que el motor no cargue los retos en el navegador. */
+  challenge?: ExpertChallenge,
 ): AdventureState {
   const adventure = requireAdventure(id);
   const state = {
@@ -441,11 +444,10 @@ export function applyAdventureAction(
     updatedAt: now,
   };
   if (action.expert) {
-    const challenge = adventure.expert;
     if (!challenge) throw new LearningError("Esta aventura no tiene reto experto.");
     if (!state.completedAt)
       throw new LearningError("Completa primero la misión para desbloquear el reto experto.");
-    const expert = { ...(state.expert ?? initialExpert(adventure)) };
+    const expert = { ...(state.expert ?? initialExpert(adventure, challenge)) };
     state.expert = expert;
     const seed = `${id}:${now}:${state.revision}`;
     if (action.kind === "inspect") {
@@ -465,12 +467,12 @@ export function applyAdventureAction(
       expert.rounds = expertRounds(expert);
       expert.variant = pickVariant(challenge.variants, seed, expertVariant(expert));
       expert.attempts = 0;
-      expert.allocation = expertInputs(adventure).map((input) => input.start);
+      expert.allocation = expertInputs(adventure, challenge).map((input) => input.start);
       expert.feedback = EXPERT_REPLAY_FEEDBACK;
       expert.solvedAt = null;
       return state;
     }
-    const inputs = expertInputs(adventure);
+    const inputs = expertInputs(adventure, challenge);
     if (!validAllocation(adventure, action.allocation, inputs)) throw rangeError(inputs);
     const solvedBefore = expertRoundSolved(expert);
     expert.allocation = [...action.allocation];

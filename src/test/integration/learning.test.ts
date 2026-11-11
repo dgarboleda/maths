@@ -10,7 +10,7 @@ import type {
 } from "@/lib/learning/domain";
 import {
   dailyQuestions,
-  getAdventure,
+  getExpertChallenge,
   getLesson,
   initialMixedReview,
   mixedQuestions,
@@ -462,7 +462,7 @@ describe("Servicio educativo y reglas reales", () => {
       const read = await expert(2, { kind: "inspect", expert: true });
       expect(read.stars).toBe(0);
       // El servidor elige la partida; su solución sale del catálogo.
-      const challenge = getAdventure("ascensor-carga")!.expert!;
+      const challenge = getExpertChallenge("ascensor-carga")!;
       const variant = read.progress.expert!.variant!;
       const [boxes, trips] = challenge.solution(variant);
       await expect(expert(3, { kind: "replay", expert: true })).rejects.toMatchObject({ code: "functions/failed-precondition" });

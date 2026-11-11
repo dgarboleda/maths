@@ -739,3 +739,7 @@ function firstYear(C: number, s: number, c: number) {
   }
   return null;
 }
+
+export function getExpertChallenge(id: string): ExpertChallenge | undefined {
+  return EXPERT_CHALLENGES[id];
+}

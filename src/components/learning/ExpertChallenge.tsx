@@ -11,6 +11,7 @@ import {
   type AdventureDef,
   type AdventureState,
 } from "@/lib/learning/core";
+import { getExpertChallenge } from "@/lib/learning/expert";
 import type { useLearningAction } from "@/lib/learning/useLearningData";
 import { OpenCalculatorButton, useCalculatorTarget } from "./Calculator";
 import { primaryButton, secondaryButton } from "./LearningShell";
@@ -31,7 +32,7 @@ export function ExpertChallenge({
   state: AdventureState;
   mutation: ReturnType<typeof useLearningAction>;
 }) {
-  const challenge = adventure.expert;
+  const challenge = getExpertChallenge(adventure.id);
   if (!challenge || !state.completedAt) return null;
   const expert = state.expert;
   const solved = expertRoundSolved(expert);
@@ -100,10 +101,10 @@ function ExpertPlan({
   state: AdventureState;
   mutation: ReturnType<typeof useLearningAction>;
 }) {
-  const challenge = adventure.expert!;
+  const challenge = getExpertChallenge(adventure.id)!;
   const expert = state.expert!;
   const round = challenge.round(expertVariant(expert));
-  const inputs = expertInputs(adventure);
+  const inputs = expertInputs(adventure, challenge);
   const [values, setValues] = useState(() => expert.allocation.map(String));
   const [invalid, setInvalid] = useState<string | null>(null);
   const tested = expert.attempts > 0 ? round.evaluate(expert.allocation) : null;
