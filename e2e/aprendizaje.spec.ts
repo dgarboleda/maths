@@ -276,6 +276,12 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
     await section.getByLabel("Baldosas", { exact: true }).fill(String(b));
     await section.getByRole("button", { name: "Probar el plan experto" }).click();
   };
+  // El esquema dibuja el plan mientras se escribe, sin evaluarlo.
+  await section.getByLabel("Lado del jardín (m)").fill("11");
+  await section.getByLabel("Baldosas", { exact: true }).fill("48");
+  const schema = section.getByRole("figure", { name: "Esquema del plan experto" });
+  await expect(schema.getByText("Césped: 11 × 11 = 121 m²")).toBeVisible();
+  await expect(schema.getByRole("img", { name: `Jardín de lado 11 con ${rings} anillos de baldosas alrededor` })).toBeVisible();
   // La solución de la misión ya no sirve.
   await expertPlan(11, 48);
   await expect(section.getByRole("status")).toHaveText(/^Con lado 11, el césped mide 121 m²: no llega a \d+\.$/);

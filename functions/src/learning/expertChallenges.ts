@@ -27,13 +27,14 @@ interface Round {
   success: string;
 }
 
-function toRound(spec: Round): ExpertRound {
+function toRound(spec: Round, params: Readonly<Record<string, unknown>>): ExpertRound {
   if (spec.checks.length !== spec.goals.length || spec.hints.length !== spec.goals.length)
     throw new Error("Cada objetivo del reto experto necesita su comprobación y su pista.");
   return {
     brief: spec.brief,
     goals: spec.goals,
     success: spec.success,
+    params,
     evaluate(values): AdventureResult {
       const goals = spec.checks.map((check) => check(values));
       const failed = goals.indexOf(false);
@@ -63,7 +64,7 @@ function family<P>(spec: {
   return {
     inputs: spec.inputs,
     variants: list.length,
-    round: (variant) => toRound(spec.round(at(variant))),
+    round: (variant) => toRound(spec.round(at(variant)), at(variant) as Readonly<Record<string, unknown>>),
     solution: (variant) => spec.solution(at(variant)),
   };
 }

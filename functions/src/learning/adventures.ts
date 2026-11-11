@@ -48,6 +48,8 @@ export interface ExpertRound {
   goals: string[];
   evaluate(values: number[]): AdventureResult;
   success: string;
+  /** Datos de esta partida, para dibujar el esquema del plan. */
+  params: Readonly<Record<string, unknown>>;
 }
 
 /** Reto experto: una familia de partidas con los mismos objetivos y datos
