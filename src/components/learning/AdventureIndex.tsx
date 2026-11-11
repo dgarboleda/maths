@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Compass, Flame, Trophy } from "lucide-react";
+import { ArrowRight, CheckCircle2, Compass, Flame, Star, Trophy } from "lucide-react";
 import { useLearningData } from "@/lib/learning/useLearningData";
-import { ADVENTURES, expertRounds, LEARNING_UNITS, missingAdventureLessons, STAR_REWARDS } from "@/lib/learning/core";
+import {
+  ADVENTURE_DIFFICULTY_LABEL,
+  ADVENTURE_EXPERT_STARS,
+  ADVENTURE_STARS,
+  ADVENTURES,
+  adventureStars,
+  expertRounds,
+  LEARNING_UNITS,
+  missingAdventureLessons,
+} from "@/lib/learning/core";
 import {
   LearningLoading,
   LearningLoadError,
@@ -35,9 +44,11 @@ export function AdventureIndex({ childId }: { childId: string }) {
       <p className="mb-6 max-w-3xl leading-relaxed text-slate-300">
         Explora las misiones de cada unidad en Ciudad Central. No hay una única
         respuesta escrita: decides un plan, lo pruebas y la ciudad te dice qué
-        condición falta. Cada misión completada da {STAR_REWARDS.adventure} estrellas una vez y
-        desbloquea su reto experto: la historia da un giro, sin pistas, por{" "}
-        {STAR_REWARDS.adventureExpert} estrellas más. Cada partida del reto trae datos nuevos.
+        condición falta. Cada misión completada da estrellas una vez según su
+        dificultad ({ADVENTURE_STARS.basica} básica, {ADVENTURE_STARS.intermedia} intermedia,{" "}
+        {ADVENTURE_STARS.avanzada} avanzada) y desbloquea su reto experto: la historia da un giro, sin pistas, por{" "}
+        {ADVENTURE_EXPERT_STARS.basica}, {ADVENTURE_EXPERT_STARS.intermedia} o{" "}
+        {ADVENTURE_EXPERT_STARS.avanzada} estrellas más según la dificultad. Cada partida del reto trae datos nuevos.
       </p>
       <ul className="grid gap-4 sm:grid-cols-2">
         {ADVENTURES.map((adventure) => {
@@ -58,9 +69,17 @@ export function AdventureIndex({ childId }: { childId: string }) {
                   )}
                 </span>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    {unit?.title}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      {unit?.title}
+                    </p>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/40 px-2 py-0.5 text-xs font-bold text-amber-100">
+                      {ADVENTURE_DIFFICULTY_LABEL[adventure.difficulty]} ·{" "}
+                      {adventureStars(adventure)}
+                      <Star size={12} aria-hidden="true" />
+                      <span className="sr-only">estrellas</span>
+                    </span>
+                  </div>
                   <h2 className="mt-1 font-bold text-white">
                     {adventure.title}
                   </h2>

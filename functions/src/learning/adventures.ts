@@ -1,4 +1,5 @@
 import { MORE_ADVENTURES } from "./moreAdventures";
+import type { AdventureDifficulty } from "./rewards";
 import type { LearningProgress, UnitId } from "./types";
 
 /** Una decisión que el estudiante ajusta antes de probar su plan. */
@@ -26,6 +27,8 @@ export interface AdventureResult {
 export interface AdventureDef {
   id: string;
   unitId: UnitId;
+  /** Exigencia matemática de la misión; fija sus estrellas (`ADVENTURE_STARS`). */
+  difficulty: AdventureDifficulty;
   title: string;
   eyebrow: string;
   intro: string;
@@ -86,6 +89,7 @@ const all = (n: number, ok: boolean) => Array.from({ length: n }, () => ok);
 const apagon: AdventureDef = {
   id: "apagon",
   unitId: "fracciones",
+  difficulty: "basica",
   title: "El apagón",
   eyebrow: "Capítulo 01 / Devuelve la energía a la ciudad",
   intro:
@@ -141,6 +145,7 @@ const apagon: AdventureDef = {
 const camara: AdventureDef = {
   id: "camara-fria",
   unitId: "numeros",
+  difficulty: "intermedia",
   title: "La cámara del mercado",
   eyebrow: "Capítulo 02 / Salva la comida del mercado",
   intro:
@@ -196,6 +201,7 @@ const camara: AdventureDef = {
 const receta: AdventureDef = {
   id: "receta-festival",
   unitId: "proporcionalidad",
+  difficulty: "intermedia",
   title: "La receta del festival",
   eyebrow: "Capítulo 03 / Cocina para todo el barrio",
   intro:
@@ -242,6 +248,7 @@ const receta: AdventureDef = {
 const ascensor: AdventureDef = {
   id: "ascensor-carga",
   unitId: "algebra",
+  difficulty: "intermedia",
   title: "El ascensor de carga",
   eyebrow: "Capítulo 04 / Sube los suministros a la torre",
   intro:
@@ -286,6 +293,7 @@ const ascensor: AdventureDef = {
 const baldosas: AdventureDef = {
   id: "jardin-baldosas",
   unitId: "expresiones",
+  difficulty: "avanzada",
   title: "El jardín de baldosas",
   eyebrow: "Capítulo 05 / Diseña la plaza nueva",
   intro:
@@ -341,6 +349,7 @@ const baldosas: AdventureDef = {
 const huerto: AdventureDef = {
   id: "huerto-escolar",
   unitId: "geometria",
+  difficulty: "avanzada",
   title: "El huerto escolar",
   eyebrow: "Capítulo 06 / Cerca el huerto de la escuela",
   intro:
@@ -389,6 +398,7 @@ const huerto: AdventureDef = {
 const torneo: AdventureDef = {
   id: "torneo-lanzamientos",
   unitId: "datos",
+  difficulty: "avanzada",
   title: "El torneo de lanzamientos",
   eyebrow: "Capítulo 07 / Planifica la final",
   intro:

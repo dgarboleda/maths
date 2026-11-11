@@ -14,6 +14,8 @@ import {
 // `core`, no `domain`: la aventura solo necesita los títulos de sus clases
 // (índice ligero), no el catálogo completo con todos los bancos.
 import {
+  ADVENTURE_DIFFICULTY_LABEL,
+  adventureStars,
   getAdventure,
   getLessonSummary,
   initialAdventure,
@@ -290,8 +292,9 @@ function AdventureGame({
           <p className="text-slate-200">{adventure.success}</p>
           <p className="text-sm text-emerald-200">
             {state.attempts <= 3 ? `¡Lo lograste en ${state.attempts} ${state.attempts === 1 ? "prueba" : "pruebas"}! ` : ""}
-            10 estrellas una sola vez. Aprender con ayuda conserva la misma
-            recompensa.
+            {adventureStars(adventure)} estrellas una sola vez (misión{" "}
+            {ADVENTURE_DIFFICULTY_LABEL[adventure.difficulty].toLowerCase()}). Aprender con
+            ayuda conserva la misma recompensa.
           </p>
           <Link href={`/jugar/${childId}/aventura`} className={secondaryButton}>
             Elegir otra aventura

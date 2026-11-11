@@ -1,5 +1,9 @@
 import {
   ADVENTURES,
+  ADVENTURE_EXPERT_STARS,
+  ADVENTURE_STARS,
+  adventureExpertStars,
+  adventureStars,
   LEARNING_UNITS,
   LESSONS,
   STAR_REWARDS,
@@ -51,7 +55,7 @@ export function starPlan({ progress, reviews, adventures, ledger }: {
 }): StarPlan {
   const lessonsDone = LESSONS.filter((lesson) => progress[lesson.id]?.completedAt).length;
   const mixedDone = Object.values(reviews).filter((review) => review?.completedAt).length;
-  const adventuresDone = ADVENTURES.filter((adventure) => adventures[adventure.id]?.completedAt).length;
+  const adventuresDone = ADVENTURES.filter((adventure) => adventures[adventure.id]?.completedAt);
   const lessons: StarSection = {
     id: "lessons", label: "Clases",
     rule: `${STAR_REWARDS.lesson} al terminar cada clase, ${STAR_REWARDS.lessonCheck} al superar su comprobación sin ayuda y ${STAR_REWARDS.lessonRetained} al superar su repaso`,
@@ -62,11 +66,14 @@ export function starPlan({ progress, reviews, adventures, ledger }: {
     id: "mixed", label: "Repasos mixtos", rule: `${STAR_REWARDS.mixed} por cada unidad repasada`,
     earned: mixedDone * STAR_REWARDS.mixed, possible: unitsWithLessons.length * STAR_REWARDS.mixed, done: mixedDone, total: unitsWithLessons.length,
   };
-  const expertsDone = ADVENTURES.filter((adventure) => adventures[adventure.id]?.expert?.completedAt).length;
+  const expertsDone = ADVENTURES.filter((adventure) => adventures[adventure.id]?.expert?.completedAt);
+  const missionAndExpert = (adventure: (typeof ADVENTURES)[number]) => adventureStars(adventure) + adventureExpertStars(adventure);
   const adv: StarSection = {
-    id: "adventures", label: "Aventuras", rule: `${STAR_REWARDS.adventure} por cada misión completada y ${STAR_REWARDS.adventureExpert} por su reto experto`,
-    earned: adventuresDone * STAR_REWARDS.adventure + expertsDone * STAR_REWARDS.adventureExpert,
-    possible: ADVENTURES.length * (STAR_REWARDS.adventure + STAR_REWARDS.adventureExpert), done: adventuresDone, total: ADVENTURES.length,
+    id: "adventures", label: "Aventuras",
+    rule: `${ADVENTURE_STARS.basica}, ${ADVENTURE_STARS.intermedia} o ${ADVENTURE_STARS.avanzada} por cada misión según su dificultad, y ${ADVENTURE_EXPERT_STARS.basica}, ${ADVENTURE_EXPERT_STARS.intermedia} o ${ADVENTURE_EXPERT_STARS.avanzada} por su reto experto`,
+    earned: adventuresDone.reduce((sum, adventure) => sum + adventureStars(adventure), 0) + expertsDone.reduce((sum, adventure) => sum + adventureExpertStars(adventure), 0),
+    possible: ADVENTURES.reduce((sum, adventure) => sum + missionAndExpert(adventure), 0),
+    done: adventuresDone.length, total: ADVENTURES.length,
   };
   const fixed = lessons.earned + mixed.earned + adv.earned;
   const daily: StarSection = {

@@ -9,6 +9,8 @@ import type {
   LearningProgress,
 } from "@/lib/learning/domain";
 import {
+  ADVENTURE_EXPERT_STARS,
+  ADVENTURE_STARS,
   dailyQuestions,
   getExpertChallenge,
   getLesson,
@@ -351,7 +353,7 @@ describe("Servicio educativo y reglas reales", () => {
         request,
       );
       expect(result.progress.completedAt).toBeGreaterThan(0);
-      expect(result.stars).toBe(10);
+      expect(result.stars).toBe(ADVENTURE_STARS.basica); // apagon
       await call(family.app, "recordLearningAction", request);
       const replay = await call<{ stars: number }>(
         family.app,
@@ -369,7 +371,7 @@ describe("Servicio educativo y reglas reales", () => {
         (
           await fs.getDoc(fs.doc(family.db, ...path, "starBalance", "total"))
         ).data()?.total,
-      ).toBe(10 + 2 * STAR_REWARDS.lesson);
+      ).toBe(ADVENTURE_STARS.basica + 2 * STAR_REWARDS.lesson);
       await fs.updateDoc(family.profile, { deleting: true });
       await expect(
         call(family.app, "recordLearningAction", {
@@ -437,7 +439,7 @@ describe("Servicio educativo y reglas reales", () => {
         },
       );
       expect(result.progress.completedAt).toBeGreaterThan(0);
-      expect(result.stars).toBe(10);
+      expect(result.stars).toBe(ADVENTURE_STARS.intermedia); // ascensor-carga
       const saved = await fs.getDoc(
         fs.doc(
           family.db,
@@ -470,7 +472,7 @@ describe("Servicio educativo y reglas reales", () => {
       expect(almost.stars).toBe(0);
       expect(almost.progress.expert).toMatchObject({ attempts: 1, completedAt: null });
       const solved = await expert(4, { kind: "dispatch", allocation: [boxes, trips], expert: true });
-      expect(solved.stars).toBe(5);
+      expect(solved.stars).toBe(ADVENTURE_EXPERT_STARS.intermedia); // ascensor-carga
       expect(solved.progress.expert!.completedAt).toBeGreaterThan(0);
       // Otra partida, con datos nuevos, no vuelve a premiar.
       const again = await expert(5, { kind: "replay", expert: true });

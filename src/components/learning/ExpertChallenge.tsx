@@ -7,7 +7,7 @@ import {
   expertRounds,
   expertRoundSolved,
   expertVariant,
-  STAR_REWARDS,
+  adventureExpertStars,
   type AdventureDef,
   type AdventureState,
 } from "@/lib/learning/core";
@@ -65,7 +65,7 @@ export function ExpertChallenge({
               {rounds} {rounds === 1 ? "partida superada" : "partidas superadas"}
             </p>
           ) : (
-            <p className="rounded-full border border-amber-300/40 px-3 py-1 text-amber-100">+{STAR_REWARDS.adventureExpert} estrellas</p>
+            <p className="rounded-full border border-amber-300/40 px-3 py-1 text-amber-100">+{adventureExpertStars(adventure)} estrellas</p>
           )}
         </div>
       </div>
@@ -163,8 +163,8 @@ function ExpertPlan({
             <p className="inline-flex items-center gap-2 font-bold">
               <Trophy size={18} aria-hidden="true" />
               {firstRound
-                ? `${STAR_REWARDS.adventureExpert} estrellas, una sola vez`
-                : `Las ${STAR_REWARDS.adventureExpert} estrellas ya son tuyas: esta partida es para entrenar`}
+                ? `${adventureExpertStars(adventure)} estrellas, una sola vez`
+                : `Las ${adventureExpertStars(adventure)} estrellas ya son tuyas: esta partida es para entrenar`}
             </p>
             <p className="text-sm leading-relaxed">{round.success}</p>
             <button

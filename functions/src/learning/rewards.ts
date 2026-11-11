@@ -14,15 +14,44 @@ export const STAR_REWARDS = {
   lessonRetained: 2,
   /** Repaso mixto de una unidad superado (una vez por unidad). */
   mixed: 5,
-  /** Aventura completada (una vez por aventura). */
-  adventure: 10,
-  /** Reto experto de una aventura superado (una vez por aventura). */
-  adventureExpert: 5,
   /** Primera sesión del repaso diario terminada cada día. */
   daily: 2,
   /** Extra al alcanzar una racha de 7, 14 o 30 días. */
   streakBonus: 3,
 } as const;
+
+/** Dificultad de una aventura: decide cuántas estrellas da completarla. */
+export type AdventureDifficulty = "basica" | "intermedia" | "avanzada";
+
+/** Estrellas por completar una aventura (una vez), según su dificultad. */
+export const ADVENTURE_STARS: Readonly<Record<AdventureDifficulty, number>> = {
+  basica: 5,
+  intermedia: 10,
+  avanzada: 15,
+};
+
+/** Estrellas por superar el reto experto de una aventura (una vez), según su dificultad. */
+export const ADVENTURE_EXPERT_STARS: Readonly<Record<AdventureDifficulty, number>> = {
+  basica: 3,
+  intermedia: 5,
+  avanzada: 8,
+};
+
+export const ADVENTURE_DIFFICULTY_LABEL: Readonly<Record<AdventureDifficulty, string>> = {
+  basica: "Básica",
+  intermedia: "Intermedia",
+  avanzada: "Avanzada",
+};
+
+/** Estrellas que da completar esta aventura. */
+export function adventureStars(adventure: { difficulty: AdventureDifficulty }): number {
+  return ADVENTURE_STARS[adventure.difficulty];
+}
+
+/** Estrellas que da superar el reto experto de esta aventura. */
+export function adventureExpertStars(adventure: { difficulty: AdventureDifficulty }): number {
+  return ADVENTURE_EXPERT_STARS[adventure.difficulty];
+}
 
 /** Máximo de una clase: terminarla, demostrarla y recordarla. */
 export const LESSON_STARS_MAX = STAR_REWARDS.lesson + STAR_REWARDS.lessonCheck + STAR_REWARDS.lessonRetained;

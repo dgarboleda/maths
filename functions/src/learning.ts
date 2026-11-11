@@ -42,7 +42,7 @@ import {
   type DailyLessonInfo,
 } from "./learning/daily";
 import { readBalance } from "./stars";
-import { lessonStars, STAR_REWARDS } from "./learning/rewards";
+import { adventureExpertStars, adventureStars, lessonStars, STAR_REWARDS } from "./learning/rewards";
 import { MIN_THINK_MS } from "./learning/engine";
 
 /**
@@ -385,9 +385,9 @@ export const recordLearningAction = onCall(
           : lessonReward
             ? lessonReward.stars
             : expertDone
-              ? STAR_REWARDS.adventureExpert
+              ? adventureExpertStars(adventure)
             : !placement && !done(previous) && done(next)
-              ? adventure ? STAR_REWARDS.adventure : STAR_REWARDS.mixed
+              ? adventure ? adventureStars(adventure) : STAR_REWARDS.mixed
               : 0;
         const outcome = outcomeOf(lessonId, action, previous, next);
         // Todas las lecturas deben preceder las escrituras en la transacción.
