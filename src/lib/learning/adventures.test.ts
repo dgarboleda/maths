@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
+  ADVENTURE_STARS,
   ADVENTURES,
+  adventureStars,
   applyAdventureAction,
   getAdventure,
   getLesson,
@@ -128,5 +130,23 @@ describe("Aventuras por unidad", () => {
     expect(() => applyAdventureAction(undefined, { kind: "inspect" }, NOW, "no-existe")).toThrow(
       /no existe/,
     );
+  });
+});
+
+describe("estrellas por dificultad", () => {
+  test("cada aventura tiene una dificultad válida y paga según ella", () => {
+    for (const adventure of ADVENTURES) {
+      expect(Object.keys(ADVENTURE_STARS)).toContain(adventure.difficulty);
+      expect(adventureStars(adventure)).toBe(ADVENTURE_STARS[adventure.difficulty]);
+    }
+  });
+
+  test("más dificultad, más estrellas", () => {
+    expect(ADVENTURE_STARS.basica).toBeLessThan(ADVENTURE_STARS.intermedia);
+    expect(ADVENTURE_STARS.intermedia).toBeLessThan(ADVENTURE_STARS.avanzada);
+  });
+
+  test("el catálogo usa los tres niveles, no un premio único", () => {
+    expect(new Set(ADVENTURES.map((a) => a.difficulty))).toEqual(new Set(["basica", "intermedia", "avanzada"]));
   });
 });

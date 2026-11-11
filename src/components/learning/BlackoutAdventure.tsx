@@ -8,7 +8,7 @@ import {
   useLearningAction,
   useLearningData,
 } from "@/lib/learning/useLearningData";
-import { getAdventure, initialAdventure, missingAdventureLessons, type AdventureState } from "@/lib/learning/core";
+import { adventureStars, getAdventure, initialAdventure, missingAdventureLessons, type AdventureState } from "@/lib/learning/core";
 import { AdventureRequirements } from "./AdventureRequirements";
 import { ExpertChallenge } from "./ExpertChallenge";
 import {
@@ -312,7 +312,7 @@ function AdventureGame({
             de 180 = 100 y 1/4 de 180 = 45. Quedaron 35 para el taller.
           </p>
           <p className="text-sm text-emerald-200">
-            Misión completada · 10 estrellas una sola vez. Aprender con ayuda
+            Misión completada · {adventureStars(getAdventure("apagon")!)} estrellas una sola vez. Aprender con ayuda
             conserva la misma recompensa.
           </p>
           <Link

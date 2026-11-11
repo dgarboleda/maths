@@ -1,6 +1,8 @@
 import { expect, test } from "vitest";
-import { ADVENTURES, LEARNING_UNITS, LESSONS, LESSON_STARS_MAX, STAR_REWARDS } from "./domain";
+import { ADVENTURES, adventureStars, LEARNING_UNITS, LESSONS, LESSON_STARS_MAX, STAR_REWARDS } from "./domain";
 import { ledgerTotals, starPlan } from "./starPlan";
+
+const adventuresMax = ADVENTURES.reduce((sum, a) => sum + adventureStars(a), 0) + ADVENTURES.length * STAR_REWARDS.adventureExpert;
 
 const done = { completedAt: 1 } as never;
 // Con el reparto actual: terminada (1) y comprobación sin ayuda (4).
@@ -17,12 +19,14 @@ test("calcula lo ganado y lo posible por sección", () => {
   const by = Object.fromEntries(plan.sections.map((s) => [s.id, s]));
   expect(by.lessons).toMatchObject({ earned: 5 + STAR_REWARDS.lesson + STAR_REWARDS.lessonCheck, done: 2, total: LESSONS.length, possible: LESSONS.length * LESSON_STARS_MAX });
   expect(by.mixed).toMatchObject({ earned: STAR_REWARDS.mixed, total: LEARNING_UNITS.length });
-  expect(by.adventures).toMatchObject({ earned: STAR_REWARDS.adventure, possible: ADVENTURES.length * (STAR_REWARDS.adventure + STAR_REWARDS.adventureExpert) });
-  // El resto del historial (40 − 25) son del repaso diario u otras actividades.
-  expect(by.daily).toMatchObject({ earned: 15, possible: null });
+  expect(by.adventures).toMatchObject({ earned: adventureStars(ADVENTURES[0]), possible: adventuresMax });
+  // Lo fijo: clases + repaso mixto + aventura (según su dificultad).
+  const fixed = 5 + STAR_REWARDS.lesson + STAR_REWARDS.lessonCheck + STAR_REWARDS.mixed + adventureStars(ADVENTURES[0]);
+  // El resto del historial son del repaso diario u otras actividades.
+  expect(by.daily).toMatchObject({ earned: 40 - fixed, possible: null });
   expect(plan).toMatchObject({ earned: 40, spent: 12 });
-  expect(plan.possible).toBe(LESSONS.length * LESSON_STARS_MAX + LEARNING_UNITS.length * 5 + ADVENTURES.length * (STAR_REWARDS.adventure + STAR_REWARDS.adventureExpert));
-  expect(plan.remaining).toBe(plan.possible - 25);
+  expect(plan.possible).toBe(LESSONS.length * LESSON_STARS_MAX + LEARNING_UNITS.length * 5 + adventuresMax);
+  expect(plan.remaining).toBe(plan.possible - fixed);
 });
 
 test("sin historial cargado no inventa totales", () => {

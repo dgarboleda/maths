@@ -9,6 +9,7 @@ import type {
   LearningProgress,
 } from "@/lib/learning/domain";
 import {
+  ADVENTURE_STARS,
   dailyQuestions,
   getExpertChallenge,
   getLesson,
@@ -351,7 +352,7 @@ describe("Servicio educativo y reglas reales", () => {
         request,
       );
       expect(result.progress.completedAt).toBeGreaterThan(0);
-      expect(result.stars).toBe(10);
+      expect(result.stars).toBe(ADVENTURE_STARS.basica); // apagon
       await call(family.app, "recordLearningAction", request);
       const replay = await call<{ stars: number }>(
         family.app,
@@ -437,7 +438,7 @@ describe("Servicio educativo y reglas reales", () => {
         },
       );
       expect(result.progress.completedAt).toBeGreaterThan(0);
-      expect(result.stars).toBe(10);
+      expect(result.stars).toBe(ADVENTURE_STARS.intermedia); // ascensor-carga
       const saved = await fs.getDoc(
         fs.doc(
           family.db,

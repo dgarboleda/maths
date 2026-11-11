@@ -5,6 +5,7 @@ import { Star, Trash2 } from "lucide-react";
 import { getFirebase } from "@/lib/firebase";
 import { useLearningData } from "@/lib/learning/useLearningData";
 import { starPlan } from "@/lib/learning/starPlan";
+import { ADVENTURE_STARS } from "@/lib/learning/core";
 import { useRewardCatalog, useStarLedger, type RewardOption } from "@/lib/learning/useStars";
 import { useTotalStars } from "@/lib/useTotalStars";
 import { StarBreakdown } from "@/components/learning/StarBreakdown";
@@ -101,7 +102,7 @@ export function RewardCatalogEditor({ parentId, available, possible, childName }
   return (
     <div className="space-y-3">
       <p className="text-sm text-slate-300">
-        Acordad juntos cuánto vale cada premio. Como referencia, terminar una clase da 5 ⭐ y una aventura 10 ⭐; en total quedan {possible} ⭐ posibles en clases, repasos y aventuras.
+        Acordad juntos cuánto vale cada premio. Como referencia, terminar una clase da 5 ⭐ y una aventura entre {ADVENTURE_STARS.basica} y {ADVENTURE_STARS.avanzada} ⭐ según su dificultad; en total quedan {possible} ⭐ posibles en clases, repasos y aventuras.
       </p>
       {catalog.items && catalog.items.length > 0 && (
         <ul className="divide-y divide-indigo-500/15">
