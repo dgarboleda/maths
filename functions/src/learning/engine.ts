@@ -1,8 +1,9 @@
-import { getAdventure, type AdventureDef } from "./adventures";
+import { expertInputs, getAdventure, type AdventureDef, type AdventureInput, type ExpertChallenge } from "./adventures";
 import { isAnswerCorrect, MAX_RESPONSE_LENGTH } from "./questions";
 import type {
   AdventureAction,
   AdventureState,
+  ExpertState,
   CheckResult,
   LearningAction,
   LearningProgress,
@@ -364,24 +365,77 @@ function requireAdventure(id: string) {
   if (!adventure) throw new LearningError("Esta aventura no existe.");
   return adventure;
 }
-/** Un plan válido trae un entero dentro del rango de cada entrada. */
-export function validAllocation(adventure: AdventureDef, allocation: unknown) {
+/** Un plan válido trae un entero dentro del rango de cada entrada (las de
+ *  la misión, o las del reto experto si se indican). */
+export function validAllocation(
+  adventure: AdventureDef,
+  allocation: unknown,
+  inputs: AdventureInput[] = adventure.inputs,
+) {
   return (
     Array.isArray(allocation) &&
-    allocation.length === adventure.inputs.length &&
+    allocation.length === inputs.length &&
     allocation.every(
       (n, i) =>
         Number.isSafeInteger(n) &&
-        n >= adventure.inputs[i].min &&
-        n <= adventure.inputs[i].max,
+        n >= inputs[i].min &&
+        n <= inputs[i].max,
     )
   );
+}
+function rangeError(inputs: AdventureInput[]) {
+  const [first] = inputs;
+  return new LearningError(
+    inputs.every((i) => i.min === first.min && i.max === first.max)
+      ? `Cada valor debe ser un número entero entre ${first.min} y ${first.max}.`
+      : "Cada valor debe ser un número entero dentro de su rango.",
+  );
+}
+export const EXPERT_INITIAL_FEEDBACK = "Lee el nuevo informe: la situación ha cambiado.";
+export const EXPERT_INSPECT_FEEDBACK =
+  "Nuevo plan en marcha. Esta vez no hay pistas junto a los datos: decide, prueba y la ciudad te dirá qué falla.";
+export const EXPERT_REPLAY_FEEDBACK =
+  "Datos nuevos, mismo reto. Lee el informe con atención: los números han cambiado.";
+export function initialExpert(adventure: AdventureDef, challenge: ExpertChallenge): ExpertState {
+  return {
+    inspected: false,
+    attempts: 0,
+    allocation: expertInputs(adventure, challenge).map((input) => input.start),
+    feedback: EXPERT_INITIAL_FEEDBACK,
+    completedAt: null,
+  };
+}
+/** Partida actual del reto experto (los estados anteriores a las partidas
+ *  juegan la original). */
+export function expertVariant(expert: ExpertState | undefined): number {
+  return expert?.variant ?? 0;
+}
+/** La partida actual está superada. Antes de las partidas, el reto tenía
+ *  una sola, superada en `completedAt`. */
+export function expertRoundSolved(expert: ExpertState | undefined): boolean {
+  if (!expert) return false;
+  return expert.solvedAt !== undefined ? expert.solvedAt !== null : expert.completedAt !== null;
+}
+export function expertRounds(expert: ExpertState | undefined): number {
+  return expert?.rounds ?? (expert?.completedAt ? 1 : 0);
+}
+/** Partida al azar, distinta de la actual. Se deriva de la hora del servidor
+ *  y de la revisión: el navegador no la elige. */
+function pickVariant(count: number, seed: string, current?: number): number {
+  if (count <= 1) return 0;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  const next = (h >>> 0) % count;
+  return next === current ? (next + 1) % count : next;
 }
 export function applyAdventureAction(
   previous: AdventureState | undefined,
   action: AdventureAction,
   now: number,
   id = "apagon",
+  /** Reto experto de la aventura (`getExpertChallenge`): se pasa aparte para
+   *  que el motor no cargue los retos en el navegador. */
+  challenge?: ExpertChallenge,
 ): AdventureState {
   const adventure = requireAdventure(id);
   const state = {
@@ -389,20 +443,56 @@ export function applyAdventureAction(
     revision: (previous?.revision ?? 0) + 1,
     updatedAt: now,
   };
+  if (action.expert) {
+    if (!challenge) throw new LearningError("Esta aventura no tiene reto experto.");
+    if (!state.completedAt)
+      throw new LearningError("Completa primero la misión para desbloquear el reto experto.");
+    const expert = { ...(state.expert ?? initialExpert(adventure, challenge)) };
+    state.expert = expert;
+    const seed = `${id}:${now}:${state.revision}`;
+    if (action.kind === "inspect") {
+      // La primera lectura reparte una partida al azar; releer no la cambia.
+      if (!expert.inspected) {
+        expert.variant = pickVariant(challenge.variants, seed);
+        expert.solvedAt = null;
+      }
+      expert.inspected = true;
+      expert.feedback = EXPERT_INSPECT_FEEDBACK;
+      return state;
+    }
+    if (!expert.inspected) throw new LearningError("Lee primero el nuevo informe.");
+    if (action.kind === "replay") {
+      if (!expertRoundSolved(expert))
+        throw new LearningError("Supera esta partida antes de jugar con datos nuevos.");
+      expert.rounds = expertRounds(expert);
+      expert.variant = pickVariant(challenge.variants, seed, expertVariant(expert));
+      expert.attempts = 0;
+      expert.allocation = expertInputs(adventure, challenge).map((input) => input.start);
+      expert.feedback = EXPERT_REPLAY_FEEDBACK;
+      expert.solvedAt = null;
+      return state;
+    }
+    const inputs = expertInputs(adventure, challenge);
+    if (!validAllocation(adventure, action.allocation, inputs)) throw rangeError(inputs);
+    const solvedBefore = expertRoundSolved(expert);
+    expert.allocation = [...action.allocation];
+    expert.attempts++;
+    const result = challenge.round(expertVariant(expert)).evaluate(expert.allocation);
+    expert.feedback = result.feedback;
+    if (result.goals.every(Boolean) && !solvedBefore) {
+      expert.completedAt ??= now;
+      expert.solvedAt = now;
+      expert.rounds = expertRounds({ ...expert, completedAt: null }) + 1;
+    }
+    return state;
+  }
   if (action.kind === "inspect") {
     state.inspected = true;
     state.feedback = adventure.inspectFeedback;
     return state;
   }
   if (!state.inspected) throw new LearningError(adventure.inspectFirst);
-  if (!validAllocation(adventure, action.allocation)) {
-    const [first] = adventure.inputs;
-    throw new LearningError(
-      adventure.inputs.every((i) => i.min === first.min && i.max === first.max)
-        ? `Cada valor debe ser un número entero entre ${first.min} y ${first.max}.`
-        : "Cada valor debe ser un número entero dentro de su rango.",
-    );
-  }
+  if (!validAllocation(adventure, action.allocation)) throw rangeError(adventure.inputs);
   state.allocation = [...action.allocation];
   state.attempts++;
   const result = adventure.evaluate(state.allocation);

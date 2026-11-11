@@ -236,10 +236,33 @@ export interface AdventureState {
   allocation: number[];
   feedback: string;
   updatedAt: number;
+  /** Reto experto: segunda fase que se desbloquea al completar la misión.
+   *  Ausente hasta que el estudiante lo empieza. */
+  expert?: ExpertState;
 }
+export interface ExpertState {
+  inspected: boolean;
+  /** Pruebas de la partida actual. */
+  attempts: number;
+  /** Último plan probado: un valor por entrada del reto experto. */
+  allocation: number[];
+  feedback: string;
+  /** Primera vez que se superó el reto (premio único). */
+  completedAt: number | null;
+  /** Partida actual (datos del reto); ausente = la original. */
+  variant?: number;
+  /** Cuándo se superó la partida actual; ausente en estados anteriores a
+   *  las partidas, donde equivale a `completedAt`. */
+  solvedAt?: number | null;
+  /** Partidas superadas. */
+  rounds?: number;
+}
+/** `expert: true` actúa sobre el reto experto en lugar de la misión.
+ *  `replay` empieza otra partida del reto, con datos nuevos, tras superarlo. */
 export type AdventureAction =
-  | { kind: "inspect" }
-  | { kind: "dispatch"; allocation: number[] };
+  | { kind: "inspect"; expert?: true }
+  | { kind: "dispatch"; allocation: number[]; expert?: true }
+  | { kind: "replay"; expert: true };
 
 /** Repaso intercalado de una unidad: mezcla problemas de las clases ya
  *  terminadas para que el estudiante tenga que elegir la estrategia. */

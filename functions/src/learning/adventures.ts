@@ -40,6 +40,34 @@ export interface AdventureDef {
   lessonIds: string[];
 }
 
+/** Una partida del reto experto: el giro de la historia con unos datos
+ *  concretos, sus objetivos y cómo responde a cada plan. */
+export interface ExpertRound {
+  /** El giro de la historia, con todos los datos de esta partida. */
+  brief: string;
+  goals: string[];
+  evaluate(values: number[]): AdventureResult;
+  success: string;
+}
+
+/** Reto experto: una familia de partidas con los mismos objetivos y datos
+ *  distintos, para poder volver a jugarlo. Exige optimizar, razonar al
+ *  revés o combinar más condiciones, y no muestra pistas por entrada. */
+export interface ExpertChallenge {
+  /** Entradas propias (iguales en todas las partidas); si faltan, las de la misión. */
+  inputs?: AdventureInput[];
+  /** Número de partidas distintas. La 0 es la original. */
+  variants: number;
+  round(variant: number): ExpertRound;
+  /** Un plan que supera la partida (para las pruebas y el resumen). */
+  solution(variant: number): number[];
+}
+
+/** Entradas del reto experto: las suyas o, si no tiene, las de la misión. */
+export function expertInputs(adventure: Pick<AdventureDef, "inputs">, challenge: Pick<ExpertChallenge, "inputs"> | undefined): AdventureInput[] {
+  return challenge?.inputs ?? adventure.inputs;
+}
+
 /** La aplicación terminada por sí sola no sustituye la explicación y los ejemplos. */
 export function missingAdventureLessons(
   adventure: Pick<AdventureDef, "lessonIds">,
@@ -405,6 +433,8 @@ const torneo: AdventureDef = {
   lessonIds: ["media-mediana-moda"],
 };
 
+// Los retos expertos viven en `expertChallenges.ts` y no se importan aquí:
+// este catálogo llega a la página de cada clase, que no los necesita.
 export const ADVENTURES: AdventureDef[] = [apagon, camara, receta, ascensor, baldosas, huerto, torneo, ...MORE_ADVENTURES];
 
 export function getAdventure(id: string) {

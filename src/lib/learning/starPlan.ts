@@ -62,9 +62,11 @@ export function starPlan({ progress, reviews, adventures, ledger }: {
     id: "mixed", label: "Repasos mixtos", rule: `${STAR_REWARDS.mixed} por cada unidad repasada`,
     earned: mixedDone * STAR_REWARDS.mixed, possible: unitsWithLessons.length * STAR_REWARDS.mixed, done: mixedDone, total: unitsWithLessons.length,
   };
+  const expertsDone = ADVENTURES.filter((adventure) => adventures[adventure.id]?.expert?.completedAt).length;
   const adv: StarSection = {
-    id: "adventures", label: "Aventuras", rule: `${STAR_REWARDS.adventure} por cada misión completada`,
-    earned: adventuresDone * STAR_REWARDS.adventure, possible: ADVENTURES.length * STAR_REWARDS.adventure, done: adventuresDone, total: ADVENTURES.length,
+    id: "adventures", label: "Aventuras", rule: `${STAR_REWARDS.adventure} por cada misión completada y ${STAR_REWARDS.adventureExpert} por su reto experto`,
+    earned: adventuresDone * STAR_REWARDS.adventure + expertsDone * STAR_REWARDS.adventureExpert,
+    possible: ADVENTURES.length * (STAR_REWARDS.adventure + STAR_REWARDS.adventureExpert), done: adventuresDone, total: ADVENTURES.length,
   };
   const fixed = lessons.earned + mixed.earned + adv.earned;
   const daily: StarSection = {

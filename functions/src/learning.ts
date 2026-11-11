@@ -3,7 +3,8 @@ import { createHash } from "node:crypto";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { assertChildSessionCurrent } from "./childSession";
-import { getAdventure, missingAdventureLessons, type AdventureDef } from "./learning/adventures";
+import { expertInputs, getAdventure, missingAdventureLessons, type AdventureDef } from "./learning/adventures";
+import { getExpertChallenge } from "./learning/expertChallenges";
 import { getLesson } from "./learning/catalog";
 import {
   applyAdventureAction,
@@ -133,11 +134,17 @@ function validAction(
 ): action is LearningAction | AdventureAction {
   if (!action || typeof action !== "object") return false;
   const a = action as Record<string, unknown>;
-  if (adventure)
+  if (adventure) {
+    // `expert` solo puede ser true, y solo en aventuras con reto experto.
+    const challenge = getExpertChallenge(adventure.id);
+    if (a.expert !== undefined && (a.expert !== true || !challenge)) return false;
+    const inputs = a.expert ? expertInputs(adventure, challenge) : adventure.inputs;
     return (
       a.kind === "inspect" ||
-      (a.kind === "dispatch" && validAllocation(adventure, a.allocation))
+      (a.kind === "replay" && a.expert === true) ||
+      (a.kind === "dispatch" && validAllocation(adventure, a.allocation, inputs))
     );
+  }
   return (
     a.kind === "next" ||
     (a.kind === "begin" &&
@@ -331,6 +338,7 @@ export const recordLearningAction = onCall(
               action as AdventureAction,
               now,
               adventure.id,
+              getExpertChallenge(adventure.id),
             )
           : reviewUnit
             ? applyMixedReviewAction(
@@ -367,10 +375,17 @@ export const recordLearningAction = onCall(
           ? lessonStars(previous as LearningProgress | undefined, next as LearningProgress)
           : null;
         if (lessonReward) (next as LearningProgress).rewarded = lessonReward.rewarded;
+        // Reto experto: un premio propio, una sola vez por aventura.
+        const expertDone =
+          adventure &&
+          !(previous as AdventureState | undefined)?.expert?.completedAt &&
+          (next as AdventureState).expert?.completedAt;
         const stars = daily
           ? dailyReward ? STAR_REWARDS.daily + (milestone ? STAR_REWARDS.streakBonus : 0) : 0
           : lessonReward
             ? lessonReward.stars
+            : expertDone
+              ? STAR_REWARDS.adventureExpert
             : !placement && !done(previous) && done(next)
               ? adventure ? STAR_REWARDS.adventure : STAR_REWARDS.mixed
               : 0;

@@ -156,6 +156,39 @@ Se guarda cada prueba, se puede volver a experimentar y el premio de diez estrel
 | Geometría | El huerto escolar | Largo y ancho con 36 m de cerca | Confundir semiperímetro con perímetro |
 | Datos | El torneo de lanzamientos | Tres puntuaciones con media y moda 8 | Calcular la media solo con los lanzamientos nuevos |
 
+### Reto experto (fase 2)
+
+Completar una misión desbloquea su **reto experto** (`functions/src/learning/expertChallenges.ts`): la historia da un giro, cambia los datos y exige más que aplicar una fórmula. Cada reto es una familia de **partidas**: los mismos objetivos con datos distintos (entre 5 y 12 por reto). La tabla describe la partida original. Las pistas por dato de la misión se abren a petición («Ver pista»); en el reto experto no hay pistas junto a los datos y la única ayuda es la respuesta a cada plan probado, que señala el error sin dar el método completo.
+
+| Aventura | Giro del reto experto | Qué lo hace difícil |
+| --- | --- | --- |
+| El apagón | La reserva baja a 3/4; la radio toma 1/3 de lo que deja el hospital | Fracción del resto, no del total; reserva de emergencia |
+| La cámara del mercado | Vacunas entre 2 y 8 °C y un compresor más débil | Hay que calentar el congelador hasta −15 °C, no enfriarlo |
+| La receta del festival | Solo quedan 9 huevos | Máximo de personas con un ingrediente limitante |
+| El ascensor de carga | 65 cajas, otra tripulación y margen del 90 % | Inecuación con decimal y mínimo de viajes |
+| El jardín de baldosas | Borde doble | (n + 4)² − n² y el menor jardín válido |
+| El huerto escolar | El huerto se apoya en una pared | Área máxima con cerca en tres lados (no es un cuadrado) |
+| El torneo de lanzamientos | Media, mediana, rango y moda única a la vez | Una sola terna cumple las cuatro medidas |
+| El convoy de suministros | El segundo vehículo sale 6 minutos después | Coincidencias desfasadas: el primer encuentro ya no es el MCM |
+| La mezcla de emergencia | Derrame de 5/6 L y dosis de 1/4 L | Suma y resta con tres denominadores y división en partes |
+| El mercado del barrio | Descuento del 25 % y luego impuesto del 12 % | Porcentajes encadenados, no sumados |
+| El rescate en la montaña | Ruta 1,5 veces más larga y tormenta en 18 h | Proporcionalidad inversa con el menor equipo |
+| La feria de energía | Al menos 47 kW, 14 generadores, precios distintos | Optimización entera del coste |
+| La ruta del dron | Tres veces más cerca de B que de A | Punto que divide un segmento en razón 3 : 1 |
+| El depósito de agua | Medidas decimales y llenado al 90 % | Volumen decimal, porcentaje y resta |
+| El puente del valle | Desnivel de 21 m y piezas de 3 m | Terna 20-21-29 y redondeo hacia arriba |
+| La tómbola solidaria | Venta de boletos con ganancia mínima | La mayor probabilidad que respeta la ganancia |
+| La alerta meteorológica | Porcentaje de alertas que acertaron | P(lluvia \| alerta) frente a P(alerta \| lluvia) |
+| El ahorro para el observatorio | 12 % simple frente a 10 % compuesto | Primer año en que gana la compuesta |
+| La trayectoria del cohete | h(t) = −t² + 10t y altura segura de 16 m | Vértice y ecuación cuadrática por simetría |
+
+- **Partidas al azar:** al aceptar el reto, el servidor elige una partida a partir de su hora y de la revisión; el navegador no la elige. Superada una partida, «Jugar con datos nuevos» (`replay`) reparte otra distinta y reinicia las pruebas. Las partidas salen de rejillas de parámetros filtradas: solución entera dentro de los rangos de entrada y, en los retos de «el mejor», un único óptimo. Torneo, feria y tómbola usan configuraciones encontradas por búsqueda exhaustiva. La partida 0 es la original, de modo que un reto empezado antes de las partidas conserva sus datos.
+- **Estado:** `learningMissions/{aventura}.expert` (opcional): lectura del informe, partida (`variant`), pruebas de la partida, último plan, respuesta, partida superada (`solvedAt`), partidas superadas (`rounds`) y primera vez superado (`completedAt`). La misión conserva su plan y su fecha.
+- **Acciones:** `{ kind: "inspect" | "dispatch" | "replay", expert: true }`. El servidor exige la misión completada, valida las entradas propias del reto, solo admite `replay` con la partida superada y rechaza `expert` con otro valor o en aventuras sin reto.
+- **Carga:** los retos no forman parte del catálogo `ADVENTURES`, que llega a la página de cada clase. El servidor los busca con `getExpertChallenge` y se los pasa al motor (`applyAdventureAction`); en el navegador solo los importan las pantallas de aventura (`src/lib/learning/expert.ts`). Así la clase respeta su presupuesto de JS.
+- **Premio:** 5 estrellas la primera vez que se supera (`STAR_REWARDS.adventureExpert`); las partidas siguientes son de entrenamiento. El plan de estrellas lo cuenta en «Aventuras».
+- **Validez:** `expertChallenges.test.ts` comprueba cada partida de cada reto: su solución entera se acepta, la de la misión no sirve y cualquier plan recibe una respuesta concreta. Donde el espacio de entradas es pequeño, lo recorre entero: los retos de «el mejor», «el mínimo» o «el máximo» aceptan solo el óptimo. La receta se acota por los huevos.
+
 El servidor valida cada plan con el número de entradas y los rangos de su aventura y guarda el estado en `learningMissions/{aventura}`. El estado guardado de El apagón no cambia de forma. Tras la última clase relacionada, el resumen ofrece jugar la aventura; el informe familiar muestra planes probados y misiones completadas.
 
 ## Correspondencia con el CNEB (Perú)

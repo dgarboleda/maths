@@ -17,11 +17,11 @@ test("calcula lo ganado y lo posible por sección", () => {
   const by = Object.fromEntries(plan.sections.map((s) => [s.id, s]));
   expect(by.lessons).toMatchObject({ earned: 5 + STAR_REWARDS.lesson + STAR_REWARDS.lessonCheck, done: 2, total: LESSONS.length, possible: LESSONS.length * LESSON_STARS_MAX });
   expect(by.mixed).toMatchObject({ earned: STAR_REWARDS.mixed, total: LEARNING_UNITS.length });
-  expect(by.adventures).toMatchObject({ earned: STAR_REWARDS.adventure, possible: ADVENTURES.length * STAR_REWARDS.adventure });
+  expect(by.adventures).toMatchObject({ earned: STAR_REWARDS.adventure, possible: ADVENTURES.length * (STAR_REWARDS.adventure + STAR_REWARDS.adventureExpert) });
   // El resto del historial (40 − 25) son del repaso diario u otras actividades.
   expect(by.daily).toMatchObject({ earned: 15, possible: null });
   expect(plan).toMatchObject({ earned: 40, spent: 12 });
-  expect(plan.possible).toBe(LESSONS.length * LESSON_STARS_MAX + LEARNING_UNITS.length * 5 + ADVENTURES.length * 10);
+  expect(plan.possible).toBe(LESSONS.length * LESSON_STARS_MAX + LEARNING_UNITS.length * 5 + ADVENTURES.length * (STAR_REWARDS.adventure + STAR_REWARDS.adventureExpert));
   expect(plan.remaining).toBe(plan.possible - 25);
 });
 

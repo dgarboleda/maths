@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { getLesson, placementQuestion, type Question } from "../src/lib/learning/domain";
+import { getExpertChallenge, getLesson, placementQuestion, type Question } from "../src/lib/learning/domain";
 import { crearHijo, entrarAlEspacio, entrarComoFamilia, registrarPadre, sembrarClasesTerminadas } from "./utilidades";
 
 const familyEmail = new WeakMap<Page, string>();
@@ -242,6 +242,10 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
   await page.getByRole("link", { name: /El jardín de baldosas/ }).click();
   await page.getByRole("button", { name: "Investigar la situación" }).click();
   await expect(page.getByRole("status").filter({ hasText: /al menos 110 m²/ })).toBeVisible();
+  // Las pistas de cada dato se abren a petición.
+  await expect(page.getByText("Cuenta un lado, los otros tres y no olvides las 4 esquinas: 4n + 4.")).toHaveCount(0);
+  await page.getByRole("button", { name: "Ver pista de Baldosas" }).click();
+  await expect(page.getByText("Cuenta un lado, los otros tres y no olvides las 4 esquinas: 4n + 4.")).toBeVisible();
   const plan = async (lado: string, baldosas: string) => {
     await page.getByLabel("Lado del jardín (m)").fill(lado);
     await page.getByLabel("Baldosas", { exact: true }).fill(baldosas);
@@ -255,8 +259,52 @@ test("una aventura de unidad orienta cada intento, se guarda y aparece completad
   await expect(page.getByRole("heading", { name: "Misión completada" })).toBeVisible();
   const results = await new AxeBuilder({ page }).include("main").analyze();
   expect(results.violations).toEqual([]);
+
+  // Fase 2: el reto experto cambia los datos y no muestra pistas. El servidor
+  // elige la partida; la prueba lee cuál y toma su solución del catálogo.
+  const expert = page.getByRole("region", { name: "La historia da un giro" });
+  await expert.getByRole("button", { name: "Aceptar el reto" }).click();
+  await expect(expert.getByText(/anillos de baldosas/)).toBeVisible();
+  await expect(expert.getByRole("button", { name: /Ver pista/ })).toHaveCount(0);
+  const challenge = getExpertChallenge("jardin-baldosas")!;
+  const section = page.locator("section[data-variant]");
+  const variant = Number(await section.getAttribute("data-variant"));
+  const [lado, baldosas] = challenge.solution(variant);
+  const rings = challenge.round(variant).brief.includes("borde de tres anillos") ? 3 : 2;
+  const expertPlan = async (l: number, b: number) => {
+    await section.getByLabel("Lado del jardín (m)").fill(String(l));
+    await section.getByLabel("Baldosas", { exact: true }).fill(String(b));
+    await section.getByRole("button", { name: "Probar el plan experto" }).click();
+  };
+  // La solución de la misión ya no sirve.
+  await expertPlan(11, 48);
+  await expect(section.getByRole("status")).toHaveText(/^Con lado 11, el césped mide 121 m²: no llega a \d+\.$/);
+  await expertPlan(lado, 4 * lado + 4);
+  await expect(section.getByRole("status")).toContainText("forman un solo anillo");
+  // Cumple, pero no es el óptimo.
+  await expertPlan(lado + 1, (lado + 1 + 2 * rings) ** 2 - (lado + 1) ** 2);
+  await expect(section.getByRole("status")).toContainText("gastaría menos baldosas");
+  await expertPlan(lado, baldosas);
+  await expect(section.getByText("Superado en 4 pruebas")).toBeVisible();
+  await expect(section.getByText("1 partida superada")).toBeVisible();
+  await page.reload();
+  await expect(section.getByText("Superado en 4 pruebas")).toBeVisible();
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations).toEqual([]);
+
+  // Otra partida: datos nuevos, contador a cero, sin premio repetido.
+  await section.getByRole("button", { name: "Jugar con datos nuevos" }).click();
+  await expect(page.getByRole("region", { name: "La historia da un giro" })).toBeVisible();
+  const next = Number(await section.getAttribute("data-variant"));
+  expect(next).not.toBe(variant);
+  await expect(section.getByText("0 pruebas")).toBeVisible();
+  const [lado2, baldosas2] = challenge.solution(next);
+  await expertPlan(lado2, baldosas2);
+  await expect(section.getByText("2 partidas superadas")).toBeVisible();
+  await expect(section.getByText(/ya son tuyas: esta partida es para entrenar/)).toBeVisible();
+
   await page.getByRole("link", { name: "Elegir otra aventura" }).click();
-  await expect(page.getByText("1 de 19 misiones completadas")).toBeVisible();
+  await expect(page.getByText("1 de 19 misiones completadas · 1 retos expertos")).toBeVisible();
+  await expect(page.getByText("Reto experto superado · 2 partidas")).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

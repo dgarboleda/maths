@@ -10,6 +10,7 @@ import {
 } from "@/lib/learning/useLearningData";
 import { getAdventure, initialAdventure, missingAdventureLessons, type AdventureState } from "@/lib/learning/core";
 import { AdventureRequirements } from "./AdventureRequirements";
+import { ExpertChallenge } from "./ExpertChallenge";
 import {
   LearningLoading,
   LearningLoadError,
@@ -316,12 +317,13 @@ function AdventureGame({
           </p>
           <Link
             href={`/jugar/${childId}/aprende/razones`}
-            className={primaryButton}
+            className={secondaryButton}
           >
             Siguiente clase: comparar cantidades con razones
           </Link>
         </section>
       )}
+      <ExpertChallenge adventure={getAdventure("apagon")!} state={state} mutation={mutation} />
       <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-700 bg-slate-900 p-5">
         <div>
           <h2 className="font-bold">La matemática que cambia esta ciudad</h2>

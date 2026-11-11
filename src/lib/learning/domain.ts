@@ -6,3 +6,4 @@ export * from "../../../functions/src/learning/mixed";
 export * from "../../../functions/src/learning/placement";
 export * from "../../../functions/src/learning/itemAnalysis";
 export * from "../../../functions/src/learning/daily";
+export * from "../../../functions/src/learning/expertChallenges";
