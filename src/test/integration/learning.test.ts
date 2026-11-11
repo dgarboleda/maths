@@ -9,6 +9,7 @@ import type {
   LearningProgress,
 } from "@/lib/learning/domain";
 import {
+  ADVENTURE_EXPERT_STARS,
   ADVENTURE_STARS,
   dailyQuestions,
   getExpertChallenge,
@@ -471,7 +472,7 @@ describe("Servicio educativo y reglas reales", () => {
       expect(almost.stars).toBe(0);
       expect(almost.progress.expert).toMatchObject({ attempts: 1, completedAt: null });
       const solved = await expert(4, { kind: "dispatch", allocation: [boxes, trips], expert: true });
-      expect(solved.stars).toBe(5);
+      expect(solved.stars).toBe(ADVENTURE_EXPERT_STARS.intermedia); // ascensor-carga
       expect(solved.progress.expert!.completedAt).toBeGreaterThan(0);
       // Otra partida, con datos nuevos, no vuelve a premiar.
       const again = await expert(5, { kind: "replay", expert: true });

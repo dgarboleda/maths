@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
-import { ADVENTURES, adventureStars, LEARNING_UNITS, LESSONS, LESSON_STARS_MAX, STAR_REWARDS } from "./domain";
+import { ADVENTURES, adventureExpertStars, adventureStars, LEARNING_UNITS, LESSONS, LESSON_STARS_MAX, STAR_REWARDS } from "./domain";
 import { ledgerTotals, starPlan } from "./starPlan";
 
-const adventuresMax = ADVENTURES.reduce((sum, a) => sum + adventureStars(a), 0) + ADVENTURES.length * STAR_REWARDS.adventureExpert;
+const adventuresMax = ADVENTURES.reduce((sum, a) => sum + adventureStars(a) + adventureExpertStars(a), 0);
 
 const done = { completedAt: 1 } as never;
 // Con el reparto actual: terminada (1) y comprobación sin ayuda (4).

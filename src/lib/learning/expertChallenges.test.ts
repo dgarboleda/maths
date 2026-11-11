@@ -7,7 +7,6 @@ import {
   expertRoundSolved,
   expertVariant,
   getExpertChallenge,
-  STAR_REWARDS,
   type AdventureDef,
   type AdventureState,
 } from "./domain";
@@ -193,7 +192,6 @@ describe("motor del reto experto", () => {
     expect(expertRoundSolved(state.expert)).toBe(false);
     state = applyAdventureAction(state, { kind: "dispatch", allocation: challenge.solution(second), expert: true }, NOW + 5, id, getExpertChallenge(id));
     expect(state.expert).toMatchObject({ completedAt: NOW + 2, solvedAt: NOW + 5, rounds: 2 });
-    expect(STAR_REWARDS.adventureExpert).toBe(5);
   });
 
   test("un reto empezado antes de las partidas sigue con la partida original", () => {

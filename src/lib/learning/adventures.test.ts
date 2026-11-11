@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  ADVENTURE_EXPERT_STARS,
   ADVENTURE_STARS,
   ADVENTURES,
   adventureStars,
@@ -141,9 +142,11 @@ describe("estrellas por dificultad", () => {
     }
   });
 
-  test("más dificultad, más estrellas", () => {
-    expect(ADVENTURE_STARS.basica).toBeLessThan(ADVENTURE_STARS.intermedia);
-    expect(ADVENTURE_STARS.intermedia).toBeLessThan(ADVENTURE_STARS.avanzada);
+  test("más dificultad, más estrellas (misión y reto experto)", () => {
+    for (const table of [ADVENTURE_STARS, ADVENTURE_EXPERT_STARS]) {
+      expect(table.basica).toBeLessThan(table.intermedia);
+      expect(table.intermedia).toBeLessThan(table.avanzada);
+    }
   });
 
   test("el catálogo usa los tres niveles, no un premio único", () => {

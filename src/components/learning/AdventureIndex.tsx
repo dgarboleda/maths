@@ -5,13 +5,13 @@ import { ArrowRight, CheckCircle2, Compass, Flame, Star, Trophy } from "lucide-r
 import { useLearningData } from "@/lib/learning/useLearningData";
 import {
   ADVENTURE_DIFFICULTY_LABEL,
+  ADVENTURE_EXPERT_STARS,
   ADVENTURE_STARS,
   ADVENTURES,
   adventureStars,
   expertRounds,
   LEARNING_UNITS,
   missingAdventureLessons,
-  STAR_REWARDS,
 } from "@/lib/learning/core";
 import {
   LearningLoading,
@@ -47,7 +47,8 @@ export function AdventureIndex({ childId }: { childId: string }) {
         condición falta. Cada misión completada da estrellas una vez según su
         dificultad ({ADVENTURE_STARS.basica} básica, {ADVENTURE_STARS.intermedia} intermedia,{" "}
         {ADVENTURE_STARS.avanzada} avanzada) y desbloquea su reto experto: la historia da un giro, sin pistas, por{" "}
-        {STAR_REWARDS.adventureExpert} estrellas más. Cada partida del reto trae datos nuevos.
+        {ADVENTURE_EXPERT_STARS.basica}, {ADVENTURE_EXPERT_STARS.intermedia} o{" "}
+        {ADVENTURE_EXPERT_STARS.avanzada} estrellas más según la dificultad. Cada partida del reto trae datos nuevos.
       </p>
       <ul className="grid gap-4 sm:grid-cols-2">
         {ADVENTURES.map((adventure) => {

@@ -42,7 +42,7 @@ import {
   type DailyLessonInfo,
 } from "./learning/daily";
 import { readBalance } from "./stars";
-import { adventureStars, lessonStars, STAR_REWARDS } from "./learning/rewards";
+import { adventureExpertStars, adventureStars, lessonStars, STAR_REWARDS } from "./learning/rewards";
 import { MIN_THINK_MS } from "./learning/engine";
 
 /**
@@ -385,7 +385,7 @@ export const recordLearningAction = onCall(
           : lessonReward
             ? lessonReward.stars
             : expertDone
-              ? STAR_REWARDS.adventureExpert
+              ? adventureExpertStars(adventure)
             : !placement && !done(previous) && done(next)
               ? adventure ? adventureStars(adventure) : STAR_REWARDS.mixed
               : 0;
