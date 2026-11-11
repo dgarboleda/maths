@@ -128,8 +128,8 @@ export function OptionPicker<T extends string>({
   disabled,
 }: {
   label: string;
-  /** Con `symbol`, en móvil se ve solo el signo; el nombre sigue siendo
-   *  el texto accesible del botón. */
+  /** Con `symbol`, se ve solo el signo; el nombre sigue siendo el texto
+   *  accesible del botón (y su `title`). */
   options: readonly { id: T; label: string; symbol?: string }[];
   value: T;
   onChange: (value: T) => void;
@@ -155,7 +155,7 @@ export function OptionPicker<T extends string>({
           {option.symbol ? (
             <>
               <span aria-hidden="true" className="text-xl leading-none">{option.symbol}</span>
-              <span className="sr-only sm:not-sr-only">{option.label}</span>
+              <span className="sr-only">{option.label}</span>
             </>
           ) : option.label}
         </button>

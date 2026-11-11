@@ -216,8 +216,8 @@ export function CalculatorPanel({
 
   const fieldBase = "mt-1 block min-h-11 rounded-xl border border-slate-500 bg-slate-950 px-3 font-mono text-lg text-white";
   const field = `${fieldBase} w-32`;
-  // En móvil los dos números y el botón de escribir comparten una fila.
-  const operand = `${fieldBase} w-full sm:w-32`;
+  // Los dos números y el botón de escribir comparten una fila.
+  const operand = `${fieldBase} w-full`;
   const remainderNote = result && spec?.op === "divide" && isDecimalDivision(spec) && divisionTrace(spec).remainder !== 0;
 
   return (
@@ -283,19 +283,19 @@ export function CalculatorPanel({
         <section aria-labelledby={`${id}-new`} className="space-y-3">
           <h3 id={`${id}-new`} className="text-sm font-bold text-cyan-200">{chain.length ? "Cuenta siguiente" : "Cuenta"}</h3>
           <OptionPicker label="Operación de la calculadora" options={CALCULATOR_OPS} value={op} onChange={setOp} />
-          <div className="flex items-end gap-3 sm:flex-wrap">
-            <label className="min-w-0 flex-1 text-sm text-slate-300 sm:flex-none">
+          <div className="flex max-w-md items-end gap-3">
+            <label className="min-w-0 flex-1 text-sm text-slate-300">
               {op === "divide" ? "Dividendo" : op === "multiply" ? "Primer factor" : "Primer número"}
               <input className={operand} inputMode="text" maxLength={11} value={a} onChange={(e) => setA(decimalInput(e.target.value))} />
             </label>
-            <label className="min-w-0 flex-1 text-sm text-slate-300 sm:flex-none">
+            <label className="min-w-0 flex-1 text-sm text-slate-300">
               {op === "divide" ? "Divisor" : op === "multiply" ? "Segundo factor" : "Segundo número"}
               <input ref={second} className={operand} inputMode="text" maxLength={11} value={b} onChange={(e) => setB(decimalInput(e.target.value))} />
             </label>
-            {/* En móvil, solo el icono: el texto sigue siendo el nombre accesible. */}
+            {/* Solo el icono: el texto sigue siendo el nombre accesible. */}
             <button type="button" className={`${secondaryButton} shrink-0`} title="Escribir la cuenta" onClick={() => write()}>
               <PencilLine size={18} aria-hidden="true" />
-              <span className="sr-only sm:not-sr-only">Escribir la cuenta</span>
+              <span className="sr-only">Escribir la cuenta</span>
             </button>
           </div>
           {op === "divide" && <p className="text-xs text-slate-400">Para continuar con decimales, escribe la coma en el cociente.</p>}
@@ -361,7 +361,7 @@ export function CalculatorPanel({
         <div className="flex flex-wrap items-center gap-2">
           {final && <button type="button" className={secondaryButton} title="Copiar" onClick={() => void copy()}>
             <ClipboardCopy size={18} aria-hidden="true" />
-            <span className="sr-only sm:not-sr-only">Copiar</span>
+            <span className="sr-only">Copiar</span>
           </button>}
           {target && final && (
             <button type="button" className={primaryButton} disabled={incompatibleTarget} onClick={useInTarget}>
@@ -371,7 +371,7 @@ export function CalculatorPanel({
           {mode === "written" && (chain.length > 0 || spec) && (
             <button type="button" className={`${secondaryButton} ml-auto`} title="Empezar de nuevo" onClick={reset}>
               <RotateCcw size={18} aria-hidden="true" />
-              <span className="sr-only sm:not-sr-only">Empezar de nuevo</span>
+              <span className="sr-only">Empezar de nuevo</span>
             </button>
           )}
         </div>

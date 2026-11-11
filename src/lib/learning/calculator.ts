@@ -21,7 +21,7 @@ import {
   type MultiplySpec,
 } from "./core";
 
-/** `symbol`: en pantallas estrechas el botón muestra solo el signo. */
+/** `symbol`: el botón muestra solo el signo; `label` es su nombre accesible. */
 export const CALCULATOR_OPS = [
   { id: "add", label: "Sumar", symbol: "+" },
   { id: "subtract", label: "Restar", symbol: "−" },
