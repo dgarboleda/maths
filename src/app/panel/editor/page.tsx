@@ -350,7 +350,7 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
   return (
     <form onSubmit={handleSubmit} className="family-panel space-y-4 rounded-2xl p-4 sm:p-5">
       <div>
-        <label htmlFor="nombre-nivel" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">
+        <label htmlFor="nombre-nivel" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
           Nombre del nivel
         </label>
         <input
@@ -367,7 +367,7 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
       {parentId && <BackgroundPicker parentId={parentId} for="scene" value={background?.src ?? ""} onChange={setBackground} autoSelectDefault />}
 
       <div>
-        <label htmlFor="plantilla-nivel" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">
+        <label htmlFor="plantilla-nivel" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
           Punto de partida
         </label>
         <select
@@ -383,7 +383,7 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
             </option>
           ))}
         </select>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-slate-500">
           {templateId ? LEVEL_TEMPLATES.find((t) => t.id === templateId)?.description : "Empezá desde cero y armá el nivel a tu gusto."}
         </p>
       </div>

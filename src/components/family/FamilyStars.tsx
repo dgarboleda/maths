@@ -38,8 +38,8 @@ function FamilyRow({ parentId, childId, name }: { parentId: string; childId: str
   return (
     <tr className="border-t border-slate-200/80">
       <th scope="row" className="py-2 pr-2 text-left font-semibold text-slate-900">{name}</th>
-      <td className="py-2 text-right font-bold tabular-nums text-amber-600">{available ?? "…"}</td>
-      <td className="py-2 text-right tabular-nums text-emerald-600">{plan.earned ?? "…"}</td>
+      <td className="py-2 text-right font-bold tabular-nums text-amber-700">{available ?? "…"}</td>
+      <td className="py-2 text-right tabular-nums text-emerald-700">{plan.earned ?? "…"}</td>
       <td className="py-2 text-right tabular-nums text-indigo-600">{plan.spent ?? "…"}</td>
       <td className="py-2 text-right tabular-nums text-slate-600">{plan.remaining}</td>
     </tr>
@@ -112,7 +112,7 @@ export function RewardCatalogEditor({ parentId, available, possible, childName }
             const missing = Math.max(0, item.stars - (available ?? 0));
             return (
               <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <span className="text-sm text-slate-900">{item.label} · <strong className="text-amber-600 tabular-nums">{item.stars} ★</strong></span>
+                <span className="text-sm text-slate-900">{item.label} · <strong className="text-amber-700 tabular-nums">{item.stars} ★</strong></span>
                 <span className="flex items-center gap-3 text-xs">
                   <span className={missing ? "text-slate-500" : "font-semibold text-emerald-700"}>{missing ? `A ${childName} le faltan ${missing}` : `${childName} ya puede canjearlo`}</span>
                   <button type="button" onClick={() => void remove(item)} aria-label={`Quitar ${item.label}`}

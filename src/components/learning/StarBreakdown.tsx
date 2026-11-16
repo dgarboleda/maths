@@ -23,8 +23,8 @@ export function StarBreakdown({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-2">
-        {stat(you ? "tienes ahora" : "disponibles", available, light ? "text-amber-600" : "text-amber-300")}
-        {stat(you ? "ganaste en total" : "ganadas", plan.earned, light ? "text-emerald-600" : "text-emerald-300")}
+        {stat(you ? "tienes ahora" : "disponibles", available, light ? "text-amber-700" : "text-amber-300")}
+        {stat(you ? "ganaste en total" : "ganadas", plan.earned, light ? "text-emerald-700" : "text-emerald-300")}
         {stat(you ? "canjeaste" : "canjeadas", plan.spent, light ? "text-indigo-600" : "text-violet-300")}
       </div>
       <div className="overflow-x-auto">
@@ -49,7 +49,7 @@ export function StarBreakdown({
                   </span>
                 )}
               </th>
-              <td className={`py-2 text-right font-bold tabular-nums ${light ? "text-amber-600" : "text-amber-200"}`}>{s.earned}</td>
+              <td className={`py-2 text-right font-bold tabular-nums ${light ? "text-amber-700" : "text-amber-200"}`}>{s.earned}</td>
               <td className={`py-2 text-right tabular-nums ${light ? "text-slate-600" : "text-slate-300"}`}>{s.possible ?? "sin tope"}</td>
             </tr>
           ))}
@@ -58,7 +58,7 @@ export function StarBreakdown({
       </div>
       <p className={`text-sm ${light ? "text-slate-700" : "text-slate-200"}`}>
         {plan.remaining > 0
-          ? <>{you ? "Todavía puedes ganar" : "Todavía puede ganar"} <strong className={light ? "text-amber-600" : "text-amber-300"}>{plan.remaining} ⭐</strong> en clases, repasos y aventuras (de {plan.possible}), y 2 más cada día con el repaso diario.</>
+          ? <>{you ? "Todavía puedes ganar" : "Todavía puede ganar"} <strong className={light ? "text-amber-700" : "text-amber-300"}>{plan.remaining} ⭐</strong> en clases, repasos y aventuras (de {plan.possible}), y 2 más cada día con el repaso diario.</>
           : <>{you ? "Ya ganaste" : "Ya ganó"} todas las estrellas de clases, repasos y aventuras. El repaso diario sigue dando 2 al día.</>}
       </p>
     </div>

@@ -24,7 +24,7 @@ export default function ChildLearningPage() {
       <Avatar avatarId={child.avatarId} title={child.name} className="size-16 rounded-full border border-slate-200" />
       <div className="min-w-0 flex-1"><h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">{child.name}</h1>
         <p className="mt-1 text-sm text-slate-600 tabular-nums">{dashboard.completed} de {LESSONS.length} clases terminadas · {dashboard.streak} días de racha de repaso</p>
-        <p className="mt-1 text-sm font-medium text-amber-600 tabular-nums">{dashboard.totalStars ?? "…"} estrellas</p></div>
+        <p className="mt-1 text-sm font-medium text-amber-700 tabular-nums">{dashboard.totalStars ?? "…"} estrellas</p></div>
       <Link href={`/jugar/${childId}/mapa`} className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver mapa de aprendizaje</Link>
     </header>
     <LearningReport childId={childId} childName={child.name} />
