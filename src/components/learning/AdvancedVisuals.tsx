@@ -111,6 +111,7 @@ export function ExponentialVisual({ id }: { id: string }) {
       </Plane>
       <GhostNote show={Boolean(ghost)} />
       <PointReader id={`${id}-pt`} points={points} selected={pick} onSelect={setPick} />
+      <div className="overflow-x-auto">
       <table className="w-full text-left text-sm tabular-nums">
         <caption className="sr-only">Valores de la exponencial y de la lineal</caption>
         <thead><tr><th className="p-2">n</th><th className="p-2">Exponencial</th><th className="p-2">Lineal</th></tr></thead>
@@ -124,6 +125,7 @@ export function ExponentialVisual({ id }: { id: string }) {
           ))}
         </tbody>
       </table>
+      </div>
       <p className="text-sm text-slate-300">
         Las dos empiezan en {a} y dan el mismo primer paso. La lineal suma siempre {num(step)}; la exponencial multiplica por {num(b)}, así que
         {b > 1 ? " cada paso es mayor que el anterior." : b < 1 ? " cada paso es menor que el anterior." : " con b = 1 no cambia."}
@@ -336,6 +338,7 @@ export function TransformVisual({ id }: { id: string }) {
           </>
         )}
       </Plane>
+      <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">Coordenadas antes y después</caption>
         <thead><tr><th className="p-2">Vértice</th><th className="p-2">Original</th><th className="p-2">Imagen</th></tr></thead>
@@ -349,6 +352,7 @@ export function TransformVisual({ id }: { id: string }) {
           ))}
         </tbody>
       </table>
+      </div>
       <p className="text-sm text-slate-300">
         La figura cian es la original y la ámbar, su imagen. {kind === "traslacion" ? "Arrastra el vértice A′ para cambiar el vector." : "Compara los signos de cada coordenada con la regla."} El tamaño y los ángulos no cambian.
       </p>
@@ -673,6 +677,7 @@ export function TwoWayVisual({ id }: { id: string }) {
           <Slider id={`${id}-v5`} label="5.° · vóley" value={v5} min={0} max={20} onChange={setV5} />
         </div>
       </div>
+      <div className="overflow-x-auto">
       <table className="w-full max-w-md text-left text-sm">
         <caption className="sr-only">Estudiantes por grado y deporte preferido</caption>
         <thead>
@@ -684,6 +689,7 @@ export function TwoWayVisual({ id }: { id: string }) {
           <tr><th className="p-2" scope="row">Total</th><td className="p-2">{f4 + f5}</td><td className="bg-rose-950/40 p-2">{v4 + v5}</td><td className="p-2">{total}</td></tr>
         </tbody>
       </table>
+      </div>
       <p className="text-sm font-semibold">
         <MathText text={`P(vóley | 5.°) = ${frac(v5, f5 + v5)}`} />
         <br /><MathText text={`P(5.° | vóley) = ${frac(v5, v4 + v5)}`} />

@@ -355,7 +355,7 @@ function ResetPinDialog({
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
             >
               Guardar
             </button>

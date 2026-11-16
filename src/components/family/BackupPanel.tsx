@@ -29,6 +29,8 @@ export function BackupPanel({ parentId }: { parentId: string }) {
     { mode: "restaurar"; data: ImportResult } | { mode: "clonar"; data: CloneResult } | null
   >(null);
 
+  const [pendingConfirm, setPendingConfirm] = useState<{ mode: Mode; bundle: ReturnType<typeof parseBundle> extends { ok: true; bundle: infer B } ? B : never } | null>(null);
+
   async function handleExport() {
     setExporting(true);
     setErrors(null);
@@ -54,6 +56,7 @@ export function BackupPanel({ parentId }: { parentId: string }) {
   async function handleFileChosen(file: File) {
     setErrors(null);
     setResult(null);
+    setPendingConfirm(null);
 
     let raw: unknown;
     try {
@@ -68,20 +71,13 @@ export function BackupPanel({ parentId }: { parentId: string }) {
       setErrors(parsed.errors);
       return;
     }
-    const { bundle } = parsed;
-    const mode = pendingMode;
+    setPendingConfirm({ mode: pendingMode, bundle: parsed.bundle });
+  }
 
-    const confirmed =
-      mode === "restaurar"
-        ? window.confirm(
-            // Confirmación explícita (§2.5 punto 4): restaurar sobrescribe.
-            `Se van a sobrescribir ${bundle.levels.length} nivel(es), 1 mundo y ${bundle.customModules.length} módulo(s) personalizado(s). Lo que ya tenés y no está en este paquete no se borra. ¿Restaurar de todos modos?`,
-          )
-        : window.confirm(
-            `Se van a sumar ${bundle.levels.length} nivel(es) nuevo(s) y ${bundle.customModules.length} módulo(s) personalizado(s) nuevo(s) a tu mundo actual, con ids nuevos — nada de lo que ya tenés se toca. ¿Sumar esta copia?`,
-          );
-    if (!confirmed) return;
-
+  async function confirmImport() {
+    if (!pendingConfirm) return;
+    const { mode, bundle } = pendingConfirm;
+    setPendingConfirm(null);
     setImporting(true);
     try {
       const { db, firestore } = await getFirebase();
@@ -100,7 +96,7 @@ export function BackupPanel({ parentId }: { parentId: string }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-slate-600">
         Exportá una copia de tu mundo, tus niveles y tu currícula personalizada, o restaurala si algo se borró por
         error. Las imágenes no viajan en el archivo — quedan en esta cuenta, restaurar solo tiene sentido acá.
       </p>
@@ -110,7 +106,7 @@ export function BackupPanel({ parentId }: { parentId: string }) {
           type="button"
           onClick={() => void handleExport()}
           disabled={exporting || importing}
-          className="flex min-h-11 items-center gap-2 rounded-xl border border-indigo-500/25 bg-slate-800/60 px-4 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800 disabled:opacity-40"
+          className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
         >
           <Download className="size-4" aria-hidden="true" />
           {exporting ? "Exportando…" : "Exportar respaldo"}
@@ -122,7 +118,7 @@ export function BackupPanel({ parentId }: { parentId: string }) {
             fileInputRef.current?.click();
           }}
           disabled={exporting || importing}
-          className="flex min-h-11 items-center gap-2 rounded-xl border border-indigo-500/25 bg-slate-800/60 px-4 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800 disabled:opacity-40"
+          className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
         >
           <Upload className="size-4" aria-hidden="true" />
           {importing && pendingMode === "restaurar" ? "Restaurando…" : "Restaurar desde un archivo"}
@@ -134,7 +130,7 @@ export function BackupPanel({ parentId }: { parentId: string }) {
             fileInputRef.current?.click();
           }}
           disabled={exporting || importing}
-          className="flex min-h-11 items-center gap-2 rounded-xl border border-indigo-500/25 bg-slate-800/60 px-4 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800 disabled:opacity-40"
+          className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
         >
           <Copy className="size-4" aria-hidden="true" />
           {importing && pendingMode === "clonar" ? "Sumando…" : "Sumar como copia nueva"}
@@ -157,8 +153,26 @@ export function BackupPanel({ parentId }: { parentId: string }) {
         ids nuevos para todo, así que nunca pisa tu mundo actual.
       </p>
 
+      {pendingConfirm && (
+        <div role="alertdialog" aria-label="Confirmar importación" className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          <p className="font-medium">
+            {pendingConfirm.mode === "restaurar"
+              ? `Se van a sobrescribir ${pendingConfirm.bundle.levels.length} nivel(es), 1 mundo y ${pendingConfirm.bundle.customModules.length} módulo(s) personalizado(s). Lo que ya tenés y no está en este paquete no se borra. ¿Restaurar de todos modos?`
+              : `Se van a sumar ${pendingConfirm.bundle.levels.length} nivel(es) nuevo(s) y ${pendingConfirm.bundle.customModules.length} módulo(s) personalizado(s) nuevo(s) a tu mundo actual, con ids nuevos — nada de lo que ya tenés se toca. ¿Sumar esta copia?`}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => void confirmImport()} className="min-h-9 rounded-lg bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-slate-800">
+              {pendingConfirm.mode === "restaurar" ? "Sí, restaurar" : "Sí, sumar copia"}
+            </button>
+            <button type="button" onClick={() => setPendingConfirm(null)} className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
       {errors && (
-        <ul role="alert" className="list-disc space-y-1 rounded-lg border border-rose-500/30 bg-rose-950/30 px-3 py-2 pl-6 text-xs text-rose-200">
+        <ul role="alert" className="list-disc space-y-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 pl-6 text-xs text-red-700">
           {errors.map((e, i) => (
             <li key={i}>{e}</li>
           ))}
@@ -167,14 +181,14 @@ export function BackupPanel({ parentId }: { parentId: string }) {
 
       {result && (
         <div className="space-y-2">
-          <p role="status" className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 px-3 py-2 text-xs font-bold text-emerald-200">
+          <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
             {result.mode === "restaurar"
               ? `Restaurado: ${result.data.levelsRestored} nivel(es) y ${result.data.customModulesRestored} módulo(s) personalizado(s).`
               : `Sumado: ${result.data.levelsCreated} nivel(es) nuevo(s) y ${result.data.customModulesCreated} módulo(s) personalizado(s) nuevo(s).`}
           </p>
           {result.data.missingAssets.length > 0 && (
-            <div role="alert" className="rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-xs text-amber-200">
-              <p className="font-bold">
+            <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <p className="font-semibold">
                 {result.data.missingAssets.length} imagen(es) del paquete ya no existen en esta cuenta — los niveles que las usan van a mostrarse sin fondo hasta que subas una imagen nueva:
               </p>
               <ul className="ml-4 list-disc">
@@ -189,8 +203,8 @@ export function BackupPanel({ parentId }: { parentId: string }) {
           )}
           {result.mode === "clonar" &&
             (result.data.issues.world.length > 0 || Object.values(result.data.issues.levels).some((l) => l.length > 0)) && (
-              <div role="alert" className="rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-xs text-amber-200">
-                <p className="font-bold">
+              <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <p className="font-semibold">
                   La copia se sumó, pero quedaron {result.data.issues.world.length + Object.values(result.data.issues.levels).reduce((n, l) => n + l.length, 0)} pendiente(s) para revisar desde el editor (por ejemplo, más de un punto de inicio en el mapa, o un desafío sin módulo asignado).
                 </p>
               </div>

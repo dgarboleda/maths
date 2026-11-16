@@ -20,14 +20,14 @@ export default function RecompensasPage() {
 
   if (loadingChildren) {
     return (
-      <p role="status" className="text-indigo-200">
+      <p role="status" className="text-slate-600">
         Cargando…
       </p>
     );
   }
 
   if (!selectedChild || !parentId || !selectedChildId) {
-    return <p className="text-sm text-slate-400">Todavía no hay perfiles de hijos creados.</p>;
+    return <p className="text-sm text-slate-500">Todavía no hay perfiles de hijos creados.</p>;
   }
 
   async function resolveRequest(request: RequestDoc, approve: boolean) {
@@ -49,11 +49,11 @@ export default function RecompensasPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">Recompensas</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Recompensas</h1>
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
             Las estrellas se ganan aprendiendo; en qué se convierten lo decide la familia.
           </p>
         </div>
@@ -82,9 +82,9 @@ export default function RecompensasPage() {
             {dashboard.pendingRedemptions.map((r) => (
               <li
                 key={r.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
               >
-                <span className="text-sm font-semibold text-amber-100">
+                <span className="text-sm font-semibold text-amber-900 tabular-nums">
                   {r.rewardLabel} · {r.starsSpent} ★
                 </span>
                 <div className="flex gap-3 text-sm">
@@ -93,7 +93,7 @@ export default function RecompensasPage() {
                     onClick={() => resolveRequest(r, true)}
                     disabled={resolvingId === r.id}
                     aria-label={`Aprobar el canje de ${r.rewardLabel} por ${r.starsSpent} estrellas`}
-                    className="inline-flex items-center gap-1 font-bold text-emerald-300 underline-offset-2 hover:underline disabled:opacity-40"
+                    className="inline-flex items-center gap-1 font-semibold text-emerald-700 underline-offset-2 hover:underline disabled:opacity-40"
                   >
                     <Check className="size-4" aria-hidden="true" />
                     Aprobar
@@ -103,7 +103,7 @@ export default function RecompensasPage() {
                     onClick={() => resolveRequest(r, false)}
                     disabled={resolvingId === r.id}
                     aria-label={`Rechazar el canje de ${r.rewardLabel} por ${r.starsSpent} estrellas`}
-                    className="inline-flex items-center gap-1 font-semibold text-slate-400 underline-offset-2 hover:underline disabled:opacity-40"
+                    className="inline-flex items-center gap-1 font-semibold text-slate-600 underline-offset-2 hover:underline disabled:opacity-40"
                   >
                     <X className="size-4" aria-hidden="true" />
                     Rechazar
@@ -115,9 +115,9 @@ export default function RecompensasPage() {
         )}
       </SectionCard>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Logros educativos" icon={<Medal className="size-4" aria-hidden="true" />}>
-          <p className="mb-3 text-xs text-slate-400">
+          <p className="mb-3 text-xs text-slate-500">
             Se muestran a partir de las clases, comprobaciones y repasos guardados. No se compran.
           </p>
           {dashboard.loading ? (
@@ -128,7 +128,7 @@ export default function RecompensasPage() {
                 <li
                   key={b.id}
                   className={`rounded-xl border p-3 ${
-                    b.unlocked ? "border-amber-400/30 bg-amber-500/10" : "border-indigo-500/15 bg-slate-800/40"
+                    b.unlocked ? "border-amber-200 bg-amber-50" : "border-slate-200/80 bg-slate-50"
                   }`}
                 >
                   {b.image ? (
@@ -138,10 +138,10 @@ export default function RecompensasPage() {
                       {b.emoji}
                     </span>
                   )}
-                  <p className={`mt-2 text-sm font-bold leading-tight ${b.unlocked ? "text-amber-200" : "text-slate-500"}`}>
+                  <p className={`mt-2 text-sm font-semibold leading-tight ${b.unlocked ? "text-amber-900" : "text-slate-500"}`}>
                     {b.label}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-400">{b.description}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{b.description}</p>
                 </li>
               ))}
             </ul>
@@ -153,7 +153,7 @@ export default function RecompensasPage() {
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="mb-3 min-h-11 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white"
+              className="mb-3 min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
             >
               Registrar solicitud de canje
             </button>
@@ -173,11 +173,11 @@ export default function RecompensasPage() {
               text={`Cuando se resuelva un canje de ${selectedChild.name}, aparecerá aquí.`}
             />
           ) : (
-            <ul className="divide-y divide-indigo-500/15">
+            <ul className="divide-y divide-slate-200/80">
               {dashboard.resolvedRedemptions.map((r) => (
                 <li key={r.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <span className="min-w-0 truncate text-sm font-semibold text-slate-100">{r.rewardLabel}</span>
-                  <span className={r.status === "aprobado" ? "font-bold text-emerald-300" : "font-bold text-red-400"}>
+                  <span className="min-w-0 truncate text-sm font-semibold text-slate-900">{r.rewardLabel}</span>
+                  <span className={r.status === "aprobado" ? "text-sm font-semibold text-emerald-700 tabular-nums" : "text-sm font-semibold text-red-600"}>
                     {r.status === "aprobado" ? `Aprobado · −${r.starsSpent} ★` : "Rechazado"}
                   </span>
                 </li>
@@ -242,12 +242,12 @@ function RedeemForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mb-4 flex flex-col gap-3 rounded-2xl border border-indigo-500/20 bg-slate-900/50 p-4">
-      <label className="flex flex-col gap-1 text-sm font-bold text-slate-200">
+    <form onSubmit={handleSubmit} className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-slate-50 p-4">
+      <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
         ¿Qué se canjeó o se va a canjear?
         <input value={rewardLabel} onChange={(e) => setRewardLabel(e.target.value)} className="family-input" />
       </label>
-      <label className="flex flex-col gap-1 text-sm font-bold text-slate-200">
+      <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
         ¿Cuántas estrellas? (tiene {maxStars} ★)
         <input
           inputMode="numeric"
@@ -257,7 +257,7 @@ function RedeemForm({
         />
       </label>
       {error && (
-        <p role="alert" className="text-sm font-bold text-red-400">
+        <p role="alert" className="text-sm font-semibold text-red-600">
           {error}
         </p>
       )}
@@ -265,11 +265,11 @@ function RedeemForm({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+          className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
         >
           Guardar
         </button>
-        <button type="button" onClick={onDone} className="text-sm font-bold text-slate-400">
+        <button type="button" onClick={onDone} className="min-h-11 px-2 text-sm font-semibold text-slate-600 hover:text-slate-900">
           Cancelar
         </button>
       </div>

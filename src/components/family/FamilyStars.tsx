@@ -26,8 +26,8 @@ export function ChildStarsCard({ parentId, childId, childName }: { parentId: str
   const { plan, available, loading, error } = useChildStars(parentId, childId);
   return (
     <SectionCard title={`Estrellas de ${childName}`} icon={<Star className="size-4" aria-hidden="true" />}>
-      {error && <p role="alert" className="mb-2 text-sm text-amber-200">No pudimos cargar el historial de estrellas; las ganadas y canjeadas pueden no estar al día.</p>}
-      {loading ? <p role="status" className="text-sm text-slate-400">Cargando…</p> : <StarBreakdown plan={plan} available={available} who={childName} />}
+      {error && <p role="alert" className="mb-2 text-sm text-amber-700">No pudimos cargar el historial de estrellas; las ganadas y canjeadas pueden no estar al día.</p>}
+      {loading ? <p role="status" className="text-sm text-slate-500">Cargando…</p> : <StarBreakdown plan={plan} available={available} who={childName} tone="light" />}
     </SectionCard>
   );
 }
@@ -36,12 +36,12 @@ export function ChildStarsCard({ parentId, childId, childName }: { parentId: str
 function FamilyRow({ parentId, childId, name }: { parentId: string; childId: string; name: string }) {
   const { plan, available } = useChildStars(parentId, childId);
   return (
-    <tr className="border-t border-indigo-500/15">
-      <th scope="row" className="py-2 pr-2 text-left font-semibold text-slate-100">{name}</th>
-      <td className="py-2 text-right font-bold tabular-nums text-amber-300">{available ?? "…"}</td>
-      <td className="py-2 text-right tabular-nums text-emerald-300">{plan.earned ?? "…"}</td>
-      <td className="py-2 text-right tabular-nums text-violet-300">{plan.spent ?? "…"}</td>
-      <td className="py-2 text-right tabular-nums text-slate-300">{plan.remaining}</td>
+    <tr className="border-t border-slate-200/80">
+      <th scope="row" className="py-2 pr-2 text-left font-semibold text-slate-900">{name}</th>
+      <td className="py-2 text-right font-bold tabular-nums text-amber-600">{available ?? "…"}</td>
+      <td className="py-2 text-right tabular-nums text-emerald-600">{plan.earned ?? "…"}</td>
+      <td className="py-2 text-right tabular-nums text-indigo-600">{plan.spent ?? "…"}</td>
+      <td className="py-2 text-right tabular-nums text-slate-600">{plan.remaining}</td>
     </tr>
   );
 }
@@ -50,20 +50,22 @@ export function FamilyStarsSummary({ parentId, kids }: { parentId: string; kids:
   if (kids.length < 2) return null;
   return (
     <SectionCard title="Estrellas de la familia" icon={<Star className="size-4" aria-hidden="true" />}>
-      <table className="w-full text-sm">
-        <caption className="sr-only">Estrellas por hijo</caption>
-        <thead>
-          <tr className="text-xs text-slate-400">
-            <th scope="col" className="py-1 text-left">Hijo</th>
-            <th scope="col" className="py-1 text-right">Disponibles</th>
-            <th scope="col" className="py-1 text-right">Ganadas</th>
-            <th scope="col" className="py-1 text-right">Canjeadas</th>
-            <th scope="col" className="py-1 text-right">Por ganar</th>
-          </tr>
-        </thead>
-        <tbody>{kids.map((k) => <FamilyRow key={k.id} parentId={parentId} childId={k.id} name={k.name} />)}</tbody>
-      </table>
-      <p className="mt-2 text-xs text-slate-400">«Por ganar» cuenta clases, repasos mixtos y aventuras pendientes; el repaso diario suma 2 más al día.</p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <caption className="sr-only">Estrellas por hijo</caption>
+          <thead>
+            <tr className="text-xs text-slate-500">
+              <th scope="col" className="py-1 text-left">Hijo</th>
+              <th scope="col" className="py-1 text-right">Disponibles</th>
+              <th scope="col" className="py-1 text-right">Ganadas</th>
+              <th scope="col" className="py-1 text-right">Canjeadas</th>
+              <th scope="col" className="py-1 text-right">Por ganar</th>
+            </tr>
+          </thead>
+          <tbody>{kids.map((k) => <FamilyRow key={k.id} parentId={parentId} childId={k.id} name={k.name} />)}</tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-xs text-slate-500">«Por ganar» cuenta clases, repasos mixtos y aventuras pendientes; el repaso diario suma 2 más al día.</p>
     </SectionCard>
   );
 }
@@ -101,20 +103,20 @@ export function RewardCatalogEditor({ parentId, available, possible, childName }
   }
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-300">
+      <p className="text-sm text-slate-600">
         Acordad juntos cuánto vale cada premio. Como referencia, una clase da hasta {LESSON_STARS_MAX} ⭐ (terminarla, superar su comprobación sin ayuda y su repaso) y una aventura entre {ADVENTURE_STARS.basica} y {ADVENTURE_STARS.avanzada} ⭐ según su dificultad, más {ADVENTURE_EXPERT_STARS.basica}–{ADVENTURE_EXPERT_STARS.avanzada} ⭐ por su reto experto. Las estrellas ya ganadas se conservan; en total quedan {possible} ⭐ posibles en clases, repasos y aventuras.
       </p>
       {catalog.items && catalog.items.length > 0 && (
-        <ul className="divide-y divide-indigo-500/15">
+        <ul className="divide-y divide-slate-200/80">
           {catalog.items.map((item) => {
             const missing = Math.max(0, item.stars - (available ?? 0));
             return (
               <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <span className="text-sm text-slate-100">{item.label} · <strong className="text-amber-300">{item.stars} ★</strong></span>
+                <span className="text-sm text-slate-900">{item.label} · <strong className="text-amber-600 tabular-nums">{item.stars} ★</strong></span>
                 <span className="flex items-center gap-3 text-xs">
-                  <span className={missing ? "text-slate-400" : "font-bold text-emerald-300"}>{missing ? `A ${childName} le faltan ${missing}` : `${childName} ya puede canjearlo`}</span>
+                  <span className={missing ? "text-slate-500" : "font-semibold text-emerald-700"}>{missing ? `A ${childName} le faltan ${missing}` : `${childName} ya puede canjearlo`}</span>
                   <button type="button" onClick={() => void remove(item)} aria-label={`Quitar ${item.label}`}
-                    className="grid min-h-11 min-w-11 place-items-center rounded-lg text-slate-400 hover:text-red-300"><Trash2 className="size-4" aria-hidden="true" /></button>
+                    className="grid min-h-11 min-w-11 place-items-center rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600"><Trash2 className="size-4" aria-hidden="true" /></button>
                 </span>
               </li>
             );
@@ -122,17 +124,17 @@ export function RewardCatalogEditor({ parentId, available, possible, childName }
         </ul>
       )}
       <form onSubmit={(e) => void add(e)} className="flex flex-wrap items-end gap-2">
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-bold text-slate-200">
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium text-slate-700">
           Premio
           <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Por ejemplo, elegir la película" maxLength={80} className="family-input" />
         </label>
-        <label className="flex w-28 flex-col gap-1 text-sm font-bold text-slate-200">
+        <label className="flex w-28 flex-col gap-1 text-sm font-medium text-slate-700">
           Estrellas
           <input value={stars} onChange={(e) => setStars(e.target.value.replace(/\D/g, ""))} inputMode="numeric" className="family-input" />
         </label>
-        <button type="submit" disabled={busy} className="min-h-11 rounded-xl bg-amber-400 px-4 text-sm font-bold text-slate-950 disabled:opacity-50">Añadir</button>
+        <button type="submit" disabled={busy} className="min-h-11 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">Añadir</button>
       </form>
-      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
     </div>
   );
 }

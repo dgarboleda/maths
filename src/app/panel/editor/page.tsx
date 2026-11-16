@@ -90,9 +90,11 @@ export default function EditorPage() {
     }
   }
 
-  async function handleDelete(levelId: string, name: string) {
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  async function handleDelete(levelId: string) {
     if (!parentId) return;
-    if (!window.confirm(`¿Borrar "${name}"? Esta acción no se puede deshacer.`)) return;
+    setConfirmDeleteId(null);
     setBusyId(levelId);
     setError(null);
     try {
@@ -140,17 +142,17 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex items-center justify-between gap-3">
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">Editor de niveles</h1>
-          <p className="mt-1 text-sm text-slate-400">Crea escenarios nuevos de Math Quest sin tocar código.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Editor de niveles</h1>
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">Crea escenarios nuevos de Math Quest sin tocar código.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Tooltip content="Historia del mundo, relaciones entre niveles y reglas generales." side="bottom" wide>
             <Link
               href="/panel/editor/mundo"
-              className="flex min-h-11 items-center gap-1.5 rounded-xl border border-indigo-500/25 bg-slate-800/60 px-4 text-sm font-bold text-slate-100 hover:bg-slate-800"
+              className="flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               <Map className="size-4" aria-hidden="true" />
               Mundo
@@ -160,7 +162,7 @@ export default function EditorPage() {
             <button
               type="button"
               onClick={() => setCreating(true)}
-              className="flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 text-sm font-bold text-white transition-colors hover:brightness-110"
+              className="flex min-h-11 items-center gap-1.5 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
             >
               <Plus className="size-4" aria-hidden="true" />
               Nuevo nivel
@@ -170,7 +172,7 @@ export default function EditorPage() {
       </header>
 
       {error && (
-        <p role="alert" className="rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 text-sm text-rose-200">
+        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </p>
       )}
@@ -223,7 +225,7 @@ export default function EditorPage() {
                   <Tooltip content="Abre el editor visual de este nivel." side="top">
                     <Link
                       href={`/panel/editor/${level.id}`}
-                      className="flex min-h-9 items-center gap-1.5 rounded-lg border border-indigo-500/25 bg-slate-800/60 px-3 text-xs font-bold text-slate-100 hover:bg-slate-800"
+                      className="flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                     >
                       <Pencil className="size-3.5" aria-hidden="true" />
                       Abrir
@@ -233,7 +235,7 @@ export default function EditorPage() {
                     <Tooltip content={`Juega este nivel tal como lo vería ${selectedChild.name}.`} side="top" wide>
                       <Link
                         href={`/jugar/${selectedChild.id}/nivel/${level.id}`}
-                        className="flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-950/40 px-3 text-xs font-bold text-emerald-200 hover:bg-emerald-950/70"
+                        className="flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
                       >
                         <Play className="size-3.5" aria-hidden="true" />
                         Jugar con {selectedChild.name}
@@ -245,23 +247,43 @@ export default function EditorPage() {
                       type="button"
                       disabled={busyId === level.id}
                       onClick={() => handleDuplicate(level.id)}
-                      className="flex min-h-9 items-center gap-1.5 rounded-lg border border-indigo-500/25 bg-slate-800/60 px-3 text-xs font-bold text-slate-100 hover:bg-slate-800 disabled:opacity-40"
+                      className="flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                     >
                       <Copy className="size-3.5" aria-hidden="true" />
                       Duplicar
                     </button>
                   </Tooltip>
-                  <Tooltip content="Borra este nivel de forma permanente." side="top">
-                    <button
-                      type="button"
-                      disabled={busyId === level.id}
-                      onClick={() => handleDelete(level.id, level.name)}
-                      className="flex min-h-9 items-center gap-1.5 rounded-lg border border-rose-500/25 bg-rose-950/30 px-3 text-xs font-bold text-rose-200 hover:bg-rose-950/60 disabled:opacity-40"
-                    >
-                      <Trash2 className="size-3.5" aria-hidden="true" />
-                      Borrar
-                    </button>
-                  </Tooltip>
+                  {confirmDeleteId === level.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={busyId === level.id}
+                        onClick={() => void handleDelete(level.id)}
+                        className="flex min-h-9 items-center rounded-lg bg-red-600 px-3 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-40"
+                      >
+                        Confirmar borrado
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="flex min-h-9 items-center rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <Tooltip content="Borra este nivel de forma permanente." side="top">
+                      <button
+                        type="button"
+                        disabled={busyId === level.id}
+                        onClick={() => setConfirmDeleteId(level.id)}
+                        className="flex min-h-9 items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-40"
+                      >
+                        <Trash2 className="size-3.5" aria-hidden="true" />
+                        Borrar
+                      </button>
+                    </Tooltip>
+                  )}
                 </div>
               </li>
             ))}
@@ -366,20 +388,20 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
         </p>
       </div>
 
-      {error && <p role="alert" className="text-sm text-rose-300">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={saving || name.trim() === "" || !background}
-          className="flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 text-sm font-bold text-white disabled:opacity-40"
+          className="flex min-h-11 items-center gap-1.5 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-40"
         >
           {saving ? "Creando…" : "Crear nivel"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="flex min-h-11 items-center rounded-xl bg-slate-800 px-4 text-sm font-bold text-slate-200 hover:bg-slate-700"
+          className="flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
           Cancelar
         </button>

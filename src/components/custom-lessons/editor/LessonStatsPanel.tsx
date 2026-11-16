@@ -37,6 +37,7 @@ export function LessonStatsPanel({ parentId, lessonId, lesson, students }: { par
                   </li>
                 ))}
               </ul>
+              <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <caption className="sr-only">Resultados por pregunta</caption>
                 <thead><tr><th scope="col">Pregunta</th><th scope="col">A la primera</th><th scope="col">Intentos (media)</th><th scope="col">Error más repetido</th></tr></thead>
@@ -51,6 +52,7 @@ export function LessonStatsPanel({ parentId, lessonId, lesson, students }: { par
                   ))}
                 </tbody>
               </table>
+              </div>
               <p className="text-slate-400">Solo cuenta la versión actual: cambiar preguntas o respuestas reinicia el progreso.</p>
             </>
           )}

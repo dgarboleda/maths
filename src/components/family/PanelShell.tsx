@@ -40,8 +40,8 @@ export function PanelShell({ children }: { children: ReactNode }) {
 
   if (loading || !user || role !== "parent") {
     return (
-      <main id="contenido" tabIndex={-1} className="flex h-dvh w-full items-center justify-center bg-slate-950">
-        <p role="status" className="text-indigo-200">
+      <main id="contenido" tabIndex={-1} className="panel-light flex h-dvh w-full items-center justify-center bg-slate-50/70">
+        <p role="status" className="text-slate-600">
           Cargando…
         </p>
       </main>
@@ -50,7 +50,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
 
   // El editor de un nivel concreto (no la lista) es una herramienta a pantalla
   // completa con su propio canvas de zoom/pan — no cabe bien dentro del
-  // `max-w-5xl` con padding del panel familiar, y compite por espacio con un
+  // contenedor con padding del panel familiar, y compite por espacio con un
   // sidebar que no necesita. Sigue viviendo bajo /panel/editor (mismo dueño,
   // misma sesión) pero sin el chrome del panel — la lista en /panel/editor sí
   // lo conserva, como cualquier otra pantalla de /panel/*.
@@ -64,17 +64,17 @@ export function PanelShell({ children }: { children: ReactNode }) {
 
   return (
     <FamilyProvider>
-      <div className="h-dvh overflow-hidden bg-slate-950 lg:flex">
-        <aside className="hidden h-full w-60 shrink-0 flex-col border-r border-indigo-500/20 bg-slate-900/40 p-4 lg:flex">
+      <div className="panel-light h-dvh overflow-hidden bg-slate-50/70 text-slate-900 lg:flex">
+        <aside className="hidden h-full w-60 shrink-0 flex-col border-r border-slate-200/80 bg-white p-4 lg:flex">
           <Link href="/panel" className="mb-6 flex items-center gap-2.5 px-1.5">
-            <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white">
+            <span className="grid size-9 place-items-center rounded-xl bg-slate-900 text-white">
               <Sparkles className="size-4.5" aria-hidden="true" />
             </span>
             <span>
-              <span className="block font-display text-sm font-bold leading-none tracking-wide text-white">
+              <span className="block font-display text-sm font-bold leading-none tracking-wide text-slate-900">
                 MATH QUEST
               </span>
-              <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+              <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
                 Panel familiar
               </span>
             </span>
@@ -89,10 +89,10 @@ export function PanelShell({ children }: { children: ReactNode }) {
                     <Link
                       href={item.href}
                       aria-current={active ? "page" : undefined}
-                      className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-bold transition-colors ${
+                      className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors ${
                         active
-                          ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white"
-                          : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
+                          ? "bg-slate-900 text-white"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       }`}
                     >
                       <item.icon className="size-4.5" aria-hidden="true" />
@@ -104,12 +104,12 @@ export function PanelShell({ children }: { children: ReactNode }) {
             </ul>
           </nav>
 
-          <div className="border-t border-indigo-500/20 pt-3">
-            {user && <p className="truncate px-3 text-xs text-slate-400">{user.email}</p>}
+          <div className="border-t border-slate-200/80 pt-3">
+            {user && <p className="truncate px-3 text-xs text-slate-500">{user.email}</p>}
             <button
               type="button"
               onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
-              className="mt-2 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-bold text-slate-400 transition-colors hover:bg-slate-800/60 hover:text-white"
+              className="mt-2 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
               <LogOut className="size-4.5" aria-hidden="true" />
               Cerrar sesión
@@ -118,12 +118,12 @@ export function PanelShell({ children }: { children: ReactNode }) {
         </aside>
 
         <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-          <header className="z-20 flex shrink-0 items-center justify-between border-b border-indigo-500/20 bg-slate-950/85 px-4 py-2.5 backdrop-blur-md lg:hidden">
+          <header className="z-20 flex shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 py-2.5 backdrop-blur-md lg:hidden">
             <Link href="/panel" className="flex items-center gap-2">
-              <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white">
+              <span className="grid size-8 place-items-center rounded-lg bg-slate-900 text-white">
                 <Sparkles className="size-4" aria-hidden="true" />
               </span>
-              <span className="font-display text-sm font-bold tracking-wide text-white">
+              <span className="font-display text-sm font-bold tracking-wide text-slate-900">
                 MATH QUEST · Familia
               </span>
             </Link>
@@ -131,20 +131,20 @@ export function PanelShell({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
               aria-label="Cerrar sesión"
-              className="grid min-h-11 min-w-11 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-800/60 hover:text-white"
+              className="grid min-h-11 min-w-11 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
               <LogOut className="size-5" aria-hidden="true" />
             </button>
           </header>
 
-          <main id="contenido" tabIndex={-1} className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-y-auto px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8">
+          <main id="contenido" tabIndex={-1} className="mx-auto min-h-0 w-full max-w-7xl flex-1 overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8">
             {children}
           </main>
         </div>
 
         <nav
           aria-label="Secciones del panel familiar"
-          className="fixed inset-x-0 bottom-0 z-20 border-t border-indigo-500/20 bg-slate-950/92 backdrop-blur-md lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200/80 bg-white/95 backdrop-blur-md lg:hidden"
         >
           <ul className="flex">
             {NAV.map((item) => {
@@ -154,8 +154,8 @@ export function PanelShell({ children }: { children: ReactNode }) {
                   <Link
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-bold ${
-                      active ? "text-cyan-300" : "text-slate-400"
+                    className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ${
+                      active ? "text-indigo-600" : "text-slate-500"
                     }`}
                   >
                     <item.icon className="size-5" aria-hidden="true" />

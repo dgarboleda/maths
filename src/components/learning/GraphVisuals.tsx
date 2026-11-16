@@ -369,6 +369,7 @@ export function ValueTable({ caption, headers, rows }: { caption: string; header
   return (
     <details className="rounded-xl border border-slate-700 bg-slate-950/40 px-3 py-2">
       <summary className="min-h-11 cursor-pointer content-center text-sm font-bold text-cyan-200">Ver la tabla de valores</summary>
+      <div className="overflow-x-auto">
       <table className="mt-2 w-full text-left text-sm tabular-nums">
         <caption className="sr-only">{caption}</caption>
         <thead><tr>{headers.map((h) => <th key={h} scope="col" className="p-2">{h}</th>)}</tr></thead>
@@ -378,6 +379,7 @@ export function ValueTable({ caption, headers, rows }: { caption: string; header
           ))}
         </tbody>
       </table>
+      </div>
     </details>
   );
 }
@@ -421,6 +423,7 @@ export function LinearVisual({ id }: { id: string }) {
       </Plane>
       <GhostNote show={Boolean(ghost)} />
       <PointReader id={`${id}-pt`} points={points} selected={pick} onSelect={setPick} />
+      <div className="overflow-x-auto">
       <table className="w-full text-left text-sm tabular-nums">
         <caption className="sr-only">Tabla de la función lineal</caption>
         <thead><tr><th className="p-2">x</th><th className="p-2">y</th><th className="p-2">Cambio de y</th></tr></thead>
@@ -434,6 +437,7 @@ export function LinearVisual({ id }: { id: string }) {
           ))}
         </tbody>
       </table>
+      </div>
       <p className="text-sm text-slate-300">
         El cuadrado rosa es el valor inicial; el triángulo ámbar muestra la pendiente: cada vez que x aumenta 1, y cambia {num(slope)}. Arrastra cualquiera de los dos puntos para cambiar la recta.
       </p>
@@ -482,6 +486,7 @@ export function ProportionVisual({ id, initial }: { id: string; initial: "direct
       </Plane>
       <GhostNote show={Boolean(ghost && ghost.mode === mode && ghost.k !== k)} />
       <PointReader id={`${id}-pt`} points={points} selected={pick} onSelect={setPick} />
+      <div className="overflow-x-auto">
       <table className="w-full text-left text-sm tabular-nums">
         <caption className="sr-only">Valores de la relación</caption>
         <thead>
@@ -497,6 +502,7 @@ export function ProportionVisual({ id, initial }: { id: string; initial: "direct
           ))}
         </tbody>
       </table>
+      </div>
       <p className="text-sm text-slate-300">
         {direct
           ? "Directa: una recta que sale del origen. Si x se multiplica por 2, y también; el cociente y ÷ x no cambia."

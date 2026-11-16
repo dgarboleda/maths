@@ -110,30 +110,30 @@ export default function ChildDetailPage() {
         Hijos
       </Link>
 
-      <header className="family-panel flex flex-wrap items-center gap-4 rounded-2xl p-4 sm:p-5">
+      <header className="family-panel flex flex-wrap items-center gap-4 rounded-2xl p-5 sm:p-6">
         <Avatar
           variant="headshot"
           title={child.name}
           avatarId={child.avatarId}
-          className="size-20 shrink-0 rounded-full border-2 border-cyan-400/40"
+          className="size-20 shrink-0 rounded-full border-2 border-slate-200"
         />
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-bold leading-tight text-white">{child.name}</h1>
-          {age !== null && <p className="text-sm text-slate-400">{age} años</p>}
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">{child.name}</h1>
+          {age !== null && <p className="text-sm text-slate-500 tabular-nums">{age} años</p>}
           <ul className="mt-2 flex flex-wrap gap-1.5">
-            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-slate-200">
+            <li className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 tabular-nums">
               Nivel {dashboard.level}
             </li>
-            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-amber-300">
+            <li className="inline-flex items-center gap-1 rounded-full border border-amber-200/60 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 tabular-nums">
               <Star className="size-3.5" aria-hidden="true" />
               {dashboard.totalStars ?? "…"}
               <span className="sr-only">estrellas</span>
             </li>
-            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-orange-300">
+            <li className="inline-flex items-center gap-1 rounded-full border border-orange-200/60 bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700 tabular-nums">
               <Flame className="size-3.5" aria-hidden="true" />
               {dashboard.streak} días de racha
             </li>
-            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-cyan-300">
+            <li className="inline-flex items-center gap-1 rounded-full border border-sky-200/60 bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-700 tabular-nums">
               <Target className="size-3.5" aria-hidden="true" />
               {dashboard.weeklyAccuracy} % de acierto
             </li>
@@ -141,20 +141,20 @@ export default function ChildDetailPage() {
         </div>
         <Link
           href={`/jugar/${params.childId}`}
-          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 text-sm font-bold text-white transition-colors hover:brightness-110"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
         >
           <Play className="size-4" aria-hidden="true" />
           Jugar como {child.name}
         </Link>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Mundos" icon={<MapIcon className="size-4" aria-hidden="true" />}>
           <ul className="space-y-4">
             {dashboard.worlds.map((w) => (
               <li key={w.id}>
                 <div className="flex items-center justify-between gap-2">
-                  <p className={`text-sm font-bold ${w.status === "bloqueado" ? "text-slate-500" : "text-white"}`}>
+                  <p className={`text-sm font-semibold ${w.status === "bloqueado" ? "text-slate-400" : "text-slate-900"}`}>
                     <span aria-hidden="true">{w.icon} </span>
                     {w.title}
                   </p>
