@@ -5,7 +5,7 @@ import { Copy, Download, Upload } from "lucide-react";
 import { getFirebase } from "@/lib/firebase";
 import { exportBundle, importBundle, NothingToExportError, type ImportResult } from "@/lib/backup/backupRepository";
 import { cloneBundle, type CloneResult } from "@/lib/backup/cloneBundle";
-import { parseBundle } from "@/lib/backup/bundle";
+import { parseBundle, type WorldBundle } from "@/lib/backup/bundle";
 
 type Mode = "restaurar" | "clonar";
 
@@ -29,7 +29,7 @@ export function BackupPanel({ parentId }: { parentId: string }) {
     { mode: "restaurar"; data: ImportResult } | { mode: "clonar"; data: CloneResult } | null
   >(null);
 
-  const [pendingConfirm, setPendingConfirm] = useState<{ mode: Mode; bundle: ReturnType<typeof parseBundle> extends { ok: true; bundle: infer B } ? B : never } | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<{ mode: Mode; bundle: WorldBundle } | null>(null);
 
   async function handleExport() {
     setExporting(true);
