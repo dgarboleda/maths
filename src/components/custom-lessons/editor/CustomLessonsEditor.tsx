@@ -162,12 +162,12 @@ export function CustomLessonsEditor({ parentId, students = [] }: { parentId: str
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-900">
       <header>
-        <h1 className="text-2xl font-bold">Crear clases</h1>
-        <p className="text-slate-300">Escribe una clase, agrúpala en un tema y prepara preguntas para tus alumnos.</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Crear clases</h1>
+        <p className="mt-1 text-sm text-slate-600">Escribe una clase, agrúpala en un tema y prepara preguntas para tus alumnos.</p>
       </header>
-      {loadError && <p role="alert">No se pudieron cargar las clases.</p>}
+      {loadError && <p role="alert" className="text-sm font-medium text-red-600">No se pudieron cargar las clases.</p>}
       <div className="grid gap-6 lg:grid-cols-[minmax(16rem,1fr)_2fr]">
         <div className="space-y-3">
           <LessonList
@@ -178,17 +178,17 @@ export function CustomLessonsEditor({ parentId, students = [] }: { parentId: str
             onNew={(topic) => open(null, blankLesson(topic), null)}
             onMove={(group, from, to) => void handleMove(group, from, to)}
           />
-          <div className="space-y-2 rounded-xl border border-slate-700 p-3">
-            <label className="block text-sm">
+          <div className="space-y-2 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+            <label className="block text-sm font-medium text-slate-700">
               Empezar desde una plantilla
-              <select className="mt-1 w-full rounded-lg border border-slate-500 bg-slate-900 px-2 py-2" value="" onChange={(e) => { const t = TEMPLATES.find((x) => x.id === e.target.value); if (t) startFrom(t.build(), `Plantilla «${t.name}» lista: adáptala y guárdala.`); }}>
+              <select className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" value="" onChange={(e) => { const t = TEMPLATES.find((x) => x.id === e.target.value); if (t) startFrom(t.build(), `Plantilla «${t.name}» lista: adáptala y guárdala.`); }}>
                 <option value="">Elige una plantilla…</option>
                 {TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </label>
-            <button type="button" className="rounded-lg border border-slate-500 px-3 py-2 text-sm" onClick={() => fileInput.current?.click()}>Importar clase (JSON)</button>
+            <button type="button" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => fileInput.current?.click()}>Importar clase (JSON)</button>
             <input ref={fileInput} type="file" accept="application/json,.json" className="hidden" aria-label="Archivo de clase para importar" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void handleImport(f); }} />
-            <p role="status" className="text-sm">{listMessage}</p>
+            <p role="status" className="text-sm text-slate-600">{listMessage}</p>
           </div>
         </div>
         <LessonForm

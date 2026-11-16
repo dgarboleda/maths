@@ -21,18 +21,18 @@ export function LessonStatsPanel({ parentId, lessonId, lesson, students }: { par
   }, [open, parentId, lessonId, students, lesson.updatedAt]);
   const stats = progress ? summarizeLessonStats(lesson, students, progress) : null;
   return (
-    <details className="rounded-lg border border-slate-600 p-3" onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
-      <summary className="cursor-pointer">Resultados de los alumnos</summary>
-      <div className="mt-3 space-y-3 text-sm">
+    <details className="rounded-xl border border-slate-200 bg-slate-50/70 p-3" onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary className="cursor-pointer text-sm font-semibold text-slate-900">Resultados de los alumnos</summary>
+      <div className="mt-3 space-y-3 text-sm text-slate-700">
         {!students.length ? <p>Todavía no hay perfiles de alumnos.</p>
-          : error ? <p role="alert">No se pudieron cargar los resultados.</p>
-          : !stats ? <p role="status">Cargando resultados…</p>
+          : error ? <p role="alert" className="text-red-600">No se pudieron cargar los resultados.</p>
+          : !stats ? <p role="status" className="text-slate-500">Cargando resultados…</p>
           : (
             <>
-              <p>{stats.completed} de {students.length} {students.length === 1 ? "alumno la ha" : "alumnos la han"} terminado.</p>
+              <p className="tabular-nums">{stats.completed} de {students.length} {students.length === 1 ? "alumno la ha" : "alumnos la han"} terminado.</p>
               <ul className="flex flex-wrap gap-2">
                 {stats.students.map((s) => (
-                  <li key={s.id} className="rounded border border-slate-500 px-2 py-1">
+                  <li key={s.id} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700">
                     {s.name}: {s.completed ? "terminada" : s.started ? `${s.solved}/${lesson.questions.length} resueltas` : "sin empezar"}
                   </li>
                 ))}
@@ -40,20 +40,20 @@ export function LessonStatsPanel({ parentId, lessonId, lesson, students }: { par
               <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <caption className="sr-only">Resultados por pregunta</caption>
-                <thead><tr><th scope="col">Pregunta</th><th scope="col">A la primera</th><th scope="col">Intentos (media)</th><th scope="col">Error más repetido</th></tr></thead>
+                <thead><tr className="text-xs text-slate-500"><th scope="col" className="py-1 pr-2">Pregunta</th><th scope="col" className="py-1 pr-2">A la primera</th><th scope="col" className="py-1 pr-2">Intentos (media)</th><th scope="col" className="py-1">Error más repetido</th></tr></thead>
                 <tbody>
                   {stats.questions.map((q, i) => (
-                    <tr key={q.id} className={q.firstTryRate !== null && q.firstTryRate < 50 ? "text-amber-200" : undefined}>
-                      <td>{i + 1}. <InlineText text={q.prompt} /></td>
-                      <td>{q.firstTryRate === null ? "—" : `${q.firstTryRate}% (${q.attempted})`}</td>
-                      <td>{q.averageTries ?? "—"}</td>
-                      <td>{q.topWrong ? <><InlineText text={q.topWrong.label} /> ×{q.topWrong.count}</> : "—"}</td>
+                    <tr key={q.id} className={`border-t border-slate-200/80 ${q.firstTryRate !== null && q.firstTryRate < 50 ? "text-amber-800" : "text-slate-800"}`}>
+                      <td className="py-2 pr-2">{i + 1}. <InlineText text={q.prompt} /></td>
+                      <td className="py-2 pr-2 tabular-nums">{q.firstTryRate === null ? "—" : `${q.firstTryRate}% (${q.attempted})`}</td>
+                      <td className="py-2 pr-2 tabular-nums">{q.averageTries ?? "—"}</td>
+                      <td className="py-2">{q.topWrong ? <><InlineText text={q.topWrong.label} /> ×{q.topWrong.count}</> : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               </div>
-              <p className="text-slate-400">Solo cuenta la versión actual: cambiar preguntas o respuestas reinicia el progreso.</p>
+              <p className="text-xs text-slate-500">Solo cuenta la versión actual: cambiar preguntas o respuestas reinicia el progreso.</p>
             </>
           )}
       </div>

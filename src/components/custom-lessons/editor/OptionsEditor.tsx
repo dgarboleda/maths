@@ -34,9 +34,9 @@ export function OptionsEditor({ idPrefix, question, game, onChange }: Props) {
 
   return (
     <fieldset className="space-y-2">
-      <legend className="flex flex-wrap items-center gap-2">
+      <legend className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-700">
         Respuestas
-        <span className={`rounded px-2 text-sm ${countOk ? "bg-emerald-900 text-emerald-200" : "bg-amber-900 text-amber-200"}`} aria-live="polite">
+        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${countOk ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`} aria-live="polite">
           {needed === null ? `${options.length} (entre ${LIMITS.minOptions} y ${LIMITS.maxOptions})` : `${options.length}/${needed} para el minijuego`}
         </span>
       </legend>
