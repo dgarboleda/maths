@@ -38,11 +38,11 @@ export function AssignmentFields({ draft, students, lessons, errors, set }: Prop
   const sameTopic = (l: { topic: string }) => l.topic.trim().toLocaleLowerCase("es") === draft.topic.trim().toLocaleLowerCase("es");
   const ordered = [...lessons].sort((a, b) => Number(sameTopic(b)) - Number(sameTopic(a)) || a.title.localeCompare(b.title, "es"));
   return (
-    <fieldset className="space-y-3 rounded-lg border border-slate-600 p-3">
-      <legend className="px-1 font-bold">Alumnos y fechas</legend>
+    <fieldset className="space-y-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4">
+      <legend className="px-1 text-sm font-semibold text-slate-900">Alumnos y fechas</legend>
       {students.length > 0 && (
-        <div id="lesson-assignedTo" tabIndex={-1} className="space-y-1">
-          <p>¿Quién la ve?</p>
+        <div id="lesson-assignedTo" tabIndex={-1} className="space-y-1 text-sm text-slate-700">
+          <p className="font-medium text-slate-700">¿Quién la ve?</p>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={everyone} onChange={(e) => { if (e.target.checked) set({ assignedTo: undefined }); }} />
             Todos los alumnos
@@ -53,29 +53,29 @@ export function AssignmentFields({ draft, students, lessons, errors, set }: Prop
               {s.name}
             </label>
           ))}
-          {!everyone && <p className="text-sm text-slate-400">Selecciona al menos un alumno, o elige todos los alumnos.</p>}
-          <p className="text-sm text-amber-200">{fieldError("assignedTo")}</p>
+          {!everyone && <p className="text-xs text-slate-500">Selecciona al menos un alumno, o elige todos los alumnos.</p>}
+          {fieldError("assignedTo") && <p className="text-sm font-medium text-amber-800">{fieldError("assignedTo")}</p>}
         </div>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="lesson-availableFrom" className="block">Visible desde (opcional)</label>
+          <label htmlFor="lesson-availableFrom" className="mb-1 block text-sm font-medium text-slate-700">Visible desde (opcional)</label>
           <input id="lesson-availableFrom" type="date" className={inputClass} value={toDateInput(draft.availableFrom)} onChange={(e) => set({ availableFrom: fromDateInput(e.target.value, false) })} />
-          <p className="text-sm text-amber-200">{fieldError("availableFrom")}</p>
+          {fieldError("availableFrom") && <p className="mt-1 text-sm font-medium text-amber-800">{fieldError("availableFrom")}</p>}
         </div>
         <div>
-          <label htmlFor="lesson-dueAt" className="block">Entregar antes de (opcional)</label>
+          <label htmlFor="lesson-dueAt" className="mb-1 block text-sm font-medium text-slate-700">Entregar antes de (opcional)</label>
           <input id="lesson-dueAt" type="date" className={inputClass} value={toDateInput(draft.dueAt)} onChange={(e) => set({ dueAt: fromDateInput(e.target.value, true) })} />
-          <p className="text-sm text-amber-200">{fieldError("dueAt")}</p>
+          {fieldError("dueAt") && <p className="mt-1 text-sm font-medium text-amber-800">{fieldError("dueAt")}</p>}
         </div>
       </div>
       <div>
-        <label htmlFor="lesson-requires" className="block">Hay que terminar antes</label>
+        <label htmlFor="lesson-requires" className="mb-1 block text-sm font-medium text-slate-700">Hay que terminar antes</label>
         <select id="lesson-requires" className={inputClass} value={draft.requires ?? ""} onChange={(e) => set({ requires: e.target.value || undefined })}>
           <option value="">Ninguna clase (se puede empezar ya)</option>
           {ordered.map((l) => <option key={l.id} value={l.id}>{l.title || "Sin título"}{l.topic ? ` · ${l.topic}` : ""}</option>)}
         </select>
-        <p className="text-sm text-slate-400">Si la clase elegida deja de estar publicada, esta se desbloquea.</p>
+        <p className="mt-1 text-xs text-slate-500">Si la clase elegida deja de estar publicada, esta se desbloquea.</p>
       </div>
     </fieldset>
   );
