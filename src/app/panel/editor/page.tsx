@@ -203,7 +203,7 @@ export default function EditorPage() {
                   type="button"
                   onClick={() => void handleSeedExample()}
                   disabled={seeding}
-                  className="flex min-h-9 items-center gap-1.5 rounded-lg border border-indigo-500/25 bg-slate-800/60 px-3 text-xs font-bold text-slate-100 hover:bg-slate-800 disabled:opacity-40"
+                  className="flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                 >
                   <Sparkles className="size-3.5" aria-hidden="true" />
                   {seeding ? "Cargando…" : "Cargar mundo de ejemplo"}
@@ -212,12 +212,12 @@ export default function EditorPage() {
             </div>
           </div>
         ) : (
-          <ul className="divide-y divide-white/5">
+          <ul className="divide-y divide-slate-200/80">
             {levels.map((level) => (
               <li key={level.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-white">{level.name}</p>
-                  <p className="text-xs text-slate-400">
+                  <p className="truncate text-sm font-semibold text-slate-900">{level.name}</p>
+                  <p className="text-xs text-slate-500">
                     versión {level.version} · actualizado {new Date(level.updatedAt).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
@@ -360,7 +360,7 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Mi nivel nuevo"
-          className="w-full rounded-xl border border-indigo-500/25 bg-slate-900/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400/60 focus:outline-none"
+          className="family-input w-full"
         />
       </div>
 
@@ -374,7 +374,7 @@ function CreateLevelForm({ onCancel, onCreated }: { onCancel: () => void; onCrea
           id="plantilla-nivel"
           value={templateId}
           onChange={(e) => setTemplateId(e.target.value)}
-          className="w-full rounded-xl border border-indigo-500/25 bg-slate-900/60 px-3 py-2 text-sm text-white focus:border-cyan-400/60 focus:outline-none"
+          className="family-input w-full"
         >
           <option value="">Lienzo vacío</option>
           {LEVEL_TEMPLATES.map((t) => (
