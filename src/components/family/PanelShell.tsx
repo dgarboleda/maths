@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
@@ -10,6 +10,28 @@ import { getFirebase } from "@/lib/firebase";
 import { FamilyProvider } from "./FamilyProvider";
 
 const THEME_STORAGE_KEY = "panel-theme";
+const THEME_EVENT = "panel-theme-change";
+
+function subscribeTheme(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(THEME_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(THEME_EVENT, callback);
+  };
+}
+
+function getThemeSnapshot(): "light" | "dark" {
+  try {
+    return window.localStorage.getItem(THEME_STORAGE_KEY) === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+function getThemeServerSnapshot(): "light" | "dark" {
+  return "light";
+}
 
 const NAV = [
   { href: "/panel", label: "Resumen", icon: LayoutDashboard, exact: true },
@@ -31,25 +53,16 @@ export function PanelShell({ children }: { children: ReactNode }) {
   const { user, loading, role, childId } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
-      if (saved === "dark" || saved === "light") setTheme(saved);
-    } catch {
-      // Sin acceso a localStorage; se mantiene el modo claro por defecto.
-    }
-  }, []);
+  const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot);
 
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       // Ignorar si el almacenamiento está bloqueado.
     }
+    window.dispatchEvent(new Event(THEME_EVENT));
   }
 
   const themeClass = theme === "dark" ? "panel-dark" : "panel-light";
