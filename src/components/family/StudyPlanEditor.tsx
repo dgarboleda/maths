@@ -24,34 +24,34 @@ export function StudyPlanEditor({ parentId, child }: { parentId: string; child: 
     finally { setSaving(false); }
   }
   return <div className="space-y-5">
-    <p className="max-w-3xl text-sm leading-relaxed text-slate-300">Elige las clases prioritarias para {child.name}. El recorrido recomienda primero sus bases. Todas las clases siguen disponibles; esta elección no cambia el progreso ni concede logros.</p>
+    <p className="max-w-3xl text-sm leading-relaxed text-slate-600">Elige las clases prioritarias para {child.name}. El recorrido recomienda primero sus bases. Todas las clases siguen disponibles; esta elección no cambia el progreso ni concede logros.</p>
     <form onSubmit={(event) => { event.preventDefault(); void save(); }} className="space-y-5 pb-20 lg:pb-0">
       <div className="flex flex-wrap items-center gap-3">
-        <button disabled={saving} type="button" className="min-h-11 rounded-xl border border-slate-600 px-4 text-sm text-slate-200" onClick={() => { setSelected([]); setMessage(""); }}>Seguir el programa completo</button>
-        <Link href={`/jugar/${child.id}/mapa`} className="inline-flex min-h-11 items-center px-2 text-sm text-cyan-200 underline">Ver mapa de aprendizaje</Link>
+        <button disabled={saving} type="button" className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50" onClick={() => { setSelected([]); setMessage(""); }}>Seguir el programa completo</button>
+        <Link href={`/jugar/${child.id}/mapa`} className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-indigo-600 underline hover:text-indigo-700">Ver mapa de aprendizaje</Link>
       </div>
       <fieldset disabled={saving} className="space-y-4">
-        <legend className="mb-3 font-bold text-cyan-200">Clases prioritarias</legend>
-        {LEARNING_UNITS.map((unit) => <fieldset key={unit.id} className="rounded-2xl border border-slate-700 p-4">
-          <legend className="px-2 font-semibold text-slate-100">{unit.title}</legend>
+        <legend className="mb-3 font-semibold text-slate-900">Clases prioritarias</legend>
+        {LEARNING_UNITS.map((unit) => <fieldset key={unit.id} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+          <legend className="px-2 text-sm font-semibold text-slate-800">{unit.title}</legend>
           <div className="grid gap-2 sm:grid-cols-2">
-            {LESSONS.filter((lesson) => lesson.unitId === unit.id).map((lesson) => <label key={lesson.id} htmlFor={`${id}-${lesson.id}`} className="flex min-h-11 items-start gap-3 rounded-xl bg-slate-900/60 p-3 text-sm text-slate-200">
-              <input id={`${id}-${lesson.id}`} type="checkbox" checked={selected.includes(lesson.id)} className="mt-0.5 size-5 shrink-0 accent-cyan-300"
+            {LESSONS.filter((lesson) => lesson.unitId === unit.id).map((lesson) => <label key={lesson.id} htmlFor={`${id}-${lesson.id}`} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-slate-200/60 bg-slate-50 p-3 text-sm text-slate-800 hover:bg-slate-100/70">
+              <input id={`${id}-${lesson.id}`} type="checkbox" checked={selected.includes(lesson.id)} className="mt-0.5 size-5 shrink-0 accent-indigo-600"
                 onChange={(event) => { const checked = event.target.checked; setMessage(""); setSelected((previous) => checked ? [...previous, lesson.id] : previous.filter((value) => value !== lesson.id)); }} />
-              <span><span className="block font-semibold">{lesson.title}</span><span className="mt-1 block text-xs text-slate-400">{lesson.objective}</span></span>
+              <span><span className="block font-semibold text-slate-900">{lesson.title}</span><span className="mt-1 block text-xs text-slate-500">{lesson.objective}</span></span>
             </label>)}
           </div>
         </fieldset>)}
       </fieldset>
       {/* En móvil, fija justo encima del menú inferior (min-h-14): `sticky` dentro de
           un <main> con padding inferior quedaba flotando a media pantalla. */}
-      <div className="fixed inset-x-4 bottom-16 z-10 rounded-2xl border border-slate-600 bg-slate-950 p-3 shadow-xl lg:sticky lg:inset-x-auto lg:bottom-0">
+      <div className="fixed inset-x-4 bottom-16 z-10 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.03)] lg:sticky lg:inset-x-auto lg:bottom-0">
         <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 text-xs text-slate-300">{selected.length === 0 ? "Programa completo" : `${selected.length} ${selected.length === 1 ? "clase prioritaria" : "clases prioritarias"}`}</p>
-          <button disabled={saving} type="submit" className="min-h-11 shrink-0 rounded-xl bg-cyan-300 px-4 text-sm font-bold text-slate-950 disabled:opacity-50">{saving ? "Guardando…" : "Guardar plan"}</button>
+          <p className="min-w-0 text-xs text-slate-600 tabular-nums">{selected.length === 0 ? "Programa completo" : `${selected.length} ${selected.length === 1 ? "clase prioritaria" : "clases prioritarias"}`}</p>
+          <button disabled={saving} type="submit" className="min-h-11 shrink-0 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">{saving ? "Guardando…" : "Guardar plan"}</button>
         </div>
-        <p role="status" className="text-xs text-emerald-200">{message}</p>
-        {error && <p role="alert" className="mt-2 text-xs text-rose-200">{error}</p>}
+        <p role="status" className="text-xs font-medium text-emerald-700">{message}</p>
+        {error && <p role="alert" className="mt-2 text-xs font-medium text-red-600">{error}</p>}
       </div>
     </form>
   </div>;

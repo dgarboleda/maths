@@ -28,19 +28,19 @@ export default function AjustesPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">Ajustes</h1>
-        <p className="mt-1 text-sm text-slate-400">Cuenta y perfiles de juego.</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Ajustes</h1>
+        <p className="mt-1 text-sm text-slate-600">Cuenta y perfiles de juego.</p>
       </header>
 
       <SectionCard title="Cuenta" icon={<UserRound className="size-4" aria-hidden="true" />}>
         <div className="flex flex-wrap items-center gap-4">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-white">{user?.email}</p>
+            <p className="truncate text-sm font-semibold text-slate-900">{user?.email}</p>
           </div>
           <button
             type="button"
             onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
-            className="flex min-h-11 items-center gap-2 rounded-xl border border-indigo-500/25 bg-slate-800/60 px-4 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
+            className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
           >
             Cerrar sesión
           </button>
@@ -49,13 +49,13 @@ export default function AjustesPage() {
 
       <SectionCard title="Perfiles de juego" icon={<Users className="size-4" aria-hidden="true" />}>
         {loadingChildren ? (
-          <p role="status" className="text-sm text-slate-400">
+          <p role="status" className="text-sm text-slate-500">
             Cargando…
           </p>
         ) : children.length === 0 ? (
-          <p className="text-sm text-slate-400">Todavía no hay perfiles de hijos creados.</p>
+          <p className="text-sm text-slate-600">Todavía no hay perfiles de hijos creados.</p>
         ) : (
-          <ul className="divide-y divide-indigo-500/15">
+          <ul className="divide-y divide-slate-200/80">
             {children.map((c) => {
               const age = ageFromBirthDate(c.birthDate);
               return (
@@ -64,20 +64,20 @@ export default function AjustesPage() {
                     variant="headshot"
                     avatarId={c.avatarId}
                     title={c.name}
-                    className="size-11 shrink-0 rounded-full border border-indigo-500/25"
+                    className="size-11 shrink-0 rounded-full border border-slate-200"
                   />
                   <div className="min-w-[8rem] flex-1">
-                    <p className="text-sm font-bold text-white">{c.name}</p>
+                    <p className="text-sm font-semibold text-slate-900">{c.name}</p>
                     {c.deleting && (
-                      <p role="status" className="text-xs text-amber-300">Borrado pendiente. Reintenta para terminarlo.</p>
+                      <p role="status" className="text-xs text-amber-700">Borrado pendiente. Reintenta para terminarlo.</p>
                     )}
-                    {age !== null && <p className="text-xs text-slate-400">{age} años</p>}
+                    {age !== null && <p className="text-xs text-slate-500">{age} años</p>}
                   </div>
                   <button
                     type="button"
                     onClick={() => setPickingAvatarChild(c)}
                     disabled={c.deleting}
-                    className="flex min-h-11 items-center gap-1.5 rounded-full border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
+                    className="flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                   >
                     <ImageIcon className="size-4" aria-hidden="true" />
                     Avatar
@@ -86,7 +86,7 @@ export default function AjustesPage() {
                     type="button"
                     onClick={() => setResettingChild(c)}
                     disabled={c.deleting}
-                    className="flex min-h-11 items-center gap-1.5 rounded-full border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
+                    className="flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                   >
                     <KeyRound className="size-4" aria-hidden="true" />
                     Restablecer PIN
@@ -94,7 +94,7 @@ export default function AjustesPage() {
                   <button
                     type="button"
                     onClick={() => setDeletingChild(c)}
-                    className="flex min-h-11 items-center gap-1.5 rounded-full border border-red-500/25 bg-red-950/30 px-3.5 text-sm font-bold text-red-300 transition-colors hover:bg-red-950/50"
+                    className="flex min-h-11 items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
                   >
                     <Trash2 className="size-4" aria-hidden="true" />
                     {c.deleting ? "Reintentar borrado" : "Borrar perfil"}
@@ -104,7 +104,7 @@ export default function AjustesPage() {
             })}
           </ul>
         )}
-        <p className="mt-3 text-xs text-slate-400">El PIN es la llave de cada explorador para entrar a su aventura.</p>
+        <p className="mt-3 text-xs text-slate-500">El PIN es la llave de cada explorador para entrar a su aventura.</p>
       </SectionCard>
 
       {parentId && (
@@ -115,21 +115,21 @@ export default function AjustesPage() {
 
       {parentId && (
         <SectionCard title="Archivo de actividades anteriores" icon={<DatabaseBackup className="size-4" aria-hidden="true" />}>
-          <p className="text-sm text-slate-300">Consulta tus creaciones, avatares personalizados y respaldos anteriores. El programa de clases funciona sin preparar mundos ni niveles.</p>
-          <Link href="/panel/archivo" className="mt-3 inline-flex min-h-11 items-center text-cyan-200 underline">Abrir archivo</Link>
+          <p className="text-sm text-slate-600">Consulta tus creaciones, avatares personalizados y respaldos anteriores. El programa de clases funciona sin preparar mundos ni niveles.</p>
+          <Link href="/panel/archivo" className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-indigo-600 underline hover:text-indigo-700">Abrir archivo</Link>
         </SectionCard>
       )}
 
       <SectionCard title="Privacidad y datos" icon={<ShieldCheck className="size-4" aria-hidden="true" />}>
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-slate-600">
           Consulta qué datos guardamos y para qué en la{" "}
-          <Link href="/privacidad" className="text-cyan-200 underline">política de privacidad</Link> y los{" "}
-          <Link href="/terminos" className="text-cyan-200 underline">términos de uso</Link>.
+          <Link href="/privacidad" className="text-indigo-600 underline hover:text-indigo-700">política de privacidad</Link> y los{" "}
+          <Link href="/terminos" className="text-indigo-600 underline hover:text-indigo-700">términos de uso</Link>.
         </p>
         <button
           type="button"
           onClick={() => setDeletingAccount(true)}
-          className="mt-3 flex min-h-11 items-center gap-1.5 rounded-full border border-red-500/25 bg-red-950/30 px-3.5 text-sm font-bold text-red-300 transition-colors hover:bg-red-950/50"
+          className="mt-3 flex min-h-11 items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
         >
           <Trash2 className="size-4" aria-hidden="true" />
           Borrar cuenta
@@ -220,18 +220,18 @@ function ChildDeviceLink({ parentId }: { parentId: string }) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-slate-600">
         Comparte este enlace con el dispositivo de tu hijo para que entre directo a elegir su perfil, sin que abras
         tu sesión ahí. Trátalo como una llave: quien lo tenga verá los nombres de los perfiles.
       </p>
-      <p className="text-sm text-slate-400">Al generar un enlace nuevo, todos los hijos deberán volver a entrar con el nuevo enlace y su PIN.</p>
+      <p className="text-sm text-slate-600">Al generar un enlace nuevo, todos los hijos deberán volver a entrar con el nuevo enlace y su PIN.</p>
       {error && (
-        <p role="alert" className="text-sm font-semibold text-red-300">
+        <p role="alert" className="text-sm font-semibold text-red-600">
           {error}
         </p>
       )}
       {!link && !error && (
-        <p role="status" className="text-sm text-slate-400">
+        <p role="status" className="text-sm text-slate-500">
           Preparando el enlace…
         </p>
       )}
@@ -247,7 +247,7 @@ function ChildDeviceLink({ parentId }: { parentId: string }) {
           <button
             type="button"
             onClick={copyLink}
-            className="flex min-h-11 items-center gap-1.5 rounded-xl border border-indigo-500/25 bg-slate-800/60 px-3.5 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
+            className="flex min-h-11 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
           >
             {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
             {copied ? "¡Copiado!" : "Copiar"}
@@ -256,7 +256,7 @@ function ChildDeviceLink({ parentId }: { parentId: string }) {
             type="button"
             onClick={rotateKey}
             disabled={rotating}
-            className="flex min-h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold text-cyan-300 underline disabled:opacity-60"
+            className="flex min-h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold text-indigo-600 underline hover:text-indigo-700 disabled:opacity-60"
           >
             {rotating ? "Generando…" : "Generar enlace nuevo y revocar accesos infantiles"}
           </button>
@@ -308,7 +308,7 @@ function ResetPinDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/80 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-3 backdrop-blur-sm sm:items-center sm:p-6">
       <div
         ref={dialogRef}
         role="dialog"
@@ -316,14 +316,14 @@ function ResetPinDialog({
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="family-panel anim-rise w-full max-w-sm rounded-3xl p-5 focus:outline-none"
+        className="family-panel anim-rise w-full max-w-sm rounded-2xl p-5 focus:outline-none"
       >
-        <h2 id={titleId} className="font-display text-lg font-bold text-white">
+        <h2 id={titleId} className="text-lg font-semibold text-slate-900">
           Restablecer PIN de {child.name}
         </h2>
-        <p className="mt-2 text-sm text-slate-400">Los dispositivos que ya habían entrado con este perfil necesitarán el PIN nuevo para volver a acceder.</p>
+        <p className="mt-2 text-sm text-slate-600">Los dispositivos que ya habían entrado con este perfil necesitarán el PIN nuevo para volver a acceder.</p>
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm font-bold text-slate-200">
+          <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
             PIN nuevo (4 dígitos)
             <input
               ref={firstInputRef}
@@ -335,7 +335,7 @@ function ResetPinDialog({
               className="family-input text-center text-lg tracking-[0.6em]"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-bold text-slate-200">
+          <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
             Confirmar PIN
             <input
               inputMode="numeric"
@@ -347,7 +347,7 @@ function ResetPinDialog({
             />
           </label>
           {error && (
-            <p role="alert" className="text-sm font-bold text-red-400">
+            <p role="alert" className="text-sm font-semibold text-red-600">
               {error}
             </p>
           )}
@@ -355,11 +355,11 @@ function ResetPinDialog({
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
             >
               Guardar
             </button>
-            <button type="button" onClick={onClose} className="text-sm font-bold text-slate-400">
+            <button type="button" onClick={onClose} className="text-sm font-semibold text-slate-600 hover:text-slate-900">
               Cancelar
             </button>
           </div>
@@ -419,7 +419,7 @@ function DeleteChildDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/80 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-3 backdrop-blur-sm sm:items-center sm:p-6">
       <div
         ref={dialogRef}
         role="dialog"
@@ -427,16 +427,16 @@ function DeleteChildDialog({
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="family-panel anim-rise w-full max-w-sm rounded-3xl border border-red-500/25 p-5 focus:outline-none"
+        className="family-panel anim-rise w-full max-w-sm rounded-2xl border border-red-200 p-5 focus:outline-none"
       >
-        <h2 id={titleId} className="font-display text-lg font-bold text-white">
+        <h2 id={titleId} className="text-lg font-semibold text-slate-900">
           Borrar perfil de {child.name}
         </h2>
-        <p className="mt-2 text-sm text-slate-300">
+        <p className="mt-2 text-sm text-slate-600">
           Esto borra para siempre todo su progreso, estrellas, insignias y evaluaciones. No se puede deshacer.
         </p>
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-          <label htmlFor={confirmId} className="flex flex-col gap-1 text-sm font-bold text-slate-200">
+          <label htmlFor={confirmId} className="flex flex-col gap-1 text-sm font-medium text-slate-700">
             Escribe &quot;{child.name}&quot; para confirmar
             <input
               ref={confirmInputRef}
@@ -448,7 +448,7 @@ function DeleteChildDialog({
             />
           </label>
           {error && (
-            <p role="alert" className="text-sm font-bold text-red-400">
+            <p role="alert" className="text-sm font-semibold text-red-600">
               {error}
             </p>
           )}
@@ -456,11 +456,11 @@ function DeleteChildDialog({
             <button
               type="submit"
               disabled={!confirmed || submitting}
-              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
             >
               {submitting ? "Borrando…" : "Borrar perfil"}
             </button>
-            <button type="button" onClick={onClose} className="text-sm font-bold text-slate-400">
+            <button type="button" onClick={onClose} className="text-sm font-semibold text-slate-600 hover:text-slate-900">
               Cancelar
             </button>
           </div>
@@ -519,7 +519,7 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/80 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-3 backdrop-blur-sm sm:items-center sm:p-6">
       <div
         ref={dialogRef}
         role="dialog"
@@ -527,15 +527,15 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="family-panel anim-rise w-full max-w-sm rounded-3xl border border-red-500/25 p-5 focus:outline-none"
+        className="family-panel anim-rise w-full max-w-sm rounded-2xl border border-red-200 p-5 focus:outline-none"
       >
-        <h2 id={titleId} className="font-display text-lg font-bold text-white">Borrar la cuenta</h2>
-        <p className="mt-2 text-sm text-slate-300">
+        <h2 id={titleId} className="text-lg font-semibold text-slate-900">Borrar la cuenta</h2>
+        <p className="mt-2 text-sm text-slate-600">
           Se borran para siempre todos los perfiles, su avance, estrellas y evaluaciones, las clases y niveles creados, las imágenes
           subidas y tu usuario. No se puede deshacer.
         </p>
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-          <label htmlFor={passwordId} className="flex flex-col gap-1 text-sm font-bold text-slate-200">
+          <label htmlFor={passwordId} className="flex flex-col gap-1 text-sm font-medium text-slate-700">
             Tu contraseña
             <input
               ref={passwordRef}
@@ -547,7 +547,7 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
               className="family-input"
             />
           </label>
-          <label htmlFor={confirmId} className="flex flex-col gap-1 text-sm font-bold text-slate-200">
+          <label htmlFor={confirmId} className="flex flex-col gap-1 text-sm font-medium text-slate-700">
             Escribe &quot;{DELETE_WORD}&quot; para confirmar
             <input
               id={confirmId}
@@ -558,7 +558,7 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
             />
           </label>
           {error && (
-            <p role="alert" className="text-sm font-bold text-red-400">
+            <p role="alert" className="text-sm font-semibold text-red-600">
               {error}
             </p>
           )}
@@ -566,11 +566,11 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
             <button
               type="submit"
               disabled={!confirmed || submitting}
-              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
             >
               {submitting ? "Borrando…" : "Borrar cuenta"}
             </button>
-            <button type="button" onClick={onClose} className="text-sm font-bold text-slate-400">
+            <button type="button" onClick={onClose} className="text-sm font-semibold text-slate-600 hover:text-slate-900">
               Cancelar
             </button>
           </div>

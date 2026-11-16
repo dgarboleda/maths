@@ -539,6 +539,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
               <p className="text-lg font-semibold">
                 {factor} {factor === 1 ? "sensor" : "sensores"} × 5 créditos por sensor = {5 * factor} créditos
               </p>
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <caption className="sr-only">
                   Cantidad y costo proporcional, sin cargo fijo
@@ -560,6 +561,7 @@ function ClassicVisual({ kind }: { kind: Visual }) {
                   ))}
                 </tbody>
               </table>
+              </div>
               <p className="text-sm">
                 Con un envío fijo de 6, el costo sería 5x + 6: la razón
                 costo/cantidad cambiaría.

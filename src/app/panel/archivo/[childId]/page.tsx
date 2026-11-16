@@ -29,11 +29,11 @@ import {
 } from "@/components/family/ui";
 
 const STRAND_COLORS: Record<string, string> = {
-  aritmetica: "border-violet-400/30 bg-violet-500/15 text-violet-200",
-  algebra: "border-pink-400/30 bg-pink-500/15 text-pink-200",
-  geometria: "border-sky-400/30 bg-sky-500/15 text-sky-200",
-  medicion: "border-emerald-400/30 bg-emerald-500/15 text-emerald-200",
-  logica: "border-amber-400/30 bg-amber-500/15 text-amber-200",
+  aritmetica: "border-violet-200 bg-violet-50 text-violet-700",
+  algebra: "border-pink-200 bg-pink-50 text-pink-700",
+  geometria: "border-sky-200 bg-sky-50 text-sky-700",
+  medicion: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  logica: "border-amber-200 bg-amber-50 text-amber-700",
 };
 
 interface PlacementDoc extends Placement {
@@ -101,39 +101,39 @@ export default function ChildDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="rounded-xl border border-amber-300/30 bg-amber-950/20 p-4 text-sm text-amber-100">Historial de actividades anteriores. Estos módulos y evaluaciones no acreditan las clases actuales. <Link href={`/panel/${params.childId}`} className="underline">Ver el informe actual</Link></p>
+      <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Historial de actividades anteriores. Estos módulos y evaluaciones no acreditan las clases actuales. <Link href={`/panel/${params.childId}`} className="font-medium underline">Ver el informe actual</Link></p>
       <Link
         href="/panel/hijos"
-        className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-1 text-sm font-semibold text-slate-400 transition-colors hover:text-white"
+        className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full px-1 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-900"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
         Hijos
       </Link>
 
-      <header className="family-panel flex flex-wrap items-center gap-4 rounded-2xl p-4 sm:p-5">
+      <header className="family-panel flex flex-wrap items-center gap-4 rounded-2xl p-5 sm:p-6">
         <Avatar
           variant="headshot"
           title={child.name}
           avatarId={child.avatarId}
-          className="size-20 shrink-0 rounded-full border-2 border-cyan-400/40"
+          className="size-20 shrink-0 rounded-full border-2 border-slate-200"
         />
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-bold leading-tight text-white">{child.name}</h1>
-          {age !== null && <p className="text-sm text-slate-400">{age} años</p>}
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">{child.name}</h1>
+          {age !== null && <p className="text-sm text-slate-500 tabular-nums">{age} años</p>}
           <ul className="mt-2 flex flex-wrap gap-1.5">
-            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-slate-200">
+            <li className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 tabular-nums">
               Nivel {dashboard.level}
             </li>
-            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-amber-300">
+            <li className="inline-flex items-center gap-1 rounded-full border border-amber-200/60 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 tabular-nums">
               <Star className="size-3.5" aria-hidden="true" />
               {dashboard.totalStars ?? "…"}
               <span className="sr-only">estrellas</span>
             </li>
-            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-orange-300">
+            <li className="inline-flex items-center gap-1 rounded-full border border-orange-200/60 bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700 tabular-nums">
               <Flame className="size-3.5" aria-hidden="true" />
               {dashboard.streak} días de racha
             </li>
-            <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-cyan-300">
+            <li className="inline-flex items-center gap-1 rounded-full border border-sky-200/60 bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-700 tabular-nums">
               <Target className="size-3.5" aria-hidden="true" />
               {dashboard.weeklyAccuracy} % de acierto
             </li>
@@ -141,20 +141,20 @@ export default function ChildDetailPage() {
         </div>
         <Link
           href={`/jugar/${params.childId}`}
-          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 text-sm font-bold text-white transition-colors hover:brightness-110"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
         >
           <Play className="size-4" aria-hidden="true" />
           Jugar como {child.name}
         </Link>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Mundos" icon={<MapIcon className="size-4" aria-hidden="true" />}>
           <ul className="space-y-4">
             {dashboard.worlds.map((w) => (
               <li key={w.id}>
                 <div className="flex items-center justify-between gap-2">
-                  <p className={`text-sm font-bold ${w.status === "bloqueado" ? "text-slate-500" : "text-white"}`}>
+                  <p className={`text-sm font-semibold ${w.status === "bloqueado" ? "text-slate-500" : "text-slate-900"}`}>
                     <span aria-hidden="true">{w.icon} </span>
                     {w.title}
                   </p>
@@ -167,7 +167,7 @@ export default function ChildDetailPage() {
                   tone={w.status === "completado" ? "success" : w.status === "en-curso" ? "accent" : "primary"}
                   className="mt-1.5"
                 />
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-slate-500">
                   {w.zoneName} · {w.done} de {w.total} objetivos
                 </p>
               </li>
@@ -180,20 +180,20 @@ export default function ChildDetailPage() {
             {dashboard.strandRows.map((s) => (
               <li key={s.slug}>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-bold text-white">
+                  <p className="text-sm font-semibold text-slate-900">
                     <span aria-hidden="true">{s.emoji} </span>
                     {s.label}
                   </p>
                   <span className="flex items-center gap-2">
                     <TrendChip trend={s.trend} />
-                    <span className="text-sm font-bold tabular-nums text-slate-200">{s.mastery} %</span>
+                    <span className="text-sm font-semibold tabular-nums text-slate-900">{s.mastery} %</span>
                   </span>
                 </div>
                 <MasteryBar value={s.mastery} label={`${s.label}: ${s.mastery} % de dominio`} />
               </li>
             ))}
           </ul>
-          <p className="mt-3 rounded-lg bg-slate-800/50 px-3 py-2 text-xs text-slate-400">
+          <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
             La línea marca el umbral de dominio (85 % de aciertos en los últimos 12 intentos).
           </p>
         </SectionCard>
@@ -204,7 +204,7 @@ export default function ChildDetailPage() {
               <li
                 key={b.id}
                 className={`rounded-xl border p-3 ${
-                  b.unlocked ? "border-amber-400/30 bg-amber-500/10" : "border-indigo-500/15 bg-slate-800/40"
+                  b.unlocked ? "border-amber-200 bg-amber-50" : "border-slate-200/80 bg-slate-50"
                 }`}
               >
                 {b.image ? (
@@ -214,10 +214,10 @@ export default function ChildDetailPage() {
                     {b.emoji}
                   </span>
                 )}
-                <p className={`mt-2 text-sm font-bold leading-tight ${b.unlocked ? "text-amber-200" : "text-slate-500"}`}>
+                <p className={`mt-2 text-sm font-semibold leading-tight ${b.unlocked ? "text-amber-900" : "text-slate-500"}`}>
                   {b.label}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">{b.description}</p>
+                <p className="mt-0.5 text-xs text-slate-600">{b.description}</p>
               </li>
             ))}
           </ul>
@@ -231,7 +231,7 @@ export default function ChildDetailPage() {
               text="Cuando practique, la actividad aparecerá aquí."
             />
           ) : (
-            <ul className="divide-y divide-indigo-500/15">
+            <ul className="divide-y divide-slate-200/80">
               {dashboard.activity.map((item) => (
                 <ActivityRow key={item.id} item={item} />
               ))}
@@ -246,33 +246,33 @@ export default function ChildDetailPage() {
 
       <section aria-label="Evaluaciones de ubicación" className="family-panel flex flex-col gap-3 rounded-2xl p-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-white">Evaluaciones de ubicación</h2>
+          <h2 className="text-sm font-semibold text-slate-900">Evaluaciones de ubicación</h2>
           <Link
             href={`/jugar/${params.childId}/evaluacion`}
-            className="text-sm font-semibold text-cyan-300 underline-offset-2 hover:underline"
+            className="text-sm font-semibold text-indigo-600 underline-offset-2 hover:text-indigo-700 hover:underline"
           >
             {evaluaciones.length > 0 ? "Volver a evaluar" : "Hacer la evaluación inicial"}
           </Link>
         </div>
 
         {evaluaciones.length === 0 ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-600">
             Todavía no se ha hecho ninguna evaluación de ubicación. Sirve como línea base para medir el avance con el
             tiempo.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
             {evaluaciones.map((ev) => (
-              <li key={ev.id} className="rounded-xl border border-indigo-500/20 bg-slate-900/50 p-3 text-sm">
+              <li key={ev.id} className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-semibold text-white">
+                  <span className="font-semibold text-slate-900">
                     {ev.completedAt ? new Date(ev.completedAt).toLocaleDateString("es") : "…"}
                   </span>
-                  <span className="font-bold text-violet-300">
+                  <span className="font-semibold text-indigo-700 tabular-nums">
                     {ev.overallGradeBand} ({ev.overallScore}/100)
                   </span>
                 </div>
-                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-400">
+                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
                   {STRANDS.map((s) => {
                     const r = ev.perStrand[s.slug];
                     if (!r) return null;
@@ -284,7 +284,7 @@ export default function ChildDetailPage() {
                   })}
                 </p>
                 {STRANDS.some((s) => ev.perStrand[s.slug]?.weakTiers?.length) && (
-                  <p className="mt-1 text-xs text-amber-300">
+                  <p className="mt-1 text-xs text-amber-800">
                     Puntos de mejora:{" "}
                     {STRANDS.flatMap((s) => {
                       const r = ev.perStrand[s.slug];
@@ -303,8 +303,8 @@ export default function ChildDetailPage() {
       </section>
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-display text-lg font-bold text-white">Currícula completa</h2>
-        <p className="text-sm text-slate-400">
+        <h2 className="text-lg font-semibold text-slate-900">Currícula completa</h2>
+        <p className="text-sm text-slate-600">
           Los temas se agrupan por grado escolar de referencia, y cada uno indica su área y nivel en la escala de PISA.
           Un tema se desbloquea cuando se dominan todos sus prerrequisitos (mostrados entre paréntesis cuando está
           bloqueado), sin importar de qué materia vengan.
@@ -314,7 +314,7 @@ export default function ChildDetailPage() {
       <div className="flex flex-col gap-6">
         {tiers.map((tier) => (
           <section key={tier} aria-label={gradeLabel(tier)} className="flex flex-col gap-2">
-            <h2 className="text-xs font-bold uppercase tracking-wide text-indigo-300">{gradeLabel(tier)}</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wide text-indigo-700">{gradeLabel(tier)}</h2>
             <ul className="flex flex-col gap-1">
               {allModules()
                 .filter((m) => m.tier === tier)
@@ -332,15 +332,15 @@ export default function ChildDetailPage() {
                   >
                     <span className="flex items-center gap-2">
                       <span
-                        className={`rounded-full border px-2 py-0.5 text-xs font-bold ${STRAND_COLORS[mod.strandSlug] ?? "border-indigo-500/20 bg-slate-800 text-slate-300"}`}
+                        className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${STRAND_COLORS[mod.strandSlug] ?? "border-slate-200 bg-slate-100 text-slate-700"}`}
                       >
                         {strandLabel}
                       </span>
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-slate-900">
                         {mod.emoji} {mod.label}
                       </span>
                       {mod.pisa && pisaCategory && (
-                        <span className="rounded-full border border-cyan-400/25 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-200">
+                        <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-700">
                           <span aria-hidden="true">{pisaCategory.emoji} </span>
                           PISA {PISA_LEVELS[mod.pisa.level].code}
                           <span className="sr-only"> · {pisaCategory.label}</span>
@@ -348,11 +348,11 @@ export default function ChildDetailPage() {
                       )}
                     </span>
                     {mastered ? (
-                      <span className="font-bold text-emerald-300">
+                      <span className="font-semibold text-emerald-700">
                         ✓ Dominado{viaPlacement ? " (evaluación inicial)" : ""}
                       </span>
                     ) : unlocked ? (
-                      <span className="font-bold text-violet-300">▶ Desbloqueado</span>
+                      <span className="font-semibold text-indigo-700">▶ Desbloqueado</span>
                     ) : (
                       <span className="text-slate-500">🔒 Bloqueado (falta: {missing.map((m) => m.label).join(", ")})</span>
                     )}

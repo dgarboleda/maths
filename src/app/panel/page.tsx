@@ -72,19 +72,19 @@ export default function PanelPage() {
 
   if (loadingChildren) {
     return (
-      <p role="status" className="text-indigo-200">
+      <p role="status" className="text-slate-600">
         Cargando…
       </p>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <header>
-        <h1 className="family-text-glow font-display text-2xl font-bold text-white sm:text-3xl">
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
           {greeting ? `Hola, ${greeting}` : "Panel familiar"}
         </h1>
-        <p className="mt-1 text-sm text-slate-400">Esto es lo que ha pasado en Math Quest esta semana.</p>
+        <p className="mt-1 text-xs text-slate-500 sm:text-sm">Esto es lo que ha pasado en Math Quest esta semana.</p>
       </header>
 
       {selectedChild && <LearningReport key={selectedChild.id} childId={selectedChild.id} childName={selectedChild.name} compact />}
@@ -97,7 +97,7 @@ export default function PanelPage() {
         />
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {children.map((c) => (
               <ChildResumenEntry key={c.id} child={c} onDashboard={handleDashboard} />
             ))}
@@ -111,16 +111,16 @@ export default function PanelPage() {
                 text="Todo tranquilo por ahora."
               />
             ) : (
-              <ul className="divide-y divide-indigo-500/15">
+              <ul className="divide-y divide-slate-200/80">
                 {alerts.map((a) => (
                   <li key={a.id} className="flex items-start gap-3 py-2.5">
                     <span
                       aria-hidden="true"
-                      className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-slate-800/60"
+                      className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100"
                     >
                       {a.icon}
                     </span>
-                    <span className="min-w-0 flex-1 text-sm font-semibold leading-snug text-slate-100">
+                    <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-slate-800">
                       {a.text}
                     </span>
                   </li>
@@ -129,7 +129,7 @@ export default function PanelPage() {
             )}
           </SectionCard>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2">
             <SectionCard
               title="Ritmo de la semana"
               icon={<ChartLine className="size-4" aria-hidden="true" />}
@@ -146,7 +146,7 @@ export default function PanelPage() {
                   text="Cuando jueguen, la actividad aparecerá aquí."
                 />
               ) : (
-                <ul className="divide-y divide-indigo-500/15">
+                <ul className="divide-y divide-slate-200/80">
                   {recentActivity.map(({ item, name }) => (
                     <ActivityRow key={item.id} item={item} childName={name} />
                   ))}
@@ -174,53 +174,53 @@ function ChildResumenEntry({
   }, [child.id, dashboard, onDashboard]);
 
   return (
-    <section aria-label={`Progreso de ${child.name}`} className="family-tile rounded-2xl p-4">
+    <section aria-label={`Progreso de ${child.name}`} className="family-tile rounded-2xl p-5 sm:p-6">
       <header className="flex items-center gap-3">
         <Avatar
           variant="headshot"
           title={child.name}
           avatarId={child.avatarId}
-          className="size-14 shrink-0 rounded-full border-2 border-indigo-500/30"
+          className="size-14 shrink-0 rounded-full border-2 border-slate-200"
         />
         <div className="min-w-0 flex-1">
-          <h2 className="font-display text-lg font-bold leading-tight text-white">{child.name}</h2>
-          <p className="text-xs text-slate-400">{dashboard.completed} de {LESSONS.length} clases terminadas</p>
+          <h2 className="font-display text-lg font-bold leading-tight text-slate-900">{child.name}</h2>
+          <p className="text-xs text-slate-500 tabular-nums">{dashboard.completed} de {LESSONS.length} clases terminadas</p>
         </div>
       </header>
 
       <ul className="mt-3 flex flex-wrap gap-1.5">
-        <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-amber-300">
+        <li className="inline-flex items-center gap-1 rounded-full border border-amber-200/60 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 tabular-nums">
           <Star className="size-3.5" aria-hidden="true" />
           {dashboard.totalStars ?? "…"}
           <span className="sr-only">estrellas</span>
         </li>
-        <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-orange-300">
+        <li className="inline-flex items-center gap-1 rounded-full border border-orange-200/60 bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700 tabular-nums">
           <Flame className="size-3.5" aria-hidden="true" />
           {dashboard.streak} {dashboard.streak === 1 ? "día" : "días"} de repaso
           <span className="sr-only">de racha de repaso</span>
         </li>
-        <li className="inline-flex items-center gap-1 rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-bold text-slate-200">
+        <li className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 tabular-nums">
           {dashboard.autonomous} comprobaciones autónomas
         </li>
       </ul>
 
-      <div className="mt-3 rounded-xl bg-slate-800/50 p-3">
-        <p className="text-xs font-bold text-cyan-300">Siguiente paso de aprendizaje</p>
-        <p className="mt-1 text-sm font-semibold text-slate-100">{dashboard.nextLesson.title}</p>
-        <p className="mt-1 text-xs text-slate-400">{dashboard.nextLesson.objective}</p>
+      <div className="mt-3 rounded-xl border border-slate-200/60 bg-slate-50 p-3">
+        <p className="text-xs font-semibold text-indigo-600">Siguiente paso de aprendizaje</p>
+        <p className="mt-1 text-sm font-semibold text-slate-900">{dashboard.nextLesson.title}</p>
+        <p className="mt-1 text-xs text-slate-500">{dashboard.nextLesson.objective}</p>
 
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-4 flex gap-2">
         <Link
           href={`/panel/${child.id}`}
-          className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-indigo-500/25 bg-slate-800/60 text-sm font-bold text-slate-100 transition-colors hover:bg-slate-800"
+          className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
         >
           Ver perfil
         </Link>
         <Link
           href={`/jugar/${child.id}`}
-          className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-sm font-bold text-white transition-colors hover:brightness-110"
+          className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-900 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
         >
           <Play className="size-4" aria-hidden="true" />
           Jugar

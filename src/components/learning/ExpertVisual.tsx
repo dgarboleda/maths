@@ -324,6 +324,7 @@ const SCHEMAS: Record<string, (p: never, v: number[]) => Schema> = {
   "alerta-meteorologica": (p: { D: number; R: number; A: number; K: number }, [f, pct]) => ({
     lines: [`Tu porcentaje: ${pct} % de las alertas terminaron en lluvia`],
     diagram: (
+      <div className="overflow-x-auto">
       <table className="w-full table-fixed border-collapse text-center text-sm">
         <caption className="sr-only">Tabla de doble entrada con tus alertas sin lluvia</caption>
         <thead>
@@ -355,6 +356,7 @@ const SCHEMAS: Record<string, (p: never, v: number[]) => Schema> = {
           </tr>
         </tbody>
       </table>
+      </div>
     ),
   }),
 

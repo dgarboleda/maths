@@ -759,6 +759,43 @@ body {
   background: rgba(129, 140, 248, 0.18);
   animation: skeleton-pulse 1.4s ease-in-out infinite;
 }
+
+/* Modo claro (canvas-ui-standard) para /panel/* manteniendo /login y /perfiles intactos. */
+.panel-light {
+  --scrollbar-thumb: rgba(100, 116, 139, 0.35);
+  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.55);
+  --scrollbar-track: rgba(241, 245, 249, 0.9);
+  color: #0f172a;
+}
+.panel-light .family-panel,
+.panel-light .family-tile {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+.panel-light .family-tile:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+}
+.panel-light .family-input {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+.panel-light .family-input::placeholder {
+  color: #94a3b8;
+}
+.panel-light .family-input:focus-visible {
+  border-color: #4f46e5;
+  background: #ffffff;
+}
+.panel-light .family-text-glow {
+  text-shadow: none;
+}
+.panel-light .skeleton-block {
+  background: rgba(203, 213, 225, 0.65);
+}
 @keyframes skeleton-pulse {
   0%,
   100% {

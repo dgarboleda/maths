@@ -219,6 +219,7 @@ function PlacementSummary({
           Empezar por: {next.title}
         </Link>
       )}
+      <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
         <caption className="mb-2 text-left font-semibold text-white">Dónde empezar en cada unidad</caption>
         <thead>
@@ -241,6 +242,8 @@ function PlacementSummary({
           })}
         </tbody>
       </table>
+      </div>
+      <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
         <caption className="mb-2 text-left font-semibold text-white">
           Referencia: Currículo Nacional de Perú (orientativo)
@@ -265,6 +268,7 @@ function PlacementSummary({
           })}
         </tbody>
       </table>
+      </div>
       <p className="text-xs leading-relaxed text-slate-400">
         La ubicación es una estimación rápida, no una confirmación de dominio ni una nota. La correspondencia con los grados del
         CNEB es orientativa y está pendiente de validación docente; no sustituye la evaluación del colegio.

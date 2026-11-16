@@ -183,6 +183,7 @@ export function SimilarityVisual({ id }: { id: string }) {
         <Handle x={tri(k)[1][0]} y={tri(k)[1][1]} className="fill-cyan-300"
           onDrag={(px) => setK(snap((px - O[0]) / (4 * u), 1, 3, 0.5))} />
       </svg>
+      <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">Medidas del original y de la copia</caption>
         <thead><tr><th className="p-2">Medida</th><th className="p-2">Original</th><th className="p-2">Copia × {num(k)}</th><th className="p-2">Factor</th></tr></thead>
@@ -192,6 +193,7 @@ export function SimilarityVisual({ id }: { id: string }) {
           <tr className="border-t border-slate-700"><th scope="row" className="p-2">Área</th><td className="p-2">6</td><td className="p-2">{num(6 * k * k)}</td><td className="p-2 font-bold text-cyan-200">× {num(k * k)}</td></tr>
         </tbody>
       </table>
+      </div>
       <p className="text-sm text-slate-300">
         Arrastra el vértice de la copia. Los ángulos no cambian. Las longitudes se multiplican por k, pero el área por k²: con k = 2 caben 4 triángulos ámbar en la copia.
       </p>

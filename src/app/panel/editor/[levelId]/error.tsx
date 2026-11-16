@@ -33,7 +33,7 @@ export default function LevelEditorError({ error, retry }: { error: Error & { di
           <button
             type="button"
             onClick={() => retry()}
-            className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 text-sm font-bold text-white hover:brightness-110"
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700"
           >
             Reintentar
           </button>

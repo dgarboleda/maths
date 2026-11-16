@@ -60,7 +60,7 @@ export function GeneratorPreview({ spec }: { spec: GeneratorSpec }) {
       )}
 
       {batch && (
-        <div className="max-h-64 overflow-y-auto rounded-md border border-indigo-500/10">
+        <div className="max-h-64 overflow-auto rounded-md border border-indigo-500/10">
           <table className="w-full text-left text-[11px]">
             <thead className="sticky top-0 bg-slate-950/90 text-slate-400">
               <tr>

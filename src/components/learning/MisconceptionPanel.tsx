@@ -19,24 +19,24 @@ export function MisconceptionPanel({
   childName: string;
 }) {
   const { events, error } = useLearningEvidence(parentId, childId);
-  if (error) return <p role="alert" className="text-sm text-amber-200">{error}</p>;
+  if (error) return <p role="alert" className="text-sm text-amber-700">{error}</p>;
   if (!events)
-    return <p role="status" className="text-sm text-slate-300">Analizando las respuestas…</p>;
+    return <p role="status" className="text-sm text-slate-500">Analizando las respuestas…</p>;
   const { misconceptions, unexpected } = summarizeMisconceptions(events, getLesson);
   const pending = misconceptions.filter((m) => !m.resolved);
   const totalUnexpected = Object.values(unexpected).reduce((a, b) => a + b, 0);
   return (
     <section aria-labelledby="errores-frecuentes" className="space-y-3">
-      <h3 id="errores-frecuentes" className="font-semibold text-white">
+      <h3 id="errores-frecuentes" className="font-semibold text-slate-900">
         Errores frecuentes
       </h3>
       {misconceptions.length === 0 ? (
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-slate-600">
           Todavía no hay errores previstos repetidos en las respuestas de {childName}.
         </p>
       ) : (
         <>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-slate-600">
             {pending.length > 0
               ? `${pending.length} ${pending.length === 1 ? "idea necesita" : "ideas necesitan"} atención. Cada tarjeta muestra la explicación que vio ${childName} al equivocarse.`
               : `Los errores registrados se corrigieron después: ${childName} resolvió bien la misma tarea al primer intento.`}
@@ -46,21 +46,21 @@ export function MisconceptionPanel({
               const lesson = getLesson(m.lessonId);
               return (
                 <li key={`${m.lessonId}:${m.text}`}
-                  className={`rounded-xl border p-4 ${m.resolved ? "border-slate-700 bg-slate-950" : "border-amber-300/30 bg-amber-950/20"}`}>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                  className={`rounded-xl border p-4 ${m.resolved ? "border-slate-200/80 bg-slate-50" : "border-amber-200 bg-amber-50"}`}>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                     {lesson?.title} · {m.count} {m.count === 1 ? "vez" : "veces"} · última {date(m.lastAt)}
                   </p>
-                  <p className="mt-2 text-sm text-slate-300">
-                    {m.prompt} <span className="text-slate-400">Respondió:</span>{" "}
-                    <strong className="text-white">{m.response}</strong>
+                  <p className="mt-2 text-sm text-slate-700">
+                    {m.prompt} <span className="text-slate-500">Respondió:</span>{" "}
+                    <strong className="text-slate-900">{m.response}</strong>
                   </p>
-                  <p className="mt-2 text-sm text-slate-100">{m.text}</p>
-                  <p className={`mt-2 text-xs font-semibold ${m.resolved ? "text-emerald-200" : "text-amber-200"}`}>
+                  <p className="mt-2 text-sm text-slate-800">{m.text}</p>
+                  <p className={`mt-2 text-xs font-semibold ${m.resolved ? "text-emerald-700" : "text-amber-800"}`}>
                     {m.resolved ? "Superado: después resolvió bien la misma tarea." : "Persiste: conviene practicar esta idea."}
                   </p>
                   {!m.resolved && lesson && (
                     <Link href={`/jugar/${childId}/aprende/${lesson.id}?modo=practice`}
-                      className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cyan-200 underline underline-offset-4">
+                      className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-indigo-600 underline underline-offset-4 hover:text-indigo-700">
                       Practicar {lesson.title}
                     </Link>
                   )}
@@ -71,12 +71,12 @@ export function MisconceptionPanel({
         </>
       )}
       {totalUnexpected > 0 && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           Además hubo {totalUnexpected} respuestas incorrectas que no coinciden con un error previsto (distracciones,
           cálculos o ideas que el contenido todavía no anticipa).
         </p>
       )}
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-500">
         Se analizan las últimas {EVIDENCE_WINDOW} acciones registradas.
       </p>
     </section>
