@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { BookOpen, ChartLine, Gift, LayoutDashboard, LogOut, Settings, Sparkles, Users } from "lucide-react";
+import { BookOpen, ChartLine, Gift, LayoutDashboard, LogOut, Moon, Settings, Sparkles, Sun, Users } from "lucide-react";
 import { childHome, useAuth } from "@/lib/AuthProvider";
 import { getFirebase } from "@/lib/firebase";
 import { FamilyProvider } from "./FamilyProvider";
+
+const THEME_STORAGE_KEY = "panel-theme";
 
 const NAV = [
   { href: "/panel", label: "Resumen", icon: LayoutDashboard, exact: true },
@@ -29,6 +31,28 @@ export function PanelShell({ children }: { children: ReactNode }) {
   const { user, loading, role, childId } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved === "dark" || saved === "light") setTheme(saved);
+    } catch {
+      // Sin acceso a localStorage; se mantiene el modo claro por defecto.
+    }
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch {
+      // Ignorar si el almacenamiento está bloqueado.
+    }
+  }
+
+  const themeClass = theme === "dark" ? "panel-dark" : "panel-light";
 
   useEffect(() => {
     if (!loading && role !== "parent") router.replace(childHome({ user, role, childId }));
@@ -40,7 +64,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
 
   if (loading || !user || role !== "parent") {
     return (
-      <main id="contenido" tabIndex={-1} className="panel-light flex h-dvh w-full items-center justify-center bg-slate-50/70">
+      <main id="contenido" tabIndex={-1} className={`${themeClass} flex h-dvh w-full items-center justify-center bg-slate-50/70`}>
         <p role="status" className="text-slate-600">
           Cargando…
         </p>
@@ -64,7 +88,7 @@ export function PanelShell({ children }: { children: ReactNode }) {
 
   return (
     <FamilyProvider>
-      <div className="panel-light h-dvh overflow-hidden bg-slate-50/70 text-slate-900 lg:flex">
+      <div className={`${themeClass} h-dvh overflow-hidden bg-slate-50/70 text-slate-900 lg:flex`}>
         <aside className="hidden h-full w-60 shrink-0 flex-col border-r border-slate-200/80 bg-white p-4 lg:flex">
           <Link href="/panel" className="mb-6 flex items-center gap-2.5 px-1.5">
             <span className="grid size-9 place-items-center rounded-xl bg-slate-900 text-white">
@@ -108,8 +132,17 @@ export function PanelShell({ children }: { children: ReactNode }) {
             {user && <p className="truncate px-3 text-xs text-slate-500">{user.email}</p>}
             <button
               type="button"
-              onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
+              onClick={toggleTheme}
+              aria-pressed={theme === "dark"}
               className="mt-2 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            >
+              {theme === "dark" ? <Sun className="size-4.5" aria-hidden="true" /> : <Moon className="size-4.5" aria-hidden="true" />}
+              {theme === "dark" ? "Modo claro" : "Modo oscuro"}
+            </button>
+            <button
+              type="button"
+              onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
+              className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
               <LogOut className="size-4.5" aria-hidden="true" />
               Cerrar sesión
@@ -127,14 +160,25 @@ export function PanelShell({ children }: { children: ReactNode }) {
                 MATH QUEST · Familia
               </span>
             </Link>
-            <button
-              type="button"
-              onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
-              aria-label="Cerrar sesión"
-              className="grid min-h-11 min-w-11 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-            >
-              <LogOut className="size-5" aria-hidden="true" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-pressed={theme === "dark"}
+                aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+                className="grid min-h-11 min-w-11 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+              >
+                {theme === "dark" ? <Sun className="size-5" aria-hidden="true" /> : <Moon className="size-5" aria-hidden="true" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => getFirebase().then(({ auth }) => signOut(auth)).catch(console.error)}
+                aria-label="Cerrar sesión"
+                className="grid min-h-11 min-w-11 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+              >
+                <LogOut className="size-5" aria-hidden="true" />
+              </button>
+            </div>
           </header>
 
           <main id="contenido" tabIndex={-1} className="mx-auto min-h-0 w-full max-w-7xl flex-1 overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8">
