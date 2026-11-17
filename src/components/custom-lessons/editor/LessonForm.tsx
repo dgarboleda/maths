@@ -13,7 +13,7 @@ import { dangerButton, inputClass, primaryButton, secondaryButton, smallButton }
 const GAME_NAMES: Record<CustomGame, string> = { write: "Sin minijuego", frogger: "Estanque", cohete: "Cohete", snake: "Serpiente", runner: "Carrera", numberpac: "Laberinto", invaders: "Invasión", breakout: "Bloques numéricos", topos: "Topos", cajas: "Cajas" };
 
 function FieldError({ message }: { message?: string }) {
-  return message ? <p className="text-sm text-amber-200">{message}</p> : null;
+  return message ? <p className="mt-1 text-sm font-medium text-amber-800">{message}</p> : null;
 }
 
 interface Props {
@@ -50,11 +50,11 @@ export function LessonForm({ parentId, draft, savedPublished, isNew, dirty, busy
   const add = (q: CustomQuestion) => setQuestions((qs) => [...qs, q]);
 
   return (
-    <form className="space-y-4 rounded-xl border border-slate-700 p-4" onSubmit={(e) => e.preventDefault()} aria-label="Editar clase">
+    <form className="space-y-5 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] sm:p-6" onSubmit={(e) => e.preventDefault()} aria-label="Editar clase">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-slate-600">
           {isNew ? "Clase nueva" : savedPublished ? "Publicada: los alumnos la ven." : "Borrador: los alumnos todavía no la ven."}
-          {dirty && <span className="ml-2 text-amber-200">· Cambios sin guardar</span>}
+          {dirty && <span className="ml-2 font-medium text-amber-700">· Cambios sin guardar</span>}
         </p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className={smallButton} onClick={onDuplicate}>Duplicar clase</button>
@@ -62,45 +62,45 @@ export function LessonForm({ parentId, draft, savedPublished, isNew, dirty, busy
         </div>
       </div>
       {errors.length > 0 && (
-        <div role="alert" className="rounded-lg border border-amber-400 p-3 text-amber-100">
-          <p className="font-bold">Revisa {errors.length === 1 ? "este punto" : `estos ${errors.length} puntos`} antes de {savedPublished || !isNew ? "guardar" : "publicar"}:</p>
-          <ul className="list-disc pl-5 text-sm">
+        <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
+          <p className="font-semibold">Revisa {errors.length === 1 ? "este punto" : `estos ${errors.length} puntos`} antes de {savedPublished || !isNew ? "guardar" : "publicar"}:</p>
+          <ul className="mt-1 list-disc pl-5 text-sm">
             {errors.map((e, i) => <li key={i}>{e.question === undefined ? e.message : `Pregunta ${e.question + 1}: ${e.message}`}</li>)}
           </ul>
         </div>
       )}
       <div>
-        <label htmlFor="lesson-topic" className="block">Tema</label>
+        <label htmlFor="lesson-topic" className="mb-1 block text-sm font-medium text-slate-700">Tema</label>
         <input id="lesson-topic" list="lesson-topics" aria-describedby="lesson-topic-help" className={inputClass} value={draft.topic} maxLength={LIMITS.topic} onChange={(e) => set({ topic: e.target.value })} />
         <datalist id="lesson-topics">{topics.map((t) => <option key={t} value={t} />)}</datalist>
-        <p id="lesson-topic-help" className="text-sm text-slate-400">Elige un tema existente para añadir la clase a él, o escribe uno nuevo.</p>
+        <p id="lesson-topic-help" className="mt-1 text-xs text-slate-500">Elige un tema existente para añadir la clase a él, o escribe uno nuevo.</p>
         <FieldError message={fieldError("topic")} />
       </div>
       <div>
-        <label htmlFor="lesson-title" className="block">Título de la clase</label>
+        <label htmlFor="lesson-title" className="mb-1 block text-sm font-medium text-slate-700">Título de la clase</label>
         <input id="lesson-title" className={inputClass} value={draft.title} maxLength={LIMITS.title} onChange={(e) => set({ title: e.target.value })} />
         <FieldError message={fieldError("title")} />
       </div>
       <div>
-        <label htmlFor="lesson-content" className="block">Contenido de la clase</label>
+        <label htmlFor="lesson-content" className="mb-1 block text-sm font-medium text-slate-700">Contenido de la clase</label>
         <textarea id="lesson-content" aria-describedby="lesson-content-help" className={inputClass} rows={8} maxLength={LIMITS.content} value={draft.content} onChange={(e) => set({ content: e.target.value })} />
-        <p id="lesson-content-help" className="text-sm text-slate-400">Formato: **negrita**, *cursiva*, # Título, - lista, 1. lista. Fórmulas: 3/4, √(16), x^2 (también en preguntas, respuestas y explicaciones).</p>
+        <p id="lesson-content-help" className="mt-1 text-xs text-slate-500">Formato: **negrita**, *cursiva*, # Título, - lista, 1. lista. Fórmulas: 3/4, √(16), x^2 (también en preguntas, respuestas y explicaciones).</p>
         {parentId && <ImagePicker parentId={parentId} onInsert={(md) => onChange((d) => ({ ...d, content: `${d.content.replace(/\s*$/, "")}${d.content.trim() ? "\n\n" : ""}${md}\n` }))} />}
         <FieldError message={fieldError("content")} />
       </div>
       <VisualEditor visuals={draft.visuals ?? []} onChange={(visuals) => set({ visuals })} />
       <FieldError message={fieldError("visuals")} />
       <div>
-        <label htmlFor="lesson-game" className="block">Minijuego</label>
+        <label htmlFor="lesson-game" className="mb-1 block text-sm font-medium text-slate-700">Minijuego</label>
         <select id="lesson-game" className={inputClass} value={draft.game} onChange={(e) => set({ game: e.target.value as CustomGame })}>
           {CUSTOM_GAMES.map((g) => <option key={g} value={g}>{GAME_NAMES[g]}</option>)}
         </select>
-        {draft.game !== "write" && <p className="text-sm text-slate-400">Los minijuegos necesitan {LIMITS.gameOptions} respuestas en cada pregunta.</p>}
+        {draft.game !== "write" && <p className="mt-1 text-xs text-slate-500">Los minijuegos necesitan {LIMITS.gameOptions} respuestas en cada pregunta.</p>}
       </div>
 
       <AssignmentFields draft={draft} students={students} lessons={otherLessons} errors={errors} set={set} />
 
-      <h2 className="text-xl font-bold">Preguntas</h2>
+      <h2 className="text-lg font-semibold text-slate-900">Preguntas</h2>
       {draft.questions.map((q, i) => (
         <QuestionEditor
           key={q.id}
@@ -116,13 +116,13 @@ export function LessonForm({ parentId, draft, savedPublished, isNew, dirty, busy
         />
       ))}
       <div className="flex flex-wrap gap-2">
-        <button id="lesson-questions" type="button" className="rounded-lg border border-cyan-300 px-3 py-2 disabled:opacity-40" disabled={full} onClick={() => add(blankQuestion())}>
+        <button id="lesson-questions" type="button" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-40" disabled={full} onClick={() => add(blankQuestion())}>
           Añadir pregunta
         </button>
-        <button type="button" className="rounded-lg border border-cyan-300 px-3 py-2 disabled:opacity-40" disabled={full} onClick={() => add(blankNumeric())}>
+        <button type="button" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-40" disabled={full} onClick={() => add(blankNumeric())}>
           Añadir pregunta numérica
         </button>
-        <button type="button" className="rounded-lg border border-cyan-300 px-3 py-2 disabled:opacity-40" disabled={full} onClick={() => add(blankTrueFalse())}>
+        <button type="button" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-40" disabled={full} onClick={() => add(blankTrueFalse())}>
           Añadir verdadero o falso
         </button>
       </div>

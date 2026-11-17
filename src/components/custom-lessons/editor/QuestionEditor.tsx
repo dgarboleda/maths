@@ -21,31 +21,31 @@ export function QuestionEditor({ question, index, total, game, errors, onChange,
   const n = index + 1;
   const numeric = isNumeric(question);
   return (
-    <fieldset className={`space-y-3 rounded-lg border p-3 ${errors.length ? "border-amber-400" : "border-slate-600"}`}>
-      <legend className="px-1 font-bold">Pregunta {n}</legend>
+    <fieldset className={`space-y-3 rounded-xl border p-4 ${errors.length ? "border-amber-300 bg-amber-50/30" : "border-slate-200 bg-slate-50/50"}`}>
+      <legend className="px-1 text-sm font-semibold text-slate-900">Pregunta {n}</legend>
       {errors.length > 0 && (
-        <ul className="list-disc pl-5 text-sm text-amber-200">
+        <ul className="list-disc pl-5 text-sm font-medium text-amber-800">
           {errors.map((e, i) => <li key={i}>{e.message}</li>)}
         </ul>
       )}
-      <label className="block">
+      <label className="block text-sm font-medium text-slate-700">
         Tipo de pregunta
-        <select id={`${prefix}-kind`} className={inputClass} value={numeric ? "numeric" : "choice"} onChange={(e) => onChange(convertQuestion(question, e.target.value as "choice" | "numeric"))}>
+        <select id={`${prefix}-kind`} className={`mt-1 ${inputClass}`} value={numeric ? "numeric" : "choice"} onChange={(e) => onChange(convertQuestion(question, e.target.value as "choice" | "numeric"))}>
           <option value="choice">Elegir entre respuestas</option>
           <option value="numeric">Escribir un número</option>
         </select>
       </label>
-      {numeric && game !== "write" && <p className="text-sm text-amber-200">Las preguntas de escribir un número se juegan sin minijuego.</p>}
-      <label className="block">
+      {numeric && game !== "write" && <p className="text-sm font-medium text-amber-800">Las preguntas de escribir un número se juegan sin minijuego.</p>}
+      <label className="block text-sm font-medium text-slate-700">
         Enunciado
-        <input id={`${prefix}-prompt`} className={inputClass} value={question.prompt} maxLength={LIMITS.prompt} onChange={(e) => onChange({ ...question, prompt: e.target.value })} />
+        <input id={`${prefix}-prompt`} className={`mt-1 ${inputClass}`} value={question.prompt} maxLength={LIMITS.prompt} onChange={(e) => onChange({ ...question, prompt: e.target.value })} />
       </label>
       {numeric ? (
         <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
           <div>
-            <label htmlFor={`${prefix}-value`} className="block">Respuesta correcta</label>
+            <label htmlFor={`${prefix}-value`} className="mb-1 block text-sm font-medium text-slate-700">Respuesta correcta</label>
             <input id={`${prefix}-value`} className={inputClass} inputMode="decimal" value={question.value} maxLength={LIMITS.value} aria-describedby={`${prefix}-value-help`} onChange={(e) => onChange({ ...question, value: e.target.value })} />
-            <p id={`${prefix}-value-help`} className="text-sm text-slate-400">Se aceptan fracciones y decimales equivalentes: 3/4 = 0,75 = 6/8.</p>
+            <p id={`${prefix}-value-help`} className="mt-1 text-xs text-slate-500">Se aceptan fracciones y decimales equivalentes: 3/4 = 0,75 = 6/8.</p>
           </div>
           <label className="block">
             Margen aceptado (±)
